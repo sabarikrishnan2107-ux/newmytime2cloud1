@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="utf-8">
-<title>Payslip - {{ $record->employee->employee_id ?? '' }} - {{ $record->month }}</title>
+<title>Payslip Preview</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; background: #f3f4f6; padding: 20px 0; }
@@ -95,25 +95,10 @@
   .footer { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 14px 38px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
   .footer .lock { width: 22px; height: 22px; border-radius: 50%; background: #fee2e2; display: inline-flex; align-items: center; justify-content: center; }
   .footer .text { font-size: 11px; color: #c0392b; }
-
-  @media print {
-    body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-    .page { box-shadow: none; max-width: 100%; border-radius: 0; }
-  }
 </style>
 </head>
 <body>
 <div class="page">
-
-  @php
-    $monthLabel = '---';
-    try { $monthLabel = \Carbon\Carbon::parse($record->month . '-01')->format('F Y'); } catch(\Exception $e) {}
-    $currency = $currency ?? 'AED';
-    $daysInMonth = 30;
-    try { $daysInMonth = \Carbon\Carbon::parse($record->month . '-01')->daysInMonth; } catch(\Exception $e) {}
-    $dailyRate = $record->basic_salary > 0 ? round($record->basic_salary / $daysInMonth, 2) : 0;
-    $companyName = $record->employee->company->name ?? 'MyTime2Cloud';
-  @endphp
 
   <!-- Header -->
   <div class="header">
@@ -127,8 +112,8 @@
           </svg>
         </div>
         <div>
-          <h1>{{ $companyName }}</h1>
-          <div class="sub">Payslip for the Month of {{ $monthLabel }}</div>
+          <h1>MyTime2Cloud</h1>
+          <div class="sub">Payslip for the Month of April 2026</div>
         </div>
       </div>
       <div class="confidential">CONFIDENTIAL</div>
@@ -146,11 +131,11 @@
         </div>
         <h3>Employee Details</h3>
       </div>
-      <div class="row"><span class="label">Employee ID</span><span class="colon">:</span><span class="value">{{ $record->employee->employee_id ?? $record->employee_id }}</span></div>
-      <div class="row"><span class="label">Employee Name</span><span class="colon">:</span><span class="value">{{ trim(($record->employee->first_name ?? '') . ' ' . ($record->employee->last_name ?? '')) ?: '---' }}</span></div>
-      <div class="row"><span class="label">Department</span><span class="colon">:</span><span class="value">{{ $record->employee->department->name ?? '---' }}</span></div>
-      <div class="row"><span class="label">Designation</span><span class="colon">:</span><span class="value">{{ $record->employee->designation->name ?? '---' }}</span></div>
-      <div class="row"><span class="label">Branch</span><span class="colon">:</span><span class="value">{{ $record->employee->branch->branch_name ?? '---' }}</span></div>
+      <div class="row"><span class="label">Employee ID</span><span class="colon">:</span><span class="value">2553</span></div>
+      <div class="row"><span class="label">Employee Name</span><span class="colon">:</span><span class="value">---</span></div>
+      <div class="row"><span class="label">Department</span><span class="colon">:</span><span class="value">---</span></div>
+      <div class="row"><span class="label">Designation</span><span class="colon">:</span><span class="value">---</span></div>
+      <div class="row"><span class="label">Branch</span><span class="colon">:</span><span class="value">---</span></div>
     </div>
     <div class="col">
       <div class="section-head">
@@ -162,10 +147,10 @@
         <h3>Payment Details</h3>
       </div>
       <div class="row"><span class="label">Payment Method</span><span class="colon">:</span><span class="value">Bank Transfer</span></div>
-      <div class="row"><span class="label">Bank</span><span class="colon">:</span><span class="value">{{ $record->employee->bank->bank_name ?? '---' }}</span></div>
-      <div class="row"><span class="label">IBAN</span><span class="colon">:</span><span class="value">{{ $record->employee->bank->account_no ?? '---' }}</span></div>
-      <div class="row"><span class="label">Pay Period</span><span class="colon">:</span><span class="value">{{ $monthLabel }}</span></div>
-      <div class="row"><span class="label">Status</span><span class="colon">:</span><span class="value status {{ $record->status === 'paid' ? 'status-paid' : '' }}">{{ $record->status }}</span></div>
+      <div class="row"><span class="label">Bank</span><span class="colon">:</span><span class="value">---</span></div>
+      <div class="row"><span class="label">IBAN</span><span class="colon">:</span><span class="value">---</span></div>
+      <div class="row"><span class="label">Pay Period</span><span class="colon">:</span><span class="value">April 2026</span></div>
+      <div class="row"><span class="label">Status</span><span class="colon">:</span><span class="value status">DRAFT</span></div>
     </div>
   </div>
 
@@ -179,40 +164,32 @@
         <div class="att-icon blue">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1e5f8e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
         </div>
-        <div class="att-text"><div class="v">{{ $record->present_days }}</div><div class="l">Present</div></div>
+        <div class="att-text"><div class="v">2</div><div class="l">Present</div></div>
       </div>
       <div class="att-stat">
         <div class="att-icon red">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </div>
-        <div class="att-text"><div class="v">{{ $record->absent_days }}</div><div class="l">Absent</div></div>
+        <div class="att-text"><div class="v">28</div><div class="l">Absent</div></div>
       </div>
       <div class="att-stat">
         <div class="att-icon orange">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.5"><circle cx="12" cy="12" r="9"/></svg>
         </div>
-        <div class="att-text"><div class="v">{{ $record->late_days }}</div><div class="l">Late Days</div></div>
+        <div class="att-text"><div class="v">0</div><div class="l">Late Days</div></div>
       </div>
       <div class="att-stat">
         <div class="att-icon purple">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
         </div>
-        <div class="att-text"><div class="v">{{ $record->late_minutes ?? 0 }}</div><div class="l">Late Mins</div></div>
+        <div class="att-text"><div class="v">0</div><div class="l">Late Mins</div></div>
       </div>
       <div class="att-stat">
         <div class="att-icon teal">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0d9488" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
         </div>
-        <div class="att-text"><div class="v">{{ number_format($record->ot_hours, 2) }}</div><div class="l">OT Hrs</div></div>
+        <div class="att-text"><div class="v">0.00</div><div class="l">OT Hrs</div></div>
       </div>
-      @if(($record->paid_leave_days ?? 0) > 0)
-      <div class="att-stat">
-        <div class="att-icon green">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-        </div>
-        <div class="att-text"><div class="v">{{ $record->paid_leave_days }}</div><div class="l">Paid Leave</div></div>
-      </div>
-      @endif
     </div>
   </div>
 
@@ -226,21 +203,16 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><rect x="3" y="6" width="18" height="13" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
             </span>Earnings
           </th>
-          <th class="amt">Amount ({{ $currency }})</th>
+          <th class="amt">Amount (AED)</th>
         </tr></thead>
         <tbody>
-          <tr><td>Basic Salary</td><td>{{ number_format($record->basic_salary, 2) }}</td></tr>
-          @if($record->house_allowance > 0)<tr><td>House Allowance</td><td>{{ number_format($record->house_allowance, 2) }}</td></tr>@endif
-          @if($record->transport_allowance > 0)<tr><td>Transport Allowance</td><td>{{ number_format($record->transport_allowance, 2) }}</td></tr>@endif
-          @if($record->food_allowance > 0)<tr><td>Food Allowance</td><td>{{ number_format($record->food_allowance, 2) }}</td></tr>@endif
-          @if($record->medical_allowance > 0)<tr><td>Medical Allowance</td><td>{{ number_format($record->medical_allowance, 2) }}</td></tr>@endif
-          @if($record->other_allowance > 0)<tr><td>Other Allowance</td><td>{{ number_format($record->other_allowance, 2) }}</td></tr>@endif
-          @if($record->ot_amount > 0)<tr><td>Overtime ({{ $record->ot_hours }} hrs)</td><td>{{ number_format($record->ot_amount, 2) }}</td></tr>@endif
-          @if($record->bonus > 0)<tr><td>Bonus</td><td>{{ number_format($record->bonus, 2) }}</td></tr>@endif
-          @if($record->incentive > 0)<tr><td>Incentive</td><td>{{ number_format($record->incentive, 2) }}</td></tr>@endif
-          @if($record->arrears > 0)<tr><td>Arrears</td><td>{{ number_format($record->arrears, 2) }}</td></tr>@endif
-          @if($record->reimbursement > 0)<tr><td>Reimbursement</td><td>{{ number_format($record->reimbursement, 2) }}</td></tr>@endif
-          <tr class="total"><td>Gross Earned</td><td>{{ number_format($record->gross_earned, 2) }}</td></tr>
+          <tr><td>Basic Salary</td><td>5,200.00</td></tr>
+          <tr><td>House Allowance</td><td>1,000.00</td></tr>
+          <tr><td>Transport Allowance</td><td>150.00</td></tr>
+          <tr><td>Food Allowance</td><td>300.00</td></tr>
+          <tr><td>Medical Allowance</td><td>250.00</td></tr>
+          <tr><td>Other Allowance</td><td>100.00</td></tr>
+          <tr class="total"><td>Gross Earned</td><td>7,000.00</td></tr>
         </tbody>
       </table>
     </div>
@@ -252,19 +224,14 @@
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><circle cx="12" cy="12" r="9"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
             </span>Deductions
           </th>
-          <th class="amt">Amount ({{ $currency }})</th>
+          <th class="amt">Amount (AED)</th>
         </tr></thead>
         <tbody>
-          <tr class="{{ $record->absence_deduction == 0 ? 'zero' : '' }}"><td>Absence Deduction ({{ $record->absent_days }} days)</td><td>{{ number_format($record->absence_deduction, 2) }}</td></tr>
-          @if(($record->leave_deduction ?? 0) > 0)
-          <tr><td>Unpaid Leave ({{ $record->unpaid_leave_days }} days)</td><td>{{ number_format($record->leave_deduction, 2) }}</td></tr>
-          @endif
-          <tr class="{{ $record->late_deduction == 0 ? 'zero' : '' }}"><td>Late Deduction ({{ $record->late_days }} days)</td><td>{{ number_format($record->late_deduction, 2) }}</td></tr>
-          <tr class="{{ $record->loan_deduction == 0 ? 'zero' : '' }}"><td>Loan Deduction</td><td>{{ number_format($record->loan_deduction, 2) }}</td></tr>
-          <tr class="{{ $record->advance_deduction == 0 ? 'zero' : '' }}"><td>Advance Deduction</td><td>{{ number_format($record->advance_deduction, 2) }}</td></tr>
-          @if($record->fine_amount > 0)<tr><td>Fine</td><td>{{ number_format($record->fine_amount, 2) }}</td></tr>@endif
-          @if($record->other_deduction > 0)<tr><td>Other Deduction</td><td>{{ number_format($record->other_deduction, 2) }}</td></tr>@endif
-          <tr class="total"><td>Total Deductions</td><td>{{ number_format($record->total_deduction, 2) }}</td></tr>
+          <tr><td>Absence Deduction (28 days)</td><td>4,853.33</td></tr>
+          <tr class="zero"><td>Late Deduction (0 days)</td><td>0.00</td></tr>
+          <tr><td>Loan Deduction</td><td>1,000.00</td></tr>
+          <tr><td>Advance Deduction</td><td>100.00</td></tr>
+          <tr class="total"><td>Total Deductions</td><td>5,953.33</td></tr>
         </tbody>
       </table>
     </div>
@@ -278,17 +245,9 @@
     <div class="content">
       <div class="title">Rate Calculation</div>
       <div class="body">
-        <span>Daily Rate:</span> {{ $currency }} {{ number_format($dailyRate, 2) }} (Basic {{ number_format($record->basic_salary, 2) }} / {{ $daysInMonth }} days)
+        <span>Daily Rate:</span> AED 173.33 (Basic 5,200.00 / 30 days)
         &nbsp;&bull;&nbsp;
-        <span>Absence:</span> {{ $record->absent_days }} days &times; {{ number_format($dailyRate, 2) }} = {{ number_format($record->absence_deduction, 2) }}
-        @if(($record->leave_deduction ?? 0) > 0)
-        &nbsp;&bull;&nbsp;
-        <span>Unpaid Leave:</span> {{ $record->unpaid_leave_days }} days &times; {{ number_format($dailyRate, 2) }} = {{ number_format($record->leave_deduction, 2) }}
-        @endif
-        @if($record->ot_amount > 0)
-        &nbsp;&bull;&nbsp;
-        <span>OT:</span> {{ $record->ot_hours }} hrs
-        @endif
+        <span>Absence:</span> 28 days &times; 173.33 = 4,853.33
       </div>
     </div>
   </div>
@@ -302,7 +261,7 @@
       </div>
       <span class="ns-label">NET SALARY</span>
     </div>
-    <span class="ns-amount">{{ $currency }} {{ number_format($record->net_salary, 2) }}</span>
+    <span class="ns-amount">AED 1,046.67</span>
   </div>
 
   <!-- Signatures -->

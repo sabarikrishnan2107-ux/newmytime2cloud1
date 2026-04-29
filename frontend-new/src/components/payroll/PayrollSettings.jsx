@@ -175,17 +175,17 @@ export default function PayrollSettings() {
 
       {/* Deduction Rules */}
       <Section title="Deduction Rules" fullWidth>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
+          <div className="flex flex-col justify-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg min-h-[72px]">
             <label className="text-xs font-medium text-gray-500">Late Deduction Mode</label>
             <SelectInput value={settings.late_deduction_mode} onChange={v => update("late_deduction_mode", v)}
               options={[["per_minute", "Per Minute"], ["per_hour", "Per Hour"], ["slab_based", "Slab Based (Monthly Total)"]]} />
           </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg min-h-[72px]">
             <label className="text-xs font-medium text-gray-500">Leave Deduction Enabled</label>
             <ToggleSwitch checked={settings.leave_deduction_enabled} onChange={v => update("leave_deduction_enabled", v)} />
           </div>
-          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+          <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg min-h-[72px]">
             <div>
               <label className="text-xs font-medium text-gray-500">Salary Rounding</label>
               <p className="text-[10px] text-gray-400 mt-0.5">{settings.rounding_rule === "round" ? "Enabled — salary rounded up" : "Disabled — salary rounded down (floor)"}</p>

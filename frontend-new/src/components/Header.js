@@ -149,19 +149,19 @@ export default function Header() {
   return (
     <>
       <LiveAttendanceNotifier />
-      <header className="flex items-center justify-between bg-slate-900 p-3 border-b border-slate-800 shadow-[0_4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+      <header className="flex items-center justify-between bg-white dark:bg-[#293548] p-3 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.12)] dark:shadow-[0_12px_30px_-4px_rgba(0,0,0,0.9)] ring-1 ring-slate-200 dark:ring-white/10 z-20">
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
-            <img alt="MyTime Cloud logo" className="h-10" src="/logo22.png" />
+            <img alt="MyTime Cloud logo" className="h-32 w-auto object-contain -my-8" src="/logo22.png" />
           </div>
         </div>
 
         <nav className="hidden md:flex items-center space-x-6 lg:space-x-10 xl:space-x-14">
           {filteredLinks.map((link) => {
             const isActive = link.href === pathname;
-            const baseClasses = "text-sm font-medium";
-            const activeClasses = "text-purple-400 rounded-md";
-            const inactiveClasses = "text-gray-300 hover:text-purple-400";
+            const baseClasses = "text-sm font-medium transition-colors";
+            const activeClasses = "text-purple-600 dark:text-purple-400 rounded-md";
+            const inactiveClasses = "text-slate-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400";
 
             return (
               <Link

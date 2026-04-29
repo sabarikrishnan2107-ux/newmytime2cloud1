@@ -83,7 +83,6 @@ const payrollMenu = [
   { href: "/payslips/adjustments", icon: FileText, label: "Adjustments" },
   { href: "/payslips/loans", icon: DollarSign, label: "Loans & Advances" },
   { href: "/payslips/reports", icon: FileText, label: "Reports" },
-  { href: "/payslips/employees", icon: Users, label: "Employees" },
   { href: "/payslips/settings", icon: Settings, label: "Settings" },
 ];
 
@@ -159,7 +158,6 @@ export const leftNavLinks = {
   "/payslips/adjustments": payrollMenu,
   "/payslips/loans": payrollMenu,
   "/payslips/reports": payrollMenu,
-  "/payslips/employees": payrollMenu,
   "/payslips/settings": payrollMenu,
   "/geo-fencing": companyMenu,
   "/setup/geofencing": companyMenu,

@@ -11,10 +11,49 @@ import {
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
-  PieChart, Pie, Cell
+  PieChart, Pie, Cell, Legend,
+  AreaChart, Area, LineChart, Line, ComposedChart
 } from "recharts";
 
 const COLORS = ['hsl(199,89%,38%)', 'hsl(152,60%,40%)', 'hsl(38,92%,50%)', 'hsl(262,52%,47%)', 'hsl(0,72%,51%)', 'hsl(199,89%,58%)'];
+
+function ChartTooltip({ active, payload, label }) {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div
+      style={{
+        background: 'rgba(15,23,42,0.97)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid rgba(255,255,255,0.15)',
+        borderRadius: '10px',
+        padding: '10px 14px',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
+        color: '#f8fafc',
+        fontSize: '12px',
+        minWidth: '140px',
+      }}
+    >
+      {label && (
+        <div style={{ color: '#f1f5f9', fontWeight: 700, marginBottom: '6px', fontSize: '12px', letterSpacing: '0.3px' }}>
+          {label}
+        </div>
+      )}
+      {payload.map((entry, idx) => {
+        const color = entry.color || entry.payload?.fill || entry.fill;
+        const name = entry.name || entry.dataKey;
+        const val = typeof entry.value === 'number' ? entry.value.toLocaleString() : entry.value;
+        return (
+          <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '3px 0', color: '#f8fafc' }}>
+            <span style={{ width: '8px', height: '8px', borderRadius: '2px', background: color, flexShrink: 0 }} />
+            <span style={{ flex: 1, color: '#cbd5e1', fontSize: '11px' }}>{name}</span>
+            <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '12px' }}>{val}</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export default function PayrollDashboard() {
   const router = useRouter();
@@ -24,6 +63,17 @@ export default function PayrollDashboard() {
   const [monthlyTrend, setMonthlyTrend] = useState([]);
   const [deptCost, setDeptCost] = useState([]);
   const [generating, setGenerating] = useState(false);
+  const [trendType, setTrendType] = useState("bar"); // bar | area | line
+  const [trendPeriod, setTrendPeriod] = useState("1y"); // 1m | 6m | 1y | all
+
+  // Filter monthlyTrend by selected period (last N months)
+  const filteredTrend = (() => {
+    if (!Array.isArray(monthlyTrend) || monthlyTrend.length === 0) return [];
+    if (trendPeriod === "all") return monthlyTrend;
+    const counts = { "1m": 1, "6m": 6, "1y": 12 };
+    const n = counts[trendPeriod] || 12;
+    return monthlyTrend.slice(-n);
+  })();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -114,41 +164,180 @@ export default function PayrollDashboard() {
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Monthly Payroll Trend</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={monthlyTrend}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
-              <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-              <YAxis tick={{ fill: '#94a3b8', fontSize: 11 }} tickFormatter={v => `${(v / 1000).toFixed(0)}k`} />
-              <Tooltip
-                cursor={false}
-                formatter={(v) => v.toLocaleString()}
-                contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-              />
-              <Bar dataKey="gross" name="Gross" fill="hsl(199,89%,38%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="net" name="Net" fill="hsl(152,60%,40%)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="deductions" name="Deductions" fill="hsl(0,72%,51%)" radius={[4, 4, 0, 0]} />
-            </BarChart>
+          <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Monthly Payroll Trend</h3>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Gross, Net & Deductions over time</p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Period selector */}
+              <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-gray-800 p-0.5">
+                {[
+                  { id: "1m", label: "1M" },
+                  { id: "6m", label: "6M" },
+                  { id: "1y", label: "1Y" },
+                ].map(opt => (
+                  <button key={opt.id} onClick={() => setTrendPeriod(opt.id)}
+                    className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition ${
+                      trendPeriod === opt.id
+                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {/* Chart-type toggle */}
+              <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-gray-800 p-0.5">
+                {[
+                  { id: "area", label: "Area" },
+                  { id: "bar", label: "Bar" },
+                  { id: "line", label: "Line" },
+                ].map(opt => (
+                  <button key={opt.id} onClick={() => setTrendType(opt.id)}
+                    className={`px-3 py-1 text-[11px] font-semibold rounded-md transition ${
+                      trendType === opt.id
+                        ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
+                        : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    }`}>
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              <div className="hidden sm:flex items-center gap-3 text-[10px] font-medium">
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-b from-sky-400 to-sky-600"></span><span className="text-gray-500 dark:text-gray-400">Gross</span></span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-b from-emerald-400 to-emerald-600"></span><span className="text-gray-500 dark:text-gray-400">Net</span></span>
+                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-b from-rose-400 to-rose-600"></span><span className="text-gray-500 dark:text-gray-400">Deductions</span></span>
+              </div>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={260}>
+            {trendType === "bar" ? (
+              <BarChart data={filteredTrend} margin={{ top: 18, right: 12, left: -8, bottom: 4 }} barCategoryGap="28%" barGap={4}>
+                <defs>
+                  <linearGradient id="grossGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#38bdf8" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#0284c7" stopOpacity={1} />
+                  </linearGradient>
+                  <linearGradient id="netGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#34d399" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#059669" stopOpacity={1} />
+                  </linearGradient>
+                  <linearGradient id="dedGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fb7185" stopOpacity={1} />
+                    <stop offset="100%" stopColor="#e11d48" stopOpacity={1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="2 4" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} dy={6} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} axisLine={false} tickLine={false} width={48} />
+                <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)', radius: 6 }} wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }} content={<ChartTooltip />} />
+                <Bar dataKey="gross" name="Gross" fill="url(#grossGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="net" name="Net" fill="url(#netGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="deductions" name="Deductions" fill="url(#dedGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+              </BarChart>
+            ) : trendType === "area" ? (
+              <ComposedChart data={filteredTrend} margin={{ top: 18, right: 12, left: -8, bottom: 4 }} barCategoryGap="22%" barGap={3}>
+                <defs>
+                  <linearGradient id="grossBar2" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.95} />
+                    <stop offset="100%" stopColor="#0284c7" stopOpacity={0.85} />
+                  </linearGradient>
+                  <linearGradient id="netArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#34d399" stopOpacity={0.55} />
+                    <stop offset="100%" stopColor="#059669" stopOpacity={0.1} />
+                  </linearGradient>
+                  <linearGradient id="dedArea" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#fb7185" stopOpacity={0.55} />
+                    <stop offset="100%" stopColor="#e11d48" stopOpacity={0.1} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="2 4" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} dy={6} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} axisLine={false} tickLine={false} width={48} />
+                <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)', radius: 6 }} wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }} content={<ChartTooltip />} />
+                <Bar dataKey="gross" name="Gross" fill="url(#grossBar2)" radius={[6, 6, 0, 0]} maxBarSize={42} />
+                <Area type="monotone" dataKey="net" name="Net" stroke="#059669" strokeWidth={2.5} fill="url(#netArea)" activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }} />
+                <Area type="monotone" dataKey="deductions" name="Deductions" stroke="#e11d48" strokeWidth={2.5} fill="url(#dedArea)" activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }} />
+              </ComposedChart>
+            ) : (
+              <LineChart data={filteredTrend} margin={{ top: 18, right: 12, left: -8, bottom: 4 }}>
+                <CartesianGrid strokeDasharray="2 4" stroke="rgba(128,128,128,0.15)" vertical={false} />
+                <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} dy={6} />
+                <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} axisLine={false} tickLine={false} width={48} />
+                <Tooltip cursor={{ stroke: 'rgba(148,163,184,0.3)', strokeWidth: 1 }} wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }} content={<ChartTooltip />} />
+                <Line type="monotone" dataKey="gross" name="Gross" stroke="#0284c7" strokeWidth={3} dot={{ fill: '#0284c7', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
+                <Line type="monotone" dataKey="net" name="Net" stroke="#059669" strokeWidth={3} dot={{ fill: '#059669', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
+                <Line type="monotone" dataKey="deductions" name="Deductions" stroke="#e11d48" strokeWidth={3} dot={{ fill: '#e11d48', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
+              </LineChart>
+            )}
           </ResponsiveContainer>
         </div>
 
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-4">Department Salary Cost</h3>
-          <ResponsiveContainer width="100%" height={240}>
-            <PieChart>
-              <Pie data={deptCost} dataKey="cost" nameKey="department" cx="50%" cy="50%" outerRadius={85}
-                label={({ department, percent }) => `${department} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
-                {deptCost.map((_, i) => (
-                  <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip
-                cursor={false}
-                formatter={(v) => v.toLocaleString()}
-                contentStyle={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '12px' }}
-              />
-            </PieChart>
-          </ResponsiveContainer>
+          <div className="flex items-start justify-between mb-1">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Department Salary Cost</h3>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Distribution across departments</p>
+            </div>
+          </div>
+          {(() => {
+            const totalCost = deptCost.reduce((s, d) => s + (d.cost || 0), 0);
+            return (
+              <div className="grid grid-cols-1 sm:grid-cols-[1fr_140px] gap-2 items-center">
+                <ResponsiveContainer width="100%" height={260}>
+                  <PieChart>
+                    <defs>
+                      {deptCost.map((_, i) => {
+                        const c = COLORS[i % COLORS.length];
+                        return (
+                          <linearGradient key={i} id={`pieGrad${i}`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor={c} stopOpacity={1} />
+                            <stop offset="100%" stopColor={c} stopOpacity={0.7} />
+                          </linearGradient>
+                        );
+                      })}
+                    </defs>
+                    <Pie
+                      data={deptCost}
+                      dataKey="cost"
+                      nameKey="department"
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={95}
+                      paddingAngle={2}
+                      stroke="none"
+                    >
+                      {deptCost.map((_, i) => (
+                        <Cell key={i} fill={`url(#pieGrad${i})`} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      cursor={false}
+                      allowEscapeViewBox={{ x: true, y: true }}
+                      wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }}
+                      content={<ChartTooltip />}
+                    />
+                    <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-500 dark:fill-gray-400" style={{ fontSize: 10, letterSpacing: 0.5 }}>TOTAL</text>
+                    <text x="50%" y="55%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-100" style={{ fontSize: 16, fontWeight: 700 }}>{totalCost >= 1000 ? `${(totalCost / 1000).toFixed(1)}k` : totalCost}</text>
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="space-y-1.5 max-h-[240px] overflow-y-auto pr-1">
+                  {deptCost.map((d, i) => {
+                    const pct = totalCost > 0 ? ((d.cost / totalCost) * 100).toFixed(1) : 0;
+                    return (
+                      <div key={i} className="flex items-center gap-2 text-[11px]">
+                        <span className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: COLORS[i % COLORS.length] }}></span>
+                        <span className="flex-1 truncate text-gray-600 dark:text-gray-300" title={d.department}>{d.department}</span>
+                        <span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{pct}%</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 

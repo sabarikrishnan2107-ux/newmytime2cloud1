@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
 import { FileText, Download, FileSpreadsheet, File } from "lucide-react";
+import MonthPicker from "@/components/ui/MonthPicker";
 
 const reports = [
   { id: "register", name: "Payroll Register Report", desc: "Complete payroll register with all employee details", icon: FileText, category: "Payroll" },
@@ -130,10 +131,9 @@ export default function PayrollReports() {
         <p className="text-xs text-gray-500 dark:text-gray-400">Generate and download payroll reports in PDF, Excel, or CSV format</p>
       </div>
 
-      <div>
+      <div className="w-44">
         <span className="text-[10px] text-gray-500 block mb-1">Payroll Month</span>
-        <input type="month" value={month} onChange={e => setMonth(e.target.value)}
-          className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 w-44" />
+        <MonthPicker value={month} onChange={setMonth} placeholder="Select month" />
       </div>
 
       {categories.map(cat => (

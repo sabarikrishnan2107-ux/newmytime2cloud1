@@ -1,322 +1,132 @@
 "use client";
 
-import { format } from "date-fns";
-import {
-  Calendar as CalendarIcon,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  X,
-} from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-
-const getMonthValue = (date) => {
-  if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
-    return "";
-  }
-
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
-};
-
-const parseMonthValue = (value) => {
-  if (!value || typeof value !== "string") {
-    return null;
-  }
-
-  const [yearValue, monthValue] = value.split("-").map(Number);
-  if (!yearValue || !monthValue) {
-    return null;
-  }
-
-  return new Date(yearValue, monthValue - 1, 1);
-};
-
-const formatMonthLabel = (value) => {
-  const parsedMonth = parseMonthValue(value);
-  if (!parsedMonth) {
-    return "Select month";
-  }
-
-  return format(parsedMonth, "LLL yyyy");
-};
-
-const MONTH_LABELS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+const MONTHS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
-const monthPartsFromValue = (value) => {
-  const parsedMonth = parseMonthValue(value);
-  if (!parsedMonth) {
-    const now = new Date();
-    return {
-      year: now.getFullYear(),
-      monthIndex: now.getMonth(),
-    };
-  }
+const MONTH_FULL = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
-  return {
-    year: parsedMonth.getFullYear(),
-    monthIndex: parsedMonth.getMonth(),
-  };
-};
-
-const buildMonthValue = (year, monthIndex) => {
-  return `${year}-${String(monthIndex + 1).padStart(2, "0")}`;
-};
-
-const normalizeRange = (rangeValue) => {
-  if (!rangeValue || typeof rangeValue !== "object") {
-    return null;
-  }
-
-  const from = getMonthValue(parseMonthValue(rangeValue.from));
-  const to = getMonthValue(parseMonthValue(rangeValue.to));
-
-  if (!from && !to) {
-    return null;
-  }
-
-  const normalizedFrom = from || to;
-  const normalizedTo = to || from;
-
-  if (!normalizedFrom || !normalizedTo) {
-    return null;
-  }
-
-  if (normalizedFrom <= normalizedTo) {
-    return { from: normalizedFrom, to: normalizedTo };
-  }
-
-  return { from: normalizedTo, to: normalizedFrom };
-};
-
-const formatRangeLabel = (rangeValue) => {
-  const normalized = normalizeRange(rangeValue);
-  if (!normalized) {
-    return "Select month range";
-  }
-
-  if (normalized.from === normalized.to) {
-    return formatMonthLabel(normalized.from);
-  }
-
-  return `${formatMonthLabel(normalized.from)} - ${formatMonthLabel(normalized.to)}`;
-};
-
-const isMonthInRange = (monthValue, rangeValue) => {
-  const normalized = normalizeRange(rangeValue);
-  if (!normalized) {
-    return false;
-  }
-
-  return monthValue >= normalized.from && monthValue <= normalized.to;
-};
-
-export default function MonthPicker({
-  value,
-  className,
-  onChange = () => {},
-}) {
-  const today = new Date();
-  const defaultMonth = getMonthValue(new Date(today.getFullYear(), today.getMonth(), 1));
-  const normalizedInitialRange = normalizeRange(value) || {
-    from: defaultMonth,
-    to: defaultMonth,
-  };
-  const initialMonthParts = monthPartsFromValue(normalizedInitialRange.to);
-
-  const [selectedRange, setSelectedRange] = useState(normalizedInitialRange);
-  const [draftFrom, setDraftFrom] = useState(normalizedInitialRange.from);
-  const [draftTo, setDraftTo] = useState(normalizedInitialRange.to);
-  const [selectionStep, setSelectionStep] = useState("start");
+export default function MonthPicker({ value, onChange, placeholder = "Select month" }) {
   const [open, setOpen] = useState(false);
-  const [viewYear, setViewYear] = useState(initialMonthParts.year);
+  const today = new Date();
+  const [viewYear, setViewYear] = useState(today.getFullYear());
+
+  const parsed = (() => {
+    if (!value || !/^\d{4}-\d{2}/.test(value)) return null;
+    const [y, m] = value.split("-").map(Number);
+    return { year: y, month: m - 1 };
+  })();
 
   useEffect(() => {
-    const normalized = normalizeRange(value);
-    if (!normalized) {
-      return;
-    }
-
-    const nextParts = monthPartsFromValue(normalized.to);
-
-    setSelectedRange(normalized);
-    setDraftFrom(normalized.from);
-    setDraftTo(normalized.to);
-    setSelectionStep("start");
-    setViewYear(nextParts.year);
+    if (parsed) setViewYear(parsed.year);
   }, [value]);
 
-  const syncDraftToSelectedRange = () => {
-    const nextParts = monthPartsFromValue(selectedRange.to);
-    setDraftFrom(selectedRange.from);
-    setDraftTo(selectedRange.to);
-    setSelectionStep("start");
-    setViewYear(nextParts.year);
-  };
-
-  const handleOpenChange = (nextOpen) => {
-    setOpen(nextOpen);
-    if (!nextOpen) {
-      syncDraftToSelectedRange();
-    }
-  };
-
-  const handleApply = () => {
-    const normalized = normalizeRange({ from: draftFrom, to: draftTo || draftFrom });
-    if (!normalized) {
-      return;
-    }
-
-    setSelectedRange(normalized);
-    setOpen(false);
-
-    onChange(normalized);
-  };
-
-  const handleCancel = () => {
-    syncDraftToSelectedRange();
+  const handleSelect = (monthIdx) => {
+    const mm = String(monthIdx + 1).padStart(2, "0");
+    onChange(`${viewYear}-${mm}`);
     setOpen(false);
   };
 
-  const selectedDraftRange = normalizeRange({ from: draftFrom, to: draftTo || draftFrom });
+  const display = parsed
+    ? `${MONTH_FULL[parsed.month]} ${parsed.year}`
+    : placeholder;
 
-  const handlePreviousYear = () => {
-    setViewYear((currentYear) => currentYear - 1);
-  };
-
-  const handleNextYear = () => {
-    setViewYear((currentYear) => currentYear + 1);
-  };
-
-  const handleSelectMonth = (monthValue) => {
-    if (selectionStep === "start") {
-      setDraftFrom(monthValue);
-      setDraftTo(monthValue);
-      setSelectionStep("end");
-      return;
-    }
-
-    if (monthValue >= draftFrom) {
-      setDraftTo(monthValue);
-    } else {
-      setDraftTo(draftFrom);
-      setDraftFrom(monthValue);
-    }
-
-    setSelectionStep("start");
-  };
+  const isCurrent = (monthIdx) =>
+    today.getFullYear() === viewYear && today.getMonth() === monthIdx;
+  const isSelected = (monthIdx) =>
+    parsed && parsed.year === viewYear && parsed.month === monthIdx;
 
   return (
-    <div className={cn("grid gap-2", className)}>
-      <Popover open={open} onOpenChange={handleOpenChange}>
-        <PopoverTrigger asChild>
-          <Button
-            id="month-picker"
-            variant="outline"
-            className="w-full justify-start text-left font-normal border border-border text-gray-600 dark:text-slate-300"
-          >
-            <CalendarIcon className="h-4 w-4" />
-            {formatRangeLabel(selectedRange)}
-          </Button>
-        </PopoverTrigger>
-        <PopoverContent
-          className="w-auto p-0 text-gray-600 dark:text-slate-300 bg-white dark:bg-slate-900 border border-gray-200 dark:border-white/20"
-          align="start"
-          side="bottom"
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="w-full inline-flex items-center justify-between gap-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm hover:border-gray-400 dark:hover:border-white/20 transition cursor-pointer"
         >
-          <div className="p-3 min-w-[280px]">
-            <div className="flex items-center justify-between mb-3">
+          <span className={parsed ? "font-medium text-gray-800 dark:text-gray-100" : "text-gray-400 dark:text-gray-500"}>
+            {display}
+          </span>
+          <CalendarIcon className="h-4 w-4 text-gray-400 shrink-0" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[280px] p-0 bg-white dark:bg-gray-900 border border-gray-200 dark:border-white/10 shadow-2xl rounded-xl overflow-hidden" align="start">
+        <div className="flex items-center justify-between px-3 py-2.5 border-b border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/50">
+          <button
+            type="button"
+            onClick={() => setViewYear(y => y - 1)}
+            className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition"
+            title="Previous year"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{viewYear}</span>
+          <button
+            type="button"
+            onClick={() => setViewYear(y => y + 1)}
+            className="p-1.5 rounded-md hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300 transition"
+            title="Next year"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-1.5 p-3">
+          {MONTHS.map((m, idx) => {
+            const selected = isSelected(idx);
+            const current = isCurrent(idx);
+            return (
               <button
+                key={m}
                 type="button"
-                onClick={handlePreviousYear}
-                className="h-8 w-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors flex items-center justify-center"
+                onClick={() => handleSelect(idx)}
+                className={[
+                  "py-2.5 rounded-lg text-sm font-medium transition relative",
+                  selected
+                    ? "bg-primary text-white shadow-sm"
+                    : current
+                    ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 ring-1 ring-blue-200 dark:ring-blue-500/30 hover:bg-blue-100 dark:hover:bg-blue-900/30"
+                    : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5",
+                ].join(" ")}
               >
-                <ChevronLeft className="h-4 w-4" />
+                {m}
+                {current && !selected && (
+                  <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-blue-500"></span>
+                )}
               </button>
+            );
+          })}
+        </div>
 
-              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                {viewYear}
-              </span>
-
-              <button
-                type="button"
-                onClick={handleNextYear}
-                className="h-8 w-8 rounded-md border border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 transition-colors flex items-center justify-center"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-3 gap-2">
-              {MONTH_LABELS.map((monthLabel, index) => {
-                const monthValue = buildMonthValue(viewYear, index);
-                const isSelected =
-                  monthValue === draftFrom || monthValue === draftTo;
-                const isInRange = isMonthInRange(monthValue, selectedDraftRange);
-
-                return (
-                  <button
-                    key={monthLabel}
-                    type="button"
-                    onClick={() => handleSelectMonth(monthValue)}
-                    className={cn(
-                      "px-3 py-2 rounded-md text-sm border transition-colors",
-                      isSelected
-                        ? "bg-primary text-white border-primary"
-                        : isInRange
-                          ? "bg-primary/10 text-primary border-primary/30"
-                        : "border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10"
-                    )}
-                  >
-                    {monthLabel}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <div className="flex justify-end space-x-2 border-t border-gray-200 dark:border-white/30 p-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCancel}
-              className="bg-white dark:bg-slate-700"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-            <Button
-              className="bg-white dark:bg-primary"
-              size="sm"
-              onClick={handleApply}
-              disabled={!selectedDraftRange}
-            >
-              <Check className="h-4 w-4" />
-              Apply
-            </Button>
-          </div>
-        </PopoverContent>
-      </Popover>
-    </div>
+        <div className="flex items-center justify-between px-3 py-2 border-t border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-gray-800/30">
+          <button
+            type="button"
+            onClick={() => { onChange(""); setOpen(false); }}
+            className="text-xs font-medium text-gray-500 hover:text-red-500 transition"
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const mm = String(today.getMonth() + 1).padStart(2, "0");
+              onChange(`${today.getFullYear()}-${mm}`);
+              setViewYear(today.getFullYear());
+              setOpen(false);
+            }}
+            className="text-xs font-medium text-primary hover:text-blue-600 transition"
+          >
+            This Month
+          </button>
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }

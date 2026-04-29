@@ -13,7 +13,9 @@ export default function PayrollRegister() {
   const searchParams = useSearchParams();
   const batchIdParam = searchParams.get("batch");
   const [search, setSearch] = useState("");
+  const [branchFilter, setBranchFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
+  const [empFilter, setEmpFilter] = useState("all");
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [records, setRecords] = useState([]);
@@ -78,12 +80,25 @@ export default function PayrollRegister() {
   }, []);
 
   const filtered = records.filter(e => {
-    const matchSearch = e.name.toLowerCase().includes(search.toLowerCase());
+    const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) || String(e.employeeId).toLowerCase().includes(search.toLowerCase());
+    const matchBranch = branchFilter === "all" || e.branch === branchFilter;
     const matchDept = deptFilter === "all" || e.department === deptFilter;
-    return matchSearch && matchDept;
+    const matchEmp = empFilter === "all" || String(e.employeeId) === String(empFilter);
+    return matchSearch && matchBranch && matchDept && matchEmp;
   });
 
-  const departments = [...new Set(records.map(e => e.department))];
+  const branches = [...new Set(records.map(e => e.branch).filter(b => b && b !== "---"))];
+  // Departments narrowed by selected branch
+  const departments = [...new Set(
+    records
+      .filter(e => branchFilter === "all" || e.branch === branchFilter)
+      .map(e => e.department)
+      .filter(d => d && d !== "---")
+  )];
+  // Employees narrowed by selected branch + dept
+  const empOptions = records
+    .filter(e => (branchFilter === "all" || e.branch === branchFilter) && (deptFilter === "all" || e.department === deptFilter))
+    .map(e => ({ id: e.employeeId, name: e.name }));
   const totalNet = filtered.reduce((s, e) => s + e.netSalary, 0);
   const totalGross = filtered.reduce((s, e) => s + e.grossEarned, 0);
 
@@ -226,24 +241,62 @@ export default function PayrollRegister() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
-            placeholder="Search employee..."
+            placeholder="Search employee or ID..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
+
+        <select
+          value={branchFilter}
+          onChange={e => { setBranchFilter(e.target.value); setDeptFilter("all"); setEmpFilter("all"); }}
+          className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]"
+        >
+          <option value="all">All Branches</option>
+          {branches.map(b => <option key={b} value={b}>{b}</option>)}
+        </select>
+
         <select
           value={deptFilter}
-          onChange={e => setDeptFilter(e.target.value)}
-          className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300"
+          onChange={e => { setDeptFilter(e.target.value); setEmpFilter("all"); }}
+          className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 min-w-[150px]"
         >
           <option value="all">All Departments</option>
           {departments.map(d => <option key={d} value={d}>{d}</option>)}
         </select>
+
+        <select
+          value={empFilter}
+          onChange={e => {
+            const empId = e.target.value;
+            setEmpFilter(empId);
+            if (empId !== "all") {
+              const rec = records.find(r => String(r.employeeId) === String(empId));
+              if (rec) {
+                if (rec.branch && rec.branch !== "---") setBranchFilter(rec.branch);
+                if (rec.department && rec.department !== "---") setDeptFilter(rec.department);
+              }
+            }
+          }}
+          className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 min-w-[180px]"
+        >
+          <option value="all">All Employees</option>
+          {empOptions.map(emp => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
+        </select>
+
+        {(search || branchFilter !== "all" || deptFilter !== "all" || empFilter !== "all") && (
+          <button
+            onClick={() => { setSearch(""); setBranchFilter("all"); setDeptFilter("all"); setEmpFilter("all"); }}
+            className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-500 hover:border-red-300 transition"
+          >
+            Clear
+          </button>
+        )}
       </div>
 
       {/* Table */}
@@ -274,7 +327,12 @@ export default function PayrollRegister() {
                   onClick={() => { setSelectedEmp(e); setDrawerOpen(true); }}>
                   <td className="px-4 py-3">
                     <div className="text-xs font-medium text-gray-800 dark:text-gray-100">{e.name}</div>
-                    <div className="text-[10px] text-gray-400">{e.employeeId}</div>
+                    <div className="text-[10px] text-gray-400">
+                      {e.employeeId}
+                      {e.branch && e.branch !== "---" && (
+                        <span className="text-gray-500 dark:text-gray-300"> | {e.branch}</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-3 py-3 text-[11px]">{e.department}</td>
                   <td className="px-3 py-3 text-emerald-600 dark:text-emerald-400 font-medium">{e.presentDays}</td>

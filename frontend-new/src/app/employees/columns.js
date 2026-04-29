@@ -23,7 +23,7 @@ export default (deleteEmployee, editEmployee) => [
     header: "Personnel",
     align: "left",
     render: (e) => (
-      <div className="flex items-center space-x-3">
+      <div className="flex items-center gap-5">
         <ProfilePicture src={e.profile_picture} />
         <div>
           <p className="font-medium text-sm text-slate-600 dark:text-stone-100">{e?.first_name}</p>

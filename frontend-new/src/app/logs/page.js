@@ -135,37 +135,35 @@ export default function AttendanceTable() {
     };
 
     return (
-        <div className='p-4 pb-24 overflow-y-auto max-h-[calc(100vh-100px)]'>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6  sm:space-y-0">
-                <h1 className="text-2xl font-extrabold text-gray-600 dark:text-gray-300 flex items-center">
+        <div className='p-3 sm:p-4 pb-24 overflow-y-auto max-h-[calc(100vh-100px)]'>
+            <div className="flex flex-col xl:flex-row xl:justify-between xl:items-center gap-3 mb-6">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-gray-600 dark:text-gray-300 flex items-center shrink-0">
                     Logs
                 </h1>
-                <div className="flex flex-wrap items-center space-x-3 space-y-2 sm:space-y-0">
-                    <div className="relative">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full xl:w-auto xl:justify-end">
+                    <div className="relative w-full sm:w-auto">
                         <MultiDropDown
                             placeholder={'Select Branch'}
                             items={branches}
                             value={selectedBranchIds}
                             onChange={setSelectedBranchIds}
                             badgesCount={1}
-                            width='w-[220px]'
+                            width='w-full sm:w-[180px] 2xl:w-[220px]'
                         />
                     </div>
 
-                    <div className="relative">
-
+                    <div className="relative w-full sm:w-auto">
                         <MultiDropDown
                             placeholder={'Select Device'}
                             items={devices}
                             value={selectedDeviceIds}
                             onChange={setSelectedDeviceIds}
                             badgesCount={1}
-                            width='w-[220px]'
+                            width='w-full sm:w-[180px] 2xl:w-[220px]'
                         />
-
                     </div>
 
-                    <div className="relative">
+                    <div className="relative w-full sm:w-auto">
                         <DateRangeSelect
                             value={{ from, to }}
                             onChange={({ from, to }) => {
@@ -175,47 +173,17 @@ export default function AttendanceTable() {
                             } />
                     </div>
 
-
-                    <div className="relative">
-                        {/* <MultiDropDown
-                            placeholder={'Select Department'}
-                            items={departments}
-                            value={selectedDepartmentIds}
-                            onChange={setSelectedDepartmentIds}
-                            badgesCount={1}
-                        /> */}
-                    </div>
-                    <div className="relative">
-                        {/* <Input
-                            placeholder="Search by name or ID"
-                            icon="search"
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                        /> */}
-                    </div>
-
-                    {/* <IconButton
-                        icon={RefreshCw}
-                        onClick={handleRefresh}
-                        isLoading={isLoading}
-                        title="Refresh Data"
-                    /> */}
-
-                    {/* <EmployeeExtras data={employees} onUploadSuccess={fetchEmployees} /> */}
-
-                    <button onClick={fetchRecords} className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap">
-                        <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} /> Submit
+                    <button onClick={fetchRecords} className="bg-primary text-white px-4 py-2 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center gap-2 whitespace-nowrap text-sm">
+                        <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} /> Submit
                     </button>
 
-                    <div className="relative">
-                        <button
-                            onClick={() => setIsOpen(true)}
-                            className="bg-primary hover:bg-blue-600 text-white text-sm font-semibold py-2 px-3 rounded-lg flex items-center gap-1 transition-all shadow-lg shadow-primary/20"
-                        >
-                            <Pencil size={15} />
-                            Manual Log
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setIsOpen(true)}
+                        className="bg-primary hover:bg-blue-600 text-white text-sm font-semibold py-2 px-3 rounded-lg flex items-center gap-1 transition-all shadow-lg shadow-primary/20 whitespace-nowrap"
+                    >
+                        <Pencil size={15} />
+                        Manual Log
+                    </button>
 
                     <ManualAttendanceCorrectionModal
                         open={isOpen}

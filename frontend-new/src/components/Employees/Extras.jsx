@@ -13,7 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { getBranches, uploadEmployee } from "@/lib/api";
+import { getBranches, uploadEmployee, downloadEmployeeSampleTemplate, exportEmployeesExcel } from "@/lib/api";
 import { MoreVertical, Download, Upload } from "lucide-react";
 
 import {
@@ -76,109 +76,72 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
   };
 
   const handleDownloadSample = async () => {
-    const link = document.createElement("a");
-    link.href = "/employees.csv";
-    link.download = "employees.csv";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    try {
+      await downloadEmployeeSampleTemplate();
+    } catch (e) {
+      alert("Failed to download sample template. Please try again.");
+    }
   };
 
   const handleExportEmployees = async () => {
-    if (data.length == 0) {
-      return;
+    try {
+      await exportEmployeesExcel();
+    } catch (e) {
+      alert("Failed to export employees. Please try again.");
     }
-
-    let csvData = json_to_csv(data);
-    let element = document.createElement("a");
-    element.setAttribute(
-      "href",
-      "data:text/csv;charset=utf-8, " + encodeURIComponent(csvData),
-    );
-    element.setAttribute("download", "download.csv");
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
-  };
-
-  const json_to_csv = (json) => {
-    let data = json.map((e) => ({
-      first_name: e.first_name,
-      last_name: e.last_name,
-      branch_name: e.department.branch && e.department.branch.branch_name,
-      email: e.user.email,
-      phone_number: e.phone_number,
-      whatsapp_number: e.whatsapp_number,
-      phone_relative_number: e.phone_relative_number,
-      whatsapp_relative_number: e.whatsapp_relative_number,
-      employee_id: e.employee_id,
-      joining_date: e.show_joining_date,
-      department: e.department.name,
-      sub_department: e.sub_department.name,
-      designation: e.designation.name,
-    }));
-    let header = Object.keys(data[0]).join(",") + "\n";
-    let rows = "";
-    data.forEach((e) => {
-      rows += Object.values(e).join(",").trim() + "\n";
-    });
-    return header + rows;
   };
 
   const importEmployee = async () => {
     setSnackbar(null);
+    setErrors([]);
 
     if (!selectedBranch) {
-      alert("Select Branch");
+      alert("Please select a branch.");
       return;
     }
     if (!files) {
-      alert("Select a file to upload");
+      alert("Please choose an Excel or CSV file.");
       return;
     }
 
-    let user = await getUser();
+    const user = await getUser();
     if (!user) {
-      console.log("User not found. Please login again.");
+      alert("Session expired. Please log in again.");
       return;
     }
-    console.log("🚀 ~ importEmployee ~ user.:", user.company_id);
+
     const payload = new FormData();
     payload.append("employees", files);
     payload.append("company_id", user.company_id || 0);
     payload.append("branch_id", selectedBranch);
 
     setBtnLoader(true);
-
     try {
       const data = await uploadEmployee(payload);
-
       setBtnLoader(false);
 
-      if (!data.record) {
-        setErrors(data.errors || []);
-        setSnackbar("Employee cannot import check file or entries");
-        return;
-      } else {
-        // ✅ Call parent callback
-        if (onUploadSuccess) {
-          onUploadSuccess(); // parent can refresh data or show a message
-        }
+      const importErrors = data.errors || [];
+      const skipped = data.skipped || [];
+      const created = data.created || 0;
 
-        setErrors([]);
+      if (data.record) {
+        if (onUploadSuccess) onUploadSuccess();
+        setErrors([...skipped, ...importErrors]);
+        setSnackbar(data.message || `Imported ${created} employee(s).`);
+        if (importErrors.length === 0 && skipped.length === 0) {
+          setDialogOpen(false);
+          setFiles(null);
+        }
+      } else {
+        setErrors(importErrors.length ? importErrors : ["Could not import any rows. Check the file and try again."]);
         setSnackbar(null);
-        // You can refresh your data here if needed
-        setDialogOpen(false);
-        setFiles(null);
       }
     } catch (e) {
       setBtnLoader(false);
       if (e.toString().includes("Network Error")) {
-        setErrors([
-          "File is modified. Please cancel the current file and try again",
-        ]);
+        setErrors(["Network error. Please check your connection and try again."]);
       } else {
-        setErrors([e.message]);
+        setErrors([e.message || "Upload failed."]);
       }
     }
   };
@@ -255,7 +218,8 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
           </DialogHeader>
 
           <p className="text-sm text-gray-500 mb-4">
-            Select branch and CSV file to upload employees.
+            Select a branch and upload an Excel (.xlsx) or CSV file. Profile
+            photos are not required — add them later from each employee profile.
           </p>
 
           {/* Branch Dropdown */}
@@ -301,15 +265,15 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
           {/* File input */}
           <Input
             type="file"
-            accept=".csv"
+            accept=".xlsx,.xls,.csv"
             onChange={(e) => setFiles(e.target.files[0])}
             className="mb-4"
           />
 
           {errors.length > 0 && (
-            <div className="text-red-500 mb-2">
+            <div className="text-red-500 text-xs mb-2 max-h-40 overflow-y-auto border border-red-200 rounded p-2 bg-red-50 dark:bg-red-950/20">
               {errors.map((err, idx) => (
-                <p key={idx}>{err}</p>
+                <p key={idx} className="leading-tight mb-1">• {err}</p>
               ))}
             </div>
           )}

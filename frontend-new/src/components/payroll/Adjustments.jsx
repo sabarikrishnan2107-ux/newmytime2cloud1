@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
 import { Search, Plus, Trash2, X } from "lucide-react";
+import MonthPicker from "@/components/ui/MonthPicker";
 
 const typeColors = {
   bonus: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400",
@@ -184,7 +185,17 @@ export default function Adjustments() {
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-medium text-gray-500">Employee</label>
-                  <select value={adjForm.employee_id} onChange={e => setAdjForm({ ...adjForm, employee_id: e.target.value })}
+                  <select value={adjForm.employee_id} onChange={e => {
+                    const empId = e.target.value;
+                    setAdjForm({ ...adjForm, employee_id: empId });
+                    if (empId) {
+                      const picked = employees.find(emp => String(emp.id) === String(empId));
+                      if (picked) {
+                        if (picked.branch_id) setSelBranch(String(picked.branch_id));
+                        if (picked.department_id) setSelDept(String(picked.department_id));
+                      }
+                    }
+                  }}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
                     <option value="">Select employee</option>
                     {filtEmps.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name || ""}</option>)}
@@ -213,8 +224,11 @@ export default function Adjustments() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-500">Payroll Month</label>
-                <input type="month" value={adjForm.payroll_month} onChange={e => setAdjForm({ ...adjForm, payroll_month: e.target.value })}
-                  className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
+                <MonthPicker
+                  value={adjForm.payroll_month}
+                  onChange={v => setAdjForm({ ...adjForm, payroll_month: v })}
+                  placeholder="Select payroll month"
+                />
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-500">Remarks</label>

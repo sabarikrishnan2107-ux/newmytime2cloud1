@@ -1,10 +1,10 @@
 "use client";
 
 const variantStyles = {
-  primary: "border-blue-500/20 bg-blue-500/5",
-  success: "border-emerald-500/20 bg-emerald-500/5",
-  warning: "border-amber-500/20 bg-amber-500/5",
-  destructive: "border-red-500/20 bg-red-500/5",
+  primary: "border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50",
+  success: "border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50",
+  warning: "border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50",
+  destructive: "border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50",
 };
 
 const iconVariant = {
@@ -16,19 +16,19 @@ const iconVariant = {
 
 export function KPICard({ title, value, icon: Icon, variant = "primary", trend, trendUp }) {
   return (
-    <div className={`rounded-xl border p-4 transition hover:shadow-md ${variantStyles[variant]}`}>
-      <div className="flex items-center justify-between mb-3">
-        <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${iconVariant[variant]}`}>
-          <Icon className="h-4 w-4" />
+    <div className={`rounded-xl border p-5 transition hover:shadow-md ${variantStyles[variant]}`}>
+      <div className="flex items-center justify-between mb-4">
+        <div className={`flex h-11 w-11 items-center justify-center rounded-lg ${iconVariant[variant]}`}>
+          <Icon className="h-5 w-5" />
         </div>
         {trend && (
-          <span className={`text-[10px] font-semibold ${trendUp ? "text-emerald-500" : "text-red-400"}`}>
+          <span className={`text-xs font-semibold ${trendUp ? "text-emerald-500" : "text-red-400"}`}>
             {trend}
           </span>
         )}
       </div>
-      <p className="text-[10px] font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{title}</p>
-      <p className="text-xl font-bold text-gray-800 dark:text-gray-100">{value}</p>
+      <p className="text-xs font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300 mb-1.5">{title}</p>
+      <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
     </div>
   );
 }

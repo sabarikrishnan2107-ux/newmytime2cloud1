@@ -88,9 +88,9 @@ function Calendar({
           "relative w-full h-full p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md group/day aspect-square select-none",
           defaultClassNames.day
         ),
-        range_start: cn("rounded-l-full bg-primary/10", defaultClassNames.range_start),
-        range_middle: cn("rounded-none bg-primary/[0.06]", defaultClassNames.range_middle),
-        range_end: cn("rounded-r-full bg-primary/10", defaultClassNames.range_end),
+        range_start: cn("rounded-l-full", defaultClassNames.range_start),
+        range_middle: cn("rounded-none bg-primary/[0.08]", defaultClassNames.range_middle),
+        range_end: cn("rounded-r-full", defaultClassNames.range_end),
         today: cn(
           "bg-accent text-accent-foreground rounded-md data-[selected=true]:rounded-none",
           defaultClassNames.today

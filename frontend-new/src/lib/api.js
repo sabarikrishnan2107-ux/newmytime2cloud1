@@ -409,6 +409,35 @@ export const uploadEmployee = async (payload) => {
     return data;
 };
 
+export const downloadEmployeeSampleTemplate = async () => {
+    const response = await axios.get(`${API_BASE}/employee/sample-template`, {
+        params: await buildQueryParams(),
+        responseType: 'blob',
+    });
+    triggerBlobDownload(response.data, 'employees_sample.xlsx');
+};
+
+export const exportEmployeesExcel = async (filters = {}) => {
+    const params = await buildQueryParams(filters);
+    const response = await axios.get(`${API_BASE}/employee/export`, {
+        params,
+        responseType: 'blob',
+    });
+    const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+    triggerBlobDownload(response.data, `employees_${stamp}.xlsx`);
+};
+
+const triggerBlobDownload = (blob, filename) => {
+    const url = window.URL.createObjectURL(new Blob([blob]));
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+};
+
 export const getCompanyDocuments = async () => {
     const { data } = await axios.get(`${API_BASE}/document`, {
         params: await buildQueryParams(),

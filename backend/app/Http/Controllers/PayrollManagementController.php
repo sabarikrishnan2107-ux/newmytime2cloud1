@@ -653,8 +653,10 @@ class PayrollManagementController extends Controller
             ->with('employee', 'employee.branch', 'employee.department', 'employee.designation', 'employee.bank')
             ->findOrFail($recordId);
 
+        $currency = PayrollConfig::where('company_id', $request->company_id)->value('currency') ?? 'AED';
+
         // Generate simple HTML payslip
-        $html = view('pdf.payslip-new', ['record' => $record])->render();
+        $html = view('pdf.payslip-new', ['record' => $record, 'currency' => $currency])->render();
 
         return response($html)->header('Content-Type', 'text/html');
     }
@@ -691,8 +693,10 @@ class PayrollManagementController extends Controller
             return response('<h1>No payslip records found</h1>', 404)->header('Content-Type', 'text/html');
         }
 
+        $currency = PayrollConfig::where('company_id', $companyId)->value('currency') ?? 'AED';
+
         // Render first payslip to get full HTML with styles
-        $firstHtml = view('pdf.payslip-new', ['record' => $records[0]])->render();
+        $firstHtml = view('pdf.payslip-new', ['record' => $records[0], 'currency' => $currency])->render();
 
         // Extract styles from the first payslip
         $styles = '';
@@ -708,7 +712,7 @@ class PayrollManagementController extends Controller
             . '</style></head><body>';
 
         foreach ($records as $i => $record) {
-            $html = view('pdf.payslip-new', ['record' => $record])->render();
+            $html = view('pdf.payslip-new', ['record' => $record, 'currency' => $currency])->render();
 
             // Extract body content
             $bodyContent = $html;

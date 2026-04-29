@@ -171,6 +171,11 @@ Route::apiResource('alarm_logs', AlarmLogsController::class);
 Route::get('employeev1', [EmployeeController::class, "indexV1"]);
 Route::post('global-search', [GlobalSearchController::class, "globalSearch"]);
 
+// Bulk import/export — must be declared BEFORE apiResource('employee') so they
+// are not shadowed by the GET /employee/{id} show route.
+Route::get('employee/sample-template', [EmployeeController::class, 'downloadSample']);
+Route::get('employee/export', [EmployeeController::class, 'exportEmployees']);
+
 Route::apiResource('employee', EmployeeController::class);
 
 

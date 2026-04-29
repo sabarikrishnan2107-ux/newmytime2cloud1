@@ -13,14 +13,19 @@ use App\Http\Requests\Employee\StoreRequestFromDevice;
 use App\Http\Requests\Employee\UpdateRequest;
 use App\Http\Requests\Employee\UpdateRequestFromDevice;
 use App\Console\Commands\AI\AIBirthdayFeed;
+use App\Exports\EmployeesExport;
+use App\Exports\EmployeesSampleExport;
+use App\Imports\EmployeesImport;
 use App\Models\Attendance;
 use App\Models\AttendanceLog;
 use App\Models\Company;
+use App\Models\CompanyBranch;
 use App\Models\CompanyContact;
 use App\Models\Department;
 use App\Models\Designation;
 use App\Models\Device;
 use App\Models\Employee;
+use Maatwebsite\Excel\Facades\Excel;
 use App\Models\FingerPrint;
 use App\Models\Palm;
 use App\Models\Payslips;
@@ -1018,117 +1023,118 @@ class EmployeeController extends Controller
     }
     public function import(Request $request)
     {
+        $file = $request->file('employees');
+        if (! $file) {
+            return ["status" => false, "record" => false, "errors" => ["No file uploaded."]];
+        }
 
-        $file     = $request->file('employees');
-        $rowCount = file($file);
+        $ext = strtolower($file->getClientOriginalExtension());
+        if (! in_array($ext, ['xlsx', 'xls', 'csv'])) {
+            return ["status" => false, "record" => false, "errors" => ["Unsupported file type. Use .xlsx, .xls or .csv"]];
+        }
 
-        $this->company_id = $request->company_id ?? 0;
-        $branch_id        = $request->branch_id ?? 0;
+        $companyId = (int) ($request->company_id ?? 0);
+        $branchId  = (int) ($request->branch_id ?? 0);
 
-        $company           = Company::withCount('employees')->find($this->company_id);
+        if (! $companyId) {
+            return ["status" => false, "record" => false, "errors" => ["Missing company_id."]];
+        }
+
+        $company           = Company::withCount('employees')->find($companyId);
         $totalEmployee     = $company->employees_count ?? 0;
-        $maxEmployee       = $company->max_employee ?? 0;
-        $remainingEmployee = max(0, (int) $maxEmployee - (int) $totalEmployee);
+        $maxEmployee       = (int) ($company->max_employee ?? 0);
+        $remainingEmployee = max(0, $maxEmployee - (int) $totalEmployee);
 
-        if (! (count($rowCount) - 1 <= $remainingEmployee)) {
-            return ["status" => false, "errors" => ["Employee limit reached. Maximum limit is " . $maxEmployee]];
-        }
-
-        $dataCSV = $this->saveFile($file);
-
-        if (is_array($dataCSV) && ! $dataCSV["status"]) {
-            return ["status" => false, "errors" => $dataCSV["errors"]];
-        }
-
-        $dataCSV = $this->csvParser($dataCSV);
-
-        if (array_key_exists("status", $dataCSV)) {
-            return ["status" => false, "errors" => $dataCSV["errors"]];
-        }
-        $success = false;
+        $importer = new EmployeesImport($companyId, $branchId);
 
         DB::beginTransaction();
-
         try {
-            foreach ($dataCSV as $data1) {
+            Excel::import($importer, $file);
 
-                if (Employee::where(["system_user_id" => $data1['employee_device_id']])->where("company_id", $this->company_id)->exists()) {
-                    continue;
-                }
-                $data = [];
-                foreach ($data1 as $key => $value) {
-                    $data[$key] = trim($value);
-                }
+            $createdCount = count($importer->created);
 
-                $validator = $this->validateImportData($data);
-
-                if (! $this->checkIfDepartmentExist($data['department_code'])) {
-                    return [
-                        "status" => false,
-                        "errors" => ["Department code ({$data['department_code']}) does not exist"],
-                    ];
-                }
-
-                if ($validator->fails()) {
-                    return [
-                        "status" => false,
-                        "errors" => $validator->errors()->all(),
-                    ];
-                }
-                $imageName = '';
-
-                $employee = [
-                    'title'          => $this->clean($data['title']),
-                    'display_name'   => $this->clean($data['display_name']),
-                    'first_name'     => $this->clean($data['first_name']),
-                    'last_name'      => $this->clean($data['last_name']),
-                    'employee_id'    => $this->clean($data['employee_id']),
-                    'company_id'     => $this->company_id,
-                    'system_user_id' => $this->clean($data['employee_device_id']),
-                    'department_id'  => $this->clean($data['department_code']),
-                    'branch_id'      => $this->clean($branch_id),
+            if ($maxEmployee > 0 && $createdCount > $remainingEmployee) {
+                DB::rollBack();
+                return [
+                    "status" => false,
+                    "record" => false,
+                    "errors" => ["Employee limit reached. Maximum limit is {$maxEmployee}. Only {$remainingEmployee} more allowed."],
                 ];
-
-                if ($data['profile_picture'] != '') {
-                    if (file_exists($data['profile_picture'])) {
-                        $imageName       = (time() + rand(10000, 20000)) . ".png";
-                        $newFileLocation = public_path('media/employee/profile_picture/') . '/' . $imageName;
-                        copy($data['profile_picture'], $newFileLocation);
-
-                        $employee["profile_picture"] = trim($imageName);
-                    }
-                }
-
-                // $record = null;
-
-                // if ($data['email'] != "") {
-                //     $record = User::create([
-                //         "user_type"  => "employee",
-                //         'name'       => 'null',
-                //         'email'      => $data['email'],
-                //         'password'   => Hash::make('secret'),
-                //         'company_id' => $this->company_id,
-                //     ]);
-
-                //     $employee['user_id'] = $record->id;
-                // }
-
-                $success = Employee::create($employee) ? true : false;
-
-                (new AttendanceController)->seedDefaultData($employee["company_id"], [$employee['system_user_id']], $branch_id);
             }
 
-            if ($success) {
-                DB::commit();
-            }
+            DB::commit();
 
-            $msg = $success ? 'Employee imported successfully.' : 'Employee cannot import.';
+            $errors = $importer->errors;
+            $skipped = $importer->skipped;
+            $hasAny  = $createdCount > 0;
 
-            return $this->response($msg, $success ?? false, true);
+            $message = $hasAny
+                ? "Imported {$createdCount} employee(s)." . (count($skipped) ? " Skipped " . count($skipped) . " duplicate(s)." : "")
+                : "No employees were imported.";
+
+            return [
+                "status"   => $hasAny || empty($errors),
+                "record"   => $hasAny,
+                "message"  => $message,
+                "created"  => $createdCount,
+                "skipped"  => $skipped,
+                "errors"   => $errors,
+            ];
         } catch (\Throwable $th) {
-            DB::rollback();
-            throw $th;
+            DB::rollBack();
+            return [
+                "status" => false,
+                "record" => false,
+                "errors" => ["Failed to read file: " . $th->getMessage()],
+            ];
         }
+    }
+
+    public function downloadSample(Request $request)
+    {
+        return Excel::download(new EmployeesSampleExport(), 'employees_sample.xlsx');
+    }
+
+    public function exportEmployees(Request $request)
+    {
+        $companyId = (int) ($request->company_id ?? 0);
+        if (! $companyId) {
+            return response()->json(['status' => false, 'message' => 'Missing company_id'], 422);
+        }
+
+        $query = Employee::query()
+            ->with(['user', 'department', 'designation', 'branch'])
+            ->where('company_id', $companyId);
+
+        if ($request->filled('branch_ids')) {
+            $branchIds = is_array($request->branch_ids) ? $request->branch_ids : explode(',', $request->branch_ids);
+            $branchIds = array_filter(array_map('intval', $branchIds));
+            if (! empty($branchIds)) $query->whereIn('branch_id', $branchIds);
+        } elseif ($request->filled('branch_id')) {
+            $query->where('branch_id', (int) $request->branch_id);
+        }
+
+        if ($request->filled('department_ids')) {
+            $departmentIds = is_array($request->department_ids) ? $request->department_ids : explode(',', $request->department_ids);
+            $departmentIds = array_filter(array_map('intval', $departmentIds));
+            if (! empty($departmentIds)) $query->whereIn('department_id', $departmentIds);
+        }
+
+        if ($request->filled('search')) {
+            $term = trim((string) $request->search);
+            $like = env('WILD_CARD') ?? 'ILIKE';
+            $query->where(function ($q) use ($term, $like) {
+                $q->where('first_name', $like, "%{$term}%")
+                    ->orWhere('last_name', $like, "%{$term}%")
+                    ->orWhere('employee_id', $like, "%{$term}%")
+                    ->orWhere('system_user_id', $like, "%{$term}%");
+            });
+        }
+
+        $query->orderBy('first_name');
+
+        $filename = 'employees_' . date('Y-m-d_His') . '.xlsx';
+        return Excel::download(new EmployeesExport($query), $filename);
     }
 
     public function deleteEmployeeFromDevice(Request $request)

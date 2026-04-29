@@ -160,6 +160,9 @@ export default function SalaryStructures() {
                             medical_allowance: String(s.medicalAllowance), other_allowance: String(s.otherAllowance),
                             overtime_eligible: s.overtimeEligible, loan_deduction: !!s.loan_deduction, advance_deduction: !!s.advance_deduction,
                           });
+                          const emp = employees.find(e => String(e.id) === String(s.employee_id));
+                          setSelectedBranch(emp?.branch_id ? String(emp.branch_id) : (s.employee?.branch?.id ? String(s.employee.branch.id) : ""));
+                          setSelectedDept(emp?.department_id ? String(emp.department_id) : (s.employee?.department?.id ? String(s.employee.department.id) : ""));
                           setDialogOpen(true);
                         }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 transition"><Edit className="h-3.5 w-3.5" /></button>
                       </div>
@@ -204,7 +207,17 @@ export default function SalaryStructures() {
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-gray-500">Employee</label>
-                <select value={form.employee_id} onChange={e => setForm({ ...form, employee_id: e.target.value })}
+                <select value={form.employee_id} onChange={e => {
+                  const empId = e.target.value;
+                  setForm({ ...form, employee_id: empId });
+                  if (empId) {
+                    const picked = employees.find(emp => String(emp.id) === String(empId));
+                    if (picked) {
+                      if (picked.branch_id) setSelectedBranch(String(picked.branch_id));
+                      if (picked.department_id) setSelectedDept(String(picked.department_id));
+                    }
+                  }
+                }}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
                   <option value="">Select employee</option>
                   {filteredEmployees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name || ""}</option>)}
