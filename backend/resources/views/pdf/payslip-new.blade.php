@@ -5,7 +5,7 @@
 <title>Payslip - {{ $record->employee->employee_id ?? '' }} - {{ $record->month }}</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Segoe UI', Arial, sans-serif; color: #1f2937; background: #f3f4f6; padding: 20px 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif; color: #1f2937; background: #f3f4f6; padding: 20px 0; font-weight: 400; }
   .page { max-width: 820px; margin: 0 auto; background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 6px 24px rgba(0,0,0,0.08); }
 
   /* Header */
@@ -15,54 +15,55 @@
   .header-row { display: flex; justify-content: space-between; align-items: flex-start; position: relative; z-index: 2; }
   .brand { display: flex; align-items: center; gap: 14px; }
   .brand-icon { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; }
-  .brand h1 { font-size: 26px; font-weight: 800; letter-spacing: -0.3px; line-height: 1; }
+  .brand h1 { font-size: 24px; font-weight: 600; letter-spacing: -0.3px; line-height: 1; }
   .brand .sub { font-size: 13px; opacity: 0.9; margin-top: 6px; font-weight: 400; }
-  .confidential { font-size: 10px; text-transform: uppercase; letter-spacing: 2.5px; border: 1px solid rgba(255,255,255,0.45); padding: 6px 14px; border-radius: 4px; font-weight: 600; }
+  .confidential { font-size: 10px; text-transform: uppercase; letter-spacing: 2.5px; border: 1px solid rgba(255,255,255,0.45); padding: 6px 14px; border-radius: 4px; font-weight: 500; }
 
   /* Section Card with Icon Heading */
   .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
   .section-head .icon-circle { width: 30px; height: 30px; border-radius: 50%; background: #dbeafe; display: flex; align-items: center; justify-content: center; }
-  .section-head h3 { font-size: 13px; font-weight: 700; color: #0a3d62; text-transform: uppercase; letter-spacing: 1.2px; }
+  .section-head h3 { font-size: 13px; font-weight: 600; color: #0a3d62; text-transform: uppercase; letter-spacing: 1.2px; }
 
   /* Employee & Payment Details */
   .details { display: flex; gap: 30px; padding: 28px 38px 18px; }
   .details .col { flex: 1; }
   .details .row { display: flex; padding: 7px 0; font-size: 12.5px; align-items: center; }
-  .details .row .label { color: #6b7280; flex: 1; }
+  .details .row .label { color: #6b7280; flex: 1; font-weight: 400; }
   .details .row .colon { color: #9ca3af; padding: 0 14px; }
-  .details .row .value { font-weight: 700; color: #1f2937; flex: 1.2; text-align: right; }
+  .details .row .value { font-weight: 500; color: #1f2937; flex: 1.2; text-align: right; }
   .details .row .value.status { color: #ea7c1c; text-transform: uppercase; }
   .details .row .value.status-paid { color: #16a34a; }
 
   /* Attendance Summary */
-  .attendance { margin: 6px 38px 18px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 16px 22px; background: #fafbfc; }
-  .att-head { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .att-head .label { font-size: 11.5px; font-weight: 700; color: #0a3d62; text-transform: uppercase; letter-spacing: 1.2px; }
-  .att-stats { display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
-  .att-stat { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 110px; }
-  .att-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .attendance { margin: 6px 38px 18px; border: 1px solid #e5e7eb; border-radius: 10px; padding: 12px 18px; background: #fafbfc; }
+  .att-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+  .att-head .label { font-size: 11px; font-weight: 600; color: #0a3d62; text-transform: uppercase; letter-spacing: 1.2px; }
+  .att-stats { display: flex; gap: 0; flex-wrap: wrap; align-items: center; }
+  .att-stat { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 95px; padding: 0 14px; border-left: 1px solid #e5e7eb; }
+  .att-stat:first-child { border-left: none; padding-left: 0; }
+  .att-icon { width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .att-icon.blue { background: #dbeafe; }
   .att-icon.red { background: #fee2e2; }
   .att-icon.orange { background: #fed7aa; }
   .att-icon.purple { background: #ede9fe; }
   .att-icon.teal { background: #ccfbf1; }
   .att-icon.green { background: #dcfce7; }
-  .att-text .v { font-size: 16px; font-weight: 800; color: #1f2937; line-height: 1; }
-  .att-text .l { font-size: 11px; color: #6b7280; margin-top: 3px; }
+  .att-text .v { font-size: 14px; font-weight: 600; color: #1f2937; line-height: 1; }
+  .att-text .l { font-size: 10.5px; color: #6b7280; margin-top: 2px; font-weight: 400; }
 
   /* Earnings & Deductions Tables */
   .tables { display: flex; gap: 18px; padding: 8px 38px 18px; }
   .tables .col { flex: 1; border: 1px solid #e5e7eb; border-radius: 10px; overflow: hidden; }
   .tables table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
-  .tables th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: #fff; }
+  .tables th { padding: 12px 16px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #fff; }
   .tables .earnings th { background: #1e5f8e; }
   .tables .deductions th { background: #c0392b; }
   .tables th .ico { display: inline-block; vertical-align: middle; margin-right: 8px; }
   .tables th.amt { text-align: right; }
-  .tables td { padding: 9px 16px; border-bottom: 1px solid #f3f4f6; }
-  .tables td:last-child { text-align: right; font-weight: 600; color: #1f2937; }
+  .tables td { padding: 9px 16px; border-bottom: 1px solid #f3f4f6; font-weight: 400; }
+  .tables td:last-child { text-align: right; font-weight: 500; color: #1f2937; }
   .tables tr:last-child td { border-bottom: none; }
-  .tables .total td { font-weight: 800; background: #f9fafb; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; padding: 11px 16px; }
+  .tables .total td { font-weight: 600; background: #f9fafb; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.5px; padding: 11px 16px; }
   .tables .earnings .total td { color: #1e5f8e; }
   .tables .deductions .total td { color: #c0392b; }
   .tables .zero td { color: #d1d5db; }
@@ -71,17 +72,17 @@
   .rate-card { margin: 6px 38px 18px; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 10px; padding: 14px 18px; display: flex; align-items: center; gap: 14px; }
   .rate-card .icon-circle { width: 36px; height: 36px; border-radius: 50%; background: #1e5f8e; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
   .rate-card .content { flex: 1; }
-  .rate-card .title { font-size: 11.5px; font-weight: 700; color: #0a3d62; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px; }
-  .rate-card .body { font-size: 12px; color: #374151; line-height: 1.6; }
-  .rate-card .body span { font-weight: 700; color: #1f2937; }
+  .rate-card .title { font-size: 11.5px; font-weight: 600; color: #0a3d62; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 4px; }
+  .rate-card .body { font-size: 12px; color: #374151; line-height: 1.6; font-weight: 400; }
+  .rate-card .body span { font-weight: 500; color: #1f2937; }
 
   /* Net Salary Band */
   .net-salary { margin: 6px 38px 24px; background: linear-gradient(135deg, #0a3d62 0%, #1e5f8e 100%); color: #fff; border-radius: 10px; padding: 22px 28px; display: flex; justify-content: space-between; align-items: center; position: relative; overflow: hidden; }
   .net-salary .ns-wave { position: absolute; left: 0; bottom: -40px; width: 100%; height: 80px; background: rgba(255,255,255,0.04); border-radius: 50% 50% 0 0; }
   .ns-left { display: flex; align-items: center; gap: 14px; position: relative; z-index: 2; }
   .ns-icon { width: 42px; height: 42px; border-radius: 50%; background: rgba(255,255,255,0.18); display: flex; align-items: center; justify-content: center; }
-  .ns-label { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; padding-left: 16px; border-left: 1px solid rgba(255,255,255,0.3); }
-  .ns-amount { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; position: relative; z-index: 2; }
+  .ns-label { font-size: 17px; font-weight: 500; letter-spacing: 0.5px; padding-left: 16px; border-left: 1px solid rgba(255,255,255,0.3); }
+  .ns-amount { font-size: 30px; font-weight: 600; letter-spacing: -0.5px; position: relative; z-index: 2; }
 
   /* Signatures */
   .signatures { display: flex; justify-content: space-between; padding: 16px 38px 24px; gap: 20px; }

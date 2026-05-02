@@ -12,7 +12,7 @@ export default function DataTable({
 }) {
   return (
     <div className="glass-panel rounded-xl shadow-soft overflow-hidden min-w-0">
-      <div className="overflow-x-auto h-full max-h-[700px] min-h-[0vh]">
+      <div className="overflow-x-auto max-h-[min(calc(100vh-220px),1400px)]">
         <table className="w-full min-w-[900px] text-left border-collapse table-auto">
           <thead>
             <tr className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700">

@@ -57,9 +57,9 @@ export default (deleteEmployee, editEmployee) => [
   {
     key: "position",
     header: "Position",
-    align: "center",
+    align: "left",
     render: (employee) => (
-      <div className="text-sm text-slate-600 dark:text-stone-100 text-center">
+      <div className="text-sm text-slate-600 dark:text-stone-100">
         {employee.designation?.name || "N/A"}
       </div>
     ),
@@ -67,9 +67,9 @@ export default (deleteEmployee, editEmployee) => [
   {
     key: "mobile_email",
     header: "Mobile / Email",
-    align: "center",
+    align: "left",
     render: (employee) => (
-      <div className="text-sm text-center">
+      <div className="text-sm">
         <p className="text-slate-600 dark:text-stone-100">{employee.user?.email || "—"}</p>
         <p className="text-xs text-slate-600 dark:text-stone-100">{employee.phone_number || "—"}</p>
       </div>
@@ -78,9 +78,9 @@ export default (deleteEmployee, editEmployee) => [
   {
     key: "timezone",
     header: "Join Date",
-    align: "center",
+    align: "left",
     render: (employee) => (
-      <div className="text-sm text-slate-600 dark:text-stone-100 text-center">
+      <div className="text-sm text-slate-600 dark:text-stone-100">
         {employee.show_joining_date || "N/A"}
       </div>
     ),

@@ -89,6 +89,11 @@ class EmployeesImport implements ToCollection, WithHeadingRow
                 $payload['designation_id'] = $designationId;
             }
 
+            $profilePictureFile = $this->resolveProfilePicture($data['profile_picture'] ?? null, $data['employee_id']);
+            if ($profilePictureFile) {
+                $payload['profile_picture'] = $profilePictureFile;
+            }
+
             try {
                 Employee::create($payload);
                 $this->created[] = $data['employee_id'];
@@ -117,8 +122,50 @@ class EmployeesImport implements ToCollection, WithHeadingRow
             'first_name' => null, 'last_name' => null, 'display_name' => null,
             'email' => null, 'phone_number' => null, 'whatsapp_number' => null,
             'joining_date' => null, 'department' => null, 'designation' => null,
-            'branch' => null,
+            'branch' => null, 'profile_picture' => null,
         ];
+    }
+
+    protected function resolveProfilePicture($value, $employeeId): ?string
+    {
+        if (empty($value)) return null;
+        $value = trim((string) $value);
+
+        $destDir = public_path('media/employee/profile_picture');
+        if (! is_dir($destDir)) {
+            @mkdir($destDir, 0775, true);
+        }
+
+        if (preg_match('#^https?://#i', $value)) {
+            try {
+                $contents = @file_get_contents($value);
+                if ($contents === false || $contents === '') return null;
+                $ext = strtolower(pathinfo(parse_url($value, PHP_URL_PATH) ?? '', PATHINFO_EXTENSION));
+                if (! in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'], true)) {
+                    $ext = 'jpg';
+                }
+                $filename = $this->safeProfileFilename($employeeId, $ext);
+                if (file_put_contents($destDir . DIRECTORY_SEPARATOR . $filename, $contents) === false) {
+                    return null;
+                }
+                return $filename;
+            } catch (\Throwable $e) {
+                return null;
+            }
+        }
+
+        $filename = basename($value);
+        if (file_exists($destDir . DIRECTORY_SEPARATOR . $filename)) {
+            return $filename;
+        }
+        return null;
+    }
+
+    protected function safeProfileFilename($employeeId, string $ext): string
+    {
+        $base = preg_replace('/[^A-Za-z0-9_\-]/', '_', (string) $employeeId);
+        if ($base === '') $base = 'employee';
+        return $base . '_' . substr(bin2hex(random_bytes(4)), 0, 8) . '.' . $ext;
     }
 
     protected function isEmptyRow(array $data): bool

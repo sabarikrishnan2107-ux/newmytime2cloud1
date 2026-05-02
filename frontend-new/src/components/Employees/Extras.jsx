@@ -2,19 +2,13 @@
 
 import { useEffect, useState } from "react";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getBranches, uploadEmployee, downloadEmployeeSampleTemplate, exportEmployeesExcel } from "@/lib/api";
-import { MoreVertical, Download, Upload } from "lucide-react";
+import { FileDown, Upload, FileSpreadsheet } from "lucide-react";
 
 import {
   Popover,
@@ -146,70 +140,34 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
     }
   };
 
+  const btnBase = "p-2 transition-all duration-200 rounded-xl border glass-card !bg-white border-gray-200 dark:!bg-slate-900 dark:border-white/10 active:scale-95";
+
   return (
     <>
-      {/* Dropdown Menu */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button
-            className="
-      p-2 transition-all duration-200 rounded-xl border glass-card
-      !bg-white border-gray-200 text-slate-600 hover:bg-gray-50
-      dark:!bg-slate-900 dark:border-white/10 dark:text-slate-400 dark:hover:text-slate-100 dark:hover:border-white/20
-      active:scale-95
-    "
-          >
-            <MoreVertical className="w-5 h-5" />
-          </button>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuContent
-          align="end"
-          className="
-      w-60 mt-2 p-1.5 rounded-xl shadow-2xl animate-toast
-      glass-panel !bg-white border-gray-200
-      dark:!bg-slate-900 dark:border-white/10
-    "
+      {/* Inline action buttons */}
+      <div className="flex items-center gap-1.5">
+        <button
+          title="Download Sample File"
+          onClick={handleDownloadSample}
+          className={`${btnBase} text-sky-600 hover:bg-sky-50 hover:border-sky-300 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:border-sky-500/40`}
         >
-          <DropdownMenuItem
-            onClick={handleDownloadSample}
-            className="
-        flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg transition-all duration-200 font-body text-sm
-        /* Light Hover */
-        text-slate-600 hover:bg-slate-100 hover:text-slate-900 outline-none
-        /* Dark Hover */
-        dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100
-      "
-          >
-            <Download className="w-4 h-4 opacity-70" />
-            <span>Download Sample File</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={() => setDialogOpen(true)}
-            className="
-        flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg transition-all duration-200 font-body text-sm
-        text-slate-600 hover:bg-slate-100 hover:text-slate-900 outline-none
-        dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100
-      "
-          >
-            <Upload className="w-4 h-4 opacity-70" />
-            <span>Import Employees</span>
-          </DropdownMenuItem>
-
-          <DropdownMenuItem
-            onClick={handleExportEmployees}
-            className="
-        flex items-center gap-2 px-3 py-2.5 cursor-pointer rounded-lg transition-all duration-200 font-body text-sm
-        text-slate-600 hover:bg-slate-100 hover:text-slate-900 outline-none
-        dark:text-slate-400 dark:hover:bg-white/5 dark:hover:text-slate-100
-      "
-          >
-            <Download className="w-4 h-4 opacity-70" />
-            <span>Export Employees</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+          <FileDown className="w-5 h-5" />
+        </button>
+        <button
+          title="Import Employees"
+          onClick={() => setDialogOpen(true)}
+          className={`${btnBase} text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 dark:text-emerald-400 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/40`}
+        >
+          <Upload className="w-5 h-5" />
+        </button>
+        <button
+          title="Export Employees"
+          onClick={handleExportEmployees}
+          className={`${btnBase} text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:text-rose-400 dark:hover:bg-rose-500/10 dark:hover:border-rose-500/40`}
+        >
+          <FileSpreadsheet className="w-5 h-5" />
+        </button>
+      </div>
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md w-[90%] p-6 rounded-2xl">

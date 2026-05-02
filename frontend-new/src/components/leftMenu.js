@@ -121,14 +121,16 @@ export default function LeftMenu() {
             <img
               src={avatar}
               alt={displayName}
-              title={displayName}
-              className="w-10 h-10 rounded-full object-cover border-2 border-slate-700 shrink-0"
+              title={`${displayName} — click to logout`}
+              onClick={handleLogout}
+              className="w-10 h-10 rounded-full object-cover border-2 border-slate-700 shrink-0 cursor-pointer hover:border-red-400 hover:opacity-80 transition"
               onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
             />
           ) : null}
           <div
-            title={displayName}
-            className={`w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-purple-600 text-white flex items-center justify-center shrink-0 text-sm font-bold ${avatar ? 'hidden' : ''}`}
+            title={`${displayName} — click to logout`}
+            onClick={handleLogout}
+            className={`w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-purple-600 text-white flex items-center justify-center shrink-0 text-sm font-bold cursor-pointer hover:from-red-500 hover:to-red-700 transition ${avatar ? 'hidden' : ''}`}
           >
             {initials}
           </div>

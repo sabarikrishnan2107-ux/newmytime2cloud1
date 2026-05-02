@@ -14,9 +14,10 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
-import { Banknote } from "lucide-react";
+import { Banknote, FileDown } from "lucide-react";
 import { updateBank } from "@/lib/api";
 import { parseApiError } from "@/lib/utils";
+import { api, buildQueryParams } from "@/lib/api-client";
 
 const Bank = ({ employee_id, bank, payroll = {} }) => {
     const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -77,6 +78,16 @@ const Bank = ({ employee_id, bank, payroll = {} }) => {
         }
     };
 
+    const downloadLoanAdvanceStatement = async () => {
+        try {
+            const params = await buildQueryParams({});
+            const url = `${api.defaults.baseURL}/payroll-management/loan-advance-statement/${employee_id}?company_id=${params.company_id}`;
+            window.open(url, "_blank");
+        } catch (err) {
+            setGlobalError("Failed to load loan & advance statement");
+        }
+    };
+
     return (<>
         <div
             className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
@@ -89,6 +100,17 @@ const Bank = ({ employee_id, bank, payroll = {} }) => {
                     Manage salary structures, tax classifications, and deductions.
                 </p>
             </div>
+            {employee_id && (
+                <button
+                    type="button"
+                    onClick={downloadLoanAdvanceStatement}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-medium shadow-md hover:bg-indigo-700 transition-all whitespace-nowrap"
+                    title="Download Loan & Advance Statement PDF"
+                >
+                    <FileDown className="h-4 w-4" />
+                    <span>Loan & Advance Statement</span>
+                </button>
+            )}
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5 auto-rows-[minmax(140px,auto)]">
             <div

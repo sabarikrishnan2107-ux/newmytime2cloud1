@@ -7,7 +7,8 @@ import { StatusBadge } from "@/components/payroll/StatusBadge";
 import { api, buildQueryParams } from "@/lib/api-client";
 import {
   Users, DollarSign, TrendingDown, Wallet, Clock, CheckCircle, CreditCard,
-  AlertCircle, Plus, Play, ThumbsUp, Download, FileText, Eye
+  AlertCircle, Plus, Play, ThumbsUp, Download, FileText, Eye,
+  AreaChart as AreaIcon, BarChart3 as BarIcon, LineChart as LineIcon
 } from "lucide-react";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
@@ -187,27 +188,22 @@ export default function PayrollDashboard() {
                   </button>
                 ))}
               </div>
-              {/* Chart-type toggle */}
+              {/* Chart-type toggle (icons) */}
               <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-gray-800 p-0.5">
                 {[
-                  { id: "area", label: "Area" },
-                  { id: "bar", label: "Bar" },
-                  { id: "line", label: "Line" },
+                  { id: "area", Icon: AreaIcon, title: "Area" },
+                  { id: "bar", Icon: BarIcon, title: "Bar" },
+                  { id: "line", Icon: LineIcon, title: "Line" },
                 ].map(opt => (
-                  <button key={opt.id} onClick={() => setTrendType(opt.id)}
-                    className={`px-3 py-1 text-[11px] font-semibold rounded-md transition ${
+                  <button key={opt.id} onClick={() => setTrendType(opt.id)} title={opt.title}
+                    className={`p-1.5 rounded-md transition ${
                       trendType === opt.id
                         ? "bg-white dark:bg-gray-700 text-primary shadow-sm"
                         : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
                     }`}>
-                    {opt.label}
+                    <opt.Icon className="w-4 h-4" />
                   </button>
                 ))}
-              </div>
-              <div className="hidden sm:flex items-center gap-3 text-[10px] font-medium">
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-b from-sky-400 to-sky-600"></span><span className="text-gray-500 dark:text-gray-400">Gross</span></span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-b from-emerald-400 to-emerald-600"></span><span className="text-gray-500 dark:text-gray-400">Net</span></span>
-                <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-b from-rose-400 to-rose-600"></span><span className="text-gray-500 dark:text-gray-400">Deductions</span></span>
               </div>
             </div>
           </div>
@@ -272,6 +268,12 @@ export default function PayrollDashboard() {
               </LineChart>
             )}
           </ResponsiveContainer>
+          {/* Legend at bottom */}
+          <div className="flex items-center justify-center gap-4 mt-2 text-[11px] font-medium">
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-600"></span><span className="text-gray-500 dark:text-gray-400">Gross</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600"></span><span className="text-gray-500 dark:text-gray-400">Net</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-rose-400 to-rose-600"></span><span className="text-gray-500 dark:text-gray-400">Deductions</span></span>
+          </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4">

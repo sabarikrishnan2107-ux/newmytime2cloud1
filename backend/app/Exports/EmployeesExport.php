@@ -5,18 +5,21 @@ namespace App\Exports;
 use Illuminate\Database\Eloquent\Builder;
 use Maatwebsite\Excel\Concerns\FromQuery;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class EmployeesExport implements FromQuery, WithMapping, WithHeadings, WithStyles, WithTitle, ShouldAutoSize, WithEvents
+class EmployeesExport implements FromQuery, WithMapping, WithHeadings, WithStyles, WithTitle, ShouldAutoSize, WithEvents, WithColumnFormatting
 {
     protected Builder $query;
 
@@ -51,6 +54,7 @@ class EmployeesExport implements FromQuery, WithMapping, WithHeadings, WithStyle
             'department',
             'designation',
             'branch',
+            'profile_picture',
         ];
     }
 
@@ -58,18 +62,29 @@ class EmployeesExport implements FromQuery, WithMapping, WithHeadings, WithStyle
     {
         return [
             $e->title ?? '',
-            $e->employee_id ?? '',
-            $e->system_user_id ?? '',
+            (string) ($e->employee_id ?? ''),
+            (string) ($e->system_user_id ?? ''),
             $e->first_name ?? '',
             $e->last_name ?? '',
             $e->display_name ?? '',
             optional($e->user)->email ?? '',
-            $e->phone_number ?? '',
-            $e->whatsapp_number ?? '',
+            (string) ($e->phone_number ?? ''),
+            (string) ($e->whatsapp_number ?? ''),
             $e->joining_date ? date('Y-m-d', strtotime($e->joining_date)) : '',
             optional($e->department)->name ?? '',
             optional($e->designation)->name ?? '',
             optional($e->branch)->branch_name ?? '',
+            $e->profile_picture ?? '',
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'B' => NumberFormat::FORMAT_TEXT,
+            'C' => NumberFormat::FORMAT_TEXT,
+            'H' => NumberFormat::FORMAT_TEXT,
+            'I' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
@@ -90,7 +105,8 @@ class EmployeesExport implements FromQuery, WithMapping, WithHeadings, WithStyle
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 $sheet->getRowDimension(1)->setRowHeight(28);
-                $highest = $sheet->getHighestColumn() . $sheet->getHighestRow();
+                $highestRow = $sheet->getHighestRow();
+                $highest = $sheet->getHighestColumn() . $highestRow;
                 $sheet->getStyle('A1:' . $highest)->applyFromArray([
                     'borders' => [
                         'allBorders' => [
@@ -100,6 +116,16 @@ class EmployeesExport implements FromQuery, WithMapping, WithHeadings, WithStyle
                     ],
                 ]);
                 $sheet->freezePane('A2');
+
+                foreach (['B', 'C', 'H', 'I'] as $col) {
+                    for ($row = 2; $row <= $highestRow; $row++) {
+                        $cell = $sheet->getCell($col . $row);
+                        $value = $cell->getValue();
+                        if ($value !== null && $value !== '') {
+                            $cell->setValueExplicit((string) $value, DataType::TYPE_STRING);
+                        }
+                    }
+                }
             },
         ];
     }

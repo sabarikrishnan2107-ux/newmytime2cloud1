@@ -4,17 +4,20 @@ namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromArray;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Maatwebsite\Excel\Concerns\WithColumnFormatting;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithStyles;
 use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Events\AfterSheet;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
+use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
-class EmployeesSampleExport implements FromArray, WithHeadings, WithStyles, WithTitle, ShouldAutoSize, WithEvents
+class EmployeesSampleExport implements FromArray, WithHeadings, WithStyles, WithTitle, ShouldAutoSize, WithEvents, WithColumnFormatting
 {
     public function title(): string
     {
@@ -37,6 +40,7 @@ class EmployeesSampleExport implements FromArray, WithHeadings, WithStyles, With
             'department',
             'designation',
             'branch',
+            'profile_picture',
         ];
     }
 
@@ -47,12 +51,24 @@ class EmployeesSampleExport implements FromArray, WithHeadings, WithStyles, With
                 'Mr', 'EMP001', '1001', 'John', 'Doe', 'John',
                 'john.doe@example.com', '9876543210', '9876543210',
                 '2026-04-01', 'Front Office', 'Receptionist', 'TANJORE',
+                'https://example.com/john.jpg',
             ],
             [
                 'Mrs', 'EMP002', '1002', 'Jane', 'Smith', 'Jane',
                 'jane.smith@example.com', '9876543211', '',
                 '2026-04-15', 'Housekeeping', 'HouseKeeping', 'KODAI',
+                '',
             ],
+        ];
+    }
+
+    public function columnFormats(): array
+    {
+        return [
+            'B' => NumberFormat::FORMAT_TEXT,
+            'C' => NumberFormat::FORMAT_TEXT,
+            'H' => NumberFormat::FORMAT_TEXT,
+            'I' => NumberFormat::FORMAT_TEXT,
         ];
     }
 
@@ -95,7 +111,7 @@ class EmployeesSampleExport implements FromArray, WithHeadings, WithStyles, With
                     '4. employee_id and employee_device_id must be unique per company',
                     '5. department, designation and branch can be matched by name (case-insensitive)',
                     '6. joining_date format: YYYY-MM-DD (e.g. 2026-04-01)',
-                    '7. Profile photo is NOT included in bulk import - upload it later from each employee profile',
+                    '7. profile_picture is OPTIONAL - paste a public image URL (jpg/png/webp); leave blank to skip. Employees still import without an image.',
                     '8. Delete the example rows before uploading your data',
                 ];
                 $startRow = $sheet->getHighestRow() + 2;

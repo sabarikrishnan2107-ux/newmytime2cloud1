@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AdvanceDeduction;
 use App\Models\AttendanceLog;
 use App\Models\Employee;
 use App\Models\EmployeeAdvance;
 use App\Models\EmployeeLeaves;
 use App\Models\EmployeeLoan;
+use App\Models\LoanDeduction;
 use App\Models\PayrollAdjustment;
 use App\Models\PayrollBatch;
 use App\Models\PayrollRecord;
@@ -197,6 +199,25 @@ class PayrollManagementController extends Controller
         return response()->json(['status' => true, 'data' => $loan]);
     }
 
+    public function updateLoan(Request $request, $id)
+    {
+        $loan = EmployeeLoan::where('company_id', $request->company_id)->findOrFail($id);
+        $data = $request->only([
+            'employee_id', 'loan_amount', 'monthly_installment',
+            'start_month', 'end_month', 'remarks', 'status',
+        ]);
+        $loan->update($data);
+        return response()->json(['status' => true, 'data' => $loan]);
+    }
+
+    public function deleteLoan(Request $request, $id)
+    {
+        $loan = EmployeeLoan::where('company_id', $request->company_id)->findOrFail($id);
+        \App\Models\LoanDeduction::where('loan_id', $loan->id)->delete();
+        $loan->delete();
+        return response()->json(['status' => true, 'message' => 'Loan deleted']);
+    }
+
     // ── Advances ──
     public function advances(Request $request)
     {
@@ -217,6 +238,25 @@ class PayrollManagementController extends Controller
         $data['branch_id'] = $request->branch_id ?? Employee::find($data['employee_id'])?->branch_id;
         $advance = EmployeeAdvance::create($data);
         return response()->json(['status' => true, 'data' => $advance]);
+    }
+
+    public function updateAdvance(Request $request, $id)
+    {
+        $advance = EmployeeAdvance::where('company_id', $request->company_id)->findOrFail($id);
+        $data = $request->only([
+            'employee_id', 'advance_amount', 'monthly_recovery',
+            'issue_date', 'remarks', 'status',
+        ]);
+        $advance->update($data);
+        return response()->json(['status' => true, 'data' => $advance]);
+    }
+
+    public function deleteAdvance(Request $request, $id)
+    {
+        $advance = EmployeeAdvance::where('company_id', $request->company_id)->findOrFail($id);
+        \App\Models\AdvanceDeduction::where('advance_id', $advance->id)->delete();
+        $advance->delete();
+        return response()->json(['status' => true, 'message' => 'Advance deleted']);
     }
 
     // ── Batches ──
@@ -530,10 +570,13 @@ class PayrollManagementController extends Controller
 
                 // Loan deduction
                 $loanDed = 0;
+                $activeLoan = null;
+                $loanBalanceBefore = 0;
                 if ($ss->loan_deduction) {
                     $activeLoan = EmployeeLoan::where('employee_id', $ss->employee_id)
                         ->where('company_id', $companyId)->where('status', 'active')->first();
                     if ($activeLoan && $activeLoan->outstanding_balance > 0) {
+                        $loanBalanceBefore = (float) $activeLoan->outstanding_balance;
                         $loanDed = min($activeLoan->monthly_installment, $activeLoan->outstanding_balance);
                         $activeLoan->outstanding_balance -= $loanDed;
                         if ($activeLoan->outstanding_balance <= 0) $activeLoan->status = 'completed';
@@ -543,10 +586,13 @@ class PayrollManagementController extends Controller
 
                 // Advance deduction
                 $advanceDed = 0;
+                $activeAdv = null;
+                $advanceBalanceBefore = 0;
                 if ($ss->advance_deduction) {
                     $activeAdv = EmployeeAdvance::where('employee_id', $ss->employee_id)
                         ->where('company_id', $companyId)->where('status', 'active')->first();
                     if ($activeAdv && $activeAdv->outstanding_balance > 0) {
+                        $advanceBalanceBefore = (float) $activeAdv->outstanding_balance;
                         $advanceDed = min($activeAdv->monthly_recovery, $activeAdv->outstanding_balance);
                         $activeAdv->outstanding_balance -= $advanceDed;
                         if ($activeAdv->outstanding_balance <= 0) $activeAdv->status = 'completed';
@@ -564,7 +610,7 @@ class PayrollManagementController extends Controller
                 elseif ($roundingRule === 'floor') $netSalary = floor($netSalary);
                 elseif ($roundingRule === 'ceil') $netSalary = ceil($netSalary);
 
-                PayrollRecord::create([
+                $payrollRecord = PayrollRecord::create([
                     'batch_id' => $batch->id,
                     'company_id' => $companyId,
                     'branch_id' => $emp->branch_id,
@@ -601,6 +647,38 @@ class PayrollManagementController extends Controller
                     'net_salary' => $netSalary,
                     'status' => 'draft',
                 ]);
+
+                if ($activeLoan && $loanDed > 0) {
+                    LoanDeduction::create([
+                        'company_id' => $companyId,
+                        'branch_id' => $emp->branch_id,
+                        'employee_id' => $ss->employee_id,
+                        'loan_id' => $activeLoan->id,
+                        'payroll_batch_id' => $batch->id,
+                        'payroll_record_id' => $payrollRecord->id,
+                        'payroll_month' => $month,
+                        'amount' => $loanDed,
+                        'balance_before' => $loanBalanceBefore,
+                        'balance_after' => $loanBalanceBefore - $loanDed,
+                        'deducted_at' => now(),
+                    ]);
+                }
+
+                if ($activeAdv && $advanceDed > 0) {
+                    AdvanceDeduction::create([
+                        'company_id' => $companyId,
+                        'branch_id' => $emp->branch_id,
+                        'employee_id' => $ss->employee_id,
+                        'advance_id' => $activeAdv->id,
+                        'payroll_batch_id' => $batch->id,
+                        'payroll_record_id' => $payrollRecord->id,
+                        'payroll_month' => $month,
+                        'amount' => $advanceDed,
+                        'balance_before' => $advanceBalanceBefore,
+                        'balance_after' => $advanceBalanceBefore - $advanceDed,
+                        'deducted_at' => now(),
+                    ]);
+                }
 
                 $totalGross += $grossEarned;
                 $totalDed += $totalDeduction;
@@ -726,6 +804,60 @@ class PayrollManagementController extends Controller
         $combined .= '</body></html>';
 
         return response($combined)->header('Content-Type', 'text/html');
+    }
+
+    // ── Loan & Advance Statement ──
+    public function loanAdvanceStatement(Request $request, $employeeId)
+    {
+        $companyId = (int) $request->company_id;
+        if (! $companyId) {
+            return response('<h1>Missing company_id</h1>', 422)->header('Content-Type', 'text/html');
+        }
+
+        $employee = Employee::with(['branch', 'department', 'designation', 'company'])
+            ->where('company_id', $companyId)
+            ->findOrFail($employeeId);
+
+        $loans = EmployeeLoan::where('company_id', $companyId)
+            ->where('employee_id', $employeeId)
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+            ->orderByDesc('id')
+            ->get();
+
+        $advances = EmployeeAdvance::where('company_id', $companyId)
+            ->where('employee_id', $employeeId)
+            ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+            ->orderByDesc('id')
+            ->get();
+
+        $loanDeductions = LoanDeduction::where('company_id', $companyId)
+            ->where('employee_id', $employeeId)
+            ->orderBy('payroll_month')
+            ->get()
+            ->groupBy('loan_id');
+
+        $advanceDeductions = AdvanceDeduction::where('company_id', $companyId)
+            ->where('employee_id', $employeeId)
+            ->orderBy('payroll_month')
+            ->get()
+            ->groupBy('advance_id');
+
+        $currency = PayrollConfig::where('company_id', $companyId)->value('currency') ?? 'AED';
+
+        $html = view('pdf.loan-advance-statement', [
+            'employee' => $employee,
+            'loans' => $loans,
+            'advances' => $advances,
+            'loanDeductions' => $loanDeductions,
+            'advanceDeductions' => $advanceDeductions,
+            'currency' => $currency,
+            'activeLoanCount' => $loans->where('status', 'active')->count(),
+            'activeAdvanceCount' => $advances->where('status', 'active')->count(),
+            'completedLoanCount' => $loans->where('status', 'completed')->count(),
+            'completedAdvanceCount' => $advances->where('status', 'completed')->count(),
+        ])->render();
+
+        return response($html)->header('Content-Type', 'text/html');
     }
 
     // ── Report Export ──

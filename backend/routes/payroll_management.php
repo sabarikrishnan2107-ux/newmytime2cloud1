@@ -26,10 +26,14 @@ Route::delete('payroll-management/adjustments/{id}', [PayrollManagementControlle
 // Loans
 Route::get('payroll-management/loans', [PayrollManagementController::class, 'loans']);
 Route::post('payroll-management/loans', [PayrollManagementController::class, 'storeLoan']);
+Route::put('payroll-management/loans/{id}', [PayrollManagementController::class, 'updateLoan']);
+Route::delete('payroll-management/loans/{id}', [PayrollManagementController::class, 'deleteLoan']);
 
 // Advances
 Route::get('payroll-management/advances', [PayrollManagementController::class, 'advances']);
 Route::post('payroll-management/advances', [PayrollManagementController::class, 'storeAdvance']);
+Route::put('payroll-management/advances/{id}', [PayrollManagementController::class, 'updateAdvance']);
+Route::delete('payroll-management/advances/{id}', [PayrollManagementController::class, 'deleteAdvance']);
 
 // Batches
 Route::get('payroll-management/batches', [PayrollManagementController::class, 'batches']);
@@ -75,6 +79,9 @@ Route::get('payroll-management/staff-payslips', function (\Illuminate\Http\Reque
 // Payslip
 Route::get('payroll-management/payslip/{recordId}', [PayrollManagementController::class, 'downloadPayslip']);
 Route::get('payroll-management/payslips-bulk', [PayrollManagementController::class, 'bulkPayslips']);
+
+// Loan & Advance Statement
+Route::get('payroll-management/loan-advance-statement/{employeeId}', [PayrollManagementController::class, 'loanAdvanceStatement']);
 
 // Geo-Fence Locations (Setup)
 Route::get('geofence-locations', function (\Illuminate\Http\Request $request) {

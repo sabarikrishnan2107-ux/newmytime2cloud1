@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
-import { Plus, Landmark, HandCoins, X, Edit, Trash, Search, RotateCcw, Wallet, CheckCircle, AlertCircle, Calendar, TrendingUp, Building2, Briefcase, MapPin, Printer } from "lucide-react";
+import { Plus, Landmark, HandCoins, X, Edit, Trash, Search, RotateCcw, Wallet, CheckCircle, AlertCircle, Calendar, TrendingUp, Building2, Briefcase, MapPin, Download } from "lucide-react";
 import DateRangeSelect from "@/components/ui/DateRange";
 import MonthPicker from "@/components/ui/MonthPicker";
 import { getUser } from "@/config";
@@ -392,6 +392,21 @@ export default function LoansAdvances() {
   const [employees, setEmployees] = useState([]);
   const [loanForm, setLoanForm] = useState(emptyLoanForm);
   const [advForm, setAdvForm] = useState(emptyAdvForm);
+
+  useEffect(() => {
+    const amt = parseFloat(loanForm.loan_amount);
+    const inst = parseFloat(loanForm.monthly_installment);
+    if (!loanForm.start_month || !amt || !inst || inst <= 0) return;
+    const months = Math.ceil(amt / inst);
+    if (months < 1) return;
+    const [y, m] = loanForm.start_month.split("-").map(Number);
+    if (!y || !m) return;
+    const d = new Date(y, m - 1 + (months - 1), 1);
+    const computed = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    if (computed !== loanForm.end_month) {
+      setLoanForm(prev => ({ ...prev, end_month: computed }));
+    }
+  }, [loanForm.loan_amount, loanForm.monthly_installment, loanForm.start_month]);
   const [saving, setSaving] = useState(false);
   const [editingLoanId, setEditingLoanId] = useState(null);
   const [editingAdvId, setEditingAdvId] = useState(null);
@@ -862,18 +877,14 @@ export default function LoansAdvances() {
                           </div>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
-                          <button title="Print / PDF" onClick={() => printLoanOrAdvance({
-                            kind: "loan", item: l, employee: emp,
-                            totalInstallments, installmentsPaid, installmentsLeft, paidPercent, lastDeduction, nextDeduction,
-                            companyLogoUrl, companyName,
-                            monthLabelOf: (i) => {
-                              if (!/^\d{4}-\d{2}/.test(l.startMonth || "")) return `Month ${i + 1}`;
-                              const [y, m] = l.startMonth.split("-").map(Number);
-                              const d = new Date(y, m - 1 + i, 1);
-                              return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-                            }
-                          })} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-primary transition">
-                            <Printer className="h-4 w-4" />
+                          <button title="Download PDF" onClick={async () => {
+                            try {
+                              const params = await buildQueryParams({});
+                              const url = `${api.defaults.baseURL}/payroll-management/loan-advance-statement/${l.employee_id}?company_id=${params.company_id}`;
+                              window.open(url, "_blank");
+                            } catch (e) { alert("Failed to open statement"); }
+                          }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-primary transition">
+                            <Download className="h-4 w-4" />
                           </button>
                           <button title="Edit" onClick={() => {
                             setEditingLoanId(l.id);
@@ -975,54 +986,6 @@ export default function LoansAdvances() {
                           </div>
                         </div>
 
-                        {/* Installment bars */}
-                        <div className="pt-4 border-t border-gray-100 dark:border-white/5">
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Monthly Installments</span>
-                            <span className="text-[10px] text-gray-400">Cumulative: <span className="font-bold text-gray-700 dark:text-gray-200">{(installmentsPaid * l.monthlyInstallment).toLocaleString()}</span></span>
-                          </div>
-                          <div className="flex items-end gap-1 h-16 mt-2">
-                            {Array.from({ length: totalInstallments }, (_, i) => {
-                              const isPaid = i < installmentsPaid;
-                              const isNext = i === installmentsPaid && installmentsLeft > 0;
-                              const monthLabel = (() => {
-                                if (!/^\d{4}-\d{2}/.test(l.startMonth || "")) return `${i + 1}`;
-                                const [y, m] = l.startMonth.split("-").map(Number);
-                                const d = new Date(y, m - 1 + i, 1);
-                                return d.toLocaleDateString("en-US", { month: "short" });
-                              })();
-                              return (
-                                <div key={i} className="flex-1 flex flex-col items-center gap-1" title={`${monthLabel}: ${l.monthlyInstallment.toLocaleString()} (${isPaid ? "Paid" : isNext ? "Next" : "Upcoming"})`}>
-                                  <div className={`w-full rounded-t transition-all hover:opacity-80 ${
-                                    isPaid ? "bg-gradient-to-t from-emerald-600 to-emerald-400"
-                                    : isNext ? "bg-gradient-to-t from-amber-600 to-amber-400 ring-2 ring-amber-300 dark:ring-amber-500/30"
-                                    : "bg-gradient-to-t from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-800"
-                                  }`} style={{ height: "100%" }}></div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <div className="flex items-center gap-1 mt-1">
-                            {Array.from({ length: totalInstallments }, (_, i) => {
-                              const monthLabel = (() => {
-                                if (!/^\d{4}-\d{2}/.test(l.startMonth || "")) return `${i + 1}`;
-                                const [y, m] = l.startMonth.split("-").map(Number);
-                                const d = new Date(y, m - 1 + i, 1);
-                                return d.toLocaleDateString("en-US", { month: "short" });
-                              })();
-                              return (
-                                <div key={i} className="flex-1 text-center text-[9px] text-gray-400 truncate" title={monthLabel}>
-                                  {totalInstallments <= 12 ? monthLabel : i + 1}
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <div className="flex items-center gap-3 mt-3 text-[10px]">
-                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-emerald-600 to-emerald-400"></span><span className="text-gray-500">Paid</span></span>
-                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-amber-600 to-amber-400"></span><span className="text-gray-500">Next</span></span>
-                            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-sm bg-gradient-to-t from-gray-300 to-gray-200 dark:from-gray-700 dark:to-gray-800"></span><span className="text-gray-500">Upcoming</span></span>
-                          </div>
-                        </div>
                       </div>
 
                       {/* Two-column: Schedule + Summary */}
@@ -1339,19 +1302,14 @@ export default function LoansAdvances() {
                           </div>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
-                          <button title="Print / PDF" onClick={() => printLoanOrAdvance({
-                            kind: "advance", item: a, employee: emp,
-                            totalInstallments: recoveriesTotal, installmentsPaid: recoveriesDone, installmentsLeft: recoveriesLeft, paidPercent, lastDeduction, nextDeduction,
-                            companyLogoUrl, companyName,
-                            monthLabelOf: (i) => {
-                              if (!a.issueDate) return `Month ${i + 1}`;
-                              const d = new Date(a.issueDate);
-                              if (isNaN(d.getTime())) return `Month ${i + 1}`;
-                              d.setMonth(d.getMonth() + i);
-                              return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
-                            }
-                          })} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-amber-500 transition">
-                            <Printer className="h-4 w-4" />
+                          <button title="Download PDF" onClick={async () => {
+                            try {
+                              const params = await buildQueryParams({});
+                              const url = `${api.defaults.baseURL}/payroll-management/loan-advance-statement/${a.employee_id}?company_id=${params.company_id}`;
+                              window.open(url, "_blank");
+                            } catch (e) { alert("Failed to open statement"); }
+                          }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-amber-500 transition">
+                            <Download className="h-4 w-4" />
                           </button>
                           <button title="Edit" onClick={() => {
                             setEditingAdvId(a.id);

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
-import { Search, Plus, Eye, Edit, X } from "lucide-react";
+import { Search, Plus, Eye, Edit, X, ArrowLeft, Wallet, TrendingUp, Calendar, Award } from "lucide-react";
 import ProfilePicture from "@/components/ProfilePicture";
 
 const emptyForm = {
@@ -13,6 +13,8 @@ const emptyForm = {
 
 export default function SalaryStructures() {
   const [search, setSearch] = useState("");
+  const [openStructure, setOpenStructure] = useState(null);
+  const [activeTab, setActiveTab] = useState("payroll");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [structures, setStructures] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -80,8 +82,178 @@ export default function SalaryStructures() {
     s.employeeName.toLowerCase().includes(search.toLowerCase()) || s.employeeId.toLowerCase().includes(search.toLowerCase())
   );
 
+  // Inline detail view (shown when a row is clicked)
+  const renderDetailView = () => {
+    const s = openStructure;
+    const totalAllowances = s.houseAllowance + s.transportAllowance + s.foodAllowance + s.medicalAllowance + s.otherAllowance;
+    return (
+      <div className="space-y-5">
+        {/* Top bar with back button */}
+        <div className="flex items-center justify-between gap-3">
+          <button onClick={() => setOpenStructure(null)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition">
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to list
+          </button>
+          <button
+            onClick={() => {
+              setEditingId(s.id);
+              setForm({
+                employee_id: String(s.employee_id), effective_from: s.effective_from || "", effective_to: s.effective_to || "",
+                salary_mode: s.salary_mode || "gross_based",
+                basic_salary: String(s.basicSalary), house_allowance: String(s.houseAllowance),
+                transport_allowance: String(s.transportAllowance), food_allowance: String(s.foodAllowance),
+                medical_allowance: String(s.medicalAllowance), other_allowance: String(s.otherAllowance),
+                overtime_eligible: s.overtimeEligible, loan_deduction: !!s.loan_deduction, advance_deduction: !!s.advance_deduction,
+              });
+              const emp = employees.find(e => String(e.id) === String(s.employee_id));
+              setSelectedBranch(emp?.branch_id ? String(emp.branch_id) : (s.employee?.branch?.id ? String(s.employee.branch.id) : ""));
+              setSelectedDept(emp?.department_id ? String(emp.department_id) : (s.employee?.department?.id ? String(s.employee.department.id) : ""));
+              setDialogOpen(true);
+            }}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-blue-600 transition shadow-sm">
+            <Edit className="h-3.5 w-3.5" /> Edit Structure
+          </button>
+        </div>
+
+        {/* Two-column layout: sidebar list + detail */}
+        <div className="flex gap-5">
+          {/* Left sidebar — employee list */}
+          <div className="w-72 shrink-0 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 flex flex-col overflow-hidden self-start max-h-[calc(100vh-200px)]">
+            <div className="p-3 border-b border-gray-100 dark:border-white/5">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  placeholder="Select Branch"
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
+                />
+              </div>
+            </div>
+            <ul className="flex-1 overflow-y-auto divide-y divide-gray-100 dark:divide-white/5">
+              {filtered.map(item => {
+                const isSelected = openStructure && openStructure.id === item.id;
+                return (
+                  <li
+                    key={item.id}
+                    onClick={() => setOpenStructure(item)}
+                    className={`p-3 flex items-center gap-3 cursor-pointer transition-colors ${
+                      isSelected
+                        ? "bg-primary/10 dark:bg-primary/15"
+                        : "hover:bg-gray-50 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    <div className="size-9 rounded-full overflow-hidden border border-gray-200 dark:border-white/10 flex items-center justify-center shrink-0">
+                      <ProfilePicture src={item.profilePicture} />
+                    </div>
+                    <div className="min-w-0">
+                      <div className={`text-sm font-medium truncate ${isSelected ? "text-primary" : "text-gray-800 dark:text-gray-100"}`}>{item.employeeName}</div>
+                      <div className="text-[11px] text-gray-400">{item.employeeId}</div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* Right — salary structure detail */}
+          <div className="flex-1 space-y-4">
+            <div>
+              <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Salary Structure</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Salary components, allowances, and deduction settings.</p>
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Profile + Summary card */}
+            <div className="lg:col-span-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-6">
+              <div className="flex items-center gap-4">
+                <div className="size-16 rounded-full overflow-hidden border-2 border-gray-200 dark:border-white/10 flex items-center justify-center">
+                  <ProfilePicture src={s.profilePicture} />
+                </div>
+                <div className="flex-1">
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">{s.employeeName}</h2>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Dept: {s.department || "—"}</p>
+                  <div className="mt-1 inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"><span className="material-symbols-outlined text-[14px]">badge</span>ID: {s.employeeId}</div>
+                </div>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${s.status === "active" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.status}</span>
+              </div>
+
+              <hr className="my-5 border-gray-100 dark:border-white/5" />
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Basic Salary</div>
+                  <div className="mt-1 text-xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">{s.basicSalary.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Allowances</div>
+                  <div className="mt-1 text-xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">{totalAllowances.toLocaleString()}</div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-primary font-bold">Gross Salary</div>
+                  <div className="mt-1 text-xl font-bold text-primary tabular-nums">{s.grossSalary.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Side card — Salary Mode */}
+            <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center"><Wallet className="h-4 w-4 text-primary" /></div>
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500">Mode</span>
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-gray-800 dark:text-gray-100 capitalize">{(s.salary_mode || "gross_based").replace(/_/g, " ")}</div>
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.overtimeEligible ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>OT {s.overtimeEligible ? "Yes" : "No"}</span>
+              </div>
+            </div>
+
+            {/* Allowance breakdown — full width */}
+            <div className="lg:col-span-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-6">
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4">Allowance Breakdown</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">House Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.houseAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">Transport Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.transportAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">Food Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.foodAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">Medical Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.medicalAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5 sm:col-span-2"><span className="text-gray-500 dark:text-gray-400">Other Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.otherAllowance.toLocaleString()}</span></div>
+              </div>
+            </div>
+
+            {/* Side cards — Deductions + Period */}
+            <div className="space-y-4">
+              <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="size-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-amber-500" /></div>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Deductions</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">Loan Deduction</span><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.loan_deduction ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.loan_deduction ? "On" : "Off"}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">Advance Deduction</span><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.advance_deduction ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.advance_deduction ? "On" : "Off"}</span></div>
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="size-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><Calendar className="h-4 w-4 text-blue-500" /></div>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Effective Period</span>
+                </div>
+                <div className="space-y-2 text-xs">
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">From</span><span className="font-semibold text-gray-800 dark:text-gray-100">{s.effective_from || "—"}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">To</span><span className="font-semibold text-gray-800 dark:text-gray-100">{s.effective_to || "—"}</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </div>
+        </div>
+
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
+      {openStructure ? renderDetailView() : (<>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -121,7 +293,11 @@ export default function SalaryStructures() {
               {filtered.map(s => {
                 const totalAllowances = s.houseAllowance + s.transportAllowance + s.foodAllowance + s.medicalAllowance + s.otherAllowance;
                 return (
-                  <tr key={s.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition text-xs text-gray-600 dark:text-gray-300">
+                  <tr
+                    key={s.id}
+                    onClick={() => { setOpenStructure(s); setActiveTab("payroll"); }}
+                    className="hover:bg-gray-50 dark:hover:bg-white/5 transition text-xs text-gray-600 dark:text-gray-300 cursor-pointer"
+                  >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="size-9 min-w-[36px] rounded-full overflow-hidden border border-gray-200 dark:border-white/10 flex items-center justify-center">
@@ -147,7 +323,7 @@ export default function SalaryStructures() {
                         {s.status}
                       </span>
                     </td>
-                    <td className="px-3 py-3">
+                    <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-1">
                         <button title="View" onClick={() => setViewItem(s)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-primary transition"><Eye className="h-3.5 w-3.5" /></button>
                         <button title="Edit" onClick={() => {
@@ -177,6 +353,7 @@ export default function SalaryStructures() {
           </table>
         </div>
       </div>
+      </>)}
 
       {/* Add Structure Dialog */}
       {dialogOpen && (

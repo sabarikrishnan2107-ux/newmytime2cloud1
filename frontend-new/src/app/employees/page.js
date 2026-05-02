@@ -30,7 +30,11 @@ export default function EmployeesPage() {
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
-    const [perPage, setPerPage] = useState(10);
+    const [perPage, setPerPage] = useState(() => {
+        if (typeof window === 'undefined') return 10;
+        const rows = Math.floor((window.innerHeight - 220) / 70);
+        return Math.max(10, Math.min(100, rows));
+    });
     const [total, setTotalEmployees] = useState(0);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -117,7 +121,7 @@ export default function EmployeesPage() {
     }
 
     return (
-        <div className='p-3 sm:p-4 pb-24 overflow-y-auto max-h-[calc(100vh-100px)]'>
+        <div className='p-3 sm:p-4 pb-4 overflow-y-auto max-h-[calc(100vh-100px)]'>
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 mb-6">
                 <h1 className="text-xl sm:text-2xl font-extrabold text-gray-600 dark:text-gray-300 flex items-center shrink-0">
                     Employees
@@ -187,7 +191,7 @@ export default function EmployeesPage() {
                             setPerPage(n);
                             setCurrentPage(1);
                         }}
-                        pageSizeOptions={[10, 25, 50]}
+                        pageSizeOptions={[10, 25, 50, 100]}
                     />
                 }
             />
