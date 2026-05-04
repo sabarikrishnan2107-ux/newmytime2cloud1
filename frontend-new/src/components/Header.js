@@ -131,6 +131,7 @@ export default function Header() {
     { name: 'DASHBOARD', href: '/' },
     { name: 'EMPLOYEES', href: '/employees' },
     { name: 'ATTENDANCE', href: '/shift' },
+    { name: 'ACCESS CONTROL', href: '/access_control' },
     { name: 'PAYROLL', href: '/payslips' },
     { name: 'VISITORS', href: '/visitor' },
     { name: 'REPORTS', href: '/report' },
@@ -149,19 +150,21 @@ export default function Header() {
   return (
     <>
       <LiveAttendanceNotifier />
-      <header className="flex items-center justify-between bg-white dark:bg-[#293548] p-3 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.12)] dark:shadow-[0_12px_30px_-4px_rgba(0,0,0,0.9)] ring-1 ring-slate-200 dark:ring-white/10 z-20">
+      <header className="flex items-center justify-between bg-white dark:bg-[#293548] px-4 py-3 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.06)] dark:shadow-[0_12px_30px_-4px_rgba(0,0,0,0.9)] z-20">
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
-            <img alt="MyTime Cloud logo" className="h-32 w-auto object-contain -my-8" src="/logo22.png" />
+            <img alt="MyTime Cloud logo" className="h-32 w-auto object-contain -my-9" src="/logo22.png" />
           </div>
         </div>
 
         <nav className="hidden md:flex items-center space-x-6 lg:space-x-10 xl:space-x-14">
           {filteredLinks.map((link) => {
-            const isActive = link.href === pathname;
+            const isActive = link.href === "/"
+              ? pathname === "/"
+              : pathname === link.href || pathname.startsWith(link.href + "/");
             const baseClasses = "text-sm font-medium transition-colors";
             const activeClasses = "text-purple-600 dark:text-purple-400 rounded-md";
-            const inactiveClasses = "text-slate-600 dark:text-gray-300 hover:text-purple-600 dark:hover:text-purple-400";
+            const inactiveClasses = "text-slate-600 dark:text-white hover:text-purple-600 dark:hover:text-purple-400";
 
             return (
               <Link

@@ -42,6 +42,11 @@ const attendanceMenu = [
   // { href: "/access_control_logs", icon: Lock, label: "Access Control Logs" },
 ];
 
+const accessControlMenu = [
+  { href: "/access_control", icon: LayoutDashboard, label: "Dashboard" },
+  { href: "/access_control_logs", icon: History, label: "Logs" },
+];
+
 const leaveMenu = [
   { href: "/leave-dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/leave-dashboard/calendar", icon: CalendarDays, label: "Team Calendar" },
@@ -142,6 +147,8 @@ export const leftNavLinks = {
   "/leave-dashboard/balances": leaveMenu,
   "/leave-dashboard/reports": leaveMenu,
   // "/access_control_logs": attendanceMenu,
+  "/access_control": accessControlMenu,
+  "/access_control_logs": accessControlMenu,
 
   "/setup": companyMenu,
   "/company": companyMenu,

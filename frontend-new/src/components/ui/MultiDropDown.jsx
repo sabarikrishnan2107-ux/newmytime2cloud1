@@ -74,7 +74,7 @@ export default function MultiDropDown({
   const getDisplayContent = () => {
     if (selectedItems.length === 0) {
       return (
-        <span className="text-gray-600 dark:text-slate-300">{placeholder}</span>
+        <span className="text-gray-800 dark:text-white">{placeholder}</span>
       );
     }
 
@@ -148,7 +148,7 @@ export default function MultiDropDown({
           )}
         >
           {getDisplayContent()}
-          <span className="material-icons ml-2 shrink-0  text-gray-700 dark:text-slate-300">
+          <span className="material-icons ml-2 shrink-0  text-gray-800 dark:text-white">
             expand_more
           </span>
         </Button>

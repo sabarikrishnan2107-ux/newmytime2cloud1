@@ -45,7 +45,7 @@ const AdminDashboard = () => {
   return (
     <div className="p-4 pb-24 overflow-y-auto max-h-[calc(100vh-100px)]">
       <div className="px-2 mb-4 flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-600 dark:text-gray-300 font-display tracking-tight">
+        <h2 className="text-2xl font-extrabold text-gray-700 dark:text-gray-100 font-display tracking-tight">
           Executive Overview
         </h2>
 

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { leftNavLinks } from '../lib/menuData';
-import { LogOut, User } from "lucide-react";
+import { LogOut } from "lucide-react";
 import { getUser } from "@/config";
 import { getCompanyLogo } from "@/lib/endpoint/company";
 
@@ -32,9 +32,7 @@ export default function LeftMenu() {
         if (cancelled) return;
         const logo = data?.logo || data?.url || data?.path || (typeof data === "string" ? data : null);
         if (logo) setCompanyLogo(logo);
-      } catch (_) {
-        // ignore — fallback to initials
-      }
+      } catch (_) { /* ignore */ }
     })();
     return () => { cancelled = true; };
   }, [user?.company_id]);
@@ -84,10 +82,12 @@ export default function LeftMenu() {
 
   return (
     <aside
-      className="group relative w-20 hover:w-56 border-r border-gray-700 bg-slate-900
-                 flex flex-col py-4 transition-all duration-300 ease-in-out overflow-y-auto max-h-[calc(100vh-50px)]"
+      className="group relative w-20 hover:w-60 border-r border-gray-200 dark:border-slate-800
+                 bg-white dark:bg-slate-900
+                 flex flex-col py-4 transition-all duration-300 ease-in-out overflow-y-auto max-h-[calc(100vh-50px)]
+                 shadow-[1px_0_8px_-4px_rgba(0,0,0,0.1)] dark:shadow-none"
     >
-      <nav className="flex flex-col items-center gap-3 mt-2">
+      <nav className="flex flex-col items-center gap-1.5 px-2.5">
         {links.map((link) => {
           const isActive = pathname === link.href;
           const Icon = link.icon;
@@ -95,18 +95,23 @@ export default function LeftMenu() {
             <Link
               key={link.label}
               href={link.href}
-              className={`flex items-center w-14 group-hover:w-[90%] rounded-xl px-0 group-hover:px-4 py-3
-                transition-all duration-300 ease-in-out
+              title={link.label}
+              className={`relative flex items-center w-14 group-hover:w-full rounded-xl px-0 group-hover:px-3.5 py-3.5
+                transition-all duration-300 ease-in-out overflow-hidden
                 ${isActive
-                  ? "bg-primary text-white rounded-xl"
-                  : "text-gray-300 hover:bg-primary hover:text-white"
+                  ? "bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg shadow-primary/20"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-primary dark:hover:text-white"
                 }`}
             >
-              <div className="flex justify-center w-full group-hover:w-8 group-hover:justify-start transition-all duration-300">
-                <Icon size={22} strokeWidth={1.8} />
+              {isActive && (
+                <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-r-full bg-white/80" />
+              )}
+
+              <div className="flex justify-center w-14 group-hover:w-8 group-hover:justify-start shrink-0 transition-all duration-300">
+                <Icon size={24} strokeWidth={isActive ? 2.2 : 1.8} />
               </div>
               <span className="overflow-hidden w-0 opacity-0 group-hover:w-auto group-hover:opacity-100
-                transition-all duration-300 whitespace-nowrap text-sm font-medium ml-0 group-hover:ml-2">
+                transition-all duration-300 whitespace-nowrap text-[15px] font-medium ml-0 group-hover:ml-2.5">
                 {link.label}
               </span>
             </Link>
@@ -114,36 +119,35 @@ export default function LeftMenu() {
         })}
       </nav>
 
-      {/* Bottom section: avatar + logout icon */}
-      <div className="mt-auto mb-4 px-3">
-        <div className="flex items-center justify-center w-14 group-hover:w-full group-hover:justify-start group-hover:gap-3 rounded-xl px-0 group-hover:px-3 py-2 transition-all duration-300 ease-in-out">
-          {avatar ? (
-            <img
-              src={avatar}
-              alt={displayName}
-              title={`${displayName} — click to logout`}
-              onClick={handleLogout}
-              className="w-10 h-10 rounded-full object-cover border-2 border-slate-700 shrink-0 cursor-pointer hover:border-red-400 hover:opacity-80 transition"
-              onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
-            />
-          ) : null}
-          <div
-            title={`${displayName} — click to logout`}
-            onClick={handleLogout}
-            className={`w-10 h-10 rounded-full bg-gradient-to-br from-primary/80 to-purple-600 text-white flex items-center justify-center shrink-0 text-sm font-bold cursor-pointer hover:from-red-500 hover:to-red-700 transition ${avatar ? 'hidden' : ''}`}
-          >
-            {initials}
+      {/* Logo + Logout at bottom */}
+      <div className="mt-auto px-2.5 pb-2">
+        <div
+          onClick={handleLogout}
+          title="Click to logout"
+          className="flex items-center w-14 group-hover:w-full rounded-xl px-0 group-hover:px-3 py-2.5 cursor-pointer transition-all duration-300 ease-in-out hover:bg-red-500/10"
+        >
+          <div className="flex justify-center w-14 group-hover:w-10 shrink-0 transition-all duration-300">
+            {avatar ? (
+              <img
+                src={avatar}
+                alt={displayName}
+                className="w-9 h-9 rounded-full object-cover ring-2 ring-slate-200 dark:ring-slate-700 bg-white"
+                onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+              />
+            ) : null}
+            <div
+              className={`w-9 h-9 rounded-full bg-gradient-to-br from-primary/80 to-purple-600 text-white flex items-center justify-center text-xs font-bold ring-2 ring-slate-200 dark:ring-slate-700 ${avatar ? 'hidden' : ''}`}
+            >
+              {initials}
+            </div>
           </div>
-          <button
-            type="button"
-            onClick={handleLogout}
-            title="Log out"
-            className="hidden group-hover:flex items-center px-3 h-9 rounded-lg text-slate-300 hover:bg-red-500/10 hover:text-red-400 transition-colors text-sm font-medium"
-          >
-            <span>Logout</span>
-          </button>
+          <span className="overflow-hidden w-0 opacity-0 group-hover:w-auto group-hover:opacity-100
+            transition-all duration-300 whitespace-nowrap text-[15px] font-medium text-slate-600 dark:text-slate-200 ml-0 group-hover:ml-2.5">
+            Logout
+          </span>
         </div>
       </div>
+
     </aside>
   );
 }

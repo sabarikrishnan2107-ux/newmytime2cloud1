@@ -1,5 +1,68 @@
 import { getAttendanceCount } from "@/lib/endpoint/dashboard";
 import { useEffect, useState } from "react";
+import {
+  Users,
+  UserCheck,
+  UserX,
+  CalendarDays,
+  Plane,
+  ServerOff,
+  AlertTriangle,
+} from "lucide-react";
+
+const ACCENTS = {
+  neutral: { line: "#64748b", glow: "rgba(100,116,139,.45)", iconBg: "rgba(100,116,139,.18)", iconFg: "#94a3b8", label: "#94a3b8" },
+  green:   { line: "#22c55e", glow: "rgba(34,197,94,.55)",    iconBg: "rgba(34,197,94,.20)",    iconFg: "#4ade80", label: "#4ade80" },
+  red:     { line: "#ef4444", glow: "rgba(239,68,68,.55)",    iconBg: "rgba(239,68,68,.22)",    iconFg: "#fca5a5", label: "#fb7185" },
+  purple:  { line: "#a855f7", glow: "rgba(168,85,247,.55)",   iconBg: "rgba(168,85,247,.20)",   iconFg: "#c084fc", label: "#c084fc" },
+  indigo:  { line: "#6366f1", glow: "rgba(99,102,241,.55)",   iconBg: "rgba(99,102,241,.20)",   iconFg: "#818cf8", label: "#a5b4fc" },
+  orange:  { line: "#f97316", glow: "rgba(249,115,22,.55)",   iconBg: "rgba(249,115,22,.20)",   iconFg: "#fb923c", label: "#fdba74" },
+};
+
+function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert = false }) {
+  const a = ACCENTS[accent] || ACCENTS.neutral;
+  return (
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1a2238] dark:bg-[#0c1220]">
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className="text-[11px] font-semibold tracking-[0.14em] uppercase"
+          style={{ color: a.label }}
+        >
+          {label}
+        </p>
+        <div
+          className="grid place-items-center w-9 h-9 rounded-[10px]"
+          style={{ background: a.iconBg, color: a.iconFg }}
+        >
+          <Icon className="h-4 w-4" strokeWidth={2} />
+        </div>
+      </div>
+
+      <div className="mt-2 flex items-end gap-2">
+        <span className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums text-gray-900 dark:text-white">
+          {value}
+        </span>
+        {badge && (
+          <span
+            className="text-[10px] font-semibold px-1.5 py-0.5 rounded mb-1"
+            style={{ color: a.iconFg, background: a.iconBg }}
+          >
+            {badge}
+          </span>
+        )}
+        {alert && (
+          <span
+            className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded mb-1"
+            style={{ color: a.iconFg, background: a.iconBg }}
+          >
+            <AlertTriangle className="h-3 w-3" /> Alert
+          </span>
+        )}
+      </div>
+
+    </div>
+  );
+}
 
 function Stats({ branch_ids, department_ids }) {
   const [stats, setStats] = useState({
@@ -19,100 +82,50 @@ function Stats({ branch_ids, department_ids }) {
     fetchAttendanceCounts();
   }, [branch_ids, department_ids]);
 
+  const presentPct = stats.employeeCount > 0 ? Math.round((stats.presentCount / stats.employeeCount) * 100) : null;
+  const absentPct = stats.employeeCount > 0 ? Math.round((stats.absentCount / stats.employeeCount) * 100) : null;
+
   return (
     <>
-      <div className="glass-card p-4 rounded-xl relative overflow-hidden group">
-        <p className="text-slate-400 text-xs font-medium mb-1">
-          Total Headcount
-        </p>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">
-            {stats.employeeCount}
-          </span>
-        </div>
-      </div>
-      <div className="glass-card p-4 rounded-xl relative overflow-hidden group border-l-2 border-l-emerald-500/50">
-        <p className="text-emerald-400/80 text-xs font-medium mb-1">
-          Present Today
-        </p>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">
-            {stats.presentCount}
-          </span>
-          {stats.employeeCount > 0 && (
-            <span className="text-[10px] text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded flex items-center mb-1">
-              {Math.round((stats.presentCount / stats.employeeCount) * 100)}%
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="glass-card p-4 rounded-xl relative overflow-hidden group">
-        <p className="text-rose-400/80 text-xs font-medium mb-1">
-          Unplanned Absence
-        </p>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">
-            {stats.absentCount}
-          </span>
-          {stats.employeeCount > 0 && (
-            <span className="text-[10px] text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded flex items-center mb-1">
-              {Math.round((stats.absentCount / stats.employeeCount) * 100)}%
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="glass-card p-4 rounded-xl relative overflow-hidden group">
-        <p className="text-purple-400/80 text-xs font-medium mb-1">
-          Scheduled Leave
-        </p>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">
-            {stats.leaveCount}
-          </span>
-        </div>
-      </div>
-      <div className="glass-card p-4 rounded-xl relative overflow-hidden group">
-        <p className="text-indigo-300 text-xs font-medium mb-1">Vacation</p>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">
-            {stats.vacationCount}
-          </span>
-        </div>
-      </div>
-      {/* <div className="glass-card p-4 rounded-xl relative overflow-hidden group border-l-2 border-l-amber-500/50">
-        <p className="text-amber-400/80 text-xs font-medium mb-1">
-          Late Arrivals
-        </p>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">
-            {stats.presentCount}
-          </span>
-          <span className="text-[10px] text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded flex items-center mb-1">
-            <span className="material-symbols-outlined text-[10px] mr-0.5">
-              arrow_upward
-            </span>
-            8%
-          </span>
-        </div>
-      </div> */}
-      <div className={`glass-card p-4 rounded-xl relative overflow-hidden group ${stats.offlineDevices > 0 ? "border-l-2 border-l-orange-500/50" : ""}`}>
-        <p className="text-orange-400/80 text-xs font-medium mb-1">
-          Offline Nodes
-        </p>
-        <div className="flex items-end gap-2">
-          <span className="text-2xl font-bold text-gray-600 dark:text-gray-300 font-display">
-            {stats.offlineDevices}
-          </span>
-          {stats.offlineDevices > 0 && (
-            <span className="text-[10px] text-orange-400 bg-orange-500/10 px-1.5 py-0.5 rounded flex items-center mb-1">
-              <span className="material-symbols-outlined text-[10px] mr-0.5">
-                warning
-              </span>
-              Alert
-            </span>
-          )}
-        </div>
-      </div>
+      <StatCard
+        label="Total Headcount"
+        value={stats.employeeCount}
+        icon={Users}
+        accent="neutral"
+      />
+      <StatCard
+        label="Present Today"
+        value={stats.presentCount}
+        icon={UserCheck}
+        accent="green"
+        badge={presentPct !== null ? `${presentPct}%` : null}
+      />
+      <StatCard
+        label="Unplanned Absence"
+        value={stats.absentCount}
+        icon={UserX}
+        accent="red"
+        badge={absentPct !== null ? `${absentPct}%` : null}
+      />
+      <StatCard
+        label="Scheduled Leave"
+        value={stats.leaveCount}
+        icon={CalendarDays}
+        accent="purple"
+      />
+      <StatCard
+        label="Vacation"
+        value={stats.vacationCount}
+        icon={Plane}
+        accent="indigo"
+      />
+      <StatCard
+        label="Offline Nodes"
+        value={stats.offlineDevices}
+        icon={ServerOff}
+        accent="orange"
+        alert={stats.offlineDevices > 0}
+      />
     </>
   );
 }

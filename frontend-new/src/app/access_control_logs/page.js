@@ -61,10 +61,13 @@ export default function AttendanceTable() {
     };
 
     const fetchDevices = async () => {
-        if (!selectedBranch) return;
         try {
             let result = await getDeviceList(selectedBranch);
-            setDevices(result.map((e) => ({ name: e.name, id: e.device_id })));
+            const seen = new Set();
+            const list = (result || [])
+                .filter((e) => e?.device_id != null && !seen.has(e.device_id) && seen.add(e.device_id))
+                .map((e) => ({ name: e.name, id: e.device_id }));
+            setDevices(list);
         } catch (error) {
             setError(parseApiError(error));
         }
@@ -134,9 +137,9 @@ export default function AttendanceTable() {
     };
 
     return (
-        <>
+        <div className="px-6 py-6">
             <div className="flex flex-wrap items-center space-x-3 space-y-2 mb-6 sm:space-y-0">
-                <h1 className="text-2xl font-extrabold text-gray-900 flex items-center">
+                <h1 className="text-2xl font-extrabold text-gray-900 dark:text-gray-100 flex items-center">
                     {/* <User className="w-7 h-7 mr-3 text-indigo-600" /> */}
                     Access Control Logs
                 </h1>
@@ -250,6 +253,6 @@ export default function AttendanceTable() {
                     />
                 }
             />
-        </>
+        </div>
     );
 }

@@ -1,0 +1,184 @@
+"use client";
+
+import { useMemo } from "react";
+import { X } from "lucide-react";
+
+function isOut(l) {
+  const f = (l?.device?.function || "").toLowerCase();
+  const t = (l?.log_type || l?.LogType || "").toLowerCase();
+  if (f === "out" || t === "out") return true;
+  if (f === "in" || t === "in") return false;
+  const dev = String(l?.DeviceID || l?.device_id || l?.device?.device_id || "").toLowerCase();
+  return !dev.includes("in");
+}
+
+function fmtHM(mins) {
+  return `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
+}
+
+function StatBox({ label, value }) {
+  return (
+    <div className="rounded-md border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-center">
+      <div className="text-base font-bold text-slate-800 dark:text-white">{value}</div>
+      <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{label}</div>
+    </div>
+  );
+}
+
+function StatRow({ label, value }) {
+  return (
+    <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-1.5">
+      <span className="text-slate-600 dark:text-slate-300">{label}</span>
+      <span className="font-semibold text-slate-800 dark:text-white tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+export default function EmployeeLogsDialog({ open, onClose, employee, logs = [], loading = false }) {
+  if (!open) return null;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const isSameDayFmt = (raw) => {
+    if (!raw) return false;
+    const d = new Date(raw);
+    if (!isNaN(d.getTime())) return d.toISOString().slice(0, 10) === todayStr;
+    return String(raw).slice(0, 10) === todayStr;
+  };
+
+  // Today's IN/OUT for work time calc
+  const todayLogs = useMemo(() => logs.filter((l) => isSameDayFmt(l.edit_date || l.date)), [logs]);
+  const firstInToday = todayLogs
+    .filter((l) => !isOut(l))
+    .sort((a, b) => String(a.time).localeCompare(String(b.time)))[0]?.time;
+  const lastOutToday = todayLogs
+    .filter((l) => isOut(l))
+    .sort((a, b) => String(b.time).localeCompare(String(a.time)))[0]?.time;
+
+  const workMinutes = useMemo(() => {
+    if (!firstInToday || !lastOutToday) return 0;
+    const [h1, m1] = firstInToday.split(":").map(Number);
+    const [h2, m2] = lastOutToday.split(":").map(Number);
+    return Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
+  }, [firstInToday, lastOutToday]);
+
+  const workTime = fmtHM(workMinutes);
+  const remaining = Math.max(0, 9 * 60 - workMinutes);
+  const overTime = Math.max(0, workMinutes - 9 * 60);
+
+  // 10-day stats
+  const { presents, absence, incomplete, manualEntry } = useMemo(() => {
+    const dateSet = new Set();
+    logs.forEach((l) => {
+      const d = l.edit_date || l.date;
+      if (d) dateSet.add(d);
+    });
+    const presents = dateSet.size;
+    const absence = Math.max(0, 10 - presents);
+    const byDate = new Map();
+    logs.forEach((l) => {
+      const d = l.edit_date || l.date;
+      if (!d) return;
+      if (!byDate.has(d)) byDate.set(d, { hasIn: false, hasOut: false });
+      if (isOut(l)) byDate.get(d).hasOut = true;
+      else byDate.get(d).hasIn = true;
+    });
+    let inc = 0;
+    byDate.forEach((v) => { if (v.hasIn !== v.hasOut) inc += 1; });
+    const manualEntry = logs.filter((l) => String(l?.DeviceID || l?.device_id || "").toLowerCase() === "manual").length;
+    return { presents, absence, incomplete: inc, manualEntry };
+  }, [logs]);
+
+  const name = employee?.full_name || "Employee";
+  const profile = employee?.profile_picture && employee.profile_picture !== "undefined"
+    ? employee.profile_picture
+    : "/avatar-placeholder.png";
+
+  return (
+    <div
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/65"
+      onClick={onClose}
+    >
+      <div
+        className="w-[560px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex justify-end px-4 pt-3">
+          <button
+            onClick={onClose}
+            className="w-7 h-7 rounded-full flex items-center justify-center text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition"
+            title="Close"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <div className="grid grid-cols-[160px_1fr] gap-x-4 gap-y-3 px-4 pb-4">
+          {/* Left side: avatar + sidebar stats */}
+          <div className="flex flex-col items-center text-center">
+            <div className="w-20 h-20 rounded-full overflow-hidden ring-1 ring-slate-200 dark:ring-slate-700 bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+              <img
+                src={profile}
+                alt={name}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  if (!e.target.src.endsWith("/avatar-placeholder.png")) {
+                    e.target.src = "/avatar-placeholder.png";
+                  }
+                }}
+              />
+            </div>
+            <div className="mt-1.5 text-[13px] font-bold text-slate-800 dark:text-white uppercase tracking-wide">
+              {name}
+            </div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500">{employee?.designation?.title || "---"}</div>
+            <div className="text-[10px] text-slate-400 dark:text-slate-500">{employee?.department?.name || "---"}</div>
+
+            <div className="w-full text-xs space-y-2 text-slate-700 dark:text-slate-200 mt-3 text-left">
+              <StatRow label="Presents" value={presents} />
+              <StatRow label="Absence" value={absence} />
+              <StatRow label="Incomplete" value={incomplete} />
+              <StatRow label="Manual Entry" value={manualEntry} />
+              <StatRow label="Leaves" value={0} />
+              <StatRow label="Holidays" value={0} />
+            </div>
+          </div>
+
+          {/* Right side: stat cards + table */}
+          <div className="flex flex-col gap-3 min-w-0">
+            <div className="grid grid-cols-3 gap-3">
+              <StatBox label="Work Time" value={workTime} />
+              <StatBox label="Remaing Hours" value={fmtHM(remaining)} />
+              <StatBox label="OverTime" value={fmtHM(overTime)} />
+            </div>
+
+            <div className="text-[12px]">
+              <div className="grid grid-cols-[28px_1fr_60px_70px] gap-x-3 text-slate-500 dark:text-slate-400 font-semibold text-[11px] pb-1 border-b border-slate-100 dark:border-slate-800">
+                <div>#</div>
+                <div>Date Time</div>
+                <div>In/Out</div>
+                <div>Device</div>
+              </div>
+              {loading ? (
+                <div className="py-3 text-center text-slate-500 dark:text-slate-400">Loading…</div>
+              ) : logs.length === 0 ? (
+                <div className="py-3 text-center text-slate-500 dark:text-slate-400">No logs in last 10 days.</div>
+              ) : logs.slice(0, 10).map((log, i) => {
+                const out = isOut(log);
+                const label = out ? "Out" : "In";
+                const color = out ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400";
+                return (
+                  <div key={log.id || i} className="grid grid-cols-[28px_1fr_60px_70px] gap-x-3 py-1 text-slate-700 dark:text-slate-200 leading-tight">
+                    <div>{i + 1}</div>
+                    <div className="whitespace-nowrap">{log.date} {log.time}</div>
+                    <div className={`font-semibold ${color}`}>{label}</div>
+                    <div>{log?.device?.name || "—"}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

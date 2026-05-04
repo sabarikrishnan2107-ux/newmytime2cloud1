@@ -41,7 +41,7 @@ export default function DropDown({
           variant="outline"
           role="combobox"
           aria-expanded={itemOpen}
-          className="w-full justify-between text-gray-600 dark:text-slate-300 border border-border"
+          className="w-full justify-between text-gray-800 dark:text-white border border-border"
           {...props}
         >
           {itemName}

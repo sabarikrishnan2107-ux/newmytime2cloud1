@@ -168,6 +168,13 @@ export const getAccessControlReport = async (params = {}) => {
     return data;
 };
 
+export const getVisitorLogs = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/visitor-management/logs`, {
+        params: await buildQueryParams(params),
+    });
+    return data;
+};
+
 
 export const getEmployees = async (params = {}) => {
     const { data } = await axios.get(`${API_BASE}/employeev1`, { params: await buildQueryParams(params) });

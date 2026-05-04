@@ -26,7 +26,7 @@ export default function LayoutShell({ children }) {
   return (
     <>
       <Header />
-      <div className="flex flex-1">
+      <div className="flex flex-1 min-h-0">
         <LeftMenu />
         <MainContentWrapper>{children}</MainContentWrapper>
       </div>

@@ -10,6 +10,122 @@ const VisitorHub = () => {
   const [visitors, setVisitors] = useState([]);
   const [form, setForm] = useState({ first_name: "", phone_number: "", id_number: "", id_type: "" });
   const [submitting, setSubmitting] = useState(false);
+  const [eidReading, setEidReading] = useState(false);
+  const [eidScriptReady, setEidScriptReady] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.Toolkit) { setEidScriptReady(true); return; }
+    const existing = document.querySelector('script[data-eida-toolkit]');
+    if (existing) {
+      existing.addEventListener("load", () => setEidScriptReady(true));
+      return;
+    }
+    const s = document.createElement("script");
+    s.src = "/eidatoolkit.js";
+    s.async = true;
+    s.dataset.eidaToolkit = "true";
+    s.onload = () => setEidScriptReady(true);
+    s.onerror = () => console.error("Failed to load eidatoolkit.js");
+    document.body.appendChild(s);
+  }, []);
+
+  const readEmiratesIdPublicData = () => {
+    return new Promise((resolve, reject) => {
+      if (typeof window === "undefined" || !window.Toolkit) {
+        reject(new Error("EID Toolkit not loaded"));
+        return;
+      }
+      let ToolkitOB = null;
+      let readerClass = null;
+      let settled = false;
+      const done = (fn, arg) => {
+        if (settled) return;
+        settled = true;
+        try { if (readerClass && readerClass.disconnect) readerClass.disconnect(() => {}); } catch (_) {}
+        fn(arg);
+      };
+      const fail = (msg) => done(reject, new Error(msg));
+
+      const options = {
+        debugEnabled: false,
+        agent_tls_enabled: false,
+        agent_host_name: "toolkitagent.emiratesid.ae",
+        jnlp_address: "/IDCardToolkitService.jnlp",
+        toolkitConfig:
+          'vg_connection_timeout = 60 \n' +
+          'log_level = "INFO" \n' +
+          'log_performance_time = true \n' +
+          'read_publicdata_offline = false \n',
+      };
+
+      const onOpen = (_resp, error) => {
+        if (error) return fail("Agent open failed: " + (error.message || error));
+        ToolkitOB.getReaderWithEmiratesId(onListReaders);
+      };
+      const onClose = () => {};
+      const onError = (err) => fail("Agent error: " + (err && err.message ? err.message : err));
+
+      const onListReaders = (response, error) => {
+        if (error) return fail("No reader: " + (error.message || error.description || error));
+        readerClass = response;
+        if (!readerClass) return fail("No reader found. Plug in the card reader.");
+        readerClass.connect(onCardConnected);
+      };
+      const onCardConnected = (_resp, error) => {
+        if (error) return fail("Card not connected: " + (error.message || error.code || error));
+        readerClass.getInterfaceType(onInterface);
+      };
+      const onInterface = (response, error) => {
+        if (error) return fail("Interface check failed: " + (error.message || error));
+        const isNfc = response === 2;
+        const requestId = btoa(String(Math.random()).slice(2) + Date.now());
+        readerClass.readPublicData(
+          requestId, true, true, true, true, !isNfc,
+          (resp, err) => {
+            if (err) return fail("Read failed: " + (err.message || err));
+            resp.isNfc = isNfc;
+            done(resolve, resp);
+          }
+        );
+      };
+
+      try { ToolkitOB = new window.Toolkit(onOpen, onClose, onError, options); }
+      catch (e) { fail("Could not start toolkit: " + e); }
+    });
+  };
+
+  const photoMimeFromBase64 = (b64) => {
+    if (!b64) return "image/jpeg";
+    if (b64.indexOf("/9j/") === 0) return "image/jpeg";
+    if (b64.indexOf("Qk") === 0) return "image/bmp";
+    if (b64.indexOf("iVBOR") === 0) return "image/png";
+    return "image/jpeg";
+  };
+
+  const handleReadEid = async () => {
+    setEidReading(true);
+    try {
+      const resp = await readEmiratesIdPublicData();
+      const nm = resp.nonModifiablePublicData || {};
+      const home = resp.homeAddress || {};
+      setForm((f) => ({
+        ...f,
+        first_name: nm.fullNameEnglish || f.first_name,
+        phone_number: home.mobilePhoneNumber || f.phone_number,
+        id_number: resp.iDNumber || f.id_number,
+        id_type: "Emirates ID",
+      }));
+      if (resp.cardHolderPhoto) {
+        const mime = photoMimeFromBase64(resp.cardHolderPhoto);
+        setCapturedPhoto(`data:${mime};base64,${resp.cardHolderPhoto}`);
+      }
+    } catch (e) {
+      alert("EID read failed: " + (e.message || e));
+    } finally {
+      setEidReading(false);
+    }
+  };
 
   const startCamera = async () => {
     try {
@@ -65,16 +181,19 @@ const VisitorHub = () => {
   useEffect(() => { fetchData(); }, []);
 
   const handleCheckIn = async () => {
-    if (!form.first_name) { alert("Visitor name is required"); return; }
+    if (!form.first_name.trim()) { alert("Visitor name is required"); return; }
     setSubmitting(true);
     try {
       const params = await buildQueryParams({});
+      const nameParts = form.first_name.trim().split(/\s+/);
+      const firstName = nameParts[0];
+      const lastName = nameParts.slice(1).join(" ") || ".";
       const today = new Date().toISOString().split("T")[0];
       const now = new Date().toTimeString().slice(0, 5);
-      await api.post("/visitor-register", {
+      const payload = {
         ...params,
-        first_name: form.first_name,
-        last_name: form.first_name.split(" ").slice(1).join(" ") || ".",
+        first_name: firstName,
+        last_name: lastName,
         phone_number: form.phone_number || "0000000000",
         email: "",
         gender: "Male",
@@ -82,7 +201,6 @@ const VisitorHub = () => {
         id_type: form.id_type || "National ID",
         id_number: form.id_number || "",
         purpose_id: 1,
-        host_company_id: null,
         date: today,
         visit_from: today,
         visit_to: today,
@@ -90,13 +208,20 @@ const VisitorHub = () => {
         time_out: "23:59",
         status_id: 6,
         logo: capturedPhoto || null,
-      });
+      };
+      const { data } = await api.post("/visitor-register", payload);
+      if (data && data.status === false) {
+        alert("Check-in failed: " + (data.message || "Unknown error"));
+        return;
+      }
       alert("Visitor checked in!");
       setForm({ first_name: "", phone_number: "", id_number: "", id_type: "" });
       setCapturedPhoto(null);
       fetchData();
-    } catch (e) { alert(e?.response?.data?.message || "Check-in failed"); }
-    finally { setSubmitting(false); }
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Check-in failed";
+      alert("Check-in failed: " + msg);
+    } finally { setSubmitting(false); }
   };
 
   const handleCheckOut = async (id) => {
@@ -206,7 +331,12 @@ const VisitorHub = () => {
               </div>
             </div>
 
-            <div className="mt-8 flex justify-end relative z-10">
+            <div className="mt-8 flex justify-end gap-3 relative z-10">
+              <button disabled={eidReading || !eidScriptReady} onClick={handleReadEid}
+                className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-bold py-3 px-6 rounded-lg flex items-center gap-2 uppercase tracking-wide text-xs shadow-md transition-all disabled:opacity-50">
+                <span className="material-symbols-outlined text-lg">badge</span>
+                {eidReading ? "Reading..." : "Read Emirates ID"}
+              </button>
               <button disabled={submitting} onClick={handleCheckIn}
                 className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white font-bold py-3 px-8 rounded-lg flex items-center gap-2 uppercase tracking-wide text-xs shadow-md transition-all disabled:opacity-50">
                 <span className="material-symbols-outlined text-lg">check_circle</span>

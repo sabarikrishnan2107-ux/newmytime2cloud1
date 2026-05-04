@@ -243,10 +243,14 @@ class VisitorController extends Controller
         $data['date'] = date("Y-m-d");
         $data['visitor_filled_datetime'] = date("Y-m-d H:i:s");
         $data['id_copy'] = 'jpg';
-        $data['status_id'] = 1;
+        $data['status_id'] = $request->filled('status_id') ? (int) $request->status_id : 1;
 
         try {
-            $data['branch_id'] = HostCompany::where("company_id", $request->company_id)->where("id", $request->host_company_id)->pluck("branch_id")[0];
+            $data['branch_id'] = $request->host_company_id
+                ? HostCompany::where("company_id", $request->company_id)
+                    ->where("id", $request->host_company_id)
+                    ->value("branch_id")
+                : null;
 
             // $existingVisitor = Visitor::where('phone_number', $data['phone_number'])->first();
 
@@ -308,9 +312,7 @@ class VisitorController extends Controller
 
             return $this->response('Form has been submitted successfully.', $data, true);
         } catch (\Throwable $th) {
-
-            return $th;
-            // return $this->response('Server Error.', null, true);
+            return $this->response($th->getMessage(), null, false, 500);
         }
     }
 

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { KPICard } from "@/components/payroll/KPICard";
 import { StatusBadge } from "@/components/payroll/StatusBadge";
+import MonthPicker from "@/components/ui/MonthPicker";
 import { api, buildQueryParams } from "@/lib/api-client";
 import {
   Users, DollarSign, TrendingDown, Wallet, Clock, CheckCircle, CreditCard,
@@ -60,7 +61,7 @@ export default function PayrollDashboard() {
   const router = useRouter();
   const [stats, setStats] = useState(null);
   const [batches, setBatches] = useState([]);
-  const [month] = useState(new Date().toISOString().slice(0, 7));
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [monthlyTrend, setMonthlyTrend] = useState([]);
   const [deptCost, setDeptCost] = useState([]);
   const [generating, setGenerating] = useState(false);
@@ -133,7 +134,10 @@ export default function PayrollDashboard() {
           <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Payroll Dashboard</h1>
           <p className="text-xs text-gray-500 dark:text-gray-400">Manage salary processing, approvals, deductions, allowances, and payslip generation</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <div className="w-[180px]">
+            <MonthPicker value={month} onChange={setMonth} />
+          </div>
           <button
             onClick={() => router.push('/payslips/salary-structures')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"

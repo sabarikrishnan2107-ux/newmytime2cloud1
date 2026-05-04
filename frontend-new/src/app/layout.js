@@ -50,7 +50,7 @@ export default function RootLayout({ children }) {
         `}</style>
       </head>
 
-      <body className="text-slate-200 overflow-hidden">
+      <body className="text-slate-200 overflow-hidden h-screen flex flex-col">
         <DarkModeProvider>
           <AuthProvider>
             <LiveAttendanceProvider>
