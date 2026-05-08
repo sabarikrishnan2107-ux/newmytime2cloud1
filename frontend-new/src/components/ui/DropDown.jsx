@@ -14,6 +14,7 @@ import {
   CommandInput,
   CommandItem,
 } from "@/components/ui/command";
+import { Check } from "lucide-react";
 
 export default function DropDown({
   items = [],
@@ -22,17 +23,48 @@ export default function DropDown({
   placeholder = "Select Item",
   width = "w-[230px]",
   portalled = true,
+  multi = false,
   ...props
 }) {
   const [itemOpen, setItemOpen] = useState(false);
 
+  // Treat value as array when multi=true
+  const selectedIds = multi ? (Array.isArray(value) ? value : []) : null;
+
   const handleSelect = (currentValue) => {
     const selectedItem = items.find((d) => d.name === currentValue);
-    onChange(selectedItem?.id ?? null);
-    setItemOpen(false);
+    if (multi) {
+      if (!selectedItem) return;
+      // Toggle behavior: id=null means "All / clear"
+      if (selectedItem.id == null) {
+        onChange([]);
+        return;
+      }
+      const exists = selectedIds.includes(selectedItem.id);
+      const next = exists
+        ? selectedIds.filter((id) => id !== selectedItem.id)
+        : [...selectedIds, selectedItem.id];
+      onChange(next);
+      // Keep popover open in multi-select mode
+    } else {
+      onChange(selectedItem?.id ?? null);
+      setItemOpen(false);
+    }
   };
 
-  const itemName = items.find((b) => b.id === value)?.name || placeholder;
+  // Display text in trigger
+  let triggerText;
+  if (multi) {
+    if (selectedIds.length === 0) {
+      triggerText = placeholder;
+    } else if (selectedIds.length === 1) {
+      triggerText = items.find((b) => b.id === selectedIds[0])?.name || placeholder;
+    } else {
+      triggerText = `${selectedIds.length} selected`;
+    }
+  } else {
+    triggerText = items.find((b) => b.id === value)?.name || placeholder;
+  }
 
   return (
     <Popover open={itemOpen} onOpenChange={setItemOpen}>
@@ -44,7 +76,7 @@ export default function DropDown({
           className="w-full justify-between text-gray-800 dark:text-white border border-border"
           {...props}
         >
-          {itemName}
+          {triggerText}
           <span className="material-icons ml-2">expand_more</span>
         </Button>
       </PopoverTrigger>
@@ -60,15 +92,28 @@ export default function DropDown({
           <CommandInput placeholder="Search item..." />
           <CommandEmpty>No item found.</CommandEmpty>
           <CommandGroup>
-            {items.map((item) => (
-              <CommandItem
-                key={item.id}
-                value={item.name}
-                onSelect={handleSelect}
-              >
-                {item.name}
-              </CommandItem>
-            ))}
+            {items.map((item) => {
+              const isSelected = multi
+                ? (item.id == null ? selectedIds.length === 0 : selectedIds.includes(item.id))
+                : item.id === value;
+              return (
+                <CommandItem
+                  key={item.id}
+                  value={item.name}
+                  onSelect={handleSelect}
+                  className="flex items-center gap-2.5"
+                >
+                  <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border ${
+                    isSelected
+                      ? "bg-primary border-primary text-white"
+                      : "border-gray-300 dark:border-slate-600 bg-transparent"
+                  }`}>
+                    {isSelected && <Check className="h-3 w-3" strokeWidth={3} />}
+                  </span>
+                  <span className="flex-1">{item.name}</span>
+                </CommandItem>
+              );
+            })}
           </CommandGroup>
         </Command>
       </PopoverContent>

@@ -31,6 +31,7 @@ import {
   Wallet,
   BarChart3,
   Video,
+  BookUser,
 } from "lucide-react";
 
 // 1️⃣ Reusable menu groups
@@ -101,13 +102,14 @@ const employeesMenu = [
 
 const visitorMenu = [
   { href: "/visitor", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/visitor/check-in", icon: LogInIcon, label: "Check-In" },
+  { href: "/visitor/reception", icon: BookUser, label: "Reception" },
   { href: "/visitor/logs", icon: History, label: "Visitor Logs" },
   { href: "/visitor/directory", icon: Users, label: "Directory" },
   { href: "/visitor/pre-register", icon: Calendar, label: "Pre-Register" },
   { href: "/visitor/blacklist", icon: Shield, label: "Blacklist" },
   { href: "/visitor/zones", icon: Map, label: "Zone Access" },
   { href: "/visitor/reports", icon: FileText, label: "Reports" },
+  { href: "/visitor/settings", icon: Settings, label: "Settings" },
 ];
 
 const dashboardMenu = [
@@ -129,6 +131,7 @@ export const leftNavLinks = {
   "/visitor/blacklist": visitorMenu,
   "/visitor/zones": visitorMenu,
   "/visitor/reports": visitorMenu,
+  "/visitor/settings": visitorMenu,
   "/employees": employeesMenu,
   "/employee_photo_upload": employeesMenu,
   "/leaves": leaveMenu,

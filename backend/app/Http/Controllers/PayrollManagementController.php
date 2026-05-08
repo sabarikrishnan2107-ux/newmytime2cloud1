@@ -150,6 +150,12 @@ class PayrollManagementController extends Controller
         return response()->json(['status' => true, 'data' => $structure]);
     }
 
+    public function deleteSalaryStructure(Request $request, $id)
+    {
+        SalaryStructure::where('company_id', $request->company_id)->findOrFail($id)->delete();
+        return response()->json(['status' => true, 'message' => 'Deleted']);
+    }
+
     // ── Adjustments ──
     public function adjustments(Request $request)
     {

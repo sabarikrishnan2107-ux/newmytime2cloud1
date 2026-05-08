@@ -17,28 +17,8 @@ import {
 import ProfilePicture from "@/components/ProfilePicture";
 
 
-export default (deleteItem, onEdit, onView, { selectedIds, toggleSelect, toggleAll, allSelected }) => {
+export default (deleteItem, onEdit, onView) => {
     return [
-        {
-            key: "checkbox",
-            header: (
-                <input
-                    type="checkbox"
-                    checked={allSelected}
-                    onChange={toggleAll}
-                    className="w-4 h-4 accent-primary cursor-pointer"
-                />
-            ),
-            render: (e) => (
-                <input
-                    type="checkbox"
-                    checked={selectedIds.includes(e.employee_id)}
-                    onChange={() => toggleSelect(e.employee_id)}
-                    onClick={(ev) => ev.stopPropagation()}
-                    className="w-4 h-4 accent-primary cursor-pointer"
-                />
-            ),
-        },
         {
             key: "employee",
             header: "Personnel",

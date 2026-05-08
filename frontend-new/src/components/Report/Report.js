@@ -37,11 +37,7 @@ import { downloadDailyPDF, downloadMonthlyDetailPDF, downloadMonthlyGridPDF, dow
 import PDFProgressOverlay from './PDFProgressOverlay';
 
 const reportTemplates = [
-  // { id: `Template1`, name: `Monthly Report Format A` },
-  { id: 'Template4', name: 'Monthly Report Format A' },
-  { id: `Template2`, name: `Monthly Report Format B` },
-  { id: 'Template5', name: 'Monthly Report Format C' },
-
+  { id: 'Template5', name: 'Monthly Report Format A' },
   { id: `Template3`, name: `Daily` },
 ];
 
@@ -79,6 +75,14 @@ export default function AttendanceTable() {
   const [selectedBranchIds, setSelectedBranchIds] = useState([]);
   const [selectedDepartmentIds, setSelectedDepartment] = useState([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+  const [selectedEmployeeTypes, setSelectedEmployeeTypes] = useState([]);
+
+  const employeeTypeOptions = [
+    { id: "Full Time", name: "Full Time" },
+    { id: "Part Time", name: "Part Time" },
+    { id: "Contractor", name: "Contractor" },
+    { id: "Trainee", name: "Trainee" },
+  ];
   const [selectedReportTemplate, setSelectedReportTemplate] = useState("Template1");
 
   const [from, setFrom] = useState(defaultDates.from);
@@ -98,6 +102,26 @@ export default function AttendanceTable() {
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [scheduledEmployees, setScheduledEmployees] = useState([]);
+
+  // Normalize employee_type strings so "Full Time", "full-time", "FULL_TIME"
+  // all match each other when filtering / auto-selecting.
+  const normalizeType = (s) => String(s || "").toLowerCase().replace(/[\s_-]+/g, "");
+  const matchesSelectedType = (e) => {
+    if (!selectedEmployeeTypes?.length) return true;
+    const target = normalizeType(e.employee_type);
+    return selectedEmployeeTypes.some((t) => normalizeType(t) === target);
+  };
+
+  // When the user picks employee type(s), auto-select all matching employees
+  // so a click on Submit immediately produces the filtered report.
+  useEffect(() => {
+    if (!selectedEmployeeTypes?.length) return;
+    const matching = scheduledEmployees
+      .filter(matchesSelectedType)
+      .map((e) => e.id);
+    setSelectedEmployeeIds(matching);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEmployeeTypes, scheduledEmployees]);
 
   const [isButtonclicked, setIsButtonclicked] = useState(false);
 
@@ -258,6 +282,7 @@ export default function AttendanceTable() {
         employee_id: selectedEmployeeIds,
         statuses: selectedStatusIds,
         department_ids: selectedDepartmentIds,
+        employee_types: selectedEmployeeTypes,
         showTabs: JSON.stringify(orginalTabSet),
       };
 
@@ -442,7 +467,7 @@ export default function AttendanceTable() {
 
   const handleSubmit = () => {
     setIsButtonclicked(true);
-    fetchRecords(shiftTypeId);
+    fetchRecords(shiftTypeId, true);
   }
 
   useEffect(() => {
@@ -496,10 +521,24 @@ export default function AttendanceTable() {
           />
         </div>
 
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder={'Employee Type'}
+            items={employeeTypeOptions}
+            value={selectedEmployeeTypes}
+            onChange={setSelectedEmployeeTypes}
+            badgesCount={1}
+          />
+        </div>
+
         <div className="flex flex-col min-w-[220px]">
           <MultiDropDown
             placeholder={'Employees'}
-            items={scheduledEmployees}
+            items={
+              selectedEmployeeTypes?.length
+                ? scheduledEmployees.filter(matchesSelectedType)
+                : scheduledEmployees
+            }
             value={selectedEmployeeIds}
             onChange={setSelectedEmployeeIds}
             badgesCount={1}
@@ -731,7 +770,7 @@ export default function AttendanceTable() {
                           {log?.device?.name || "---"}
                         </td>
                         <td className="px-4 py-3">
-                          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-primary/10 text-primary">
+                          <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-primary/10 text-white">
                             {log?.log_type || "Device"}
                           </span>
                         </td>

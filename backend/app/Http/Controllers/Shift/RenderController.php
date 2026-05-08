@@ -77,6 +77,7 @@ class RenderController extends Controller
         if ($request->shift_type_id == 2) {
             $r = (new MultiShiftController)->renderData($request);
             $this->gapFillMissingRows($request);
+            $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             return $r;
         }
@@ -84,6 +85,7 @@ class RenderController extends Controller
         if ($request->shift_type_id == 5) {
             $r = (new SplitShiftController)->renderData($request);
             $this->gapFillMissingRows($request);
+            $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             return $r;
         }
@@ -91,6 +93,7 @@ class RenderController extends Controller
         if ($request->shift_type_id == 4) {
             $r = (new NightShiftController)->renderData($request);
             $this->gapFillMissingRows($request);
+            $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             return $r;
         }
@@ -101,6 +104,7 @@ class RenderController extends Controller
             try { $results = array_merge($results, (new SingleShiftController)->renderData($request)); } catch (\Exception $e) {}
             try { $results = array_merge($results, (new NightShiftController)->renderData($request)); } catch (\Exception $e) {}
             $this->gapFillMissingRows($request);
+            $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             return $results;
         }
@@ -109,6 +113,7 @@ class RenderController extends Controller
             $results = [];
             try { $results = (new FiloShiftController)->renderData($request); } catch (\Exception $e) {}
             $this->gapFillMissingRows($request);
+            $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             return $results;
         }
@@ -117,6 +122,7 @@ class RenderController extends Controller
             $results = [];
             try { $results = (new SingleShiftController)->renderData($request); } catch (\Exception $e) {}
             $this->gapFillMissingRows($request);
+            $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             return $results;
         }
@@ -128,6 +134,7 @@ class RenderController extends Controller
         try { $results = array_merge($results, (new SingleShiftController)->renderData($request)); } catch (\Exception $e) {}
         try { $results = array_merge($results, (new NightShiftController)->renderData($request)); } catch (\Exception $e) {}
         $this->gapFillMissingRows($request);
+        $this->backfillDeviceIdsFromLogs($request);
         $this->dispatchWeekoffForRange($request);
         return $results;
     }
@@ -156,6 +163,123 @@ class RenderController extends Controller
                 try { RenderWeekOffJob::dispatchSync($companyId, $ym, $empId); } catch (\Throwable $e) {}
             }
         }
+    }
+
+    /**
+     * Backfill device_id_in / device_id_out on attendance rows where the row
+     * has IN/OUT times but the device columns are still the placeholder "---".
+     * Looks up the matching attendance_logs row by (employee, date, time) and
+     * copies its DeviceID across. Only fills when the column is missing.
+     */
+    protected function backfillDeviceIdsFromLogs(Request $request): int
+    {
+        $companyId   = (int) ($request->company_id ?? 0);
+        $employeeIds = (array) ($request->employee_ids ?? []);
+        $dates       = (array) ($request->dates ?? []);
+
+        if (!$companyId || !$employeeIds || !$dates) {
+            return 0;
+        }
+
+        try {
+            $fromDate = Carbon::parse($dates[0])->startOfDay();
+            $toDate   = Carbon::parse($dates[1] ?? $dates[0])->startOfDay();
+        } catch (\Throwable $e) {
+            return 0;
+        }
+
+        if ($fromDate->diffInDays($toDate) > 366) {
+            return 0;
+        }
+
+        $missingMarkers = ['---', ''];
+        $updated = 0;
+
+        $cursor = $fromDate->copy();
+        while ($cursor->lessThanOrEqualTo($toDate)) {
+            $dateStr = $cursor->format('Y-m-d');
+
+            $attendances = Attendance::where('company_id', $companyId)
+                ->where('date', $dateStr)
+                ->whereIn('employee_id', $employeeIds)
+                ->where(function ($q) use ($missingMarkers) {
+                    $q->where(function ($q2) use ($missingMarkers) {
+                        $q2->where('in', '!=', '---')
+                            ->where(function ($q3) use ($missingMarkers) {
+                                $q3->whereIn('device_id_in', $missingMarkers)
+                                    ->orWhereNull('device_id_in');
+                            });
+                    })->orWhere(function ($q2) use ($missingMarkers) {
+                        $q2->where('out', '!=', '---')
+                            ->where(function ($q3) use ($missingMarkers) {
+                                $q3->whereIn('device_id_out', $missingMarkers)
+                                    ->orWhereNull('device_id_out');
+                            });
+                    });
+                })
+                ->get(['id', 'employee_id', 'in', 'out', 'device_id_in', 'device_id_out']);
+
+            if ($attendances->isEmpty()) {
+                $cursor->addDay();
+                continue;
+            }
+
+            $empIds = $attendances->pluck('employee_id')
+                ->unique()
+                ->map(fn($v) => (string) $v)
+                ->all();
+
+            $logs = AttendanceLog::where('company_id', $companyId)
+                ->whereIn('UserID', $empIds)
+                ->whereDate('LogTime', $dateStr)
+                ->orderBy('LogTime', 'asc')
+                ->get(['UserID', 'LogTime', 'DeviceID']);
+
+            if ($logs->isEmpty()) {
+                $cursor->addDay();
+                continue;
+            }
+
+            $logsByEmp = $logs->groupBy(fn($l) => (string) $l->UserID);
+
+            foreach ($attendances as $att) {
+                $empLogs = $logsByEmp->get((string) $att->employee_id);
+                if (!$empLogs || $empLogs->isEmpty()) {
+                    continue;
+                }
+
+                $updates = [];
+
+                if ($att->in && $att->in !== '---' &&
+                    (in_array($att->device_id_in, $missingMarkers, true) || $att->device_id_in === null)) {
+                    $inMatch = $empLogs->first(function ($l) use ($att) {
+                        return date('H:i', strtotime($l->LogTime)) === $att->in;
+                    });
+                    if ($inMatch && !empty($inMatch->DeviceID)) {
+                        $updates['device_id_in'] = $inMatch->DeviceID;
+                    }
+                }
+
+                if ($att->out && $att->out !== '---' &&
+                    (in_array($att->device_id_out, $missingMarkers, true) || $att->device_id_out === null)) {
+                    $outMatch = $empLogs->last(function ($l) use ($att) {
+                        return date('H:i', strtotime($l->LogTime)) === $att->out;
+                    });
+                    if ($outMatch && !empty($outMatch->DeviceID)) {
+                        $updates['device_id_out'] = $outMatch->DeviceID;
+                    }
+                }
+
+                if (!empty($updates)) {
+                    Attendance::where('id', $att->id)->update($updates);
+                    $updated++;
+                }
+            }
+
+            $cursor->addDay();
+        }
+
+        return $updated;
     }
 
     /**

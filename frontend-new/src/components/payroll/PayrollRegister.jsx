@@ -4,8 +4,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { StatusBadge } from "@/components/payroll/StatusBadge";
 import { api, buildQueryParams } from "@/lib/api-client";
-import { Search, Download, Eye, FileText, X, Loader2 } from "lucide-react";
+import { Search, Download, Eye, FileText, X, Loader2, Wallet, ArrowLeft } from "lucide-react";
 import PDFProgressOverlay from "@/components/Report/PDFProgressOverlay";
+import MonthPicker from "@/components/ui/MonthPicker";
+import ProfilePicture from "@/components/ProfilePicture";
 
 const PDF_SERVICE_BASE = process.env.NEXT_PUBLIC_PDF_SERVICE_URL || 'http://localhost:3002';
 
@@ -16,6 +18,7 @@ export default function PayrollRegister() {
   const [branchFilter, setBranchFilter] = useState("all");
   const [deptFilter, setDeptFilter] = useState("all");
   const [empFilter, setEmpFilter] = useState("all");
+  const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [selectedEmp, setSelectedEmp] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [records, setRecords] = useState([]);
@@ -24,23 +27,28 @@ export default function PayrollRegister() {
   const [isBulkDownloading, setIsBulkDownloading] = useState(false);
   const [bulkProgress, setBulkProgress] = useState(0);
 
+  // If user lands with a ?batch= param, sync month state to that batch's month
+  // so the month picker reflects what they're viewing.
+  const [usingBatchParam, setUsingBatchParam] = useState(!!batchIdParam);
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const params = await buildQueryParams({});
         let batch;
-        if (batchIdParam) {
-          // View specific batch from dashboard eye icon
+        if (usingBatchParam && batchIdParam) {
+          // First load with ?batch= URL param
           const batchRes = await api.get("/payroll-management/batches", { params: { ...params, per_page: 50 } });
           batch = (batchRes.data?.data || []).find(b => String(b.id) === batchIdParam);
+          if (batch?.month) setMonth(batch.month);
+        } else {
+          // Month-driven: only show batches that match the selected month
+          const batchRes = await api.get("/payroll-management/batches", { params: { ...params, month, per_page: 50 } });
+          const list = batchRes.data?.data || [];
+          batch = list.find(b => b.month === month);
         }
-        if (!batch) {
-          // Fallback: get latest batch
-          const batchRes = await api.get("/payroll-management/batches", { params: { ...params, per_page: 1 } });
-          batch = batchRes.data?.data?.[0];
-        }
-        if (!batch) { setLoading(false); return; }
+        if (!batch) { setRecords([]); setBatchInfo(null); setLoading(false); return; }
         setBatchInfo(batch);
 
         const { data } = await api.get(`/payroll-management/records/${batch.id}`, { params: { ...params, per_page: 100 } });
@@ -48,6 +56,7 @@ export default function PayrollRegister() {
           id: r.id,
           employeeId: r.employee?.employee_id || r.employee_id,
           name: r.employee ? `${r.employee.first_name} ${r.employee.last_name || ""}`.trim() : `Emp ${r.employee_id}`,
+          profilePicture: r.employee?.profile_picture || null,
           department: r.employee?.department?.name || "---",
           branch: r.employee?.branch?.branch_name || "---",
           presentDays: r.present_days ?? 0,
@@ -70,6 +79,11 @@ export default function PayrollRegister() {
           status: r.status,
         }));
         setRecords(items);
+        // If user is viewing an employee detail, re-select the same employee in the new month's data
+        if (selectedEmp) {
+          const match = items.find(i => String(i.employeeId) === String(selectedEmp.employeeId));
+          setSelectedEmp(match || null);
+        }
       } catch (e) {
         console.warn("Register error", e);
         console.warn("Response:", e?.response?.data);
@@ -77,7 +91,8 @@ export default function PayrollRegister() {
       finally { setLoading(false); }
     };
     fetchData();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [month, batchIdParam, usingBatchParam]);
 
   const filtered = records.filter(e => {
     const matchSearch = e.name.toLowerCase().includes(search.toLowerCase()) || String(e.employeeId).toLowerCase().includes(search.toLowerCase());
@@ -102,9 +117,254 @@ export default function PayrollRegister() {
   const totalNet = filtered.reduce((s, e) => s + e.netSalary, 0);
   const totalGross = filtered.reduce((s, e) => s + e.grossEarned, 0);
 
+  // Inline detail view shown when an employee row is clicked
+  const renderDetailView = () => {
+    const emp = selectedEmp;
+    return (
+      <div className="space-y-5">
+        {/* Top bar */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <button
+            onClick={() => setSelectedEmp(null)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Back to list
+          </button>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="w-[180px]">
+              <MonthPicker
+                value={month}
+                onChange={(m) => { setMonth(m); setUsingBatchParam(false); }}
+              />
+            </div>
+            <button
+              onClick={async () => {
+                try {
+                  const params = await buildQueryParams({});
+                  const url = `${api.defaults.baseURL}/payroll-management/payslip/${emp.id}?company_id=${params.company_id}`;
+                  window.open(url, "_blank");
+                } catch { alert("Failed to load payslip"); }
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:opacity-95 transition shadow-sm"
+            >
+              <Download className="h-3.5 w-3.5" /> Download Payslip
+            </button>
+          </div>
+        </div>
+
+        {/* Two-column layout: sidebar list + detail */}
+        <div className="flex gap-5">
+          {/* Sidebar */}
+          <div className="w-72 shrink-0 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 flex flex-col overflow-hidden self-start max-h-[calc(100vh-180px)]">
+            {/* Search + count header */}
+            <div className="p-3 border-b border-gray-100 dark:border-white/5 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] uppercase tracking-wider font-semibold text-gray-500 dark:text-gray-400">Employees</span>
+                <span className="text-[10px] font-semibold text-gray-500 dark:text-gray-400 tabular-nums">{filtered.length}</span>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  placeholder="Search by name or ID..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full rounded-lg border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-800/50 pl-8 pr-3 py-2 text-xs text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary"
+                />
+              </div>
+            </div>
+
+            {/* List */}
+            <ul className="flex-1 overflow-y-auto p-2 space-y-0.5">
+              {filtered.length === 0 ? (
+                <li className="text-center py-8 text-xs text-gray-400">No employees found</li>
+              ) : filtered.map((item) => {
+                const isSelected = emp && emp.id === item.id;
+                return (
+                  <li
+                    key={item.id}
+                    onClick={() => setSelectedEmp(item)}
+                    className={`relative px-2.5 py-2 rounded-lg flex items-center gap-2.5 cursor-pointer transition-all ${
+                      isSelected
+                        ? "bg-primary/10 dark:bg-primary/20"
+                        : "hover:bg-gray-50 dark:hover:bg-white/5"
+                    }`}
+                  >
+                    {/* Active left indicator */}
+                    {isSelected && (
+                      <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-0.5 rounded-r-full bg-primary" />
+                    )}
+                    <div className={`size-9 min-w-[36px] rounded-full overflow-hidden flex items-center justify-center bg-gray-100 dark:bg-slate-800 shrink-0 ${isSelected ? "ring-2 ring-primary/40" : "ring-1 ring-gray-200 dark:ring-white/10"}`}>
+                      <ProfilePicture src={item.profilePicture} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className={`text-[13px] font-semibold truncate leading-tight ${isSelected ? "text-primary" : "text-gray-800 dark:text-gray-100"}`}>
+                        {item.name}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5 text-[10px] text-gray-500 dark:text-gray-400">
+                        <span className="tabular-nums">{item.employeeId}</span>
+                        {item.department && item.department !== "---" && (
+                          <>
+                            <span className="opacity-50">·</span>
+                            <span className="truncate">{item.department}</span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    {/* Net salary badge */}
+                    <div className={`text-[11px] font-bold tabular-nums shrink-0 ${isSelected ? "text-primary" : "text-gray-500 dark:text-gray-400"}`}>
+                      {item.netSalary?.toLocaleString() || "—"}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          {/* Detail */}
+          <div className="flex-1 space-y-4 min-w-0">
+            <div className="flex items-end justify-between gap-3 flex-wrap">
+              <div>
+                <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Payslip Detail</h1>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Attendance, earnings, and deductions for the selected employee.</p>
+              </div>
+              {batchInfo?.month && (
+                <span className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3.5 py-2 text-xs font-bold text-primary uppercase tracking-wider">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                  Pay Period · {new Date(batchInfo.month + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" })}
+                </span>
+              )}
+            </div>
+
+            {/* Profile + summary */}
+            <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden">
+              <div className="p-6 flex items-center gap-4">
+                <div className="size-16 min-w-[64px] rounded-full overflow-hidden ring-2 ring-gray-200 dark:ring-white/10 flex items-center justify-center bg-gray-100 dark:bg-slate-800">
+                  <ProfilePicture src={emp.profilePicture} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100 truncate">{emp.name}</h2>
+                  <div className="mt-1 flex items-center gap-3 flex-wrap text-[11px] text-gray-500 dark:text-gray-400">
+                    <span><span className="text-gray-400 dark:text-gray-500">ID</span> <span className="font-semibold text-gray-700 dark:text-gray-200 tabular-nums">{emp.employeeId}</span></span>
+                    <span className="opacity-30">|</span>
+                    <span><span className="text-gray-400 dark:text-gray-500">Dept</span> <span className="font-semibold text-gray-700 dark:text-gray-200">{emp.department || "—"}</span></span>
+                    {emp.branch && emp.branch !== "---" && (
+                      <>
+                        <span className="opacity-30">|</span>
+                        <span><span className="text-gray-400 dark:text-gray-500">Branch</span> <span className="font-semibold text-gray-700 dark:text-gray-200">{emp.branch}</span></span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <StatusBadge status={emp.status} />
+              </div>
+
+              {/* KPI summary tiles — split into 4 cells with subtle dividers */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 border-t border-gray-100 dark:border-white/5 divide-x divide-gray-100 dark:divide-white/5">
+                <div className="p-5">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 font-bold">Gross Earned</div>
+                  <div className="mt-2 text-2xl font-extrabold text-gray-900 dark:text-gray-100 tabular-nums">{emp.grossEarned.toLocaleString()}</div>
+                </div>
+                <div className="p-5">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 font-bold">Deductions</div>
+                  <div className="mt-2 text-2xl font-extrabold text-gray-900 dark:text-gray-100 tabular-nums">{emp.totalDeduction.toLocaleString()}</div>
+                </div>
+                <div className="p-5">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 font-bold">Net Salary</div>
+                  <div className="mt-2 text-2xl font-extrabold text-gray-900 dark:text-gray-100 tabular-nums">{emp.netSalary.toLocaleString()}</div>
+                </div>
+                <div className="p-5">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 font-bold">OT Hours</div>
+                  <div className="mt-2 text-2xl font-extrabold text-gray-900 dark:text-gray-100 tabular-nums">{emp.otHours}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Attendance + Earnings + Deductions — banker-style with header strips */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Attendance — slate header */}
+              <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden flex flex-col shadow-sm">
+                <div className="flex items-center justify-between px-5 py-3 bg-slate-700 text-white">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.14em]">Attendance</h3>
+                </div>
+                <div className="px-5 py-1 divide-y divide-gray-100 dark:divide-white/5">
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-500 dark:text-gray-400">Present Days</span><span className="font-medium text-gray-800 dark:text-gray-100 tabular-nums">{emp.presentDays}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-500 dark:text-gray-400">Absent Days</span><span className="font-medium text-gray-800 dark:text-gray-100 tabular-nums">{emp.absentDays}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-500 dark:text-gray-400">Late</span><span className="font-medium text-gray-800 dark:text-gray-100 tabular-nums">{emp.lateMinutes}min ({emp.lateDays}d)</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-500 dark:text-gray-400">OT Hours</span><span className="font-medium text-gray-800 dark:text-gray-100 tabular-nums">{emp.otHours}</span></div>
+                </div>
+              </div>
+
+              {/* Earnings — blue header (banker style) */}
+              <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden flex flex-col shadow-sm">
+                <div className="flex items-center justify-between px-5 py-3 bg-[#1e5f8e] text-white">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.14em]">Earnings</h3>
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Amount</span>
+                </div>
+                <div className="px-5 py-1 divide-y divide-gray-100 dark:divide-white/5 flex-1">
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Basic Salary</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.basicSalary.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Allowances</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.totalAllowances.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">OT Amount</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.otAmount.toLocaleString()}</span></div>
+                </div>
+                <div className="flex justify-between items-center px-5 py-3 bg-gray-50 dark:bg-slate-800/40 border-t border-gray-200 dark:border-white/10">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#1e5f8e] dark:text-blue-400">Gross Earned</span>
+                  <span className="text-base font-bold text-[#1e5f8e] dark:text-blue-400 tabular-nums">{emp.grossEarned.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Deductions — red header (banker style) */}
+              <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden flex flex-col shadow-sm">
+                <div className="flex items-center justify-between px-5 py-3 bg-[#c0392b] text-white">
+                  <h3 className="text-[11px] font-bold uppercase tracking-[0.14em]">Deductions</h3>
+                  <span className="text-[11px] font-bold uppercase tracking-wider">Amount</span>
+                </div>
+                <div className="px-5 py-1 divide-y divide-gray-100 dark:divide-white/5 flex-1">
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Absence</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.absenceDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Late</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.lateDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Loan</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.loanDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Advance</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.advanceDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Fine</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.fineAmount.toLocaleString()}</span></div>
+                  <div className="flex justify-between py-2.5 text-sm"><span className="text-gray-600 dark:text-gray-300">Other</span><span className="font-semibold text-gray-900 dark:text-gray-100 tabular-nums">{emp.otherDeduction.toLocaleString()}</span></div>
+                </div>
+                <div className="flex justify-between items-center px-5 py-3 bg-gray-50 dark:bg-slate-800/40 border-t border-gray-200 dark:border-white/10">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-[#c0392b] dark:text-rose-400">Total Deductions</span>
+                  <span className="text-base font-bold text-[#c0392b] dark:text-rose-400 tabular-nums">{emp.totalDeduction.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Calculation summary — Net salary highlight */}
+            <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden">
+              <div className="px-6 py-3 border-b border-gray-100 dark:border-white/5 bg-gray-50/40 dark:bg-slate-800/30">
+                <h3 className="text-[11px] font-semibold uppercase tracking-wider text-gray-600 dark:text-gray-300">Salary Calculation</h3>
+              </div>
+              <div className="px-6 py-5 grid grid-cols-5 items-center gap-3">
+                <div className="text-center">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 font-semibold">Gross</div>
+                  <div className="text-xl font-semibold text-gray-900 dark:text-gray-100 tabular-nums mt-1">{emp.grossEarned.toLocaleString()}</div>
+                </div>
+                <div className="text-center text-2xl font-light text-gray-300 dark:text-gray-600">−</div>
+                <div className="text-center">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 font-semibold">Deductions</div>
+                  <div className="text-xl font-semibold text-gray-900 dark:text-gray-100 tabular-nums mt-1">{emp.totalDeduction.toLocaleString()}</div>
+                </div>
+                <div className="text-center text-2xl font-light text-gray-300 dark:text-gray-600">=</div>
+                <div className="text-center rounded-lg bg-gray-50 dark:bg-slate-800/40 py-3 -mx-2">
+                  <div className="text-[10px] uppercase tracking-[0.14em] text-gray-500 dark:text-gray-400 font-bold">Net Salary</div>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums mt-1">{emp.netSalary.toLocaleString()}</div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
       <PDFProgressOverlay isOpen={isBulkDownloading} progress={bulkProgress} />
+      {selectedEmp ? renderDetailView() : (<>
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
@@ -242,6 +502,13 @@ export default function PayrollRegister() {
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3 items-center">
+        <div className="w-[180px]">
+          <MonthPicker
+            value={month}
+            onChange={(m) => { setMonth(m); setUsingBatchParam(false); }}
+          />
+        </div>
+
         <div className="relative flex-1 min-w-[200px] max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -324,7 +591,7 @@ export default function PayrollRegister() {
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {filtered.map(e => (
                 <tr key={e.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition text-xs text-gray-600 dark:text-gray-300 cursor-pointer"
-                  onClick={() => { setSelectedEmp(e); setDrawerOpen(true); }}>
+                  onClick={() => { setSelectedEmp(e); }}>
                   <td className="px-4 py-3">
                     <div className="text-xs font-medium text-gray-800 dark:text-gray-100">{e.name}</div>
                     <div className="text-[10px] text-gray-400">
@@ -349,7 +616,7 @@ export default function PayrollRegister() {
                   <td className="px-3 py-3">
                     <div className="flex gap-1" onClick={ev => ev.stopPropagation()}>
                       <button title="View Details" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-primary transition"
-                        onClick={() => { setSelectedEmp(e); setDrawerOpen(true); }}>
+                        onClick={() => { setSelectedEmp(e); }}>
                         <Eye className="h-3.5 w-3.5" />
                       </button>
                       <button title="Download Payslip" className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-emerald-500 transition"
@@ -387,66 +654,100 @@ export default function PayrollRegister() {
           Total Gross: {totalGross.toLocaleString()} | Total Net: {totalNet.toLocaleString()}
         </div>
       </div>
+      </>)}
 
-      {/* Detail Drawer */}
-      {drawerOpen && selectedEmp && (
+      {/* Detail Drawer (legacy — kept hidden; inline detail view is now used) */}
+      {false && drawerOpen && selectedEmp && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}></div>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}></div>
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-white/10 shadow-2xl overflow-y-auto">
-            <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 px-5 py-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{selectedEmp.name}</h3>
-                <p className="text-[10px] text-gray-500">{selectedEmp.department} &middot; ID: {selectedEmp.employeeId}</p>
-              </div>
-              <button onClick={() => setDrawerOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400">
+            {/* Hero header */}
+            <div className="relative bg-gradient-to-br from-primary/90 to-purple-600/90 text-white px-5 pt-5 pb-8">
+              <button onClick={() => setDrawerOpen(false)} className="absolute top-3 right-3 p-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white transition">
                 <X className="h-4 w-4" />
               </button>
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur text-base font-bold ring-2 ring-white/30">
+                  {selectedEmp.name?.split(" ").map((n) => n[0]).slice(0, 2).join("") || "?"}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold tracking-tight truncate">{selectedEmp.name}</h3>
+                  <p className="text-[11px] text-white/80 truncate">
+                    {selectedEmp.department || "—"} · ID: {selectedEmp.employeeId}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-4">
+                <StatusBadge status={selectedEmp.status} />
+              </div>
             </div>
 
-            <div className="p-5 space-y-5">
+            {/* Net salary highlight - overlaps hero */}
+            <div className="px-5 -mt-5">
+              <div className="rounded-2xl bg-emerald-500 dark:bg-emerald-600 text-white shadow-lg shadow-emerald-500/30 px-4 py-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-white/80">Net Salary</p>
+                    <p className="text-2xl font-extrabold tabular-nums leading-tight mt-0.5">{selectedEmp.netSalary.toLocaleString()}</p>
+                  </div>
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20">
+                    <Wallet className="h-6 w-6" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-5 pt-6">
+              {/* Attendance — mini cards */}
               <div>
                 <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3">Attendance</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Present Days</span><span className="text-emerald-500 font-medium">{selectedEmp.presentDays}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Absent Days</span><span className="text-red-500 font-medium">{selectedEmp.absentDays}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Late</span><span className="text-amber-500 font-medium">{selectedEmp.lateMinutes}min ({selectedEmp.lateDays} days)</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">OT Hours</span><span className="text-blue-500 font-medium">{selectedEmp.otHours}</span></div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-900/15 px-3 py-2.5">
+                    <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-semibold">Present Days</p>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-300 tabular-nums">{selectedEmp.presentDays}</p>
+                  </div>
+                  <div className="rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-900/15 px-3 py-2.5">
+                    <p className="text-[10px] text-red-700 dark:text-red-400 font-semibold">Absent Days</p>
+                    <p className="text-lg font-bold text-red-600 dark:text-red-300 tabular-nums">{selectedEmp.absentDays}</p>
+                  </div>
+                  <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-900/15 px-3 py-2.5">
+                    <p className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold">Late</p>
+                    <p className="text-base font-bold text-amber-600 dark:text-amber-300 tabular-nums">{selectedEmp.lateMinutes}min <span className="text-[10px] font-medium opacity-80">({selectedEmp.lateDays}d)</span></p>
+                  </div>
+                  <div className="rounded-xl border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-900/15 px-3 py-2.5">
+                    <p className="text-[10px] text-blue-700 dark:text-blue-400 font-semibold">OT Hours</p>
+                    <p className="text-lg font-bold text-blue-600 dark:text-blue-300 tabular-nums">{selectedEmp.otHours}</p>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3">Earnings</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Basic Salary</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.basicSalary.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Allowances</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.totalAllowances.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">OT Amount</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.otAmount.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs border-t border-gray-100 dark:border-white/10 pt-2"><span className="font-semibold text-gray-700 dark:text-gray-300">Gross Earned</span><span className="font-bold text-gray-800 dark:text-gray-100">{selectedEmp.grossEarned.toLocaleString()}</span></div>
+              {/* Earnings */}
+              <div className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+                <div className="bg-emerald-50 dark:bg-emerald-900/10 border-b border-emerald-200 dark:border-emerald-500/20 px-4 py-2.5 flex items-center justify-between">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Earnings</h4>
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 tabular-nums">{selectedEmp.grossEarned.toLocaleString()}</span>
+                </div>
+                <div className="px-4 py-3 space-y-2">
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Basic Salary</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.basicSalary.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Allowances</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.totalAllowances.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">OT Amount</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.otAmount.toLocaleString()}</span></div>
                 </div>
               </div>
 
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3">Deductions</h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Absence Deduction</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.absenceDeduction.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Late Deduction</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.lateDeduction.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Loan Deduction</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.loanDeduction.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Advance Deduction</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.advanceDeduction.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Fine Amount</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.fineAmount.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs"><span className="text-gray-500">Other Deduction</span><span className="text-gray-800 dark:text-gray-200 font-medium">{selectedEmp.otherDeduction.toLocaleString()}</span></div>
-                  <div className="flex justify-between text-xs border-t border-gray-100 dark:border-white/10 pt-2"><span className="font-semibold text-gray-700 dark:text-gray-300">Total Deductions</span><span className="font-bold text-red-500">{selectedEmp.totalDeduction.toLocaleString()}</span></div>
+              {/* Deductions */}
+              <div className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
+                <div className="bg-red-50 dark:bg-red-900/10 border-b border-red-200 dark:border-red-500/20 px-4 py-2.5 flex items-center justify-between">
+                  <h4 className="text-[10px] font-bold uppercase tracking-wider text-red-700 dark:text-red-400">Deductions</h4>
+                  <span className="text-xs font-bold text-red-600 dark:text-red-400 tabular-nums">−{selectedEmp.totalDeduction.toLocaleString()}</span>
                 </div>
-              </div>
-
-              <div className="rounded-xl bg-emerald-50 dark:bg-emerald-900/10 border border-emerald-200 dark:border-emerald-500/20 p-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">Net Salary</span>
-                  <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400">{selectedEmp.netSalary.toLocaleString()}</span>
+                <div className="px-4 py-3 space-y-2">
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Absence</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.absenceDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Late</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.lateDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Loan</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.loanDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Advance</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.advanceDeduction.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Fine</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.fineAmount.toLocaleString()}</span></div>
+                  <div className="flex justify-between text-xs"><span className="text-gray-500">Other</span><span className="text-gray-800 dark:text-gray-200 font-medium tabular-nums">{selectedEmp.otherDeduction.toLocaleString()}</span></div>
                 </div>
-              </div>
-
-              <div>
-                <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mb-3">Status</h4>
-                <StatusBadge status={selectedEmp.status} />
               </div>
 
               {/* Download & Print Buttons */}

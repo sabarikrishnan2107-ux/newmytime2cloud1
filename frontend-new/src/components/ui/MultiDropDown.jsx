@@ -156,19 +156,22 @@ export default function MultiDropDown({
 
       <PopoverContent
         portalled={portalled}
-        className="max-h-[200px] overflow-y-auto p-0 z-[60]"
+        className="max-h-[260px] overflow-y-auto p-0 z-[60] bg-white dark:bg-slate-800 border border-gray-200 dark:border-white/10 shadow-lg"
         side="bottom"
         sideOffset={6}
         align="start"
         style={{ width: popoverWidth || undefined }}
       >
-        <Command>
-          <CommandInput placeholder={`Search ${placeholder.toLowerCase()}`} />
-          <CommandEmpty>No items found.</CommandEmpty>
+        <Command className="bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100">
+          <CommandInput
+            placeholder={`Search ${placeholder.toLowerCase()}`}
+            className="text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+          />
+          <CommandEmpty className="text-gray-500 dark:text-gray-400">No items found.</CommandEmpty>
           <CommandGroup>
             {/* Select All Option */}
             <CommandItem
-              className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+              className="flex items-center gap-2 px-2 py-2 cursor-pointer text-gray-800 dark:text-gray-100 data-[selected=true]:bg-gray-100 dark:data-[selected=true]:bg-slate-700 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white"
               onSelect={() => handleSelect("Select All")}
             >
               <Checkbox
@@ -178,7 +181,7 @@ export default function MultiDropDown({
               <span className="font-medium">Select All ({items.length})</span>
             </CommandItem>
 
-            <div className="h-[1px] bg-muted my-1" />
+            <div className="h-[1px] bg-gray-200 dark:bg-white/10 my-1" />
 
             {/* Individual Items */}
             {items.map((item) => {
@@ -187,7 +190,7 @@ export default function MultiDropDown({
                 <CommandItem
                   key={item.id}
                   value={item.name}
-                  className="flex items-center gap-2 px-2 py-2 cursor-pointer"
+                  className="flex items-center gap-2 px-2 py-2 cursor-pointer text-gray-800 dark:text-gray-100 data-[selected=true]:bg-gray-100 dark:data-[selected=true]:bg-slate-700 data-[selected=true]:text-gray-900 dark:data-[selected=true]:text-white"
                   onSelect={() => handleSelect(item.id)}
                 >
                   <Checkbox

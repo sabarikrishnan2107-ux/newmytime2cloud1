@@ -886,6 +886,7 @@ class AttendanceController extends Controller
                     },
                     'device_in:device_id,name',
                     'device_out:device_id,name',
+                    'employee:system_user_id,profile_picture',
                 ])
 
                 ->selectRaw("
@@ -930,8 +931,8 @@ class AttendanceController extends Controller
                     $name = (string) ($row->display_name ?? 'Unknown');
                 }
 
-                $img = null;
-                if (!empty($row->profile_picture)) {
+                $img = $row->employee?->profile_picture;
+                if (empty($img) && !empty($row->profile_picture)) {
                     if (filter_var($row->profile_picture, FILTER_VALIDATE_URL)) {
                         $img = $row->profile_picture;
                     } else {
@@ -1086,10 +1087,13 @@ class AttendanceController extends Controller
 
                 $img = null;
                 if (!empty($row->profile_picture)) {
-                    if (filter_var($row->profile_picture, FILTER_VALIDATE_URL)) {
-                        $img = $row->profile_picture;
+                    $pp = $row->profile_picture;
+                    if (filter_var($pp, FILTER_VALIDATE_URL)) {
+                        $img = $pp;
+                    } elseif (file_exists(public_path('media/employee/profile_picture/' . $pp))) {
+                        $img = asset('media/employee/profile_picture/' . $pp);
                     } else {
-                        $img = 'https://backend.mytime2cloud.com/media/employee/profile_picture/' . ltrim($row->profile_picture, '/');
+                        $img = 'https://backend.mytime2cloud.com/media/employee/profile_picture/' . ltrim($pp, '/');
                     }
                 }
 

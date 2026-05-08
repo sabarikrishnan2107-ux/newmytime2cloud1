@@ -43,7 +43,7 @@ const EditEmployeeRecord = ({ selectedEmployee }) => {
     if (!payload) return;
 
     return (
-        <main className="mx-auto p-6 md:p-10 overflow-y-auto max-h-[calc(100vh-100px)]">
+        <main className="w-full max-w-screen-2xl mx-auto p-4 sm:p-6 md:p-8 xl:p-10 overflow-y-auto max-h-[calc(100vh-100px)]">
 
             {/* Breadcrumbs & Header */}
             <div className="flex flex-col gap-2 mb-8">

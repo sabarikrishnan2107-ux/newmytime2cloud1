@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { RefreshCw, Trash2 } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 import Input from '@/components/Theme/Input';
 import { getBranches, getDepartmentsByBranchIds, getScheduleEmployees, removeEmployeeSchedule } from '@/lib/api';
@@ -15,8 +15,10 @@ import Columns from "./columns";
 import { parseApiError } from '@/lib/utils';
 import IconButton from '@/components/Theme/IconButton';
 import Create from '@/components/Schedule/Create';
+import Delete from '@/components/Schedule/Delete';
 import EditScheduleModal from '@/components/Schedule/EditModal';
 import MultiDropDown from '@/components/ui/MultiDropDown';
+import DropDown from '@/components/ui/DropDown';
 import { SCHEDULE_STATS } from '@/lib/dropdowns';
 
 export default function SchedulePage() {
@@ -55,35 +57,6 @@ export default function SchedulePage() {
     const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([]);
     const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
     const [scheduleFilter, setScheduleFilter] = useState('');
-    const [selectedIds, setSelectedIds] = useState([]);
-
-    const toggleSelect = (employeeId) => {
-        setSelectedIds(prev =>
-            prev.includes(employeeId) ? prev.filter(id => id !== employeeId) : [...prev, employeeId]
-        );
-    };
-
-    const toggleAll = () => {
-        if (selectedIds.length === records.length) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(records.map(r => r.employee_id));
-        }
-    };
-
-    const bulkDelete = async () => {
-        if (!selectedIds.length) return;
-        if (!confirm(`Are you sure you want to delete schedules for ${selectedIds.length} employee(s)?`)) return;
-
-        try {
-            await Promise.all(selectedIds.map(id => removeEmployeeSchedule(id)));
-            setSelectedIds([]);
-            await handleRefresh();
-        } catch (error) {
-            alert("Failed to delete: " + parseApiError(error));
-        }
-    };
-
 
     const [branches, setBranches] = useState([]);
     const [departments, setDepartments] = useState([]);
@@ -161,7 +134,6 @@ export default function SchedulePage() {
             console.log("Fetched records:", result?.data?.slice(0, 2)?.map(r => ({ id: r.id, name: r.first_name, schedule: r.schedule })));
             if (result && Array.isArray(result.data)) {
                 setRecords(result.data);
-                setSelectedIds([]);
                 setCurrentPage(result.current_page || 1);
                 setTotalPages(result.total || 1);
                 setIsLoading(false);
@@ -220,15 +192,6 @@ export default function SchedulePage() {
                         <h1 className="text-2xl font-extrabold text-gray-600 dark:text-gray-300 flex items-center">
                             Schedule Employees
                         </h1>
-                        {selectedIds.length > 0 && (
-                            <button
-                                onClick={bulkDelete}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white text-sm font-semibold rounded-lg transition-all"
-                            >
-                                <Trash2 size={14} />
-                                Delete ({selectedIds.length})
-                            </button>
-                        )}
                     </div>
                     <div className="flex flex-wrap items-center space-x-3 space-y-2 sm:space-y-0">
                         <div className="relative">
@@ -263,15 +226,17 @@ export default function SchedulePage() {
                         </div>
 
                         <div className="relative">
-                            <select
+                            <DropDown
+                                placeholder="All"
                                 value={scheduleFilter}
-                                onChange={(e) => { setScheduleFilter(e.target.value); setCurrentPage(1); }}
-                                className="h-10 px-3 pr-8 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-primary/50 appearance-none cursor-pointer"
-                            >
-                                <option value="">All</option>
-                                <option value="1">Scheduled</option>
-                                <option value="0">Unscheduled</option>
-                            </select>
+                                onChange={(v) => { setScheduleFilter(v ?? ""); setCurrentPage(1); }}
+                                items={[
+                                    { id: "", name: "All" },
+                                    { id: "1", name: "Scheduled" },
+                                    { id: "0", name: "Unscheduled" },
+                                ]}
+                                width="w-[160px]"
+                            />
                         </div>
 
                         {/* Search Input */}
@@ -293,16 +258,13 @@ export default function SchedulePage() {
 
                         <Create onSuccess={handleRefresh} />
 
+                        <Delete onSuccess={handleRefresh} />
+
                     </div>
                 </div>
 
                 <DataTable
-                    columns={Columns(deleteItem, handleEdit, handleView, {
-                        selectedIds,
-                        toggleSelect,
-                        toggleAll,
-                        allSelected: records.length > 0 && selectedIds.length === records.length,
-                    })}
+                    columns={Columns(deleteItem, handleEdit, handleView)}
                     data={records}
                     isLoading={isLoading}
                     error={error}

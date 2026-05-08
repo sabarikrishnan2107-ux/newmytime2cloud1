@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { createDesignations, getBranches, getDepartments, getDepartmentsByBranchIds, getEmployeeList, getScheduledEmployeeList, getScheduleEmployees, getShiftDropDownList, getShifts, storeSchedule } from "@/lib/api";
 import { SuccessDialog } from "@/components/SuccessDialog";
@@ -13,7 +13,6 @@ import DropDown from "../ui/DropDown";
 import MultiDropDown from "../ui/MultiDropDown";
 import DateRangeSelect from "../ui/DateRange";
 import { Checkbox } from "../ui/checkbox";
-import { useDebounce } from "@/hooks/useDebounce";
 import { id } from "date-fns/locale";
 import ShiftPreview from "../Shift/ShiftPreview";
 import ProfilePicture from "../ProfilePicture";
@@ -72,12 +71,34 @@ const Create = ({ onSuccess = () => { } }) => {
     const [branches, setBranches] = useState([]);
     const [departments, setDepartments] = useState([]);
     const [employees, setEmployees] = useState([]);
-    const [filteredEmployees, setFilteredEmployees] = useState([]);
+    const [scheduleFilter, setScheduleFilter] = useState("all"); // "all" | "scheduled" | "unscheduled"
+
+    const filteredEmployees = useMemo(() => {
+        let list = employees;
+        if (searchTerm) {
+            const t = searchTerm.toLowerCase();
+            list = list.filter((e) =>
+                (e.name || "").toLowerCase().includes(t) ||
+                String(e.employee_id || "").toLowerCase().includes(t)
+            );
+        }
+        if (scheduleFilter === "scheduled") {
+            list = list.filter((e) => Array.isArray(e.schedule) && e.schedule.length > 0);
+        } else if (scheduleFilter === "unscheduled") {
+            list = list.filter((e) => !Array.isArray(e.schedule) || e.schedule.length === 0);
+        }
+        return list;
+    }, [employees, searchTerm, scheduleFilter]);
 
     const fetchDropdowns = async () => {
         try {
             setBranches(await getBranches());
-            setShifts(await getShiftDropDownList());
+            const list = await getShiftDropDownList();
+            const withAuto = [
+                { id: "auto", name: "Auto Shift" },
+                ...((Array.isArray(list) ? list : []).filter((s) => s?.id !== "auto")),
+            ];
+            setShifts(withAuto);
         } catch (error) {
             setError(parseApiError(error));
         }
@@ -123,15 +144,11 @@ const Create = ({ onSuccess = () => { } }) => {
 
         const fetchEmployees = async (selectedDepartmentIds) => {
             try {
-                console.log(`await getScheduledEmployeeList()`);
                 let emp = await getScheduledEmployeeList(selectedDepartmentIds);
                 setEmployees((emp || []).map(e => ({
                     ...e,
                     name: e.full_name || e.name
                 })));
-
-                setFilteredEmployees(emp);
-                console.log(`await getScheduledEmployeeList()`);
             } catch (error) {
                 setError(parseApiError(error));
             }
@@ -226,31 +243,7 @@ const Create = ({ onSuccess = () => { } }) => {
         }
     };
 
-    // Create the debounced version of your search logic
-    const debouncedSearch = useDebounce((value) => {
-        // 1. If no value, show everyone
-        if (!value) {
-            setFilteredEmployees(employees);
-            return;
-        }
-
-        // 2. Normalize search term to lowercase
-        const searchTerm = value.toLowerCase();
-
-        const filtered = employees.filter(e =>
-            // 3. Normalize employee name to lowercase for the comparison
-            e.name.toLowerCase().includes(searchTerm) || e.employee_id.toLowerCase().includes(searchTerm)
-        );
-
-        setFilteredEmployees(filtered);
-        console.log("Searching API for:", value);
-    }, 500);
-
-    const handleSearch = (e) => {
-        const val = e.target.value;
-        setSearchTerm(val);   // Updates the input instantly
-        debouncedSearch(val); // Triggers the delayed action
-    };
+    const handleSearch = (e) => setSearchTerm(e.target.value);
 
     return (
         <>
@@ -266,7 +259,7 @@ const Create = ({ onSuccess = () => { } }) => {
                 <div
                     aria-modal="true"
                     role="dialog"
-                    className="fixed inset-0 z-50 flex items-center justify-center px-4"
+                    className="fixed inset-0 z-50 flex items-start justify-center px-4 pt-24 pb-6"
                 >
                     {/* Backdrop/Overlay */}
                     <div
@@ -275,7 +268,7 @@ const Create = ({ onSuccess = () => { } }) => {
                     ></div>
 
                     {/* Modal Card */}
-                    <div className="relative min-w-[1200px]  overflow-y-auto max-h-[calc(100vh-130px)]  bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10  overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
+                    <div className="relative min-w-[1200px]  overflow-y-auto max-h-[calc(100vh-140px)]  bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10  overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200">
 
                         {/* Header */}
                         <div className="px-6 py-5 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
@@ -308,7 +301,7 @@ const Create = ({ onSuccess = () => { } }) => {
                                     <div className="flex flex-col gap-6">
 
                                         {/* Filters */}
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                                             <MultiDropDown
                                                 placeholder={'Select Branch'}
                                                 items={branches}
@@ -325,6 +318,18 @@ const Create = ({ onSuccess = () => { } }) => {
                                                 badgesCount={1}
                                             />
 
+                                            <DropDown
+                                                placeholder="All"
+                                                width="w-full"
+                                                value={scheduleFilter}
+                                                onChange={(v) => setScheduleFilter(v || "all")}
+                                                items={[
+                                                    { id: "all", name: "All" },
+                                                    { id: "scheduled", name: "Scheduled" },
+                                                    { id: "unscheduled", name: "Unscheduled" },
+                                                ]}
+                                            />
+
                                             <Input
                                                 placeholder="Search by name or ID"
                                                 icon="search"
@@ -334,8 +339,8 @@ const Create = ({ onSuccess = () => { } }) => {
                                         </div>
 
 
-                                        {/* Employee Table */}
-                                        <div className="overflow-y-auto max-h-[400px] rounded-3xl border border-stone-200 dark:border-white/10 shadow-elevation-1">
+                                        {/* Employee Table — shows ~4 rows, then scrolls */}
+                                        <div className="overflow-y-auto max-h-[300px] rounded-3xl border border-stone-200 dark:border-white/10 shadow-elevation-1">
                                             <table className="w-full text-left border-collapse">
                                                 <thead>
                                                     <tr className="bg-[#efece5] dark:bg-white/5 text-slate-600 dark:text-slate-300 text-xs uppercase tracking-wider font-semibold border-b border-stone-200 dark:border-white/5">
@@ -426,22 +431,6 @@ const Create = ({ onSuccess = () => { } }) => {
                                                             setTo(to);
                                                         }
                                                         } />
-                                                </div>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <label className="text-sm font-semibold text-slate-700 dark:text-gray-200 ml-1">Auto Shift</label>
-                                                <div className="flex items-center gap-3 pt-1">
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setIsAutoShift(v => !v)}
-                                                        className={`relative inline-flex items-center h-6 w-11 rounded-full transition-colors duration-300 ${isAutoShift ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-700'}`}
-                                                    >
-                                                        <span className={`inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform duration-300 ${isAutoShift ? 'translate-x-5' : 'translate-x-0.5'}`} />
-                                                    </button>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                                                        {isAutoShift ? "Enabled — system picks shift per day based on punches" : "Disabled — use the selected shift every day"}
-                                                    </span>
                                                 </div>
                                             </div>
 

@@ -21,19 +21,21 @@ export function FilterBar({
     <div className="mb-6 flex flex-wrap items-center gap-3">
       <div className="flex-1 min-w-[180px]">
         <DropDown
+          multi
           placeholder={"All Branches"}
           items={[{ id: null, name: "All Branches" }, ...branches]}
-          value={filters.branchId}
-          onChange={(v) => set({ branchId: v, deviceId: null, employeeId: null })}
+          value={filters.branchIds}
+          onChange={(v) => set({ branchIds: v, deviceIds: [], employeeIds: [] })}
         />
       </div>
 
       <div className="flex-1 min-w-[180px]">
         <DropDown
+          multi
           placeholder={"All Devices"}
           items={[{ id: null, name: "All Devices" }, ...devices]}
-          value={filters.deviceId}
-          onChange={(v) => set({ deviceId: v })}
+          value={filters.deviceIds}
+          onChange={(v) => set({ deviceIds: v })}
         />
       </div>
 
@@ -52,10 +54,11 @@ export function FilterBar({
 
       <div className="flex-1 min-w-[180px]">
         <DropDown
+          multi
           placeholder={"All Employees"}
           items={[{ id: null, name: "All Employees" }, ...employees]}
-          value={filters.employeeId}
-          onChange={(v) => set({ employeeId: v })}
+          value={filters.employeeIds}
+          onChange={(v) => set({ employeeIds: v })}
         />
       </div>
 

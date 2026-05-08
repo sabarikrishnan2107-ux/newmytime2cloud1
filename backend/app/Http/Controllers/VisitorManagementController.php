@@ -231,7 +231,7 @@ class VisitorManagementController extends Controller
         $data = $request->only([
             'company_id', 'branch_id', 'visitor_name', 'company_name', 'email', 'phone',
             'id_type', 'id_number', 'host_employee_id', 'host_name', 'purpose',
-            'visitor_type', 'expected_date', 'expected_time', 'notes',
+            'visitor_type', 'expected_date', 'expected_time', 'notes', 'photo',
         ]);
         $data['qr_code'] = 'VPR-' . strtoupper(Str::random(10));
         $data['status'] = 'pending';

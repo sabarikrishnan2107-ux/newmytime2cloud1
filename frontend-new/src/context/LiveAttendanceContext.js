@@ -126,6 +126,7 @@ export function LiveAttendanceProvider({ children }) {
 
 
     const customDate = time;
+    if (!customDate || typeof customDate !== "string") return;
 
     let customTime = new Date(customDate.replace(' ', 'T')).toLocaleTimeString('en-GB', {
       timeZone: 'Asia/Dubai',
@@ -173,7 +174,7 @@ export function LiveAttendanceProvider({ children }) {
 
       payloadList.forEach((payload) => {
         if (!payload || typeof payload !== "object") return;
-
+        if (!payload.time || typeof payload.time !== "string") return;
 
         const [hours, minutes] = payload.time.split(":");
         const myDate = new Date();
@@ -269,6 +270,8 @@ export function LiveAttendanceProvider({ children }) {
           const status = RecordCode > 15 ? "Access Denied" : "Allowed";
           const mode = verificationMethods[RecordCode] ?? "---";
           const reason = deniedReasons[RecordCode] ?? null;
+
+          if (!RecordDate || typeof RecordDate !== "string") return;
 
           const time = new Date(RecordDate.replace(" ", "T")).toLocaleTimeString("en-GB", {
             timeZone: "Asia/Dubai",

@@ -217,30 +217,45 @@ function LiveFeed({ branch_ids, department_ids }) {
   useEffect(() => {
     if (!lastAttendanceEvent) return;
 
-    fetchRecords();
+    // Optimistically prepend the event so the user sees it immediately,
+    // even before the backend has logged it.
+    const ev = lastAttendanceEvent;
+    const optimistic = {
+      id: ev.customId,
+      name: ev.personName || "—",
+      dept: ev.dept || "—",
+      branchName: (ev.dept || "").split("/")[0]?.trim() || "—",
+      departmentName: (ev.dept || "").split("/")[1]?.trim() || "—",
+      deviceName: ev.location || "—",
+      deviceLocation: ev.location || "—",
+      deviceFunction: ev.log_type || "Auto",
+      time: ev.time || "",
+      date: new Date().toISOString().slice(0, 10),
+      profile_picture: ev.profile_picture,
+      punctuality: ev.punctuality || "On Time",
+      punctualityColor: ev.punctualityColor || "text-emerald-600",
+      punctualityDot: ev.punctualityDot || "bg-emerald-500",
+      status: ev.status || "Allowed",
+      statusType: ev.status === "Access Denied" ? "Access Denied" : "Allowed",
+      modes: [
+        ev.source === "websocket" || ev.source === "mqtt"
+          ? baseIcons.Face
+          : ev.eventId?.includes("Mobile")
+            ? baseIcons.Mobile
+            : baseIcons.Face,
+      ],
+      _optimisticId: ev.eventId,
+    };
 
-    // setRecords((prev) => [
-    //   {
-    //     id: lastAttendanceEvent.customId,
-    //     name: lastAttendanceEvent.personName,
-    //     dept: lastAttendanceEvent.dept,
-    //     deviceLocation: lastAttendanceEvent.location ?? "Office Location",
-    //     log_type: lastAttendanceEvent.log_type || "---",
-    //     punctuality: lastAttendanceEvent.punctuality,
-    //     punctualityColor: lastAttendanceEvent.punctualityColor,
-    //     punctualityDot: lastAttendanceEvent.punctualityDot,
-    //     profile_picture:lastAttendanceEvent.profile_picture,
-    //     status: lastAttendanceEvent.status,
-    //     statusType: "neutral",
-    //     time: lastAttendanceEvent.time,
-    //     modes: [
-    //       lastAttendanceEvent.eventId?.includes("Mobile")
-    //         ? baseIcons.Mobile
-    //         : baseIcons.Face,
-    //     ],
-    //   },
-    //   ...prev,
-    // ]);
+    setRecords((prev) => {
+      // Skip if we've already injected this exact event
+      if (prev[0]?._optimisticId === ev.eventId) return prev;
+      return [optimistic, ...prev].slice(0, 200);
+    });
+
+    // Re-fetch from backend after a short delay so the row gets canonical data.
+    const t = setTimeout(() => fetchRecords(), 1500);
+    return () => clearTimeout(t);
   }, [lastAttendanceEvent]);
 
   return (
@@ -328,13 +343,19 @@ function LiveFeed({ branch_ids, department_ids }) {
               {item.date} {item.time}
             </div>
 
-            {/* In/Out — Function from device, "option/auto/all/mobile" collapse to Auto */}
+            {/* In/Out — Function fixed to In/Out shows that. If device lets the user
+                choose (option/auto/all/mobile), show the actual choice from log_type. */}
             <div className="text-sm font-medium text-slate-600 dark:text-slate-300 text-center">
               {(() => {
                 const f = String(item.deviceFunction || "").trim().toLowerCase();
                 if (f === "in") return "In";
                 if (f === "out") return "Out";
-                if (f === "option" || f === "auto" || f === "all" || f === "mobile") return "Auto";
+                if (f === "option" || f === "auto" || f === "all" || f === "mobile") {
+                  const lt = String(item.log_type || "").trim().toLowerCase();
+                  if (lt === "in") return "In";
+                  if (lt === "out") return "Out";
+                  return "Auto";
+                }
                 return item.deviceFunction || "—";
               })()}
             </div>
@@ -432,9 +453,12 @@ function EmployeeDetailModal({ employee, onClose }) {
         const mine = all.filter(
           (l) => String(l?.employee?.employee_id || l?.UserID || "") === String(employeeId || "")
         );
-        mine.sort((a, b) =>
-          String(`${b.date} ${b.time}`).localeCompare(String(`${a.date} ${a.time}`))
-        );
+        const tsOf = (l) => {
+          const raw = l?.LogTime || `${l?.date || ""} ${l?.time || ""}`.trim();
+          const t = new Date(raw).getTime();
+          return Number.isFinite(t) ? t : 0;
+        };
+        mine.sort((a, b) => tsOf(b) - tsOf(a));
         setLogs(mine);
       } catch (_) {
         setLogs([]);

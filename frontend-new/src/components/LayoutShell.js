@@ -16,9 +16,10 @@ export default function LayoutShell({ children }) {
   // Only the actual /login screen renders without the admin shell.
   // Sub-routes like /login/manager-login are admin CRUD pages and need the header/sidebar.
   const isLoginRoute = path === "/login";
+  const isHostCheckinRoute = path.startsWith("/visitor/host-checkin");
 
-  // Staff and login pages render their own layout
-  if (isStaffRoute || isLoginRoute) {
+  // Staff, login, and public visitor host-checkin pages render their own layout
+  if (isStaffRoute || isLoginRoute || isHostCheckinRoute) {
     return <>{children}</>;
   }
 

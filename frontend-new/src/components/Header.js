@@ -111,6 +111,8 @@ export default function Header() {
   };
 
   useEffect(() => {
+    if (pathname?.startsWith("/visitor/host-checkin")) return;
+
     const token = localStorage.getItem("token");
     if (!token) {
       router.push("/login");
@@ -123,9 +125,10 @@ export default function Header() {
     window.addEventListener("userUpdated", handleUserUpdate);
 
     return () => window.removeEventListener("userUpdated", handleUserUpdate);
-  }, [router]);
+  }, [router, pathname]);
 
   if (pathname === "/login") return null;
+  if (pathname?.startsWith("/visitor/host-checkin")) return null;
 
   const navLinks = [
     { name: 'DASHBOARD', href: '/' },

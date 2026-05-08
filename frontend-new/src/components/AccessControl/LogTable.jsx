@@ -37,6 +37,7 @@ function fmtDateTime(date, time) {
 }
 
 function isOut(l) {
+  if (typeof l?._isOut === "boolean") return l._isOut;
   const f = (l?.device?.function || "").toLowerCase();
   const t = (l?.log_type || l?.LogType || "").toLowerCase();
   if (f === "out" || t === "out") return true;

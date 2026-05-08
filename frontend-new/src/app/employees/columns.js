@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ProfilePicture from "@/components/ProfilePicture";
 
-export default (deleteEmployee, editEmployee) => [
+export default (deleteEmployee, editEmployee, showHostQr) => [
   {
     key: "employee",
     header: "Personnel",
@@ -26,7 +26,7 @@ export default (deleteEmployee, editEmployee) => [
       <div className="flex items-center gap-5">
         <ProfilePicture src={e.profile_picture} />
         <div>
-          <p className="font-medium text-sm text-slate-600 dark:text-stone-100">{e?.first_name}</p>
+          <p className="font-medium text-sm text-slate-600 dark:text-stone-100">{e?.full_name || [e?.first_name, e?.last_name].filter(Boolean).join(" ")}</p>
           <p className="text-xs text-slate-400 dark:text-stone-100">
             ID: {e.employee_id}
           </p>
@@ -129,7 +129,7 @@ export default (deleteEmployee, editEmployee) => [
 
           <DropdownMenuContent
             align="end"
-            className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1"
+            className="w-36 bg-white dark:bg-gray-900 shadow-md rounded-md py-1"
             onClick={(e) => e.stopPropagation()}
           >
             <DropdownMenuItem
@@ -142,6 +142,19 @@ export default (deleteEmployee, editEmployee) => [
               <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" />
               <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
             </DropdownMenuItem>
+
+            {showHostQr && (
+              <DropdownMenuItem
+                onClick={(e) => {
+                  e.stopPropagation();
+                  showHostQr(employee);
+                }}
+                className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <QrCode className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                <span className="text-slate-700 dark:text-slate-200 font-medium">Host QR</span>
+              </DropdownMenuItem>
+            )}
 
             <DropdownMenuItem
               onClick={(e) => {

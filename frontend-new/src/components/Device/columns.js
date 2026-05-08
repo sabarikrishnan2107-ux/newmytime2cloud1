@@ -1,5 +1,5 @@
 import {
-  AlarmClock,
+  Flame,
   MoreVertical,
   Pencil,
   Settings,
@@ -26,7 +26,8 @@ export default function Columns(
   editItem,
   deviceSettings,
   setOpenDoor,
-  setCloseDoor
+  setCloseDoor,
+  openAlwaysOpen
 ) {
   return [
     {
@@ -159,9 +160,12 @@ export default function Columns(
       header: "Always Open",
       render: (device) => (
         <span
-          title={device.always_open ? "Yes" : "No"}
-          onClick={() => console.log(device.id)}
-          className="inline-block"
+          title="Configure always-open time slots"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (typeof openAlwaysOpen === "function") openAlwaysOpen(device);
+          }}
+          className="inline-block cursor-pointer hover:opacity-80 transition"
         >
           <img
             src="/icons/always_open.png"
@@ -172,11 +176,11 @@ export default function Columns(
       ),
     },
     {
-      key: "alarm",
-      header: "Alarm",
+      key: "fire",
+      header: "Fire",
       render: () => (
-        <span className="text-center text-slate-600 dark:text-slate-300">
-          <AlarmClock size={25} />
+        <span className="text-center text-orange-500" title="Fire">
+          <Flame size={25} />
         </span>
       ),
     },

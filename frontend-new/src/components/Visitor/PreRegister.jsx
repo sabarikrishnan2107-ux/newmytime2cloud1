@@ -2,14 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
-import { Search, Plus, Trash2, X, CalendarCheck, Clock, CheckCircle, AlertCircle, QrCode, Printer } from "lucide-react";
+import { Search, Plus, Trash2, X, CalendarCheck, Clock, CheckCircle, AlertCircle, QrCode, Printer, Check, XCircle, ScanLine } from "lucide-react";
 import QRCode from "qrcode";
 
 const statusIcons = { confirmed: CheckCircle, pending: Clock };
 const statusColors = {
   confirmed: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400",
   pending: "bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400",
+  rejected: "bg-rose-100 dark:bg-rose-900/20 text-rose-700 dark:text-rose-400",
+  approved: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400",
 };
+
 
 export default function PreRegister() {
   const [search, setSearch] = useState("");
@@ -30,11 +33,27 @@ export default function PreRegister() {
         purpose: r.purpose || "---", expectedDate: r.expected_date,
         expectedTime: r.expected_time || "---", type: r.visitor_type || "Business",
         status: r.status, notes: r.notes || "", qr_code: r.qr_code,
+        photo: r.photo || null,
+        source: r.visitor_type === "Host QR" ? "host_qr" : "api",
       })));
     } catch (e) {}
   };
 
-  useEffect(() => { fetchPreRegs(); }, []);
+  useEffect(() => {
+    fetchPreRegs();
+    const interval = setInterval(fetchPreRegs, 10000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const updatePreRegStatus = async (id, status) => {
+    try {
+      const params = await buildQueryParams({});
+      await api.put(`/visitor-management/pre-registrations/${id}`, { ...params, status });
+      setPreRegs((prev) => prev.map((r) => (r.id === id ? { ...r, status } : r)));
+    } catch (e) {
+      alert("Status update failed");
+    }
+  };
 
   const showQr = async (v) => {
     setQrVisitor(v);
@@ -147,20 +166,53 @@ export default function PreRegister() {
               {filtered.map(v => (
                 <tr key={v.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition text-xs text-gray-600 dark:text-gray-300">
                   <td className="px-4 py-3">
-                    <div className="text-xs font-medium text-gray-800 dark:text-gray-100">{v.visitorName}</div>
-                    <div className="text-[10px] text-gray-400">{v.company}</div>
+                    <div className="flex items-center gap-2.5">
+                      {v.photo ? (
+                        <img src={v.photo} alt={v.visitorName} className="w-8 h-8 rounded-full object-cover border border-gray-200 dark:border-white/10" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-semibold text-gray-500">
+                          {v.visitorName?.split(" ").map(n => n[0]).slice(0, 2).join("") || "?"}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-gray-800 dark:text-gray-100">{v.visitorName}</div>
+                        <div className="text-[10px] text-gray-400">{v.company}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-3 py-3">{v.host}</td>
                   <td className="px-3 py-3">{v.purpose}</td>
                   <td className="px-3 py-3 font-mono text-[11px]">{v.expectedDate}</td>
                   <td className="px-3 py-3">{v.expectedTime}</td>
-                  <td className="px-3 py-3"><span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400">{v.type}</span></td>
+                  <td className="px-3 py-3">
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${
+                      v.source === "host_qr"
+                        ? "bg-indigo-100 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400"
+                        : "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400"
+                    }`}>
+                      {v.source === "host_qr" ? <span className="inline-flex items-center gap-1"><ScanLine className="w-3 h-3" /> {v.type}</span> : v.type}
+                    </span>
+                  </td>
                   <td className="px-3 py-3"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${statusColors[v.status] || ""}`}>{v.status}</span></td>
                   <td className="px-3 py-3">
                     <div className="flex gap-1">
-                      <button title="QR Code" onClick={() => showQr(v)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-primary transition"><QrCode className="h-3.5 w-3.5" /></button>
-                      <button title="Print Badge" onClick={() => { showQr(v); setTimeout(() => printBadge(v), 500); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-emerald-500 transition"><Printer className="h-3.5 w-3.5" /></button>
-                      <button title="Delete" onClick={() => handleDeletePreReg(v.id)} className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-gray-400 hover:text-red-500 transition"><Trash2 className="h-3.5 w-3.5" /></button>
+                      {v.source === "host_qr" && v.status === "pending" && (
+                        <>
+                          <button title="Approve" onClick={() => updatePreRegStatus(v.id, "confirmed")} className="p-1.5 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-900/10 text-gray-400 hover:text-emerald-600 transition"><Check className="h-3.5 w-3.5" /></button>
+                          <button title="Reject" onClick={() => updatePreRegStatus(v.id, "rejected")} className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-900/10 text-gray-400 hover:text-rose-600 transition"><XCircle className="h-3.5 w-3.5" /></button>
+                        </>
+                      )}
+                      {v.source !== "host_qr" && (
+                        <>
+                          <button title="QR Code" onClick={() => showQr(v)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-primary transition"><QrCode className="h-3.5 w-3.5" /></button>
+                          <button title="Print Badge" onClick={() => { showQr(v); setTimeout(() => printBadge(v), 500); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-emerald-500 transition"><Printer className="h-3.5 w-3.5" /></button>
+                        </>
+                      )}
+                      <button
+                        title="Delete"
+                        onClick={() => handleDeletePreReg(v.id)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/10 text-gray-400 hover:text-red-500 transition"
+                      ><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
                   </td>
                 </tr>

@@ -213,6 +213,10 @@ class ThemeController extends Controller
             })
             ->where('status_id', 2)
             ->where('device_id', "!=", "Manual")
+            ->where('device_type', "!=", "Mobile")
+            ->where(function ($q) {
+                $q->whereNull('model_number')->orWhere('model_number', 'not like', '%Mobile%');
+            })
             ->count();
 
         return [
@@ -290,6 +294,10 @@ class ThemeController extends Controller
             })
             ->where('status_id', 2)
             ->where('device_id', "!=", "Manual")
+            ->where('device_type', "!=", "Mobile")
+            ->where(function ($q) {
+                $q->whereNull('model_number')->orWhere('model_number', 'not like', '%Mobile%');
+            })
             ->count();
 
         return [

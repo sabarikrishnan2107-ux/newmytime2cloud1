@@ -34,6 +34,7 @@ const Profile = ({ action = "Add", payload }) => {
         rfid_card_number: "",
         gender: "",
         profile_image_base64: null,
+        employee_type: "Full Time",
 
         nationality: "",
         date_of_birth: null,
@@ -51,7 +52,8 @@ const Profile = ({ action = "Add", payload }) => {
 
 
     useEffect(() => {
-        setForm(payload);
+        if (!payload) return;
+        setForm({ ...payload, employee_type: payload.employee_type || "Full Time" });
     }, [payload])
 
     const fetchBranches = async () => {
@@ -133,6 +135,10 @@ const Profile = ({ action = "Add", payload }) => {
             await notify("Oops!", "Please enter a valid email address.", "error");
             return;
         }
+        if (!form.employee_type) {
+            await notify("Oops!", "Please select Employee Type.", "error");
+            return;
+        }
 
         setLoading(true);
 
@@ -179,8 +185,8 @@ const Profile = ({ action = "Add", payload }) => {
 
                         {/* Personal Info */}
                         <SectionTitle icon={<User size={14} />} title="Personal Information" />
-                        <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+                            <div className="lg:col-span-4">
                                 <Label>Title</Label>
                                 <DropDown
                                     width="w-full"
@@ -194,26 +200,26 @@ const Profile = ({ action = "Add", payload }) => {
                                     onChange={(title) => setForm({ ...form, title })}
                                 />
                             </div>
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>First Name</Label>
                                 <Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} placeholder="Jonathan" />
                             </div>
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Last Name</Label>
                                 <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} placeholder="Doe" />
                             </div>
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Display</Label>
                                 <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="John D." />
                             </div>
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Full Name</Label>
                                 <Input value={form.full_name} onChange={(e) => setForm({ ...form, full_name: e.target.value })} placeholder="Jonathan Doe" readOnly className="bg-slate-50 dark:bg-slate-800 text-slate-500" />
                             </div>
 
 
 
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Gender</Label>
                                 <RadioGroup
                                     options={[
@@ -225,17 +231,17 @@ const Profile = ({ action = "Add", payload }) => {
                                 />
                             </div>
 
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Religion</Label>
                                 <Input value={form.religion} onChange={(e) => setForm({ ...form, religion: e.target.value })} placeholder="Religion" className="bg-slate-50 dark:bg-slate-800 text-slate-500" />
                             </div>
 
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Nationality</Label>
                                 <Input value={form.nationality} onChange={(e) => setForm({ ...form, nationality: e.target.value })} placeholder="Nationality" className="bg-slate-50 dark:bg-slate-800 text-slate-500" />
                             </div>
 
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Blood Group</Label>
                                 <DropDown width="w-full"
                                     value={form.blood_group}
@@ -252,7 +258,7 @@ const Profile = ({ action = "Add", payload }) => {
                                     ]} />
                             </div>
 
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Marital Status</Label>
                                 <DropDown width="w-full"
                                     value={form.marital_status}
@@ -266,7 +272,7 @@ const Profile = ({ action = "Add", payload }) => {
 
                             </div>
 
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Date Of Birth</Label>
                                 <DatePicker
                                     value={form.date_of_birth}
@@ -280,19 +286,21 @@ const Profile = ({ action = "Add", payload }) => {
 
                         {/* Employment Details */}
                         <SectionTitle icon={<Briefcase size={14} />} title="Employment Details" />
-                        <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-3">
-                                <Label>Employee Type</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+                            <div className="lg:col-span-3">
+                                <Label>Employee Type *</Label>
                                 <DropDown width="w-full"
+                                    placeholder="Select Employee Type"
                                     value={form.employee_type}
                                     onChange={(e) => setForm({ ...form, employee_type: e })}
                                     items={[
                                         { id: "Full Time", name: "Full Time" },
                                         { id: "Part Time", name: "Part Time" },
                                         { id: "Contractor", name: "Contractor" },
+                                        { id: "Trainee", name: "Trainee" },
                                     ]} />
                             </div>
-                            <div className="col-span-3">
+                            <div className="lg:col-span-3">
                                 <Label>Branch</Label>
                                 <DropDown
                                     placeholder="Select Branch"
@@ -302,7 +310,7 @@ const Profile = ({ action = "Add", payload }) => {
                                     items={branches}
                                 />
                             </div>
-                            <div className="col-span-3">
+                            <div className="lg:col-span-3">
                                 <Label>Dept</Label>
                                 <DropDown width="w-full"
                                     value={form.department_id}
@@ -310,7 +318,7 @@ const Profile = ({ action = "Add", payload }) => {
                                     items={departments} />
 
                             </div>
-                            <div className="col-span-3">
+                            <div className="lg:col-span-3">
                                 <Label>Position</Label>
 
                                 <DropDown width="w-full"
@@ -318,16 +326,16 @@ const Profile = ({ action = "Add", payload }) => {
                                     onChange={(e) => setForm({ ...form, designation_id: e })}
                                     items={designations} />
                             </div>
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Employee ID</Label>
-                                <Input value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value })} placeholder="EMP-001" />
+                                <Input maxLength={16} value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value.slice(0, 16) })} placeholder="EMP-001" />
                             </div>
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Employee Device ID</Label>
-                                <Input value={form.system_user_id} onChange={(e) => setForm({ ...form, system_user_id: e.target.value })} placeholder="EMP-001" />
+                                <Input maxLength={16} value={form.system_user_id} onChange={(e) => setForm({ ...form, system_user_id: e.target.value.slice(0, 16) })} placeholder="EMP-001" />
                             </div>
 
-                            <div className="col-span-4">
+                            <div className="lg:col-span-4">
                                 <Label>Joined Date</Label>
                                 <DatePicker value={form.joining_date} onChange={(e) => setForm({ ...form, joining_date: e })} />
                             </div>
@@ -336,15 +344,15 @@ const Profile = ({ action = "Add", payload }) => {
 
                         {/* Contact Info */}
                         <SectionTitle icon={<Contact size={14} />} title="Contact Info" />
-                        <div className="grid grid-cols-12 gap-4">
-                            <div className="col-span-6"><Label>Mobile</Label>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
+                            <div className="lg:col-span-6"><Label>Mobile</Label>
                                 <Input
                                     value={form.phone_number}
                                     onChange={(e) => setForm({ ...form, phone_number: e.target.value })}
                                     placeholder="971xxxxxxxxx"
                                 />
                             </div>
-                            <div className="col-span-6">
+                            <div className="lg:col-span-6">
                                 <Label>Email</Label>
                                 <Input type="email" value={form.email}
                                     onChange={(e) => { setForm({ ...form, email: e.target.value }); validateEmail(e.target.value); }}

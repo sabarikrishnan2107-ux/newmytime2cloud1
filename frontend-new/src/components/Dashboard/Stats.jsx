@@ -22,7 +22,7 @@ const ACCENTS = {
 function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert = false }) {
   const a = ACCENTS[accent] || ACCENTS.neutral;
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1a2238] dark:bg-[#0c1220]">
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1d2b4a] dark:bg-[#101a30]">
       <div className="flex items-start justify-between gap-2">
         <p
           className="text-[11px] font-semibold tracking-[0.14em] uppercase"

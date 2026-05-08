@@ -1,6 +1,6 @@
 "use client";
 
-import { format, addMonths, subMonths } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth } from "date-fns";
 import { Calendar as CalendarIcon, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn, formatDateDubai } from "@/lib/utils";
@@ -13,6 +13,133 @@ import {
 } from "@/components/ui/popover";
 import { useEffect, useMemo, useState } from "react";
 import DropDown from "@/components/ui/DropDown";
+
+const MONTH_LABELS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
+
+function RangeMonth({ month, onChange, draftDate, onSelect, showOutsideDays }) {
+  const [view, setView] = useState("calendar"); // "calendar" | "year" | "month"
+  const [yearPage, setYearPage] = useState(month.getFullYear());
+
+  const yearGrid = useMemo(() => {
+    const start = yearPage - 6;
+    return Array.from({ length: 12 }, (_, i) => start + i);
+  }, [yearPage]);
+
+  return (
+    <div className="w-[280px]">
+      <div className="flex items-center justify-between px-2 pt-2">
+        <button
+          type="button"
+          onClick={() => {
+            if (view === "calendar") onChange(subMonths(month, 1));
+            else if (view === "year") setYearPage(yearPage - 12);
+          }}
+          className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <ChevronLeft className="w-4 h-4 text-slate-500" />
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (view === "calendar") {
+              setYearPage(month.getFullYear());
+              setView("year");
+            } else if (view === "year" || view === "month") {
+              setView("calendar");
+            }
+          }}
+          className="px-3 h-8 rounded-md text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          {view === "calendar" && format(month, "LLLL yyyy")}
+          {view === "year" && `${yearGrid[0]} – ${yearGrid[yearGrid.length - 1]}`}
+          {view === "month" && month.getFullYear()}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            if (view === "calendar") onChange(addMonths(month, 1));
+            else if (view === "year") setYearPage(yearPage + 12);
+          }}
+          className="p-1.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800"
+        >
+          <ChevronRight className="w-4 h-4 text-slate-500" />
+        </button>
+      </div>
+
+      {view === "calendar" && (
+        <Calendar
+          mode="range"
+          month={month}
+          onMonthChange={onChange}
+          selected={
+            draftDate?.from || draftDate?.to
+              ? { from: draftDate.from || undefined, to: draftDate.to || undefined }
+              : undefined
+          }
+          onSelect={onSelect}
+          numberOfMonths={1}
+          showOutsideDays={showOutsideDays}
+          classNames={{ month_caption: "hidden", nav: "hidden" }}
+        />
+      )}
+
+      {view === "year" && (
+        <div className="grid grid-cols-3 gap-2 p-3">
+          {yearGrid.map((y) => {
+            const sel = y === month.getFullYear();
+            return (
+              <button
+                key={y}
+                type="button"
+                onClick={() => {
+                  onChange(new Date(y, month.getMonth(), 1));
+                  setView("month");
+                }}
+                className={cn(
+                  "h-10 rounded-lg text-sm font-medium transition-colors",
+                  sel
+                    ? "bg-primary text-white"
+                    : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                )}
+              >
+                {y}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {view === "month" && (
+        <div className="grid grid-cols-3 gap-2 p-3">
+          {MONTH_LABELS.map((m, i) => {
+            const sel = i === month.getMonth();
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => {
+                  onChange(new Date(month.getFullYear(), i, 1));
+                  setView("calendar");
+                }}
+                className={cn(
+                  "h-10 rounded-lg text-sm font-medium transition-colors",
+                  sel
+                    ? "bg-primary text-white"
+                    : "text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                )}
+              >
+                {m.slice(0, 3)}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const monthItems = [
   "January", "February", "March", "April", "May", "June",
@@ -32,6 +159,8 @@ export default function DateRangeSelect({
   const [open, setOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [viewMonth, setViewMonth] = useState(new Date());
+  const [leftMonth, setLeftMonth] = useState(startOfMonth(new Date()));
+  const [rightMonth, setRightMonth] = useState(addMonths(startOfMonth(new Date()), 1));
 
   const yearGridPage = useMemo(() => {
     const centerYear = viewMonth.getFullYear();
@@ -58,20 +187,33 @@ export default function DateRangeSelect({
     }
   };
 
-  const handleApply = () => {
-    setDate(draftDate);
+  const commitRange = (range) => {
+    setDate(range);
     setOpen(false);
     setYearPickerOpen(false);
     onChange({
-      from: formatDateDubai(draftDate.from),
-      to: formatDateDubai(draftDate.to),
+      from: formatDateDubai(range.from),
+      to: formatDateDubai(range.to),
     });
   };
 
-  const handleCancel = () => {
-    setDraftDate(date);
-    setOpen(false);
-    setYearPickerOpen(false);
+  const handleRangeSelect = (range) => {
+    setDraftDate(range || { from: null, to: null });
+    // Only commit when the user has picked two distinct dates.
+    // First click sets from=clicked,to=clicked which we treat as in-progress.
+    if (
+      range?.from &&
+      range?.to &&
+      range.from.getTime() !== range.to.getTime()
+    ) {
+      commitRange(range);
+    }
+  };
+
+  const handleSingleSelect = (d) => {
+    const range = { from: d || null, to: d || null };
+    setDraftDate(range);
+    if (d) commitRange(range);
   };
 
   return (
@@ -112,52 +254,28 @@ export default function DateRangeSelect({
           align="start"
           side="bottom"
         >
-          {/* Header with month/year controls */}
-          <div className="flex items-center justify-between gap-2 p-3 pb-0">
-            <div className="flex gap-2 items-center">
-              <div className="w-28">
-                <DropDown
-                  items={monthItems}
-                  value={viewMonth.getMonth()}
-                  onChange={(id) => setViewMonth(new Date(viewMonth.getFullYear(), Number(id), 1))}
-                />
+          {/* Header with month/year controls — single mode only (range mode uses per-calendar nav) */}
+          {single && (
+            <div className="flex items-center justify-between gap-2 p-3 pb-0">
+              <div className="flex gap-2 items-center">
+                <div className="w-28">
+                  <DropDown
+                    items={monthItems}
+                    value={viewMonth.getMonth()}
+                    onChange={(id) => setViewMonth(new Date(viewMonth.getFullYear(), Number(id), 1))}
+                  />
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setYearPickerOpen(!yearPickerOpen)}
+                  className="px-3 h-9 rounded-md border border-border text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  {viewMonth.getFullYear()}
+                  <span className="material-icons ml-1 text-base align-middle">expand_more</span>
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setYearPickerOpen(!yearPickerOpen)}
-                className="px-3 h-9 rounded-md border border-border text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                {viewMonth.getFullYear()}
-                <span className="material-icons ml-1 text-base align-middle">expand_more</span>
-              </button>
             </div>
-            {!single && (
-              <div className="flex gap-1">
-                <button
-                  type="button"
-                  onClick={() =>
-                    yearPickerOpen
-                      ? setViewMonth(new Date(viewMonth.getFullYear() - 10, viewMonth.getMonth(), 1))
-                      : setViewMonth(subMonths(viewMonth, 1))
-                  }
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-                >
-                  <ChevronLeft className="w-4 h-4 text-slate-500" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    yearPickerOpen
-                      ? setViewMonth(new Date(viewMonth.getFullYear() + 10, viewMonth.getMonth(), 1))
-                      : setViewMonth(addMonths(viewMonth, 1))
-                  }
-                  className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
-                >
-                  <ChevronRight className="w-4 h-4 text-slate-500" />
-                </button>
-              </div>
-            )}
-          </div>
+          )}
 
           {yearPickerOpen ? (
             <div className="p-4">
@@ -170,6 +288,8 @@ export default function DateRangeSelect({
                       type="button"
                       onClick={() => {
                         setViewMonth(new Date(year, viewMonth.getMonth(), 1));
+                        setLeftMonth(new Date(year, viewMonth.getMonth(), 1));
+                        setRightMonth(addMonths(new Date(year, viewMonth.getMonth(), 1), 1));
                         setYearPickerOpen(false);
                       }}
                       className={cn(
@@ -193,46 +313,34 @@ export default function DateRangeSelect({
                 month={viewMonth}
                 onMonthChange={setViewMonth}
                 selected={draftDate?.from || undefined}
-                onSelect={(d) => setDraftDate({ from: d || null, to: d || null })}
+                onSelect={handleSingleSelect}
                 numberOfMonths={numberOfMonths}
                 showOutsideDays={showOutsideDays}
                 classNames={{ month_caption: "hidden", nav: "hidden" }}
               />
             ) : (
-              <Calendar
-                initialFocus
-                mode="range"
-                month={viewMonth}
-                onMonthChange={setViewMonth}
-                selected={draftDate}
-                onSelect={setDraftDate}
-                numberOfMonths={numberOfMonths}
-                showOutsideDays={showOutsideDays}
-              />
+              <div className="flex flex-col sm:flex-row p-2 sm:p-3 sm:divide-x divide-y sm:divide-y-0 divide-slate-200 dark:divide-white/10">
+                <div className="sm:pr-4">
+                  <RangeMonth
+                    month={leftMonth}
+                    onChange={setLeftMonth}
+                    draftDate={draftDate}
+                    onSelect={handleRangeSelect}
+                    showOutsideDays={showOutsideDays}
+                  />
+                </div>
+                <div className="sm:pl-4 pt-3 sm:pt-0">
+                  <RangeMonth
+                    month={rightMonth}
+                    onChange={setRightMonth}
+                    draftDate={draftDate}
+                    onSelect={handleRangeSelect}
+                    showOutsideDays={showOutsideDays}
+                  />
+                </div>
+              </div>
             )
           )}
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-2 border-t border-gray-200 dark:border-white/30 p-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={handleCancel}
-              className="bg-white dark:bg-slate-700"
-            >
-              <X className="h-4 w-4" />
-              Cancel
-            </Button>
-            <Button
-              className="bg-white dark:bg-primary"
-              size="sm"
-              onClick={handleApply}
-              disabled={single ? !draftDate?.from : !draftDate?.from || !draftDate.to}
-            >
-              <Check className="h-4 w-4" />
-              Apply
-            </Button>
-          </div>
         </PopoverContent>
       </Popover>
     </div>

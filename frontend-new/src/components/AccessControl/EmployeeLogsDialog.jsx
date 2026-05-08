@@ -3,13 +3,40 @@
 import { useMemo } from "react";
 import { X } from "lucide-react";
 
-function isOut(l) {
+function explicitIsOut(l) {
   const f = (l?.device?.function || "").toLowerCase();
   const t = (l?.log_type || l?.LogType || "").toLowerCase();
   if (f === "out" || t === "out") return true;
   if (f === "in" || t === "in") return false;
   const dev = String(l?.DeviceID || l?.device_id || l?.device?.device_id || "").toLowerCase();
-  return !dev.includes("in");
+  if (dev.includes("out")) return true;
+  if (dev.includes("in")) return false;
+  return null;
+}
+
+// Auto-classify: explicit signal wins; else alternate per day by time (1st=IN, 2nd=OUT, …)
+function classifyLogs(logs) {
+  const enriched = logs.map((l) => ({ ...l, _isOut: explicitIsOut(l) }));
+  const groups = new Map();
+  for (const l of enriched) {
+    if (l._isOut !== null) continue;
+    const date = l?.date || l?.edit_date || (l?.LogTime ? String(l.LogTime).slice(0, 10) : "");
+    if (!groups.has(date)) groups.set(date, []);
+    groups.get(date).push(l);
+  }
+  for (const list of groups.values()) {
+    list.sort((a, b) => {
+      const ta = `${a?.date || ""} ${a?.time || ""}`;
+      const tb = `${b?.date || ""} ${b?.time || ""}`;
+      return ta.localeCompare(tb);
+    });
+    list.forEach((l, idx) => { l._isOut = idx % 2 === 1; });
+  }
+  return enriched;
+}
+
+function isOut(l) {
+  return !!l?._isOut;
 }
 
 function fmtHM(mins) {
@@ -35,6 +62,8 @@ function StatRow({ label, value }) {
 }
 
 export default function EmployeeLogsDialog({ open, onClose, employee, logs = [], loading = false }) {
+  const classifiedLogs = useMemo(() => classifyLogs(logs), [logs]);
+
   if (!open) return null;
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -46,7 +75,7 @@ export default function EmployeeLogsDialog({ open, onClose, employee, logs = [],
   };
 
   // Today's IN/OUT for work time calc
-  const todayLogs = useMemo(() => logs.filter((l) => isSameDayFmt(l.edit_date || l.date)), [logs]);
+  const todayLogs = classifiedLogs.filter((l) => isSameDayFmt(l.edit_date || l.date));
   const firstInToday = todayLogs
     .filter((l) => !isOut(l))
     .sort((a, b) => String(a.time).localeCompare(String(b.time)))[0]?.time;
@@ -54,39 +83,36 @@ export default function EmployeeLogsDialog({ open, onClose, employee, logs = [],
     .filter((l) => isOut(l))
     .sort((a, b) => String(b.time).localeCompare(String(a.time)))[0]?.time;
 
-  const workMinutes = useMemo(() => {
-    if (!firstInToday || !lastOutToday) return 0;
+  let workMinutes = 0;
+  if (firstInToday && lastOutToday) {
     const [h1, m1] = firstInToday.split(":").map(Number);
     const [h2, m2] = lastOutToday.split(":").map(Number);
-    return Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
-  }, [firstInToday, lastOutToday]);
+    workMinutes = Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
+  }
 
   const workTime = fmtHM(workMinutes);
   const remaining = Math.max(0, 9 * 60 - workMinutes);
   const overTime = Math.max(0, workMinutes - 9 * 60);
 
   // 10-day stats
-  const { presents, absence, incomplete, manualEntry } = useMemo(() => {
-    const dateSet = new Set();
-    logs.forEach((l) => {
-      const d = l.edit_date || l.date;
-      if (d) dateSet.add(d);
-    });
-    const presents = dateSet.size;
-    const absence = Math.max(0, 10 - presents);
-    const byDate = new Map();
-    logs.forEach((l) => {
-      const d = l.edit_date || l.date;
-      if (!d) return;
-      if (!byDate.has(d)) byDate.set(d, { hasIn: false, hasOut: false });
-      if (isOut(l)) byDate.get(d).hasOut = true;
-      else byDate.get(d).hasIn = true;
-    });
-    let inc = 0;
-    byDate.forEach((v) => { if (v.hasIn !== v.hasOut) inc += 1; });
-    const manualEntry = logs.filter((l) => String(l?.DeviceID || l?.device_id || "").toLowerCase() === "manual").length;
-    return { presents, absence, incomplete: inc, manualEntry };
-  }, [logs]);
+  const dateSet = new Set();
+  classifiedLogs.forEach((l) => {
+    const d = l.edit_date || l.date;
+    if (d) dateSet.add(d);
+  });
+  const presents = dateSet.size;
+  const absence = Math.max(0, 10 - presents);
+  const byDate = new Map();
+  classifiedLogs.forEach((l) => {
+    const d = l.edit_date || l.date;
+    if (!d) return;
+    if (!byDate.has(d)) byDate.set(d, { hasIn: false, hasOut: false });
+    if (isOut(l)) byDate.get(d).hasOut = true;
+    else byDate.get(d).hasIn = true;
+  });
+  let incomplete = 0;
+  byDate.forEach((v) => { if (v.hasIn !== v.hasOut) incomplete += 1; });
+  const manualEntry = classifiedLogs.filter((l) => String(l?.DeviceID || l?.device_id || "").toLowerCase() === "manual").length;
 
   const name = employee?.full_name || "Employee";
   const profile = employee?.profile_picture && employee.profile_picture !== "undefined"
@@ -160,9 +186,9 @@ export default function EmployeeLogsDialog({ open, onClose, employee, logs = [],
               </div>
               {loading ? (
                 <div className="py-3 text-center text-slate-500 dark:text-slate-400">Loading…</div>
-              ) : logs.length === 0 ? (
+              ) : classifiedLogs.length === 0 ? (
                 <div className="py-3 text-center text-slate-500 dark:text-slate-400">No logs in last 10 days.</div>
-              ) : logs.slice(0, 10).map((log, i) => {
+              ) : classifiedLogs.slice(0, 10).map((log, i) => {
                 const out = isOut(log);
                 const label = out ? "Out" : "In";
                 const color = out ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400";

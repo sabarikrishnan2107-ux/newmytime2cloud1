@@ -3,7 +3,9 @@ import { LayoutDashboard, Palmtree, Timer, CreditCard } from 'lucide-react';
 import { hhmmToMinutes } from '@/lib/utils';
 
 const ShiftPreview = ({ shift }) => {
-    const week_offs = shift?.weekoff_rules?.days || shift?.weekoff_days || [];
+    const weekoff_type = String(shift?.weekoff_rules?.type || "").toLowerCase();
+    const isFlexible = weekoff_type === "flexible";
+    const week_offs = isFlexible ? [] : (shift?.weekoff_rules?.days || shift?.weekoff_days || []);
     const halfday_rules = shift?.halfday_rules;
 
     // Helper to convert "HH:mm" to percentage of a 24h day

@@ -665,7 +665,8 @@ class ScheduleEmployeeController extends Controller
                 "designation_id",
                 "branch_id",
                 "department_id",
-                "company_id"
+                "company_id",
+                "employee_type"
             ]);
     }
 

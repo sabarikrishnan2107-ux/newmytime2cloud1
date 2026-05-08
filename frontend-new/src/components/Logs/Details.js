@@ -90,7 +90,7 @@ const LogDetails = ({ isLogsOpen = false, setIsLogsOpen = () => { }, logDetails 
                         {log?.device?.name || "---"}
                       </td>
                       <td className="px-4 py-3">
-                        <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-primary/10 text-primary">
+                        <span className="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-primary/10 text-white">
                           {log?.log_type || "Device"}
                         </span>
                       </td>

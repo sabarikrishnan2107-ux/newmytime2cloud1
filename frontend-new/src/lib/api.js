@@ -175,6 +175,21 @@ export const getVisitorLogs = async (params = {}) => {
     return data;
 };
 
+export const getVisitorPreRegistrations = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/visitor-management/pre-registrations`, {
+        params: await buildQueryParams(params),
+    });
+    return data;
+};
+
+export const updateVisitorPreRegistration = async (id, body = {}) => {
+    const { data } = await axios.put(`${API_BASE}/visitor-management/pre-registrations/${id}`, {
+        ...(await buildQueryParams({})),
+        ...body,
+    });
+    return data;
+};
+
 
 export const getEmployees = async (params = {}) => {
     const { data } = await axios.get(`${API_BASE}/employeev1`, { params: await buildQueryParams(params) });

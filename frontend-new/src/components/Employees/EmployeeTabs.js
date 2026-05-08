@@ -6,6 +6,7 @@ import Profile from './Profile';
 import Document from './Edit/Document';
 import Payroll from './Payroll';
 import Leaves from './Leaves';
+import Attendance from './Attendance';
 
 const EmployeeTabs = ({ selectedEmployee }) => {
 
@@ -20,6 +21,7 @@ const EmployeeTabs = ({ selectedEmployee }) => {
     // Data structure for the tabs
     const TABS = [
         { id: 'profile', name: 'Personal' },
+        { id: 'attendance', name: 'Attendance' },
         { id: 'contact', name: 'Contact' },
         { id: 'payroll', name: 'Payroll' },
         { id: 'documents', name: 'Documents' },
@@ -48,6 +50,8 @@ const EmployeeTabs = ({ selectedEmployee }) => {
                 );
             case 'documents':
                 return <Document employee_id={id} />;
+            case 'attendance':
+                return <Attendance payload={payload} />;
             // case 'performance':
             //   return <Performance payload={employee} />;
             default:
@@ -62,23 +66,19 @@ const EmployeeTabs = ({ selectedEmployee }) => {
 
         <>
             <div className="mx-auto flex flex-col gap-8">
-                <div className="flex justify-center md:justify-start">
-
-                    <div
-                        className="bg-white/50 dark:bg-gray-800 backdrop-blur-sm p-1 rounded-lg inline-flex relative glass-card shadow-sm"
-                    >
+                <div className="w-full">
+                    <div className="w-full p-1.5 rounded-full bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60 flex items-center justify-between gap-1 backdrop-blur-sm shadow-sm">
                         {TABS.map((tab) => {
                             const isCurrent = activeTab === tab.id;
-                            const classes = isCurrent
-                                ? "bg-white/50 dark:bg-gray-800 text-primary"
-                                : "text-gray-600 dark:text-gray-300";
-
                             return (
-
                                 <button
                                     key={tab.id}
                                     onClick={() => setActiveTab(tab.id)}
-                                    className={`relative px-6 py-2 rounded-md text-sm font-medium   transition-all hover:bg-white/50 dark:hover:bg-gray-500 ${classes}`}
+                                    className={`flex-1 px-6 py-2.5 rounded-full text-sm transition-all whitespace-nowrap ${
+                                        isCurrent
+                                            ? "bg-gradient-to-r from-violet-500 to-indigo-600 text-white font-bold shadow-lg shadow-violet-500/30"
+                                            : "text-slate-600 dark:text-slate-300 font-medium hover:text-slate-900 dark:hover:text-white"
+                                    }`}
                                 >
                                     {tab.name}
                                 </button>

@@ -1,304 +1,641 @@
 "use client";
 
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { SuccessDialog } from "@/components/SuccessDialog";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import React, { useEffect, useMemo, useState } from "react";
+import { Calendar, ChevronLeft, ChevronRight, Wallet, Download, FileText, CheckCircle2, TrendingUp, TrendingDown, AreaChart as AreaIcon, LineChart as LineIcon, BarChart3 as BarIcon } from "lucide-react";
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
-} from "@/components/ui/form";
-import { useRouter } from "next/navigation";
-import { Banknote, FileDown } from "lucide-react";
-import { updateBank } from "@/lib/api";
-import { parseApiError } from "@/lib/utils";
+    ResponsiveContainer,
+    AreaChart, Area,
+    BarChart, Bar,
+    LineChart, Line,
+    ComposedChart,
+    PieChart, Pie, Cell,
+    XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, LabelList,
+} from "recharts";
 import { api, buildQueryParams } from "@/lib/api-client";
 
-const Bank = ({ employee_id, bank, payroll = {} }) => {
-    const fmt = (n) => Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
-    const basic = Number(payroll?.basic_salary || 0);
-    const hra = Number(payroll?.hra || payroll?.house_rent_allowance || 0);
-    const allowances = Number(payroll?.allowances || payroll?.total_allowances || 0);
-    const gross = Number(payroll?.gross_salary || (basic + hra + allowances));
-    const net = Number(payroll?.net_salary || gross);
-    const ytdTax = Number(payroll?.ytd_tax || payroll?.total_tax || 0);
-    const ytdEarnings = Number(payroll?.ytd_earnings || payroll?.total_earnings || 0);
-    const pct = (v) => gross > 0 ? Math.round((v / gross) * 100) : 0;
-    const basicPct = pct(basic);
-    const hraPct = pct(hra);
-    const allowPct = pct(allowances);
-    const router = useRouter();
-    const [open, setOpen] = useState(false);
-    const [globalError, setGlobalError] = useState(null);
+const COLOR_GROSS = "#a78bfa";
+const COLOR_NET = "#22d3ee";
+const COLOR_NET_BAR = "#10b981";
+const COLOR_DEDUCT = "#ef4444";
+const COMPOSITION_COLORS = ["#a78bfa", "#22d3ee", "#10b981", "#f59e0b"];
 
-    const form = useForm({
-        defaultValues: {
-            account_title: bank?.account_title || "",
-            bank_name: bank?.bank_name || "",
-            account_no: bank?.account_no || "",
-            iban: bank?.iban || "",
-            address: bank?.address || "",
-        },
-    });
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-    const { handleSubmit, formState } = form;
-    const { isSubmitting } = formState;
+const fmt = (n) =>
+    Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+const fmtK = (n) => {
+    const v = Number(n || 0);
+    if (Math.abs(v) >= 1000) return `${(v / 1000).toFixed(1)}k`;
+    return `${v}`;
+};
 
-    const handleCancel = () => router.push(`/employees`);
+const formatLong = (raw) => {
+    if (!raw) return "";
+    const d = new Date(raw);
+    if (isNaN(d.getTime())) return raw;
+    return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+};
 
-    const onSubmit = async (data) => {
-        setGlobalError(null);
-        try {
-            const finalPayload = {
-                account_title: data.account_title,
-                bank_name: data.bank_name,
-                account_no: data.account_no,
-                iban: data.iban,
-                address: data.address,
-
-                employee_id: employee_id || "",
-            };
-
-            await updateBank(finalPayload);
-
-            setOpen(true);
-
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            setOpen(false);
-
-            router.push(`/employees`);
-        } catch (error) {
-            setGlobalError(parseApiError(error));
-        }
-    };
-
-    const downloadLoanAdvanceStatement = async () => {
-        try {
-            const params = await buildQueryParams({});
-            const url = `${api.defaults.baseURL}/payroll-management/loan-advance-statement/${employee_id}?company_id=${params.company_id}`;
-            window.open(url, "_blank");
-        } catch (err) {
-            setGlobalError("Failed to load loan & advance statement");
-        }
-    };
-
-    return (<>
-        <div
-            className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8"
-        >
-            <div>
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-                    Payroll Details
-                </h2>
-                <p className="text-slate-600 dark:text-slate-300 mt-1">
-                    Manage salary structures, tax classifications, and deductions.
-                </p>
-            </div>
-            {employee_id && (
-                <button
-                    type="button"
-                    onClick={downloadLoanAdvanceStatement}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary text-white font-medium shadow-md hover:bg-indigo-700 transition-all whitespace-nowrap"
-                    title="Download Loan & Advance Statement PDF"
-                >
-                    <FileDown className="h-4 w-4" />
-                    <span>Loan & Advance Statement</span>
-                </button>
-            )}
+const TrendTooltip = ({ active, payload, label, currency }) => {
+    if (!active || !payload?.length) return null;
+    return (
+        <div className="rounded-lg border border-white/10 bg-slate-900/95 px-3 py-2 shadow-xl text-xs">
+            <div className="font-bold text-white mb-1">{label}</div>
+            {payload.map((p) => (
+                <div key={p.dataKey} className="flex items-center gap-2">
+                    <span className="size-2 rounded-full" style={{ background: p.color }} />
+                    <span className="capitalize text-slate-300">{p.dataKey} :</span>
+                    <span className="font-semibold text-white">{currency} {fmt(p.value)}</span>
+                </div>
+            ))}
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-5 auto-rows-[minmax(140px,auto)]">
-            <div
-                className="glass-card col-span-1 md:col-span-2 lg:col-span-2 row-span-2 p-8 flex flex-col relative overflow-hidden">
-                <div
-                    className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-500 via-transparent to-transparent pointer-events-none">
-                </div>
-                <div className="flex justify-between items-center mb-6 relative z-10">
-                    <div>
-                        <h2 className="text-xl font-bold text-gray-600 dark:text-gray-300 tracking-tight">Salary Breakdown</h2>
-                        <p className="text-sm text-[#9db0b9]">Monthly Earnings Structure</p>
-                    </div>
-                    <button
-                        className="p-2 rounded-full hover:bg-white/5 text-[#9db0b9] hover:text-white transition-colors">
-                        <span className="material-symbols-outlined">more_horiz</span>
-                    </button>
-                </div>
-                <div
-                    className="flex flex-col sm:flex-row items-center justify-around gap-8 flex-1 relative z-10">
-                    <div className="relative size-48 shrink-0 rounded-full shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)]"
-                        style={{ background: `conic-gradient(#6366f1 0% ${basicPct}%, #2dd4bf ${basicPct}% ${basicPct + hraPct}%, #0ea5e9 ${basicPct + hraPct}% 100%)` }}
-                    >
-                        <div
-                            className="absolute inset-4 bg-[#162025] rounded-full flex flex-col items-center justify-center">
-                            <span
-                                className="text-xs font-semibold text-[#9db0b9] uppercase tracking-wider">Gross
-                                Pay</span>
-                            <span className="text-3xl font-bold text-white tracking-tight">${fmt(gross)}</span>
-                            <span className="text-[10px] text-green-400 mt-1 flex items-center gap-0.5">
-                                <span className="material-symbols-outlined text-[12px]">trending_up</span> +2.5%
-                            </span>
-                        </div>
-                    </div>
-                    <div className="flex flex-col gap-4 w-full max-w-[240px]">
-                        <div className="flex items-center justify-between group cursor-pointer">
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="size-3 rounded-full bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
-                                </div>
-                                <div className="flex flex-col">
-                                    <span
-                                        className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-indigo-400 transition-colors">Basic
-                                        Salary</span>
-                                    <span className="text-xs text-[#5f717a]">{basicPct}% of total</span>
-                                </div>
-                            </div>
-                            <span className="text-sm font-bold text-gray-600 dark:text-gray-300">${fmt(basic)}</span>
-                        </div>
-                        <div className="flex items-center justify-between group cursor-pointer">
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="size-3 rounded-full bg-teal-400 shadow-[0_0_10px_rgba(45,212,191,0.5)]">
-                                </div>
-                                <div className="flex flex-col">
-                                    <span
-                                        className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-teal-400 transition-colors">HRA</span>
-                                    <span className="text-xs text-[#5f717a]">{hraPct}% of total</span>
-                                </div>
-                            </div>
-                            <span className="text-sm font-bold text-gray-600 dark:text-gray-300">${fmt(hra)}</span>
-                        </div>
-                        <div className="flex items-center justify-between group cursor-pointer">
-                            <div className="flex items-center gap-3">
-                                <div
-                                    className="size-3 rounded-full bg-sky-500 shadow-[0_0_10px_rgba(14,165,233,0.5)]">
-                                </div>
-                                <div className="flex flex-col">
-                                    <span
-                                        className="text-sm font-medium text-gray-600 dark:text-gray-300 group-hover:text-sky-400 transition-colors">Allowances</span>
-                                    <span className="text-xs text-[#5f717a]">{allowPct}% of total</span>
-                                </div>
-                            </div>
-                            <span className="text-sm font-bold text-gray-600 dark:text-gray-300">${fmt(allowances)}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div
-                className="glass-card col-span-1 md:col-span-1 lg:col-span-2 row-span-2 flex flex-col overflow-hidden relative">
-                <div
-                    className="p-6 pb-2 flex justify-between items-center z-10 ">
-                    <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300">Payment History</h3>
-                    <button className="text-xs font-medium text-primary hover:text-white transition-colors">View
-                        All</button>
-                </div>
+    );
+};
 
-                <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
-                    <div className="flex flex-col gap-1">
-                        {(payroll?.history && payroll.history.length > 0 ? payroll.history : []).map((h, idx) => {
-                            const isProcessing = (h.status || '').toLowerCase() === 'processing' || (h.status || '').toLowerCase() === 'pending';
-                            return (
-                                <div key={idx} className="flex items-center justify-between p-3 rounded-lg hover:bg-white/5 transition-colors group">
-                                    <div className="flex items-center gap-4">
-                                        <div className={`size-10 rounded-lg glass-card border border-gray-300 dark:border-[#283339] flex items-center justify-center ${isProcessing ? 'text-indigo-400' : 'text-teal-400'}`}>
-                                            <span className="material-symbols-outlined">{isProcessing ? 'account_balance' : 'check_circle'}</span>
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">{h.title || h.label || h.name || 'Salary'}</span>
-                                            <span className="text-xs text-[#9db0b9]">{h.date || h.payment_date || ''}</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-1">
-                                        <span className="text-sm font-bold text-gray-600 dark:text-gray-300">${fmt(h.amount)}</span>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full border flex items-center gap-1 ${isProcessing ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' : 'bg-teal-500/10 text-teal-400 border-teal-500/20'}`}>
-                                            {isProcessing && <div className="size-1 bg-orange-400 rounded-full animate-pulse"></div>}
-                                            {isProcessing ? 'Processing' : 'Completed'}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                        {(!payroll?.history || payroll.history.length === 0) && (
-                            <div className="text-center text-sm text-slate-500 py-10">No payment history</div>
-                        )}
-                    </div>
+const Payroll = ({ employee_id, bank, payroll = {} }) => {
+    const [records, setRecords] = useState([]);
+    const [structure, setStructure] = useState(null);
+    const [settingsCurrency, setSettingsCurrency] = useState(null);
+    const [loading, setLoading] = useState(false);
+    const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+    const [selectedMonth, setSelectedMonth] = useState("all"); // "all" or 0-11
+    const [pickerOpen, setPickerOpen] = useState(false);
+    const [trendChartType, setTrendChartType] = useState("bar"); // "area" | "line" | "bar"
+    const pickerRef = React.useRef(null);
+
+    React.useEffect(() => {
+        if (!pickerOpen) return;
+        const handleClick = (e) => {
+            if (pickerRef.current && !pickerRef.current.contains(e.target)) setPickerOpen(false);
+        };
+        document.addEventListener("mousedown", handleClick);
+        return () => document.removeEventListener("mousedown", handleClick);
+    }, [pickerOpen]);
+
+    useEffect(() => {
+        if (!employee_id) return;
+        let cancelled = false;
+        setLoading(true);
+        (async () => {
+            try {
+                const params = await buildQueryParams({});
+                const [{ data: payslips }, { data: struct }] = await Promise.all([
+                    api.get("/payroll-management/staff-payslips", {
+                        params: { ...params, employee_id, year: selectedYear, limit: 24 },
+                    }),
+                    api.get(`/payroll-management/employee-salary/${employee_id}`, { params }).catch(() => ({ data: null })),
+                ]);
+                if (cancelled) return;
+                const list = Array.isArray(payslips) ? payslips : [];
+                console.log("[Payroll] staff-payslips response:", list[0]);
+                // First record may be a currency-only placeholder when the employee has no payslips
+                if (list.length === 1 && list[0]?.placeholder) {
+                    setRecords([]);
+                    setSettingsCurrency(list[0].currency || null);
+                } else {
+                    setRecords(list);
+                    setSettingsCurrency(list[0]?.currency || null);
+                }
+                setStructure(struct || null);
+            } catch (e) {
+                console.warn("Payroll fetch error:", e?.response?.status, e?.message);
+                if (!cancelled) {
+                    setRecords([]);
+                    setStructure(null);
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        })();
+        return () => { cancelled = true; };
+    }, [employee_id, selectedYear]);
+
+    const currency = settingsCurrency || records[0]?.currency || payroll?.currency || payroll?.company?.currency || "AED";
+
+    // Filter records by selected month if a specific month is chosen
+    const filteredRecords = useMemo(() => {
+        if (selectedMonth === "all") return records;
+        return records.filter((r) => Number(r.month) === Number(selectedMonth));
+    }, [records, selectedMonth]);
+
+    const latest = filteredRecords[0];
+
+    const lastNetPay = Number(latest?.net_salary ?? latest?.final_salary ?? payroll?.net_salary ?? 0);
+    const lastPaidRaw = latest?.paid_at || (latest ? `${latest.year}-${String(latest.month + 1).padStart(2, "0")}-01` : "");
+    const latestStatus = (latest?.status || "").toString().toLowerCase();
+    const isProcessed = latestStatus === "paid" || latestStatus === "approved";
+
+    const ytdEarnings = useMemo(
+        () => records.reduce((sum, r) => sum + Number(r.net_salary || 0), 0),
+        [records]
+    );
+
+    const nextPaydayLabel = (() => {
+        if (!lastPaidRaw) return "";
+        const d = new Date(lastPaidRaw);
+        if (isNaN(d.getTime())) return "";
+        d.setMonth(d.getMonth() + 1);
+        return d.toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" });
+    })();
+
+    const downloadPayslipFor = async (year, month) => {
+        const baseParams = await buildQueryParams({});
+        const url = `${api.defaults.baseURL}/payroll-management/employee-payslip?employee_id=${employee_id}&year=${year}&month=${month}&company_id=${baseParams.company_id}`;
+        window.open(url, "_blank");
+    };
+
+    const downloadLatest = () => {
+        if (latest) return downloadPayslipFor(latest.year, latest.month + 1);
+        const now = new Date();
+        return downloadPayslipFor(now.getFullYear(), now.getMonth() + 1);
+    };
+
+    const recentPayslips = useMemo(() => filteredRecords.slice(0, 5), [filteredRecords]);
+
+    const trendData = useMemo(() => {
+        return [...records]
+            .slice(0, 6)
+            .reverse()
+            .map((r) => ({
+                month: MONTH_NAMES[r.month] || "",
+                gross: Number(r.gross_earned || 0),
+                net: Number(r.net_salary || 0),
+            }));
+    }, [records]);
+
+    const deductionData = useMemo(() => {
+        return [...records]
+            .slice(0, 6)
+            .reverse()
+            .map((r) => ({
+                month: MONTH_NAMES[r.month] || "",
+                net: Number(r.net_salary || 0),
+                deductions: Number(r.total_deduction || 0),
+            }));
+    }, [records]);
+
+    const yoyChange = useMemo(() => {
+        if (trendData.length < 2) return null;
+        const newest = trendData[trendData.length - 1].net;
+        const oldest = trendData[0].net;
+        if (!oldest) return null;
+        return ((newest - oldest) / oldest) * 100;
+    }, [trendData]);
+
+    const composition = useMemo(() => {
+        const basic = Number(latest?.basic_salary ?? structure?.basic_salary ?? 0);
+        const allowances = Number(latest?.total_allowances ?? (
+            structure
+                ? Number(structure.house_allowance || 0) +
+                  Number(structure.transport_allowance || 0) +
+                  Number(structure.food_allowance || 0) +
+                  Number(structure.medical_allowance || 0) +
+                  Number(structure.other_allowance || 0)
+                : 0
+        ));
+        const ot = Number(latest?.ot_amount ?? 0);
+        const bonus = Number((latest?.bonus ?? 0)) + Number((latest?.incentive ?? 0));
+        const allItems = [
+            { name: "Basic", value: basic, color: COMPOSITION_COLORS[0] },
+            { name: "Allowances", value: allowances, color: COMPOSITION_COLORS[1] },
+            { name: "OT", value: ot, color: COMPOSITION_COLORS[2] },
+            { name: "Bonus", value: bonus, color: COMPOSITION_COLORS[3] },
+        ];
+        const total = allItems.reduce((s, i) => s + i.value, 0);
+        const items = allItems.filter((i) => i.value > 0);
+        return { items, allItems, total };
+    }, [latest, structure]);
+
+    const noData = !loading && records.length === 0;
+
+    return (
+        <div className="flex flex-col gap-5">
+            <div className="flex items-center justify-between flex-wrap gap-3">
+                <div>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Payroll</h2>
+                    <p className="text-xs text-[#9db0b9] mt-0.5">
+                        {loading
+                            ? "Loading…"
+                            : noData
+                            ? `No payroll records for ${selectedYear}.`
+                            : selectedMonth === "all"
+                            ? `${records.length} ${records.length === 1 ? "record" : "records"} for ${selectedYear}`
+                            : `${filteredRecords.length} ${filteredRecords.length === 1 ? "record" : "records"} for ${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
+                    </p>
                 </div>
-            </div>
-            <div
-                className="glass-card col-span-1 p-6 flex flex-col justify-between group relative overflow-hidden">
-                <div
-                    className="absolute -right-4 -bottom-4 w-24 h-24 bg-indigo-500/20 rounded-full blur-[40px] pointer-events-none group-hover:bg-indigo-500/30 transition-colors">
-                </div>
-                <div className="flex justify-between items-start z-10">
-                    <span className="text-sm font-bold text-[#9db0b9] uppercase tracking-wider">Tax
-                        Summary</span>
-                    <span className="material-symbols-outlined text-indigo-400">receipt_long</span>
-                </div>
-                <div className="flex flex-col gap-1 mt-4 z-10">
-                    <div className="flex items-end justify-between">
-                        <span className="text-3xl font-light text-gray-600 dark:text-gray-300">${fmt(ytdTax)}</span>
-                        <span className="text-xs text-[#9db0b9] mb-1.5">YTD Tax</span>
-                    </div>
-                    <div
-                        className="w-full bg-gray-300 dark:bg-gray-900 h-2 rounded-full mt-3 overflow-hidden border border-white/5">
-                        <div
-                            className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 w-[65%] rounded-full shadow-[0_0_10px_rgba(99,102,241,0.5)]">
-                        </div>
-                    </div>
-                    <div className="flex justify-between mt-2 text-[10px] text-[#5f717a]">
-                        <span>Paid: 65%</span>
-                        <span>Proj: $19k</span>
-                    </div>
-                </div>
-            </div>
-            <div className="glass-card col-span-1 p-6 flex flex-col justify-between group">
-                <div className="flex justify-between items-start">
-                    <span className="text-sm font-bold text-[#9db0b9] uppercase tracking-wider">Net
-                        Earnings</span>
-                    <span className="material-symbols-outlined text-teal-400">savings</span>
-                </div>
-                <div className="mt-4">
-                    <span className="text-3xl font-light text-gray-600 dark:text-gray-300 block">${fmt(ytdEarnings)}</span>
-                    <span className="text-xs text-green-400 mt-1 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-[14px]">trending_up</span>
-                        +12% vs last year
-                    </span>
-                </div>
-            </div>
-            <div
-                className="glass-card col-span-1 md:col-span-2 lg:col-span-2 p-6 flex flex-col justify-between">
-                <div className="flex items-center justify-between mb-4">
-                    <h3 className="font-bold text-gray-600 dark:text-gray-300">Deductions &amp; Benefits</h3>
-                    <span className="text-xs text-[#9db0b9]">{(payroll?.deductions?.length || 0)} Active Plans</span>
-                </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                    {(payroll?.deductions || []).map((d, idx) => {
-                        const palette = ['indigo', 'teal', 'sky', 'amber', 'rose', 'emerald'];
-                        const c = palette[idx % palette.length];
-                        return (
-                            <div key={idx} className={`dark:bg-white/5 rounded-lg p-3 border dark:border-white/5 border-gray-300 hover:border-${c}-500/30 transition-colors flex flex-col gap-2`}>
-                                <div className={`flex items-center gap-2 text-${c}-300`}>
-                                    <span className="material-symbols-outlined text-[18px]">{d.icon || 'payments'}</span>
-                                    <span className="text-xs font-bold uppercase">{d.name || d.title || 'Item'}</span>
-                                </div>
-                                <span className="text-lg font-bold text-white">
-                                    {d.display || d.value || `$${fmt(d.amount)}`}
-                                    {d.suffix && <span className="text-xs font-normal text-[#5f717a]"> {d.suffix}</span>}
-                                </span>
+                <div className="relative" ref={pickerRef}>
+                    <button
+                        type="button"
+                        onClick={() => setPickerOpen((o) => !o)}
+                        className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/10 transition-colors"
+                    >
+                        <Calendar size={14} className="text-violet-300" />
+                        {selectedMonth === "all" ? "All months" : MONTH_NAMES[selectedMonth]} {selectedYear}
+                        <ChevronRight size={14} className={`text-slate-400 transition-transform ${pickerOpen ? "rotate-90" : ""}`} />
+                    </button>
+                    {pickerOpen && (
+                        <div className="absolute right-0 mt-2 z-50 w-64 rounded-xl border border-white/10 bg-slate-900/95 backdrop-blur-xl shadow-2xl p-3">
+                            <div className="flex items-center justify-between mb-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedYear((y) => y - 1)}
+                                    className="size-8 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors"
+                                    title="Previous year"
+                                >
+                                    <ChevronLeft size={16} />
+                                </button>
+                                <span className="text-sm font-bold text-white tabular-nums">{selectedYear}</span>
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedYear((y) => y + 1)}
+                                    className="size-8 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors"
+                                    title="Next year"
+                                >
+                                    <ChevronRight size={16} />
+                                </button>
                             </div>
-                        );
-                    })}
-                    {(!payroll?.deductions || payroll.deductions.length === 0) && (
-                        <div className="col-span-full text-center text-sm text-slate-500 py-6">No deductions or benefits</div>
+                            <button
+                                type="button"
+                                onClick={() => { setSelectedMonth("all"); setPickerOpen(false); }}
+                                className={`w-full mb-2 px-3 py-2 text-xs font-bold rounded-lg transition-colors ${
+                                    selectedMonth === "all"
+                                        ? "bg-violet-500 text-white"
+                                        : "bg-white/5 text-slate-300 hover:bg-white/10"
+                                }`}
+                            >
+                                All months
+                            </button>
+                            <div className="grid grid-cols-3 gap-1.5">
+                                {MONTH_NAMES.map((name, idx) => (
+                                    <button
+                                        key={idx}
+                                        type="button"
+                                        onClick={() => { setSelectedMonth(idx); setPickerOpen(false); }}
+                                        className={`px-2 py-2 text-xs font-bold rounded-lg transition-colors ${
+                                            selectedMonth === idx
+                                                ? "bg-violet-500 text-white"
+                                                : "text-slate-300 hover:bg-white/10"
+                                        }`}
+                                    >
+                                        {name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+            <div className="glass-card rounded-2xl p-6 flex flex-col">
+                <div className="flex items-center justify-between mb-5">
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Payroll Summary</h3>
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
+                        <CheckCircle2 size={14} /> {isProcessed ? "Processed" : latestStatus ? latestStatus.charAt(0).toUpperCase() + latestStatus.slice(1) : "—"}
+                    </span>
+                </div>
+
+                <div className="flex flex-col gap-1 mb-5">
+                    <span className="text-xs font-bold text-[#9db0b9] uppercase tracking-wider">Last Net Pay</span>
+                    <span className="text-4xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
+                        {currency} {fmt(lastNetPay)}
+                    </span>
+                    {lastPaidRaw && (
+                        <span className="text-sm text-[#9db0b9]">Paid {formatLong(lastPaidRaw)}</span>
+                    )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 mb-5">
+                    <div className="rounded-xl p-3.5 bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-2 text-[#9db0b9] mb-1">
+                            <Calendar size={14} />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider">Next Payday</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">
+                            {nextPaydayLabel || "—"}
+                        </span>
+                    </div>
+                    <div className="rounded-xl p-3.5 bg-white/5 border border-white/5">
+                        <div className="flex items-center gap-2 text-[#9db0b9] mb-1">
+                            <Wallet size={14} />
+                            <span className="text-[11px] font-semibold uppercase tracking-wider">{selectedYear} Earnings</span>
+                        </div>
+                        <span className="text-sm font-bold text-slate-900 dark:text-white">
+                            {currency} {fmt(ytdEarnings)}
+                        </span>
+                    </div>
+                </div>
+
+                <button
+                    type="button"
+                    onClick={downloadLatest}
+                    className="mt-auto inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white font-bold text-sm shadow-lg shadow-violet-500/30 transition-all"
+                >
+                    <Download size={16} /> Download Salary Slip
+                </button>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 lg:col-span-2 flex flex-col">
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5">Recent Payslips</h3>
+                <div className="flex flex-col gap-2.5">
+                    {recentPayslips.length === 0 && (
+                        <div className="text-center text-sm text-slate-500 py-10">
+                            {loading
+                                ? "Loading…"
+                                : selectedMonth === "all"
+                                ? `No payslips for ${selectedYear}`
+                                : `No payslip for ${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
+                        </div>
+                    )}
+                    {recentPayslips.map((r) => {
+                        const itemStatus = (r.status || "").toString().toLowerCase();
+                        const itemPaid = itemStatus === "paid" || itemStatus === "approved";
+                        const monthName = `${MONTH_NAMES[r.month] || ""} ${r.year}`;
+                        return (
+                            <div
+                                key={r.id}
+                                className="flex items-center justify-between gap-3 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/[0.07] transition-colors"
+                            >
+                                <div className="flex items-center gap-3 min-w-0">
+                                    <div className="size-10 shrink-0 rounded-lg bg-primary/10 flex items-center justify-center text-primary ring-1 ring-primary/20">
+                                        <FileText size={18} />
+                                    </div>
+                                    <div className="flex flex-col min-w-0">
+                                        <span className="text-sm font-bold text-slate-900 dark:text-white truncate">
+                                            {monthName}
+                                        </span>
+                                        <span className="text-xs text-[#9db0b9]">
+                                            Net pay {currency} {fmt(r.net_salary)}
+                                        </span>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span
+                                        className={`text-[11px] font-semibold px-2.5 py-1 rounded-full border ${
+                                            itemPaid
+                                                ? "bg-green-500/10 text-green-400 border-green-500/20"
+                                                : "bg-orange-500/10 text-orange-400 border-orange-500/20"
+                                        }`}
+                                    >
+                                        {itemPaid ? "Paid" : itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : "—"}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => downloadPayslipFor(r.year, r.month + 1)}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors"
+                                    >
+                                        <Download size={14} /> PDF
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 lg:col-span-3">
+                <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Salary Trend</h3>
+                        <p className="text-xs text-[#9db0b9] mt-0.5">Gross vs Net · last 6 months in {selectedYear}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-0.5">
+                            {[
+                                { id: "area", Icon: AreaIcon, title: "Area chart" },
+                                { id: "line", Icon: LineIcon, title: "Line chart" },
+                                { id: "bar", Icon: BarIcon, title: "Bar chart" },
+                            ].map(opt => {
+                                const Icon = opt.Icon;
+                                return (
+                                    <button
+                                        key={opt.id}
+                                        type="button"
+                                        onClick={() => setTrendChartType(opt.id)}
+                                        title={opt.title}
+                                        className={`size-8 inline-flex items-center justify-center rounded-md transition-colors ${
+                                            trendChartType === opt.id
+                                                ? "bg-violet-500 text-white shadow"
+                                                : "text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-white/10"
+                                        }`}
+                                    >
+                                        <Icon size={14} />
+                                    </button>
+                                );
+                            })}
+                        </div>
+                        {yoyChange !== null && (
+                            <span
+                                className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full border ${
+                                    yoyChange >= 0
+                                        ? "bg-violet-500/10 text-violet-300 border-violet-500/20"
+                                        : "bg-red-500/10 text-red-400 border-red-500/20"
+                                }`}
+                            >
+                                {yoyChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                                {yoyChange >= 0 ? "+" : ""}
+                                {yoyChange.toFixed(1)}% YoY
+                            </span>
+                        )}
+                    </div>
+                </div>
+                <div className="h-[260px] w-full">
+                    {trendData.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-sm text-slate-500">
+                            {loading ? "Loading…" : "Trend data not available yet"}
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            {trendChartType === "area" ? (
+                                <AreaChart data={trendData} margin={{ top: 10, right: 16, left: 0, bottom: 0 }}>
+                                    <defs>
+                                        <linearGradient id="grossAreaFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={COLOR_GROSS} stopOpacity={0.45} />
+                                            <stop offset="100%" stopColor={COLOR_GROSS} stopOpacity={0} />
+                                        </linearGradient>
+                                        <linearGradient id="netAreaFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={COLOR_NET} stopOpacity={0.4} />
+                                            <stop offset="100%" stopColor={COLOR_NET} stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                                    <XAxis dataKey="month" tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency} ${fmtK(v)}`} />
+                                    <Tooltip content={<TrendTooltip currency={currency} />} cursor={{ stroke: "rgba(255,255,255,0.15)" }} />
+                                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12, color: "#9db0b9" }} />
+                                    <Area type="monotone" dataKey="gross" name="Gross" stroke={COLOR_GROSS} strokeWidth={2} fill="url(#grossAreaFill)" />
+                                    <Area type="monotone" dataKey="net" name="Net" stroke={COLOR_NET} strokeWidth={2} fill="url(#netAreaFill)" />
+                                </AreaChart>
+                            ) : trendChartType === "line" ? (
+                                <LineChart data={trendData} margin={{ top: 20, right: 16, left: 0, bottom: 0 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                                    <XAxis dataKey="month" tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency} ${fmtK(v)}`} />
+                                    <Tooltip content={<TrendTooltip currency={currency} />} cursor={{ stroke: "rgba(255,255,255,0.15)" }} />
+                                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12, color: "#9db0b9" }} />
+                                    <Line type="monotone" dataKey="gross" name="Gross" stroke={COLOR_GROSS} strokeWidth={2.5} dot={{ r: 4, fill: COLOR_GROSS, stroke: "#0f172a", strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                    <Line type="monotone" dataKey="net" name="Net" stroke={COLOR_NET} strokeWidth={2.5} dot={{ r: 4, fill: COLOR_NET, stroke: "#0f172a", strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                </LineChart>
+                            ) : (
+                                <ComposedChart data={trendData} margin={{ top: 28, right: 24, left: 0, bottom: 0 }} barCategoryGap="25%">
+                                    <defs>
+                                        <linearGradient id="grossBarFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={COLOR_GROSS} stopOpacity={0.95} />
+                                            <stop offset="100%" stopColor={COLOR_GROSS} stopOpacity={0.55} />
+                                        </linearGradient>
+                                        <linearGradient id="netBarFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor={COLOR_NET} stopOpacity={0.95} />
+                                            <stop offset="100%" stopColor={COLOR_NET} stopOpacity={0.55} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                                    <XAxis dataKey="month" tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} />
+                                    <YAxis tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency} ${fmtK(v)}`} />
+                                    <Tooltip content={<TrendTooltip currency={currency} />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+                                    <Legend iconType="circle" wrapperStyle={{ fontSize: 12, color: "#9db0b9", paddingTop: 8 }} />
+                                    <Bar dataKey="gross" name="Gross" fill="url(#grossBarFill)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                                        <LabelList dataKey="gross" position="top" formatter={(v) => fmtK(v)} fill="#cbd5e1" fontSize={10} fontWeight={600} />
+                                    </Bar>
+                                    <Bar dataKey="net" name="Net" fill="url(#netBarFill)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                                        <LabelList dataKey="net" position="top" formatter={(v) => fmtK(v)} fill="#cbd5e1" fontSize={10} fontWeight={600} />
+                                    </Bar>
+                                </ComposedChart>
+                            )}
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 lg:col-span-1">
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Net vs Deductions</h3>
+                        <p className="text-xs text-[#9db0b9] mt-0.5">Monthly stacked breakdown</p>
+                    </div>
+                    <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+                        {currency}
+                    </span>
+                </div>
+                <div className="h-[230px] w-full">
+                    {deductionData.length === 0 ? (
+                        <div className="h-full flex items-center justify-center text-sm text-slate-500">
+                            {loading ? "Loading…" : "No breakdown data"}
+                        </div>
+                    ) : (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={deductionData} margin={{ top: 10, right: 8, left: -12, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                                <XAxis dataKey="month" tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} />
+                                <YAxis tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => fmtK(v)} />
+                                <Tooltip content={<TrendTooltip currency={currency} />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
+                                <Bar dataKey="net" stackId="a" fill={COLOR_NET_BAR} radius={[0, 0, 4, 4]} />
+                                <Bar dataKey="deductions" stackId="a" fill={COLOR_DEDUCT} radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    )}
+                </div>
+            </div>
+
+            <div className="glass-card rounded-2xl p-6 lg:col-span-2">
+                <div className="flex items-start justify-between mb-4">
+                    <div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Salary Composition</h3>
+                        <p className="text-xs text-[#9db0b9] mt-0.5">Latest month split</p>
+                    </div>
+                    {composition.total > 0 && (
+                        <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                            {currency} {fmt(composition.total)}
+                        </span>
+                    )}
+                </div>
+                {composition.total === 0 ? (
+                    <div className="h-[230px] flex items-center justify-center text-sm text-slate-500">
+                        {loading ? "Loading…" : "No composition data"}
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-6 items-center">
+                        <div className="sm:col-span-2 relative h-[210px]">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <PieChart>
+                                    <Tooltip
+                                        content={({ active, payload }) => {
+                                            if (!active || !payload?.length) return null;
+                                            const p = payload[0];
+                                            const pct = composition.total ? ((p.value / composition.total) * 100).toFixed(1) : 0;
+                                            return (
+                                                <div className="rounded-lg border border-white/10 bg-slate-900/95 px-3 py-2 shadow-xl text-xs">
+                                                    <div className="font-bold text-white">{p.name}</div>
+                                                    <div className="text-slate-300">{currency} {fmt(p.value)} <span className="text-slate-500">· {pct}%</span></div>
+                                                </div>
+                                            );
+                                        }}
+                                    />
+                                    <Pie
+                                        data={composition.items}
+                                        dataKey="value"
+                                        nameKey="name"
+                                        innerRadius={62}
+                                        outerRadius={90}
+                                        paddingAngle={composition.items.length > 1 ? 2 : 0}
+                                        stroke="none"
+                                        startAngle={90}
+                                        endAngle={-270}
+                                    >
+                                        {composition.items.map((it, idx) => (
+                                            <Cell key={idx} fill={it.color} />
+                                        ))}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span className="text-[10px] font-bold text-[#9db0b9] uppercase tracking-wider">Total</span>
+                                <span className="text-lg font-bold text-slate-900 dark:text-white tabular-nums">
+                                    {fmt(composition.total)}
+                                </span>
+                                <span className="text-[10px] text-[#9db0b9]">{currency}</span>
+                            </div>
+                        </div>
+                        <div className="sm:col-span-3 flex flex-col gap-2">
+                            {composition.allItems.map((item) => {
+                                const pct = composition.total ? (item.value / composition.total) * 100 : 0;
+                                const isZero = item.value === 0;
+                                return (
+                                    <div key={item.name} className={`flex items-center gap-3 ${isZero ? "opacity-40" : ""}`}>
+                                        <span
+                                            className="size-2.5 rounded-full shrink-0"
+                                            style={{ background: item.color }}
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <span className="text-xs font-bold text-slate-700 dark:text-slate-200 truncate">
+                                                    {item.name}
+                                                </span>
+                                                <span className="text-xs font-semibold text-slate-900 dark:text-white tabular-nums shrink-0">
+                                                    {currency} {fmt(item.value)}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex-1 h-1.5 rounded-full bg-white/5 overflow-hidden">
+                                                    <div
+                                                        className="h-full rounded-full transition-all"
+                                                        style={{ width: `${pct}%`, background: item.color }}
+                                                    />
+                                                </div>
+                                                <span className="text-[10px] font-semibold text-[#9db0b9] tabular-nums w-10 text-right">
+                                                    {pct.toFixed(0)}%
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                )}
+            </div>
+            </div>
         </div>
-    </>);
+    );
 };
 
-export default Bank;
+export default Payroll;

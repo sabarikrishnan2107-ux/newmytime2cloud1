@@ -73,6 +73,9 @@ export const removeBackground = async (input, options = {}) => {
   const transparent = await imglyRemove(blob, {
     model: options.model || "isnet_quint8",
     output: { format: "image/png", quality: options.quality ?? 0.85 },
+    ...(typeof options.progress === "function"
+      ? { progress: options.progress }
+      : {}),
   });
   return await blobToBase64(transparent);
 };
@@ -177,6 +180,7 @@ export const replaceBackgroundWithWhite = async (input, options = {}) => {
     threshold = 24,
     feather = 1,
     compositeQuality = 0.95,
+    progress,
   } = options;
 
   // Get the original as a data URL we can load into <img>
@@ -184,7 +188,7 @@ export const replaceBackgroundWithWhite = async (input, options = {}) => {
     typeof input === "string" ? input : await blobToBase64(await toBlob(input));
 
   // Run model — we only need the alpha mask
-  const transparentDataUrl = await removeBackground(originalDataUrl, { model });
+  const transparentDataUrl = await removeBackground(originalDataUrl, { model, progress });
 
   const [origImg, transImg] = await Promise.all([
     loadImage(originalDataUrl),

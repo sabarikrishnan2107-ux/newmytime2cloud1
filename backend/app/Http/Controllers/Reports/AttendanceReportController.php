@@ -210,8 +210,20 @@ class AttendanceReportController extends Controller
         $pdf->setOption('isPhpEnabled', true);
         $pdf->setOption('isRemoteEnabled', true);
 
-        // Render first, then add footer to every page
-        $pdf->render();
+        // dompdf uses file_get_contents() for remote images and has no socket timeout
+        // of its own, so a single slow/unreachable image URL can hang the whole render
+        // long enough for the queue worker to kill the mail job. Force a short timeout
+        // for this render only — failed images render as broken-image stubs instead of
+        // hanging the whole PDF.
+        $previousSocketTimeout = ini_get('default_socket_timeout');
+        ini_set('default_socket_timeout', '5');
+
+        try {
+            // Render first, then add footer to every page
+            $pdf->render();
+        } finally {
+            ini_set('default_socket_timeout', $previousSocketTimeout);
+        }
         $canvas = $pdf->getDomPDF()->getCanvas();
         $fontMetrics = $pdf->getDomPDF()->getFontMetrics();
         $font = $fontMetrics->getFont('Helvetica', 'normal');

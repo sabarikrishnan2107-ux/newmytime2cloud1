@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, RefreshCw } from 'lucide-react';
+import { Search, Plus, RefreshCw, Download, Copy, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import QRCode from 'qrcode';
 import { getBranches, getDepartmentsByBranchIds, getEmployees, removeEmployee } from '@/lib/api';
 import { EmployeeExtras } from '@/components/Employees/Extras';
 
@@ -120,6 +121,53 @@ export default function EmployeesPage() {
         router.push(`/employees/edit?id=${id}`)
     }
 
+    const [hostQrEmployee, setHostQrEmployee] = useState(null);
+    const [hostQrDataUrl, setHostQrDataUrl] = useState(null);
+    const [hostQrUrl, setHostQrUrl] = useState("");
+
+    const showHostQr = async (employee) => {
+        setHostQrEmployee(employee);
+        const fullName = [employee.first_name, employee.last_name].filter(Boolean).join(" ").trim() || `Employee ${employee.employee_id || employee.id}`;
+        const payload = {
+            id: employee.id,
+            eid: employee.employee_id || "",
+            name: fullName,
+            company: employee?.branch?.company?.name || employee?.company?.name || "",
+            email: employee?.user?.email || "",
+            phone: employee?.phone_number || "",
+            branch: employee?.branch?.branch_name || "",
+            department: employee?.department?.name || "",
+            flat: employee?.flat_number || employee?.flat_no || "",
+            cid: employee?.company_id || employee?.branch?.company_id || employee?.branch?.company?.id || null,
+            bid: employee?.branch_id || employee?.branch?.id || null,
+        };
+        const encoded = typeof window !== "undefined" ? btoa(unescape(encodeURIComponent(JSON.stringify(payload)))) : "";
+        const origin = typeof window !== "undefined" ? window.location.origin : "";
+        const url = `${origin}/visitor/host-checkin/?h=${encoded}`;
+        setHostQrUrl(url);
+        const dataUrl = await QRCode.toDataURL(url, { width: 280, margin: 2, color: { dark: "#0f172a", light: "#ffffff" } });
+        setHostQrDataUrl(dataUrl);
+    };
+
+    const closeHostQr = () => {
+        setHostQrEmployee(null);
+        setHostQrDataUrl(null);
+        setHostQrUrl("");
+    };
+
+    const downloadHostQr = () => {
+        if (!hostQrDataUrl) return;
+        const a = document.createElement("a");
+        a.href = hostQrDataUrl;
+        a.download = `host-qr-${hostQrEmployee?.employee_id || hostQrEmployee?.id || "employee"}.png`;
+        a.click();
+    };
+
+    const copyHostQrUrl = async () => {
+        if (!hostQrUrl) return;
+        try { await navigator.clipboard.writeText(hostQrUrl); } catch {}
+    };
+
     return (
         <div className='p-3 sm:p-4 pb-4 overflow-y-auto max-h-[calc(100vh-100px)]'>
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 mb-6">
@@ -176,7 +224,7 @@ export default function EmployeesPage() {
             </div>
 
             <DataTable
-                columns={Columns(deleteEmployee, editEmployee)}
+                columns={Columns(deleteEmployee, editEmployee, showHostQr)}
                 data={employees}
                 isLoading={isLoading}
                 error={error}
@@ -195,6 +243,62 @@ export default function EmployeesPage() {
                     />
                 }
             />
+
+            {hostQrEmployee && (
+                <div
+                    className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/65 px-4"
+                    onClick={closeHostQr}
+                >
+                    <div
+                        className="w-[440px] max-w-full rounded-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <div className="flex items-center justify-between px-5 pt-4 pb-2">
+                            <div>
+                                <h3 className="text-base font-bold text-slate-800 dark:text-white">Host QR Code</h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Visitors scan this to register with this host</p>
+                            </div>
+                            <button
+                                onClick={closeHostQr}
+                                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800"
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+                        <div className="px-5 pb-5">
+                            <div className="flex items-center justify-center bg-slate-50 dark:bg-slate-800 rounded-xl py-4">
+                                {hostQrDataUrl ? (
+                                    <img src={hostQrDataUrl} alt="Host QR" className="w-[260px] h-[260px]" />
+                                ) : (
+                                    <div className="w-[260px] h-[260px] flex items-center justify-center text-sm text-slate-400">Generating…</div>
+                                )}
+                            </div>
+                            <div className="mt-3 text-center">
+                                <div className="text-sm font-semibold text-slate-800 dark:text-white">
+                                    {[hostQrEmployee.first_name, hostQrEmployee.last_name].filter(Boolean).join(" ") || `Employee ${hostQrEmployee.employee_id || hostQrEmployee.id}`}
+                                </div>
+                                <div className="text-xs text-slate-500 dark:text-slate-400">
+                                    {hostQrEmployee?.branch?.branch_name || "—"} · {hostQrEmployee?.department?.name || "—"}
+                                </div>
+                            </div>
+                            <div className="mt-4 flex gap-2">
+                                <button
+                                    onClick={downloadHostQr}
+                                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg bg-primary text-white px-3 py-2 text-sm font-semibold hover:opacity-95"
+                                >
+                                    <Download className="w-4 h-4" /> Download
+                                </button>
+                                <button
+                                    onClick={copyHostQrUrl}
+                                    className="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-200 px-3 py-2 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
+                                >
+                                    <Copy className="w-4 h-4" /> Copy Link
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

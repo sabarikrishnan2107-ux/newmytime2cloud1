@@ -93,9 +93,12 @@
   .sig .title { font-size: 11px; color: #6b7280; text-align: center; }
 
   /* Footer */
-  .footer { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 14px 38px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .footer { background: #f9fafb; border-top: 1px solid #e5e7eb; padding: 12px 38px; }
+  .footer .top-row { display: flex; align-items: center; justify-content: center; gap: 8px; }
   .footer .lock { width: 22px; height: 22px; border-radius: 50%; background: #fee2e2; display: inline-flex; align-items: center; justify-content: center; }
   .footer .text { font-size: 11px; color: #c0392b; }
+  .footer .timestamp { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 6px; padding-top: 6px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; font-weight: 400; letter-spacing: 0.3px; }
+  .footer .timestamp svg { opacity: 0.7; }
 
   @media print {
     body { background: #fff; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -339,10 +342,16 @@
 
   <!-- Footer -->
   <div class="footer">
-    <span class="lock">
-      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
-    </span>
-    <span class="text">This is a system-generated payslip. For any queries, please contact the HR department.</span>
+    <div class="top-row">
+      <span class="lock">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+      </span>
+      <span class="text">This is a system-generated payslip. For any queries, please contact the HR department.</span>
+    </div>
+    <div class="timestamp">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>
+      <span>Generated on {{ now()->format('d M Y, h:i A') }}</span>
+    </div>
   </div>
 
 </div>

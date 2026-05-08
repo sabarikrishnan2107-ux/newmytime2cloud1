@@ -113,7 +113,7 @@ export default function EmployeeEditClient() {
         />
         <div>
           <p className="font-medium text-text-light dark:text-text-dark">
-            {employee.first_name}
+            {employee.full_name || [employee.first_name, employee.last_name].filter(Boolean).join(" ")}
           </p>
           <p className="text-sm text-subtext-light dark:text-subtext-dark">
             {employee.employee_id || "N/A"}

@@ -5,6 +5,7 @@ import useImageUpload from "@/hooks/useImageUpload";
 import React, { useState, useEffect, useCallback, useRef } from "react";
 
 import { getBranches, getEmployees, updateProfilePicture } from "@/lib/api";
+import { api, buildQueryParams } from "@/lib/api-client";
 import { convertFileToBase64, parseApiError } from "@/lib/utils";
 import EmployeeTabs from "@/components/Employees/EmployeeTabs";
 import { useSearchParams, useRouter } from "next/navigation";
@@ -22,9 +23,6 @@ export default function EmployeeShortListClient() {
   const [error, setError] = useState(null);
   const [globalError, setGlobalError] = useState(null);
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [perPage, setPerPage] = useState(10);
-  const [totalPages, setTotalPages] = useState(1);
   const [totalEmployees, setTotalEmployees] = useState(0);
 
   const [selectedBranch, setSelectedBranch] = useState(null);
@@ -43,41 +41,57 @@ export default function EmployeeShortListClient() {
     fetchBranches();
   }, []);
 
-  const fetchEmployees = useCallback(
-    async (page, perPage) => {
-      setError(null);
+  const fetchEmployees = useCallback(async () => {
+    setError(null);
 
-      try {
-        const params = {
-          page: page,
-          per_page: perPage,
-          sortDesc: "false",
-          branch_id: selectedBranch,
-          search: searchTerm || null,
-        };
-        const result = await getEmployees(params);
+    try {
+      const params = {
+        per_page: 1000,
+        sortDesc: "false",
+        branch_id: selectedBranch,
+        search: searchTerm || null,
+      };
+      const result = await getEmployees(params);
 
-        if (result && Array.isArray(result.data)) {
-          setEmployees(result.data);
-          setCurrentPage(result.current_page || 1);
-          setTotalPages(result.last_page || 1);
-          setTotalEmployees(result.total || 0);
-          let foundEmployee = result.data.find((e) => e.id == employeeId);
-          setSelectedEmployee(foundEmployee);
-          return;
-        }
-
-        throw new Error("Invalid data structure received from API.");
-      } catch (error) {
-        setGlobalError(parseApiError(error));
+      if (result && Array.isArray(result.data)) {
+        setEmployees(result.data);
+        setTotalEmployees(result.total || result.data.length);
+        let foundEmployee = result.data.find((e) => e.id == employeeId);
+        if (foundEmployee) setSelectedEmployee(foundEmployee);
+        return result.data;
       }
-    },
-    [perPage, selectedBranch, searchTerm, employeeId],
-  );
+
+      throw new Error("Invalid data structure received from API.");
+    } catch (error) {
+      setGlobalError(parseApiError(error));
+      return [];
+    }
+  }, [selectedBranch, searchTerm, employeeId]);
 
   useEffect(() => {
-    fetchEmployees(currentPage, perPage);
-  }, [currentPage, perPage, fetchEmployees]);
+    fetchEmployees();
+  }, [fetchEmployees]);
+
+  // Fallback: if the URL has an employee_id but it's not in the loaded list
+  // (e.g., user came from page 2 of the main listing, or branch filter excludes them),
+  // fetch that employee directly so the right-side details panel loads.
+  useEffect(() => {
+    if (!employeeId) return;
+    if (selectedEmployee && String(selectedEmployee.id) === String(employeeId)) return;
+    if (employees.some((e) => String(e.id) === String(employeeId))) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const params = await buildQueryParams({});
+        const { data } = await api.get(`/employee-details/${employeeId}`, { params });
+        if (!cancelled && data && data.id) setSelectedEmployee(data);
+      } catch (e) {
+        console.warn("[EmployeeShortList] direct fetch failed:", e?.response?.status, e?.message);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [employeeId, employees, selectedEmployee]);
 
   const handleRowClick = (employee) => {
     setSelectedEmployee(employee);
@@ -111,12 +125,12 @@ export default function EmployeeShortListClient() {
             e.target.src = `https://placehold.co/40x40/6946dd/ffffff?text=${employee.full_name.charAt(0)}`;
           }}
         />
-        <div>
-          <p className="font-medium text-text-light dark:text-text-dark">
-            {employee.first_name}
+        <div className="min-w-0 flex-1">
+          <p className="font-medium text-text-light dark:text-text-dark truncate">
+            {employee.full_name || [employee.first_name, employee.last_name].filter(Boolean).join(" ")}
           </p>
-          <p className="text-sm text-subtext-light dark:text-subtext-dark">
-            {employee.employee_id || "N/A"}
+          <p className="text-xs text-subtext-light dark:text-subtext-dark truncate">
+            {[employee.department?.name, employee.employee_id].filter(Boolean).join(" | ") || "N/A"}
           </p>
         </div>
       </li>
@@ -126,8 +140,8 @@ export default function EmployeeShortListClient() {
   return (
     <>
       <div className="flex flex-1 gap-6">
-        <div className="w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-          <div className="p-5 space-y-4">
+        <div className="w-80 border-r border-gray-200 dark:border-gray-700 flex flex-col max-h-[calc(100vh-100px)] sticky top-0">
+          <div className="p-5 space-y-4 shrink-0">
             <div className="relative inline-block w-full">
               <button
                 onClick={() => setIsOpen(!isOpen)}
@@ -136,7 +150,8 @@ export default function EmployeeShortListClient() {
                 <span className="truncate">
                   {selectedBranch
                     ? branches.find((b) => b.id === selectedBranch)?.name
-                    : "Select Branch"}
+                    : "All branches"}
+                  <span className="ml-1.5 text-xs text-slate-400 font-normal">({totalEmployees})</span>
                 </span>
                 <span
                   className={`material-symbols-outlined text-slate-400 transition-transform duration-200 ${
@@ -150,15 +165,31 @@ export default function EmployeeShortListClient() {
               {isOpen && (
                 <div className="absolute z-[50] w-full mt-2 origin-top bg-white border border-slate-200 rounded-xl shadow-xl dark:bg-slate-800 dark:border-slate-700 p-1.5 animate-in fade-in zoom-in-95 duration-100">
                   <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                    <div
+                      onClick={() => {
+                        setSelectedBranch(null);
+                        setIsOpen(false);
+                      }}
+                      className={`flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 ${
+                        selectedBranch === null
+                          ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                          : "text-slate-600 dark:text-slate-300"
+                      }`}
+                    >
+                      All branches
+                    </div>
                     {branches.map((opt) => (
                       <div
                         key={opt.id}
                         onClick={() => {
                           setSelectedBranch(opt.id);
-                          setCurrentPage(1);
                           setIsOpen(false);
                         }}
-                        className="flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 text-slate-600 dark:text-slate-300"
+                        className={`flex items-center px-3 py-2 text-sm rounded-lg cursor-pointer transition-colors hover:bg-indigo-50 dark:hover:bg-indigo-900/30 hover:text-indigo-600 dark:hover:text-indigo-400 ${
+                          selectedBranch === opt.id
+                            ? "text-indigo-600 dark:text-indigo-400 font-semibold"
+                            : "text-slate-600 dark:text-slate-300"
+                        }`}
                       >
                         {opt.name}
                       </div>

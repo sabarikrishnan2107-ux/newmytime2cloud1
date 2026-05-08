@@ -17,6 +17,7 @@ import DeviceEdit from './Edit';
 import axios from 'axios';
 import PinEntryModal from './UnlockDoor';
 import DeviceSettings from './Settings';
+import TimeSelectionModal from './TimeSelection';
 
 export default function EmployeeDataTable() {
 
@@ -140,6 +141,7 @@ export default function EmployeeDataTable() {
   const [deviceOpen, setDeviceOpen] = useState(false);
   const [pinModal, setPinModal] = useState(false);
   const [device_id, setDeviceId] = useState(false);
+  const [alwaysOpenDevice, setAlwaysOpenDevice] = useState(null);
 
 
   const editItem = (record) => {
@@ -219,7 +221,7 @@ export default function EmployeeDataTable() {
       </div>
 
       <DataTable
-        columns={Columns(deleteItem, editItem, deviceSettings, setOpenDoor, setCloseDoor)}
+        columns={Columns(deleteItem, editItem, deviceSettings, setOpenDoor, setCloseDoor, setAlwaysOpenDevice)}
         data={employees}
         isLoading={isLoading}
         error={error}
@@ -257,6 +259,16 @@ export default function EmployeeDataTable() {
           onSuccess={handleRefresh}
         />
       )}
+
+      <TimeSelectionModal
+        open={!!alwaysOpenDevice}
+        device={alwaysOpenDevice}
+        onClose={() => setAlwaysOpenDevice(null)}
+        onUpdate={(payload) => {
+          // Hook a real save endpoint here later. For now we log the schedule.
+          console.log("[AlwaysOpen schedule]", payload);
+        }}
+      />
 
       <PinEntryModal
         device_id={device_id}

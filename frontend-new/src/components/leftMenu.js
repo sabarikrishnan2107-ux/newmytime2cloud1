@@ -38,6 +38,7 @@ export default function LeftMenu() {
   }, [user?.company_id]);
 
   if (pathname === "/login") return null;
+  if (pathname?.startsWith("/visitor/host-checkin")) return null;
 
   const primaryPath = '/' + pathname.split('/')[1];
   const links = leftNavLinks[primaryPath] || leftNavLinks['/'];

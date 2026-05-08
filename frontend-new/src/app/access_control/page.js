@@ -27,6 +27,41 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Resolve IN/OUT for a log; returns true=OUT, false=IN, null=unknown
+function explicitIsOut(l) {
+  const f = (l?.device?.function || "").toLowerCase();
+  const t = (l?.log_type || l?.LogType || "").toLowerCase();
+  if (f === "out" || t === "out") return true;
+  if (f === "in" || t === "in") return false;
+  const dev = String(l?.DeviceID || l?.device_id || l?.device?.device_id || "").toLowerCase();
+  if (dev.includes("out")) return true;
+  if (dev.includes("in")) return false;
+  return null;
+}
+
+// Auto-classify logs: explicit signal wins; else alternate per (employee, day) by time
+function classifyLogs(logs) {
+  const enriched = logs.map((l) => ({ ...l, _isOut: explicitIsOut(l) }));
+  const groups = new Map();
+  for (const l of enriched) {
+    if (l._isOut !== null) continue;
+    const empKey = l?.employee?.id ?? l?.employee?.employee_id ?? l?.employee?.system_user_id ?? "?";
+    const date = l?.date || (l?.LogTime ? String(l.LogTime).slice(0, 10) : "");
+    const key = `${empKey}|${date}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(l);
+  }
+  for (const list of groups.values()) {
+    list.sort((a, b) => {
+      const ta = `${a?.date || ""} ${a?.time || ""}`;
+      const tb = `${b?.date || ""} ${b?.time || ""}`;
+      return ta.localeCompare(tb);
+    });
+    list.forEach((l, idx) => { l._isOut = idx % 2 === 1; });
+  }
+  return enriched;
+}
+
 function Breakdown({ employees, visitors }) {
   return (
     <>
@@ -46,10 +81,10 @@ function Breakdown({ employees, visitors }) {
 
 export default function AccessControlPage() {
   const [filters, setFilters] = useState({
-    branchId: null,
-    deviceId: null,
+    branchIds: [],
+    deviceIds: [],
     userType: null,
-    employeeId: null,
+    employeeIds: [],
     fromDate: todayStr(),
     toDate: todayStr(),
   });
@@ -107,7 +142,9 @@ export default function AccessControlPage() {
   useEffect(() => {
     (async () => {
       try {
-        const r = await getScheduledEmployeeList(filters.branchId);
+        // For multi-select branches: pass first selected branch (API takes single), else null for all
+        const branchForList = filters.branchIds?.[0] ?? null;
+        const r = await getScheduledEmployeeList(branchForList);
         const seen = new Set();
         const list = (r || [])
           .map((e) => {
@@ -119,21 +156,23 @@ export default function AccessControlPage() {
         setEmployees(list);
       } catch (e) { console.warn("employees dropdown", e); }
     })();
-  }, [filters.branchId]);
+  }, [filters.branchIds]);
 
   // ── Fetch data ─────────────────────────────────────────────────────────
   const fetchAll = useCallback(async () => {
     setIsLoading(true);
     try {
+      // API takes single values; for multi-select, pass first or null when none/all selected
       const params = {
         page: 1,
         per_page: 500,
         sortDesc: "true",
-        branch_id: filters.branchId,
-        DeviceID: filters.deviceId,
+        branch_id: filters.branchIds?.length === 1 ? filters.branchIds[0] : null,
+        branch_ids: filters.branchIds?.length > 1 ? filters.branchIds : undefined,
+        DeviceID: filters.deviceIds?.length === 1 ? filters.deviceIds[0] : null,
         from_date: filters.fromDate,
         to_date: filters.toDate,
-        UserID: filters.employeeId,
+        UserID: filters.employeeIds?.length === 1 ? filters.employeeIds[0] : null,
         include_device_types: ["all", "Access Control"],
         user_type: filters.userType,
       };
@@ -152,19 +191,13 @@ export default function AccessControlPage() {
 
   useEffect(() => { fetchAll(); }, []); // initial
 
+  // ── Auto-classified logs (IN/OUT alternation when device sends no signal) ─
+  const classifiedLogs = useMemo(() => classifyLogs(empLogs), [empLogs]);
+
   // ── Derive KPIs ────────────────────────────────────────────────────────
   const stats = useMemo(() => {
-    const isOut = (l) => {
-      const f = (l?.device?.function || "").toLowerCase();
-      const t = (l?.log_type || l?.LogType || "").toLowerCase();
-      if (f === "out" || t === "out") return true;
-      if (f === "in" || t === "in") return false;
-      // function is "all"/"auto"/missing — fall back to deviceId hint
-      const dev = String(l?.DeviceID || l?.device_id || l?.device?.device_id || "").toLowerCase();
-      return !dev.includes("in");
-    };
-    const empIns = empLogs.filter((l) => !isOut(l));
-    const empOuts = empLogs.filter((l) => isOut(l));
+    const empIns = classifiedLogs.filter((l) => !l._isOut);
+    const empOuts = classifiedLogs.filter((l) => l._isOut);
 
     // Employees currently inside: last event per employee is IN
     const tsOf = (l) => {
@@ -172,11 +205,11 @@ export default function AccessControlPage() {
       return Number.isFinite(t) ? t : 0;
     };
     const lastByEmp = new Map();
-    for (const l of [...empLogs].sort((a, b) => tsOf(a) - tsOf(b))) {
+    for (const l of [...classifiedLogs].sort((a, b) => tsOf(a) - tsOf(b))) {
       const key = l?.employee?.id ?? l?.employee?.employee_id ?? l?.employee?.system_user_id;
       if (key != null) lastByEmp.set(key, l);
     }
-    const empInside = [...lastByEmp.values()].filter((l) => !isOut(l)).length;
+    const empInside = [...lastByEmp.values()].filter((l) => !l._isOut).length;
 
     // Visitor counts (today's data)
     const visIns = visitorLogs.length;
@@ -189,7 +222,7 @@ export default function AccessControlPage() {
     const offlineDevices = totalDevices - onlineDevices;
 
     // Last log time
-    const lastEmp = empLogs[0];
+    const lastEmp = classifiedLogs[0];
     const lastTs = lastEmp ? `${lastEmp.date || ""} ${lastEmp.time || ""}`.trim() : "";
 
     return {
@@ -201,36 +234,28 @@ export default function AccessControlPage() {
       totalDevices, onlineDevices, offlineDevices,
       lastTs,
     };
-  }, [empLogs, visitorLogs, allDevices]);
+  }, [classifiedLogs, visitorLogs, allDevices]);
 
   // ── KPI click filtering ────────────────────────────────────────────────
   const tableLogs = useMemo(() => {
-    const isOut = (l) => {
-      const f = (l?.device?.function || "").toLowerCase();
-      const t = (l?.log_type || l?.LogType || "").toLowerCase();
-      if (f === "out" || t === "out") return true;
-      if (f === "in" || t === "in") return false;
-      const dev = String(l?.DeviceID || l?.device_id || l?.device?.device_id || "").toLowerCase();
-      return !dev.includes("in");
-    };
     switch (view) {
-      case "in":  return empLogs.filter((l) => !isOut(l));
-      case "out": return empLogs.filter((l) => isOut(l));
+      case "in":  return classifiedLogs.filter((l) => !l._isOut);
+      case "out": return classifiedLogs.filter((l) => l._isOut);
       case "inside": {
         const tsOf = (l) => {
           const t = new Date(l?.LogTime || `${l?.date || ""} ${l?.time || ""}`.trim()).getTime();
           return Number.isFinite(t) ? t : 0;
         };
         const lastByEmp = new Map();
-        for (const l of [...empLogs].sort((a, b) => tsOf(a) - tsOf(b))) {
+        for (const l of [...classifiedLogs].sort((a, b) => tsOf(a) - tsOf(b))) {
           const key = l?.employee?.id ?? l?.employee?.employee_id ?? l?.employee?.system_user_id;
           if (key != null) lastByEmp.set(key, l);
         }
-        return [...lastByEmp.values()].filter((l) => !isOut(l));
+        return [...lastByEmp.values()].filter((l) => !l._isOut);
       }
-      default: return empLogs;
+      default: return classifiedLogs;
     }
-  }, [empLogs, view]);
+  }, [classifiedLogs, view]);
 
   // ── Show last 10 logs for an employee (across all time, not just today) ─
   const handleRowClick = useCallback(async (log) => {
@@ -311,7 +336,7 @@ export default function AccessControlPage() {
         onChange={setFilters}
         onSubmit={fetchAll}
         onReset={() => {
-          setFilters({ branchId: null, deviceId: null, userType: null, employeeId: null, fromDate: todayStr(), toDate: todayStr() });
+          setFilters({ branchIds: [], deviceIds: [], userType: null, employeeIds: [], fromDate: todayStr(), toDate: todayStr() });
           setView("all");
         }}
         branches={branches}

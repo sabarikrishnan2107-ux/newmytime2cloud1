@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
-import { Search, Plus, Eye, Edit, X, ArrowLeft, Wallet, TrendingUp, Calendar, Award } from "lucide-react";
+import { Search, Plus, Eye, Edit, X, ArrowLeft, Wallet, TrendingUp, Calendar, Award, MoreVertical, Trash2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import ProfilePicture from "@/components/ProfilePicture";
 
 const emptyForm = {
@@ -48,6 +49,17 @@ export default function SalaryStructures() {
       }));
       setStructures(items);
     } catch (e) {}
+  };
+
+  const deleteStructure = async (id) => {
+    if (!confirm("Delete this salary structure? This cannot be undone.")) return;
+    try {
+      const params = await buildQueryParams({});
+      await api.delete(`/payroll-management/salary-structures/${id}`, { params });
+      fetchStructures();
+    } catch (e) {
+      alert(e?.response?.data?.message || "Failed to delete structure");
+    }
   };
 
   useEffect(() => {
@@ -324,24 +336,51 @@ export default function SalaryStructures() {
                       </span>
                     </td>
                     <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex gap-1">
-                        <button title="View" onClick={() => setViewItem(s)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-primary transition"><Eye className="h-3.5 w-3.5" /></button>
-                        <button title="Edit" onClick={() => {
-                          setEditingId(s.id);
-                          setForm({
-                            employee_id: String(s.employee_id), effective_from: s.effective_from || "", effective_to: s.effective_to || "",
-                            salary_mode: s.salary_mode || "gross_based",
-                            basic_salary: String(s.basicSalary), house_allowance: String(s.houseAllowance),
-                            transport_allowance: String(s.transportAllowance), food_allowance: String(s.foodAllowance),
-                            medical_allowance: String(s.medicalAllowance), other_allowance: String(s.otherAllowance),
-                            overtime_eligible: s.overtimeEligible, loan_deduction: !!s.loan_deduction, advance_deduction: !!s.advance_deduction,
-                          });
-                          const emp = employees.find(e => String(e.id) === String(s.employee_id));
-                          setSelectedBranch(emp?.branch_id ? String(emp.branch_id) : (s.employee?.branch?.id ? String(s.employee.branch.id) : ""));
-                          setSelectedDept(emp?.department_id ? String(emp.department_id) : (s.employee?.department?.id ? String(s.employee.department.id) : ""));
-                          setDialogOpen(true);
-                        }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 transition"><Edit className="h-3.5 w-3.5" /></button>
-                      </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <button className="p-1.5 rounded-full hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-gray-600 transition">
+                            <MoreVertical className="h-4 w-4" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1" onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); setViewItem(s); }}
+                            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Eye className="w-4 h-4 text-slate-700 dark:text-slate-200" />
+                            <span className="text-slate-700 dark:text-slate-200 font-medium">View</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditingId(s.id);
+                              setForm({
+                                employee_id: String(s.employee_id), effective_from: s.effective_from || "", effective_to: s.effective_to || "",
+                                salary_mode: s.salary_mode || "gross_based",
+                                basic_salary: String(s.basicSalary), house_allowance: String(s.houseAllowance),
+                                transport_allowance: String(s.transportAllowance), food_allowance: String(s.foodAllowance),
+                                medical_allowance: String(s.medicalAllowance), other_allowance: String(s.otherAllowance),
+                                overtime_eligible: s.overtimeEligible, loan_deduction: !!s.loan_deduction, advance_deduction: !!s.advance_deduction,
+                              });
+                              const emp = employees.find(e => String(e.id) === String(s.employee_id));
+                              setSelectedBranch(emp?.branch_id ? String(emp.branch_id) : (s.employee?.branch?.id ? String(s.employee.branch.id) : ""));
+                              setSelectedDept(emp?.department_id ? String(emp.department_id) : (s.employee?.department?.id ? String(s.employee.department.id) : ""));
+                              setDialogOpen(true);
+                            }}
+                            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Edit className="w-4 h-4 text-slate-700 dark:text-slate-200" />
+                            <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={(e) => { e.stopPropagation(); deleteStructure(s.id); }}
+                            className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
+                            <span className="text-red-600 dark:text-red-400 font-medium">Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </td>
                   </tr>
                 );

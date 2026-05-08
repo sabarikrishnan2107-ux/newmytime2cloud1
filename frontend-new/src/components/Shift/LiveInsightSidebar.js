@@ -3,7 +3,9 @@ import { LayoutDashboard, Palmtree, Timer, CreditCard } from 'lucide-react';
 import { hhmmToMinutes } from '@/lib/utils';
 
 const LiveInsightSidebar = ({ shift }) => {
-    const week_offs = shift?.weekoff_rules?.days || shift?.weekoff_days || [];
+    const weekoff_type = String(shift?.weekoff_rules?.type || "").toLowerCase();
+    const isFlexible = weekoff_type === "flexible";
+    const week_offs = isFlexible ? [] : (shift?.weekoff_rules?.days || shift?.weekoff_days || []);
     const halfday_rules = shift?.halfday_rules;
     const beforeOt = shift?.overtime_type === "Both" || shift?.overtime_type === "Before";
     const afterOt = shift?.overtime_type === "Both" || shift?.overtime_type === "After";

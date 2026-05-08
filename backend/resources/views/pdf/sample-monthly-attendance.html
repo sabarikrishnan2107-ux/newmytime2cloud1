@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Monthly Attendance Report — Sample</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #0f172a;
+    background: #f8fafc;
+    padding: 24px;
+    font-size: 13px;
+    line-height: 1.4;
+  }
+  .page {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: #ffffff;
+    border-radius: 12px;
+    padding: 28px 32px;
+    box-shadow: 0 4px 20px rgba(15, 23, 42, 0.06);
+  }
+
+  /* === Title row === */
+  .title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 18px;
+  }
+  .title-row h1 {
+    font-size: 22px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    color: #0f172a;
+    text-transform: uppercase;
+  }
+  .title-row .meta {
+    font-size: 11.5px;
+    color: #334155;
+    margin-top: 4px;
+  }
+  .title-row .meta .dot {
+    color: #94a3b8;
+    margin: 0 6px;
+  }
+  .company-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px 8px 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #ffffff;
+  }
+  .company-badge .avatar {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    color: #6d28d9;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.4px;
+  }
+  .company-badge .name {
+    font-size: 12px;
+    font-weight: 500;
+    color: #0f172a;
+    letter-spacing: 0.6px;
+  }
+
+  /* === Employee summary row === */
+  .summary-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr;
+    gap: 10px;
+    margin-top: 6px;
+  }
+  .sum-card {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 12px 16px;
+    background: #ffffff;
+  }
+  .emp-card { display: flex; align-items: center; gap: 12px; }
+  .emp-card .photo {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    object-fit: cover;
+    background: #e2e8f0;
+    display: inline-block;
+  }
+  .emp-card .name {
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #0f172a;
+  }
+  .emp-card .id {
+    font-size: 11px;
+    color: #334155;
+    margin-top: 1px;
+  }
+  .emp-card .position {
+    font-size: 11px;
+    color: #334155;
+  }
+  .stat-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    color: #475569;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
+  }
+  .stat-value {
+    margin-top: 6px;
+    font-size: 19px;
+    font-weight: 500;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+  }
+
+  /* === Status counters row === */
+  .status-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .status-cell {
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #ffffff;
+  }
+  .status-cell .label {
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+  .status-cell .count {
+    font-size: 14px;
+    font-weight: 500;
+    color: #0f172a;
+    letter-spacing: -0.3px;
+    font-variant-numeric: tabular-nums;
+  }
+  .label-present  { color: #16a34a; }
+  .label-absent   { color: #dc2626; }
+  .label-weekoff  { color: #475569; }
+  .label-leave    { color: #ea580c; }
+  .label-holiday  { color: #7c3aed; }
+  .label-missing  { color: #ea580c; }
+  .label-manual   { color: #475569; }
+
+  /* === Daily grid (transposed table — dates as columns) === */
+  .grid-wrap {
+    margin-top: 22px;
+    overflow-x: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+  }
+  table.daily-grid {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 10.5px;
+    color: #0f172a;
+    background: #ffffff;
+  }
+  table.daily-grid th,
+  table.daily-grid td {
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 7px 6px;
+    text-align: center;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  table.daily-grid th:first-child,
+  table.daily-grid td:first-child {
+    text-align: left;
+    background: #f8fafc;
+    font-weight: 500;
+    color: #475569;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    font-size: 10.5px;
+    padding-left: 12px;
+    width: 70px;
+    position: sticky;
+    left: 0;
+  }
+  table.daily-grid thead th {
+    background: #f1f5f9;
+    color: #1e293b;
+    font-weight: 500;
+    font-size: 11px;
+    letter-spacing: 0.4px;
+  }
+  table.daily-grid thead .row-days th {
+    background: #f8fafc;
+    color: #334155;
+    font-weight: 500;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+  /* Cell variants */
+  table.daily-grid td .time {
+    display: block;
+    font-size: 11px;
+    font-weight: 500;
+    color: #1e3a8a;
+  }
+  table.daily-grid td .device {
+    display: block;
+    font-size: 9px;
+    color: #b91c1c;
+    font-style: normal;
+    margin-top: 1px;
+    letter-spacing: 0.2px;
+  }
+  table.daily-grid td.dash {
+    color: #94a3b8;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+  /* Status pills */
+  table.daily-grid td.status {
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+  }
+  td.status.present { color: #16a34a; }
+  td.status.absent  { color: #dc2626; }
+  td.status.weekoff { color: #ea580c; }
+  td.status.holiday { color: #7c3aed; }
+  td.status.leave   { color: #f59e0b; }
+  td.status.missing { color: #dc2626; }
+  td.status.manual  { color: #475569; }
+
+  /* Sunday column tint */
+  table.daily-grid .sun {
+    background: #fff7ed;
+  }
+
+  /* === Footer === */
+  .report-footer {
+    margin-top: 24px;
+    padding-top: 8px;
+    border-top: 1px solid #94a3b8;
+    font-size: 10.5px;
+    color: #334155;
+  }
+  .report-footer .legend {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding: 6px 0;
+  }
+  .report-footer .legend span { white-space: nowrap; }
+  .report-footer .leg-P { color: #16a34a; }
+  .report-footer .leg-A { color: #dc2626; }
+  .report-footer .leg-W { color: #ea580c; }
+  .report-footer .leg-L { color: #f59e0b; }
+  .report-footer .leg-H { color: #7c3aed; }
+  .report-footer .leg-M { color: #dc2626; }
+
+  .report-footer .footer-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #e2e8f0;
+    padding-top: 6px;
+    margin-top: 4px;
+    font-size: 10.5px;
+    color: #475569;
+  }
+  .report-footer .footer-row a { color: inherit; text-decoration: none; }
+  .report-footer .footer-row .center { flex: 1; text-align: center; }
+  .report-footer .footer-row .right { text-align: right; }
+
+  /* === Print rules === */
+  @media print {
+    body { background: #ffffff; padding: 0; font-size: 11.5px; }
+    .page { box-shadow: none; padding: 16px 16mm 32mm 16mm; max-width: 100%; }
+    @page { size: A4 landscape; margin: 12mm 12mm 28mm 12mm; }
+
+    /* Repeat the footer on every printed page */
+    .report-footer {
+      position: fixed;
+      bottom: 0;
+      left: 12mm;
+      right: 12mm;
+      background: #ffffff;
+      margin-top: 0;
+      padding-bottom: 6px;
+    }
+    /* Page number via CSS counter */
+    .page-num::before { content: "Page " counter(page) " of " counter(pages); }
+  }
+</style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- TITLE ROW -->
+    <div class="title-row">
+      <div>
+        <h1>Monthly Attendance Report</h1>
+        <div class="meta">
+          2026-05-01 &mdash; 2026-05-31
+          <span class="dot">•</span>
+          Monthly Exact
+        </div>
+      </div>
+      <div class="company-badge">
+        <span class="avatar">HY</span>
+        <span class="name">HYDERS PARK</span>
+      </div>
+    </div>
+
+    <!-- EMPLOYEE SUMMARY ROW -->
+    <div class="summary-row">
+      <div class="sum-card emp-card">
+        <img class="photo" src="data:image/svg+xml;utf8,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'&gt;&lt;rect width='40' height='40' fill='%23e2e8f0'/&gt;&lt;circle cx='20' cy='15' r='6' fill='%2394a3b8'/&gt;&lt;rect x='8' y='24' width='24' height='14' rx='7' fill='%2394a3b8'/&gt;&lt;/svg&gt;" alt="">
+        <div>
+          <div class="name">Ariff Akil</div>
+          <div class="id">ID: 1231231234567812</div>
+          <div class="position">Front office</div>
+        </div>
+      </div>
+      <div class="sum-card">
+        <div class="stat-label">Score</div>
+        <div class="stat-value">19%</div>
+      </div>
+      <div class="sum-card">
+        <div class="stat-label">Worked Hours</div>
+        <div class="stat-value">12h 52m</div>
+      </div>
+      <div class="sum-card">
+        <div class="stat-label">Overtime</div>
+        <div class="stat-value">0h 00m</div>
+      </div>
+    </div>
+
+    <!-- STATUS COUNTERS ROW -->
+    <div class="status-row">
+      <div class="status-cell"><span class="label label-present">PRESENT</span><span class="count">06</span></div>
+      <div class="status-cell"><span class="label label-absent">ABSENT</span><span class="count">25</span></div>
+      <div class="status-cell"><span class="label label-weekoff">WEEKOFF</span><span class="count">00</span></div>
+      <div class="status-cell"><span class="label label-leave">LEAVE</span><span class="count">00</span></div>
+      <div class="status-cell"><span class="label label-holiday">HOLIDAY</span><span class="count">00</span></div>
+      <div class="status-cell"><span class="label label-missing">MISSING</span><span class="count">00</span></div>
+      <div class="status-cell"><span class="label label-manual">MANUAL</span><span class="count">00</span></div>
+    </div>
+
+    <!-- DAILY GRID — first half: days 1-16 -->
+    <div class="grid-wrap">
+      <table class="daily-grid">
+        <thead>
+          <tr>
+            <th>Dates</th>
+            <th>01</th><th>02</th><th class="sun">03</th><th>04</th><th>05</th><th>06</th><th>07</th><th>08</th>
+            <th>09</th><th class="sun">10</th><th>11</th><th>12</th><th>13</th><th>14</th><th>15</th><th>16</th>
+          </tr>
+          <tr class="row-days">
+            <th>Days</th>
+            <th>FRI</th><th>SAT</th><th class="sun">SUN</th><th>MON</th><th>TUE</th><th>WED</th><th>THU</th><th>FRI</th>
+            <th>SAT</th><th class="sun">SUN</th><th>MON</th><th>TUE</th><th>WED</th><th>THU</th><th>FRI</th><th>SAT</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>In</td>
+            <td><span class="time">11:47</span><span class="device">Icarus</span></td>
+            <td><span class="time">11:39</span><span class="device">Icarus</span></td>
+            <td class="dash sun">---</td>
+            <td><span class="time">11:49</span><span class="device">Icarus</span></td>
+            <td><span class="time">11:49</span><span class="device">Icarus</span></td>
+            <td class="dash">---</td>
+            <td><span class="time">11:57</span><span class="device">Icarus</span></td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+          </tr>
+          <tr>
+            <td>Out</td>
+            <td><span class="time">22:07</span><span class="device">Icarus</span></td>
+            <td><span class="time">21:49</span><span class="device">Icarus</span></td>
+            <td class="dash sun">---</td>
+            <td><span class="time">22:03</span><span class="device">Icarus</span></td>
+            <td><span class="time">22:09</span><span class="device">Icarus</span></td>
+            <td class="dash">---</td>
+            <td><span class="time">22:02</span><span class="device">Icarus</span></td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+          </tr>
+          <tr>
+            <td>OT</td>
+            <td class="dash">---</td><td class="dash">---</td><td class="dash sun">---</td><td class="dash">---</td>
+            <td class="dash">---</td><td class="dash">---</td><td class="dash">---</td><td class="dash">---</td>
+            <td class="dash">---</td><td class="dash sun">---</td><td class="dash">---</td><td class="dash">---</td>
+            <td class="dash">---</td><td class="dash">---</td><td class="dash">---</td><td class="dash">---</td>
+          </tr>
+          <tr>
+            <td>T. Hrs</td>
+            <td>10:20</td>
+            <td>10:10</td>
+            <td class="dash sun">---</td>
+            <td>10:14</td>
+            <td>10:19</td>
+            <td class="dash">---</td>
+            <td>10:04</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+          </tr>
+          <tr>
+            <td>Status</td>
+            <td class="status present">P</td>
+            <td class="status present">P</td>
+            <td class="status weekoff sun">W</td>
+            <td class="status present">P</td>
+            <td class="status present">P</td>
+            <td class="status absent">A</td>
+            <td class="status present">P</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status weekoff sun">W</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- (Footer is at the bottom — fixed on every printed page) -->
+
+    <!-- DAILY GRID — second half: days 17-31 -->
+    <div class="grid-wrap" style="margin-top: 12px;">
+      <table class="daily-grid">
+        <thead>
+          <tr>
+            <th>Dates</th>
+            <th class="sun">17</th><th>18</th><th>19</th><th>20</th><th>21</th><th>22</th><th>23</th>
+            <th class="sun">24</th><th>25</th><th>26</th><th>27</th><th>28</th><th>29</th><th>30</th><th class="sun">31</th>
+          </tr>
+          <tr class="row-days">
+            <th>Days</th>
+            <th class="sun">SUN</th><th>MON</th><th>TUE</th><th>WED</th><th>THU</th><th>FRI</th><th>SAT</th>
+            <th class="sun">SUN</th><th>MON</th><th>TUE</th><th>WED</th><th>THU</th><th>FRI</th><th>SAT</th><th class="sun">SUN</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>In</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+          </tr>
+          <tr>
+            <td>Out</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+          </tr>
+          <tr>
+            <td>OT</td>
+            <td class="dash sun">---</td><td class="dash">---</td><td class="dash">---</td><td class="dash">---</td>
+            <td class="dash">---</td><td class="dash">---</td><td class="dash">---</td><td class="dash sun">---</td>
+            <td class="dash">---</td><td class="dash">---</td><td class="dash">---</td><td class="dash">---</td>
+            <td class="dash">---</td><td class="dash">---</td><td class="dash sun">---</td>
+          </tr>
+          <tr>
+            <td>T. Hrs</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash">---</td>
+            <td class="dash sun">---</td>
+          </tr>
+          <tr>
+            <td>Status</td>
+            <td class="status weekoff sun">W</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status weekoff sun">W</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status absent">A</td>
+            <td class="status weekoff sun">W</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FOOTER — repeats on every printed page -->
+    <div class="report-footer">
+      <div class="legend">
+        <span><span class="leg-P">P</span> = Present,</span>
+        <span><span class="leg-A">A</span> = Absent,</span>
+        <span><span class="leg-W">W</span> = Week Off,</span>
+        <span><span class="leg-L">L</span> = Leaves,</span>
+        <span><span class="leg-H">H</span> = Holiday,</span>
+        <span><span class="leg-M">M</span> = Missed</span>
+      </div>
+      <div class="footer-row">
+        <div class="left">Printed on : 08-May-2026</div>
+        <div class="center">Powered by <a href="https://mytime2cloud.com">https://mytime2cloud.com</a></div>
+        <div class="right"><span class="page-num">Page 1 of 1</span></div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

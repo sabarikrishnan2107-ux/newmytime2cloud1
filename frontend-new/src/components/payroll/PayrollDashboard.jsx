@@ -87,9 +87,11 @@ export default function PayrollDashboard() {
         setDeptCost(data.department_cost || []);
       } catch (e) { console.warn("Dashboard stats error", e); }
       try {
-        const batchRes = await api.get("/payroll-management/batches", { params: { ...params, per_page: 10 } });
+        const batchRes = await api.get("/payroll-management/batches", { params: { ...params, month, per_page: 50 } });
         console.log("Batches API response:", batchRes.data);
-        setBatches(batchRes.data?.data || []);
+        const all = batchRes.data?.data || [];
+        // Client-side guard in case backend ignores `month`
+        setBatches(all.filter(b => b.month === month));
       } catch (e) { console.warn("Batches error", e?.response?.data || e); }
     };
     fetchData();
@@ -106,8 +108,9 @@ export default function PayrollDashboard() {
       setStats(res.data);
       setMonthlyTrend(res.data.monthly_trend || []);
       setDeptCost(res.data.department_cost || []);
-      const bRes = await api.get("/payroll-management/batches", { params: { ...params, per_page: 10 } });
-      setBatches(bRes.data?.data || []);
+      const bRes = await api.get("/payroll-management/batches", { params: { ...params, month, per_page: 50 } });
+      const allB = bRes.data?.data || [];
+      setBatches(allB.filter(b => b.month === month));
     } catch (e) {
       alert(e?.response?.data?.message || "Error generating payroll");
     } finally {
@@ -155,7 +158,7 @@ export default function PayrollDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
         <KPICard title="Total Employees" value={totals.empCount} icon={Users} variant="primary" />
         <KPICard title="Gross Salary" value={totals.gross.toLocaleString()} icon={DollarSign} variant="primary" />
         <KPICard title="Total Deductions" value={totals.ded.toLocaleString()} icon={TrendingDown} variant="destructive" />

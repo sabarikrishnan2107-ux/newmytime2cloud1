@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
-import { Save, Plus, Trash2, AlertTriangle, Info } from "lucide-react";
+import { Save, Plus, Trash2, AlertTriangle, Info, Settings as SettingsIcon, Clock, TrendingDown, ShieldCheck, ChevronRight } from "lucide-react";
 
 const deductionTypeLabels = {
   no_deduction: "No Deduction",
@@ -32,7 +32,7 @@ const defaultSettings = {
 function SelectInput({ value, onChange, options, className = "" }) {
   return (
     <select value={value} onChange={e => onChange(e.target.value)}
-      className={`w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 ${className}`}>
+      className={`w-full rounded-md border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-[13px] text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 ${className}`}>
       {options.map(([val, label]) => <option key={val} value={val}>{label}</option>)}
     </select>
   );
@@ -42,14 +42,14 @@ function NumberInput({ value, onChange, step, min, max, disabled, placeholder, c
   return (
     <input type="number" value={value} step={step} min={min} max={max} disabled={disabled} placeholder={placeholder}
       onChange={e => onChange(e.target.value === "" ? "" : Number(e.target.value))}
-      className={`w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 disabled:opacity-50 ${className}`} />
+      className={`w-full rounded-md border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-[13px] text-gray-700 dark:text-gray-200 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-primary/30 ${className}`} />
   );
 }
 
 function TextInput({ value, onChange, placeholder, className = "" }) {
   return (
     <input type="text" value={value} placeholder={placeholder} onChange={e => onChange(e.target.value)}
-      className={`w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 ${className}`} />
+      className={`w-full rounded-md border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-2.5 py-1.5 text-[13px] text-gray-700 dark:text-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/30 ${className}`} />
   );
 }
 
@@ -62,11 +62,28 @@ function ToggleSwitch({ checked, onChange }) {
   );
 }
 
-function Section({ title, children, fullWidth }) {
+function Section({ title, description, icon: Icon, accent = "blue", children, fullWidth }) {
+  const accentMap = {
+    blue:   { bg: "bg-blue-500/10",    fg: "text-blue-500" },
+    amber:  { bg: "bg-amber-500/10",   fg: "text-amber-500" },
+    rose:   { bg: "bg-rose-500/10",    fg: "text-rose-500" },
+    purple: { bg: "bg-purple-500/10",  fg: "text-purple-500" },
+  };
+  const a = accentMap[accent] || accentMap.blue;
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5 space-y-4">
-      <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-100">{title}</h3>
-      <div className={fullWidth ? "space-y-4" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>{children}</div>
+    <div className="rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden">
+      <div className="flex items-center gap-2.5 px-4 py-2.5 border-b border-gray-100 dark:border-white/5">
+        {Icon && (
+          <div className={`flex h-7 w-7 items-center justify-center rounded-md ${a.bg}`}>
+            <Icon className={`h-3.5 w-3.5 ${a.fg}`} strokeWidth={2} />
+          </div>
+        )}
+        <div className="min-w-0">
+          <h3 className="text-[13px] font-semibold text-gray-800 dark:text-gray-100 leading-tight">{title}</h3>
+          {description && <p className="text-[10px] text-gray-500 dark:text-gray-400 leading-tight">{description}</p>}
+        </div>
+      </div>
+      <div className={`p-4 ${fullWidth ? "space-y-3" : "grid grid-cols-1 md:grid-cols-2 gap-3"}`}>{children}</div>
     </div>
   );
 }
@@ -128,66 +145,71 @@ export default function PayrollSettings() {
   if (loading) return <div className="p-8 text-center text-gray-400 text-sm">Loading settings...</div>;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div className="space-y-5 max-w-5xl mx-auto pb-20">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Payroll Settings</h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Configure company-wide payroll calculation rules and preferences</p>
+      <div className="flex items-center gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10">
+          <SettingsIcon className="h-4 w-4 text-primary" strokeWidth={2.2} />
+        </div>
+        <div>
+          <h1 className="text-base font-bold text-gray-800 dark:text-gray-100 leading-tight">Payroll Settings</h1>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 leading-tight">Configure company-wide payroll calculation rules and preferences</p>
+        </div>
       </div>
 
       {/* General Settings */}
-      <Section title="General Settings">
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Payroll Days Mode</label>
+      <Section title="General Settings" description="Core payroll configuration" icon={SettingsIcon} accent="blue">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Payroll Days Mode</label>
           <SelectInput value={settings.days_mode} onChange={v => update("days_mode", v)}
             options={[["fixed_30", "Fixed 30 Days"], ["actual_calendar", "Actual Calendar Days"], ["working_days", "Working Days Only"]]} />
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Working Hours / Day</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Working Hours / Day</label>
           <NumberInput value={settings.working_hours_per_day} onChange={v => update("working_hours_per_day", v)} step={0.5} min={1} max={24} />
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Salary Mode</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Salary Mode</label>
           <SelectInput value={settings.salary_mode} onChange={v => update("salary_mode", v)}
             options={[["basic_based", "Basic Based"], ["gross_based", "Gross Based"]]} />
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Currency</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Currency</label>
           <TextInput value={settings.currency} onChange={v => update("currency", v)} />
         </div>
       </Section>
 
       {/* Overtime Rules */}
-      <Section title="Overtime Rules">
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Normal OT Multiplier</label>
+      <Section title="Overtime Rules" description="Multipliers applied to OT hours" icon={Clock} accent="amber">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Normal OT Multiplier</label>
           <NumberInput value={settings.normal_ot_multiplier} onChange={v => update("normal_ot_multiplier", v)} step={0.05} min={1} />
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Weekend OT Multiplier</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Weekend OT Multiplier</label>
           <NumberInput value={settings.weekend_ot_multiplier} onChange={v => update("weekend_ot_multiplier", v)} step={0.05} min={1} />
         </div>
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Holiday OT Multiplier</label>
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Holiday OT Multiplier</label>
           <NumberInput value={settings.holiday_ot_multiplier} onChange={v => update("holiday_ot_multiplier", v)} step={0.05} min={1} />
         </div>
       </Section>
 
       {/* Deduction Rules */}
-      <Section title="Deduction Rules" fullWidth>
+      <Section title="Deduction Rules" description="Late, leave and rounding policies" icon={TrendingDown} accent="rose" fullWidth>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-stretch">
           <div className="flex flex-col justify-center gap-2 p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg min-h-[72px]">
-            <label className="text-xs font-medium text-gray-500">Late Deduction Mode</label>
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Late Deduction Mode</label>
             <SelectInput value={settings.late_deduction_mode} onChange={v => update("late_deduction_mode", v)}
               options={[["per_minute", "Per Minute"], ["per_hour", "Per Hour"], ["slab_based", "Slab Based (Monthly Total)"]]} />
           </div>
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg min-h-[72px]">
-            <label className="text-xs font-medium text-gray-500">Leave Deduction Enabled</label>
+            <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Leave Deduction Enabled</label>
             <ToggleSwitch checked={settings.leave_deduction_enabled} onChange={v => update("leave_deduction_enabled", v)} />
           </div>
           <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg min-h-[72px]">
             <div>
-              <label className="text-xs font-medium text-gray-500">Salary Rounding</label>
+              <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Salary Rounding</label>
               <p className="text-[10px] text-gray-400 mt-0.5">{settings.rounding_rule === "round" ? "Enabled — salary rounded up" : "Disabled — salary rounded down (floor)"}</p>
             </div>
             <ToggleSwitch checked={settings.rounding_rule === "round"} onChange={v => update("rounding_rule", v ? "round" : "floor")} />
@@ -273,22 +295,23 @@ export default function PayrollSettings() {
       </Section>
 
       {/* Workflow */}
-      <Section title="Workflow & Security">
-        <div className="space-y-2">
-          <label className="text-xs font-medium text-gray-500">Approval Levels</label>
+      <Section title="Workflow & Security" description="Approval and lock policies" icon={ShieldCheck} accent="purple">
+        <div className="space-y-1.5">
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Approval Levels</label>
           <NumberInput value={settings.approval_levels} onChange={v => update("approval_levels", v)} min={1} max={5} />
         </div>
         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-          <label className="text-xs font-medium text-gray-500">Lock Payroll After Approval</label>
+          <label className="text-[11px] font-medium text-gray-500 dark:text-gray-400">Lock Payroll After Approval</label>
           <ToggleSwitch checked={settings.lock_after_approval} onChange={v => update("lock_after_approval", v)} />
         </div>
       </Section>
 
-      {/* Save Button */}
-      <div className="flex justify-end">
+      {/* Sticky save bar */}
+      <div className="sticky bottom-0 left-0 right-0 -mx-6 px-6 py-3 bg-white/90 dark:bg-slate-900/90 backdrop-blur border-t border-gray-200 dark:border-white/10 flex items-center justify-between mt-4">
+        <p className="text-[11px] text-gray-500 dark:text-gray-400">Changes apply to all future payroll runs.</p>
         <button disabled={saving} onClick={handleSave}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-6 py-3 text-sm font-medium text-white hover:bg-blue-600 transition shadow-sm disabled:opacity-50">
-          <Save className="h-4 w-4" /> {saving ? "Saving..." : "Save Settings"}
+          className="inline-flex items-center gap-1.5 rounded-md bg-primary px-4 py-2 text-xs font-semibold text-white hover:opacity-95 transition shadow-sm disabled:opacity-50">
+          <Save className="h-3.5 w-3.5" /> {saving ? "Saving..." : "Save Settings"}
         </button>
       </div>
     </div>
