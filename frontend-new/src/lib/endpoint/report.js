@@ -136,18 +136,19 @@ export const downloadDailyPDF = async ({ date, branch_ids, department_ids, emplo
  * Pass report_mode='daily' to render as a daily report (all employees flow on
  * the same page using the same Format C styling).
  */
-export const downloadMonthlyDetailPDF = async ({ from_date, to_date, branch_ids, department_ids, employee_ids, shift_type_id, report_mode, onProgress } = {}) => {
+export const downloadMonthlyDetailPDF = async ({ from_date, to_date, branch_ids, department_ids, employee_ids, shift_type_id, report_mode, report_format, onProgress } = {}) => {
     const params = { from_date, to_date };
     if (branch_ids?.length) params.branch_ids = branch_ids.join(',');
     if (department_ids?.length) params.department_ids = department_ids.join(',');
     if (employee_ids?.length) params.employee_ids = employee_ids.join(',');
     if (shift_type_id !== undefined) params.shift_type_id = shift_type_id;
     if (report_mode) params.report_mode = report_mode;
+    if (report_format) params.report_format = report_format;
 
     const isDaily = report_mode === 'daily';
     const fileName = isDaily
         ? `Daily_Attendance_${from_date}.pdf`
-        : `Monthly_Attendance_Detail_${from_date}_to_${to_date}.pdf`;
+        : `Monthly_Attendance_Detail_${from_date}_to_${to_date}${report_format === 'v2' ? '_FormatB' : ''}.pdf`;
 
     await downloadPDF('report/monthly_detail_pdf', params, fileName, onProgress);
 };

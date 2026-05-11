@@ -60,26 +60,26 @@ const reportMenu = [
   { href: "/report", icon: FileText, label: "Reports" },
   { href: "/logs", icon: History, label: "Device Logs" },
   { href: "/manual-logs", icon: Clipboard, label: "Manual Logs" },
+  { href: "/live-tracker", icon: LocateFixed, label: "Live Tracker" },
   { href: "/tracker-history", icon: LocateFixed, label: "Tracker History" },
 ];
 
 const companyMenu = [
   { href: "/setup", icon: Settings, label: "Setup" },
-  { href: "/geo-fencing", icon: Map, label: "Geo Fencing" },
-  { href: "/live-tracker", icon: LocateFixed, label: "Live Tracker" },
   { href: "/company", icon: Building, label: "Company" },
   { href: "/branch", icon: Briefcase, label: "Branch" },
   { href: "/department-tabs", icon: Layers, label: "Department" },
   { href: "/login/manager-login", icon: LogInIcon, label: "Login" },
   { href: "/device", icon: DoorClosedIcon, label: "Device" },
-  { href: "/live-camera", icon: Video, label: "Live Camera" },
   { href: "/automation", icon: Workflow, label: "Automation" },
   { href: "/roles", icon: Shield, label: "Roles" },
+  { href: "/live-camera", icon: Video, label: "Live Camera" },
+  { href: "/geo-fencing", icon: Map, label: "Geo Fencing" },
   { href: "/holiday", icon: CalendarDays, label: "Holidays" },
   { href: "/announcements", icon: Megaphone, label: "Announcements" },
   { href: "/activity", icon: ActivitySquare, label: "Activity" },
-  { href: "/payslips", icon: DollarSign, label: "Payroll" },
   { href: "/settings/leave", icon: Calendar, label: "Leave" },
+  { href: "/payslips", icon: DollarSign, label: "Payroll" },
 ];
 
 const payrollMenu = [

@@ -74,6 +74,7 @@ class CommunityController extends Controller
 
             "management_company" => $data['management_company'],
             "account_type" => "community",
+            "wizard_mode" => true,
 
         ];
 

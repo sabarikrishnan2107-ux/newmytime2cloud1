@@ -9,6 +9,7 @@ import {
   ServerOff,
   AlertTriangle,
 } from "lucide-react";
+import EmployeeListDialog from "./EmployeeListDialog";
 
 const ACCENTS = {
   neutral: { line: "#64748b", glow: "rgba(100,116,139,.45)", iconBg: "rgba(100,116,139,.18)", iconFg: "#94a3b8", label: "#94a3b8" },
@@ -19,10 +20,28 @@ const ACCENTS = {
   orange:  { line: "#f97316", glow: "rgba(249,115,22,.55)",   iconBg: "rgba(249,115,22,.20)",   iconFg: "#fb923c", label: "#fdba74" },
 };
 
-function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert = false }) {
+function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert = false, onClick }) {
   const a = ACCENTS[accent] || ACCENTS.neutral;
+  const clickable = typeof onClick === "function";
+  const handleKeyDown = (e) => {
+    if (!clickable) return;
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onClick();
+    }
+  };
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1d2b4a] dark:bg-[#101a30]">
+    <div
+      className={`relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1d2b4a] dark:bg-[#101a30] ${
+        clickable
+          ? "cursor-pointer transition hover:border-emerald-400/60 hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/40 dark:hover:border-emerald-400/40"
+          : ""
+      }`}
+      role={clickable ? "button" : undefined}
+      tabIndex={clickable ? 0 : undefined}
+      onClick={clickable ? onClick : undefined}
+      onKeyDown={clickable ? handleKeyDown : undefined}
+    >
       <div className="flex items-start justify-between gap-2">
         <p
           className="text-[11px] font-semibold tracking-[0.14em] uppercase"
@@ -73,6 +92,7 @@ function Stats({ branch_ids, department_ids }) {
     vacationCount: 0,
     offlineDevices: 0,
   });
+  const [openVariant, setOpenVariant] = useState(null); // "present" | "absent" | null
 
   useEffect(() => {
     const fetchAttendanceCounts = async () => {
@@ -99,6 +119,7 @@ function Stats({ branch_ids, department_ids }) {
         icon={UserCheck}
         accent="green"
         badge={presentPct !== null ? `${presentPct}%` : null}
+        onClick={() => setOpenVariant("present")}
       />
       <StatCard
         label="Unplanned Absence"
@@ -106,6 +127,7 @@ function Stats({ branch_ids, department_ids }) {
         icon={UserX}
         accent="red"
         badge={absentPct !== null ? `${absentPct}%` : null}
+        onClick={() => setOpenVariant("absent")}
       />
       <StatCard
         label="Scheduled Leave"
@@ -125,6 +147,14 @@ function Stats({ branch_ids, department_ids }) {
         icon={ServerOff}
         accent="orange"
         alert={stats.offlineDevices > 0}
+      />
+
+      <EmployeeListDialog
+        open={openVariant !== null}
+        onOpenChange={(o) => { if (!o) setOpenVariant(null); }}
+        variant={openVariant || "present"}
+        branch_ids={branch_ids}
+        department_ids={department_ids}
       />
     </>
   );

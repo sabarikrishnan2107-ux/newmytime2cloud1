@@ -5,6 +5,7 @@ import { api, buildQueryParams } from "@/lib/api-client";
 import { Search, Plus, Eye, Edit, X, ArrowLeft, Wallet, TrendingUp, Calendar, Award, MoreVertical, Trash2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import ProfilePicture from "@/components/ProfilePicture";
+import MonthPicker from "@/components/ui/MonthPicker";
 
 const emptyForm = {
   employee_id: "", effective_from: "", effective_to: "", salary_mode: "gross_based",
@@ -14,6 +15,7 @@ const emptyForm = {
 
 export default function SalaryStructures() {
   const [search, setSearch] = useState("");
+  const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [openStructure, setOpenStructure] = useState(null);
   const [activeTab, setActiveTab] = useState("payroll");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -90,9 +92,25 @@ export default function SalaryStructures() {
     return true;
   });
 
-  const filtered = structures.filter(s =>
-    s.employeeName.toLowerCase().includes(search.toLowerCase()) || s.employeeId.toLowerCase().includes(search.toLowerCase())
-  );
+  const monthOverlaps = (s) => {
+    if (!selectedMonth) return true;
+    const monthStart = `${selectedMonth}-01`;
+    const [y, m] = selectedMonth.split("-").map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    const monthEnd = `${selectedMonth}-${String(lastDay).padStart(2, "0")}`;
+    const from = s.effective_from || "";
+    const to = s.effective_to || "";
+    if (from && from > monthEnd) return false;
+    if (to && to < monthStart) return false;
+    return true;
+  };
+
+  const filtered = structures.filter(s => {
+    const matchesSearch =
+      s.employeeName.toLowerCase().includes(search.toLowerCase()) ||
+      s.employeeId.toLowerCase().includes(search.toLowerCase());
+    return matchesSearch && monthOverlaps(s);
+  });
 
   // Inline detail view (shown when a row is clicked)
   const renderDetailView = () => {
@@ -278,11 +296,27 @@ export default function SalaryStructures() {
         </button>
       </div>
 
-      {/* Search */}
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)}
-          className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
+      {/* Filters: Search + Month */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="relative max-w-sm flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <input placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="w-[180px]">
+            <MonthPicker value={selectedMonth} onChange={setSelectedMonth} />
+          </div>
+          {selectedMonth && (
+            <button
+              onClick={() => setSelectedMonth("")}
+              className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
+              title="Show all months"
+            >
+              <X className="h-3.5 w-3.5" /> All
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Table */}

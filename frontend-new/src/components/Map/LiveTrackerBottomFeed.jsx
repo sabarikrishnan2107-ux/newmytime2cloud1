@@ -1,7 +1,7 @@
 export default function LiveTrackerBottomFeed({ employees, openPanel }) {
     return (
         <div
-            className="absolute bottom-15 inset-x-0 z-40 border-t border-slate-200 dark:border-slate-800 px-6 py-4 shadow-2xl bg-white dark:bg-[rgba(17,19,24,0.95)] backdrop-blur-xl"
+            className="absolute bottom-0 inset-x-0 z-40 border-t border-slate-200 dark:border-slate-800 px-6 py-4 shadow-2xl bg-white dark:bg-[rgba(17,19,24,0.95)] backdrop-blur-xl"
         >
             <div className="max-w-[1400px] mx-auto">
                 <div className="flex items-center justify-between mb-4">

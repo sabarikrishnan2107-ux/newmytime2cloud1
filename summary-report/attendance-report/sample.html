@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>Absent Attendance Report - Sample</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif; }
+  html, body { margin: 0; padding: 0; }
+  body { font-weight: 500; background: #f1f5f9; color: #0f172a; }
+
+  /* A4 LANDSCAPE — 297mm × 210mm. Ensures Chrome/Edge/Firefox PDF export uses landscape. */
+  @page { size: 297mm 210mm; margin: 0; }
+  @page :first { size: 297mm 210mm; margin: 0; }
+
+  @media print {
+    html, body { background: #fff !important; width: 297mm; height: 210mm; }
+    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    .page {
+      box-shadow: none !important;
+      margin: 0 !important;
+      width: 297mm !important;
+      height: 210mm !important;
+      page-break-after: always;
+      page-break-inside: avoid;
+      break-after: page;
+      break-inside: avoid;
+    }
+    .page:last-child { page-break-after: auto; break-after: auto; }
+    tr { page-break-inside: avoid !important; }
+  }
+
+  .page {
+    background: #fff;
+    width: 297mm;
+    height: 210mm;
+    box-sizing: border-box;
+    margin: 12px auto;
+    padding: 10mm 12mm 8mm 12mm;
+    page-break-inside: avoid;
+    page-break-after: always;
+    break-after: page;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ---------- Title row ---------- */
+  .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .title-row h1 { font-size: 22px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+  .title-row .meta { font-size: 11.5px; color: #334155; margin-top: 4px; font-weight: 500; }
+  .title-row .meta .dot { color: #94a3b8; margin: 0 6px; }
+
+  .company-badge {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 14px 8px 8px;
+    display: inline-flex; align-items: center; gap: 10px; background: #fff;
+  }
+  .company-badge .avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6d28d9;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.4px;
+  }
+  .company-badge .name { font-size: 12px; color: #0f172a; letter-spacing: 0.6px; font-weight: 500; }
+  .company-badge .sub  { font-size: 10px; color: #64748b; margin-top: 2px; font-weight: 500; letter-spacing: 0.3px; }
+
+  /* ---------- Summary cards ---------- */
+  .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
+  .sum-card {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 11px 14px;
+    background: #fff; position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sum-card .icon-bubble {
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+    display: none; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 500; letter-spacing: -0.2px;
+  }
+  .sum-card .icon-bubble.b-violet { display: inline-flex; }
+  .sum-card .stat-body { flex: 1; min-width: 0; }
+  .sum-card .stat-label { font-size: 10px; color: #475569; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 500; }
+  .sum-card .stat-value { margin-top: 3px; font-size: 19px; color: #0f172a; letter-spacing: -0.3px; font-weight: 500; }
+  .sum-card .stat-sub   { margin-top: 1px; font-size: 10px; color: #64748b; font-weight: 500; }
+  .icon-bubble.b-slate  { background: #f1f5f9; color: #475569; }
+  .icon-bubble.b-red    { background: #fee2e2; color: #b91c1c; }
+  .icon-bubble.b-orange { background: #ffedd5; color: #c2410c; }
+  .icon-bubble.b-violet { background: #ede9fe; color: #6d28d9; }
+  .sum-card .stat-value.v-red    { color: #b91c1c; }
+  .sum-card .stat-value.v-orange { color: #c2410c; }
+
+  /* ---------- Table ---------- */
+  .grid-wrap { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  table.absent-tbl {
+    width: 100%; border-collapse: collapse; font-size: 11px; color: #0f172a; background: #fff;
+    table-layout: fixed;
+  }
+  table.absent-tbl th, table.absent-tbl td {
+    border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+    padding: 5px 9px; text-align: left; vertical-align: middle;
+  }
+  table.absent-tbl thead th {
+    background: #f1f5f9; color: #1e293b; font-size: 10.5px;
+    letter-spacing: 0.6px; text-transform: uppercase; font-weight: 500;
+  }
+  table.absent-tbl tbody tr:nth-child(even) { background: #fafbfc; }
+  table.absent-tbl td.center { text-align: center; }
+  table.absent-tbl td.right  { text-align: right; }
+
+  /* Employee cell */
+  .emp-cell { display: flex; align-items: center; gap: 8px; }
+  .emp-cell .photo, .emp-cell .photo-fallback {
+    width: 26px; height: 26px; border-radius: 7px; object-fit: cover; background: #e2e8f0;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #475569; font-size: 10px; font-weight: 500; flex-shrink: 0;
+  }
+  .emp-cell .photo-fallback.c1 { background: #dbeafe; color: #1d4ed8; }
+  .emp-cell .photo-fallback.c2 { background: #fce7f3; color: #be185d; }
+  .emp-cell .photo-fallback.c3 { background: #dcfce7; color: #15803d; }
+  .emp-cell .photo-fallback.c4 { background: #fef3c7; color: #b45309; }
+  .emp-cell .photo-fallback.c5 { background: #ede9fe; color: #6d28d9; }
+  .emp-cell .photo-fallback.c6 { background: #fee2e2; color: #b91c1c; }
+  .emp-cell .name { font-size: 11.5px; color: #0f172a; font-weight: 500; line-height: 1.25; }
+  .emp-cell .id   { font-size: 10px; color: #64748b; font-weight: 500; }
+
+  /* Branch / Dept cell */
+  .branch-cell .br   { font-size: 11px; color: #0f172a; font-weight: 500; line-height: 1.3; }
+  .branch-cell .dept { font-size: 10px; color: #64748b; font-weight: 500; }
+  .branch-cell .shift { font-size: 9.5px; color: #475569; font-weight: 500; letter-spacing: 0.3px; margin-top: 1px; }
+
+  /* Contact */
+  .contact-cell .phone { font-size: 11px; color: #0f172a; font-weight: 500; letter-spacing: 0.2px; }
+  .contact-cell .email { font-size: 10px; color: #475569; font-weight: 500; margin-top: 1px; word-break: break-all; }
+
+  /* Status pill */
+  .pill {
+    display: inline-block; padding: 3px 9px; border-radius: 999px;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.4px; white-space: nowrap;
+  }
+  .pill-noshow   { background: #fee2e2; color: #b91c1c; }
+  .pill-lop      { background: #fee2e2; color: #b91c1c; }
+  .pill-casual   { background: #ffedd5; color: #c2410c; }
+  .pill-sick     { background: #ffedd5; color: #c2410c; }
+  .pill-permit   { background: #fef3c7; color: #92400e; }
+  .pill-approved { background: #dcfce7; color: #166534; }
+
+  /* Consecutive days */
+  .streak-num { font-size: 13px; font-weight: 500; color: #0f172a; }
+  .streak-num.warn   { color: #ea580c; }
+  .streak-num.danger { color: #dc2626; }
+
+  /* Date chips for monthly */
+  .date-chips { display: flex; flex-wrap: wrap; gap: 3px; }
+  .chip {
+    display: inline-block; padding: 2px 7px; border-radius: 5px;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.3px;
+    border: 1px solid transparent;
+  }
+  .chip-app { background: #ffedd5; color: #c2410c; border-color: #fed7aa; }
+  .chip-un  { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }
+
+  .split-badge { display: inline-flex; gap: 4px; align-items: center; font-size: 10.5px; }
+  .split-badge .app { color: #c2410c; font-weight: 500; }
+  .split-badge .un  { color: #b91c1c; font-weight: 500; }
+  .split-badge .div { color: #cbd5e1; }
+
+  .total-num { font-size: 16px; font-weight: 500; color: #0f172a; letter-spacing: -0.3px; }
+
+  /* Footer */
+  .report-footer {
+    margin-top: auto;
+    padding-top: 6px; border-top: 1px solid #94a3b8;
+    font-size: 10.5px; color: #334155;
+  }
+  .report-footer .legend { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; padding: 6px 0; }
+  .report-footer .legend span { white-space: nowrap; font-weight: 500; }
+  .leg-noshow { color: #b91c1c; }
+  .leg-lop    { color: #b91c1c; }
+  .leg-cl     { color: #c2410c; }
+  .leg-sl     { color: #c2410c; }
+  .leg-pm     { color: #92400e; }
+  .leg-app    { color: #166534; }
+  .report-footer .footer-row {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid #e2e8f0; padding-top: 6px; margin-top: 4px;
+    font-size: 10.5px; color: #475569;
+  }
+
+  /* Section header on page (small ribbon) */
+  .ribbon {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f1f5f9; color: #475569; font-size: 9.5px; font-weight: 500;
+    padding: 2px 9px; border-radius: 999px; letter-spacing: 0.6px;
+    margin-top: 3px;
+  }
+  .ribbon .dot { width: 6px; height: 6px; border-radius: 50%; background: #dc2626; }
+  .ribbon.monthly .dot { background: #ea580c; }
+</style>
+</head>
+<body>
+
+<!-- ======================================================== -->
+<!-- PAGE 1 — DAILY ABSENT REPORT                              -->
+<!-- ======================================================== -->
+<div class="page">
+  <div class="title-row">
+    <div>
+      <h1>Daily Absent Report</h1>
+      <div class="meta">
+        09 May 2026 (Saturday) <span class="dot">•</span> All Branches <span class="dot">•</span> Generated 09:42 AM
+      </div>
+      <div class="ribbon"><span class="dot"></span>14 ABSENT OUT OF 142 EMPLOYEES</div>
+    </div>
+    <div class="company-badge">
+      <div class="avatar">AK</div>
+      <div>
+        <div class="name">AKIL GROUP</div>
+        <div class="sub">Bengaluru HO</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-row">
+    <div class="sum-card">
+      <div class="icon-bubble b-slate">142</div>
+      <div class="stat-body">
+        <div class="stat-label">Total Employees</div>
+        <div class="stat-value">142</div>
+        <div class="stat-sub">Active across 4 branches</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-red">14</div>
+      <div class="stat-body">
+        <div class="stat-label">Absent Today</div>
+        <div class="stat-value v-red">14 <span style="font-size:13px;color:#94a3b8;font-weight:500;">(9.86%)</span></div>
+        <div class="stat-sub">Includes leave + no-show</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-orange">8</div>
+      <div class="stat-body">
+        <div class="stat-label">Approved Leave</div>
+        <div class="stat-value v-orange">8</div>
+        <div class="stat-sub">CL · SL · Permission</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-red">6</div>
+      <div class="stat-body">
+        <div class="stat-label">Unapproved / No-show</div>
+        <div class="stat-value v-red">6</div>
+        <div class="stat-sub">Needs follow-up</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-wrap">
+    <table class="absent-tbl">
+      <colgroup>
+        <col style="width:32px" />
+        <col style="width:22%" />
+        <col style="width:13%" />
+        <col style="width:18%" />
+        <col style="width:18%" />
+        <col style="width:11%" />
+        <col style="width:8%" />
+        <col style="width:9%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Employee</th>
+          <th>Designation</th>
+          <th>Branch / Dept / Shift</th>
+          <th>Contact</th>
+          <th>Absent Type</th>
+          <th class="center">Streak</th>
+          <th>Last Present</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="center">1</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c6">RK</div>
+              <div>
+                <div class="name">Rahul Kumar</div>
+                <div class="id">EMP-1042</div>
+              </div>
+            </div>
+          </td>
+          <td>Sales Executive</td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Sales</div>
+            <div class="shift">GENERAL · 09:30–18:30</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 98450 12345</div>
+            <div class="email">rahul.k@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-noshow">NO-SHOW</span></td>
+          <td class="center"><span class="streak-num danger">4</span></td>
+          <td>05 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">2</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">AS</div>
+              <div>
+                <div class="name">Anita Sharma</div>
+                <div class="id">EMP-1108</div>
+              </div>
+            </div>
+          </td>
+          <td>HR Coordinator</td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Human Resources</div>
+            <div class="shift">GENERAL · 09:00–18:00</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 99860 33421</div>
+            <div class="email">anita.s@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-noshow">NO-SHOW</span></td>
+          <td class="center"><span class="streak-num danger">3</span></td>
+          <td>06 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">3</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">VP</div>
+              <div>
+                <div class="name">Vikram Patel</div>
+                <div class="id">EMP-0871</div>
+              </div>
+            </div>
+          </td>
+          <td>Field Engineer</td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Operations</div>
+            <div class="shift">SHIFT-A · 06:00–14:00</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 90080 77890</div>
+            <div class="email">vikram.p@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-lop">LOP</span></td>
+          <td class="center"><span class="streak-num warn">2</span></td>
+          <td>07 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">4</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">SP</div>
+              <div>
+                <div class="name">Sneha Pillai</div>
+                <div class="id">EMP-1255</div>
+              </div>
+            </div>
+          </td>
+          <td>Account Manager</td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Finance</div>
+            <div class="shift">GENERAL · 09:30–18:30</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 98410 54321</div>
+            <div class="email">sneha.p@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-lop">LOP</span></td>
+          <td class="center"><span class="streak-num">1</span></td>
+          <td>08 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">5</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">DM</div>
+              <div>
+                <div class="name">Dinesh Murthy</div>
+                <div class="id">EMP-0942</div>
+              </div>
+            </div>
+          </td>
+          <td>Warehouse Supervisor</td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Warehouse</div>
+            <div class="shift">SHIFT-B · 14:00–22:00</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 96320 11223</div>
+            <div class="email">dinesh.m@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-noshow">NO-SHOW</span></td>
+          <td class="center"><span class="streak-num">1</span></td>
+          <td>08 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">6</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">PM</div>
+              <div>
+                <div class="name">Priya Menon</div>
+                <div class="id">EMP-1331</div>
+              </div>
+            </div>
+          </td>
+          <td>QA Analyst</td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Quality</div>
+            <div class="shift">GENERAL · 10:00–19:00</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 95913 88001</div>
+            <div class="email">priya.m@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-sick">SICK LEAVE</span></td>
+          <td class="center"><span class="streak-num warn">2</span></td>
+          <td>07 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">7</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">MK</div>
+              <div>
+                <div class="name">Mohammed Khan</div>
+                <div class="id">EMP-0734</div>
+              </div>
+            </div>
+          </td>
+          <td>Driver</td>
+          <td class="branch-cell">
+            <div class="br">Hyderabad</div>
+            <div class="dept">Logistics</div>
+            <div class="shift">SHIFT-A · 06:00–14:00</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 94401 67234</div>
+            <div class="email">mohammed.k@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-sick">SICK LEAVE</span></td>
+          <td class="center"><span class="streak-num">1</span></td>
+          <td>08 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">8</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">LR</div>
+              <div>
+                <div class="name">Lakshmi Rao</div>
+                <div class="id">EMP-1187</div>
+              </div>
+            </div>
+          </td>
+          <td>Receptionist</td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Admin</div>
+            <div class="shift">GENERAL · 09:00–18:00</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 98800 23456</div>
+            <div class="email">lakshmi.r@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-casual">CASUAL LEAVE</span></td>
+          <td class="center"><span class="streak-num">1</span></td>
+          <td>08 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">9</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c6">AJ</div>
+              <div>
+                <div class="name">Arjun Joshi</div>
+                <div class="id">EMP-0998</div>
+              </div>
+            </div>
+          </td>
+          <td>Software Developer</td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">IT</div>
+            <div class="shift">GENERAL · 10:00–19:00</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 99729 45612</div>
+            <div class="email">arjun.j@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-casual">CASUAL LEAVE</span></td>
+          <td class="center"><span class="streak-num">1</span></td>
+          <td>08 May 2026</td>
+        </tr>
+        <tr>
+          <td class="center">10</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">NV</div>
+              <div>
+                <div class="name">Neha Verma</div>
+                <div class="id">EMP-1402</div>
+              </div>
+            </div>
+          </td>
+          <td>Marketing Executive</td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Marketing</div>
+            <div class="shift">GENERAL · 09:30–18:30</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 96631 78900</div>
+            <div class="email">neha.v@akilgroup.com</div>
+          </td>
+          <td><span class="pill pill-casual">CASUAL LEAVE</span></td>
+          <td class="center"><span class="streak-num warn">2</span></td>
+          <td>07 May 2026</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">
+    <div class="legend">
+      <span class="leg-noshow">● NO-SHOW</span>
+      <span class="leg-lop">● LOP</span>
+      <span class="leg-cl">● CASUAL LEAVE</span>
+      <span class="leg-sl">● SICK LEAVE</span>
+      <span class="leg-pm">● PERMISSION</span>
+      <span class="leg-app">● APPROVED</span>
+    </div>
+    <div class="footer-row">
+      <div>Showing top 10 of 14 absentees. Sorted: unapproved / longest streak first. Streak = consecutive days absent.</div>
+      <div>Page 1 of 2 · Daily Absent Report</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======================================================== -->
+<!-- PAGE 2 — MONTHLY ABSENT REPORT                            -->
+<!-- ======================================================== -->
+<div class="page">
+  <div class="title-row">
+    <div>
+      <h1>Monthly Absent Report</h1>
+      <div class="meta">
+        01 May 2026 – 31 May 2026 <span class="dot">•</span> All Branches <span class="dot">•</span> Generated 09:42 AM
+      </div>
+      <div class="ribbon monthly"><span class="dot"></span>22 EMPLOYEES WITH ABSENCES · 78 ABSENT-DAYS</div>
+    </div>
+    <div class="company-badge">
+      <div class="avatar">AK</div>
+      <div>
+        <div class="name">AKIL GROUP</div>
+        <div class="sub">Bengaluru HO</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-row">
+    <div class="sum-card">
+      <div class="icon-bubble b-slate">22</div>
+      <div class="stat-body">
+        <div class="stat-label">Employees with Absences</div>
+        <div class="stat-value">22 <span style="font-size:13px;color:#94a3b8;font-weight:500;">/ 142</span></div>
+        <div class="stat-sub">15.49% of workforce</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-red">78</div>
+      <div class="stat-body">
+        <div class="stat-label">Total Absent Days</div>
+        <div class="stat-value v-red">78</div>
+        <div class="stat-sub">52 unapproved · 26 approved</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-orange">3.5</div>
+      <div class="stat-body">
+        <div class="stat-label">Avg / Employee</div>
+        <div class="stat-value v-orange">3.55</div>
+        <div class="stat-sub">Days per absent employee</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-violet">RK</div>
+      <div class="stat-body">
+        <div class="stat-label">Top Absentee</div>
+        <div class="stat-value" style="font-size:15px;">Rahul Kumar</div>
+        <div class="stat-sub">8 days · Sales · Bengaluru HO</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-wrap">
+    <table class="absent-tbl">
+      <colgroup>
+        <col style="width:32px" />
+        <col style="width:18%" />
+        <col style="width:14%" />
+        <col style="width:13%" />
+        <col style="width:7%" />
+        <col style="width:10%" />
+        <col style="width:30%" />
+        <col style="width:7%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Employee</th>
+          <th>Branch / Dept / Shift</th>
+          <th>Contact</th>
+          <th class="center">Total</th>
+          <th class="center">App / Unapp</th>
+          <th>Absent Dates</th>
+          <th class="center">Longest Streak</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="center">1</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c6">RK</div>
+              <div>
+                <div class="name">Rahul Kumar</div>
+                <div class="id">EMP-1042</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Sales</div>
+            <div class="shift">GENERAL</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 98450 12345</div>
+            <div class="email">rahul.k@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">8</span></td>
+          <td class="center"><span class="split-badge"><span class="app">1</span><span class="div">/</span><span class="un">7</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-un">02</span>
+              <span class="chip chip-app">04</span>
+              <span class="chip chip-un">06</span>
+              <span class="chip chip-un">07</span>
+              <span class="chip chip-un">08</span>
+              <span class="chip chip-un">09</span>
+              <span class="chip chip-un">15</span>
+              <span class="chip chip-un">22</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num danger">4</span></td>
+        </tr>
+        <tr>
+          <td class="center">2</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">AS</div>
+              <div>
+                <div class="name">Anita Sharma</div>
+                <div class="id">EMP-1108</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Human Resources</div>
+            <div class="shift">GENERAL</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 99860 33421</div>
+            <div class="email">anita.s@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">6</span></td>
+          <td class="center"><span class="split-badge"><span class="app">2</span><span class="div">/</span><span class="un">4</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-app">03</span>
+              <span class="chip chip-app">04</span>
+              <span class="chip chip-un">07</span>
+              <span class="chip chip-un">08</span>
+              <span class="chip chip-un">09</span>
+              <span class="chip chip-un">19</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num danger">3</span></td>
+        </tr>
+        <tr>
+          <td class="center">3</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">RG</div>
+              <div>
+                <div class="name">Rajesh Gowda</div>
+                <div class="id">EMP-1024</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Hyderabad</div>
+            <div class="dept">Sales</div>
+            <div class="shift">GENERAL</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 98456 70011</div>
+            <div class="email">rajesh.g@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">5</span></td>
+          <td class="center"><span class="split-badge"><span class="app">0</span><span class="div">/</span><span class="un">5</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-un">05</span>
+              <span class="chip chip-un">12</span>
+              <span class="chip chip-un">13</span>
+              <span class="chip chip-un">21</span>
+              <span class="chip chip-un">28</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num warn">2</span></td>
+        </tr>
+        <tr>
+          <td class="center">4</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">VP</div>
+              <div>
+                <div class="name">Vikram Patel</div>
+                <div class="id">EMP-0871</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Operations</div>
+            <div class="shift">SHIFT-A</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 90080 77890</div>
+            <div class="email">vikram.p@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">5</span></td>
+          <td class="center"><span class="split-badge"><span class="app">2</span><span class="div">/</span><span class="un">3</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-app">02</span>
+              <span class="chip chip-un">08</span>
+              <span class="chip chip-un">09</span>
+              <span class="chip chip-app">17</span>
+              <span class="chip chip-un">25</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num warn">2</span></td>
+        </tr>
+        <tr>
+          <td class="center">5</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">SP</div>
+              <div>
+                <div class="name">Sneha Pillai</div>
+                <div class="id">EMP-1255</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Finance</div>
+            <div class="shift">GENERAL</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 98410 54321</div>
+            <div class="email">sneha.p@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">4</span></td>
+          <td class="center"><span class="split-badge"><span class="app">1</span><span class="div">/</span><span class="un">3</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-un">06</span>
+              <span class="chip chip-un">09</span>
+              <span class="chip chip-app">14</span>
+              <span class="chip chip-un">23</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num">1</span></td>
+        </tr>
+        <tr>
+          <td class="center">6</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">DM</div>
+              <div>
+                <div class="name">Dinesh Murthy</div>
+                <div class="id">EMP-0942</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Warehouse</div>
+            <div class="shift">SHIFT-B</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 96320 11223</div>
+            <div class="email">dinesh.m@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">4</span></td>
+          <td class="center"><span class="split-badge"><span class="app">0</span><span class="div">/</span><span class="un">4</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-un">04</span>
+              <span class="chip chip-un">09</span>
+              <span class="chip chip-un">16</span>
+              <span class="chip chip-un">26</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num">1</span></td>
+        </tr>
+        <tr>
+          <td class="center">7</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">PM</div>
+              <div>
+                <div class="name">Priya Menon</div>
+                <div class="id">EMP-1331</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Quality</div>
+            <div class="shift">GENERAL</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 95913 88001</div>
+            <div class="email">priya.m@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">4</span></td>
+          <td class="center"><span class="split-badge"><span class="app">4</span><span class="div">/</span><span class="un">0</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-app">07</span>
+              <span class="chip chip-app">08</span>
+              <span class="chip chip-app">09</span>
+              <span class="chip chip-app">20</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num danger">3</span></td>
+        </tr>
+        <tr>
+          <td class="center">8</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">HS</div>
+              <div>
+                <div class="name">Harish Shetty</div>
+                <div class="id">EMP-0855</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Admin</div>
+            <div class="shift">SHIFT-C</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 90087 22113</div>
+            <div class="email">harish.s@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">3</span></td>
+          <td class="center"><span class="split-badge"><span class="app">2</span><span class="div">/</span><span class="un">1</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-app">08</span>
+              <span class="chip chip-app">09</span>
+              <span class="chip chip-un">22</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num warn">2</span></td>
+        </tr>
+        <tr>
+          <td class="center">9</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">MK</div>
+              <div>
+                <div class="name">Mohammed Khan</div>
+                <div class="id">EMP-0734</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Hyderabad</div>
+            <div class="dept">Logistics</div>
+            <div class="shift">SHIFT-A</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 94401 67234</div>
+            <div class="email">mohammed.k@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">3</span></td>
+          <td class="center"><span class="split-badge"><span class="app">3</span><span class="div">/</span><span class="un">0</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-app">09</span>
+              <span class="chip chip-app">15</span>
+              <span class="chip chip-app">29</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num">1</span></td>
+        </tr>
+        <tr>
+          <td class="center">10</td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">NV</div>
+              <div>
+                <div class="name">Neha Verma</div>
+                <div class="id">EMP-1402</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Marketing</div>
+            <div class="shift">GENERAL</div>
+          </td>
+          <td class="contact-cell">
+            <div class="phone">+91 96631 78900</div>
+            <div class="email">neha.v@akilgroup.com</div>
+          </td>
+          <td class="center"><span class="total-num">3</span></td>
+          <td class="center"><span class="split-badge"><span class="app">3</span><span class="div">/</span><span class="un">0</span></span></td>
+          <td>
+            <div class="date-chips">
+              <span class="chip chip-app">07</span>
+              <span class="chip chip-app">09</span>
+              <span class="chip chip-app">21</span>
+            </div>
+          </td>
+          <td class="center"><span class="streak-num">1</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">
+    <div class="legend">
+      <span class="leg-app">● APPROVED LEAVE</span>
+      <span class="leg-noshow">● UNAPPROVED / NO-SHOW</span>
+      <span style="color:#94a3b8;">Sorted by Total Absent ↓ — worst absentees on top</span>
+    </div>
+    <div class="footer-row">
+      <div>Showing top 10 of 22 employees with absences. Streak = longest consecutive absent days in the period.</div>
+      <div>Page 2 of 2 · Monthly Absent Report</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

@@ -30,6 +30,7 @@ class RegisterController extends Controller
                 "max_employee" => 100,
                 "max_devices" => 1,
                 "account_type" => "company",
+                "wizard_mode" => true,
             ];
 
             $company = Company::create($company);

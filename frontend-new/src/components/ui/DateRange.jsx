@@ -320,7 +320,7 @@ export default function DateRangeSelect({
               />
             ) : (
               <div className="flex flex-col sm:flex-row p-2 sm:p-3 sm:divide-x divide-y sm:divide-y-0 divide-slate-200 dark:divide-white/10">
-                <div className="sm:pr-4">
+                <div className={numberOfMonths > 1 ? "sm:pr-4" : ""}>
                   <RangeMonth
                     month={leftMonth}
                     onChange={setLeftMonth}
@@ -329,15 +329,17 @@ export default function DateRangeSelect({
                     showOutsideDays={showOutsideDays}
                   />
                 </div>
-                <div className="sm:pl-4 pt-3 sm:pt-0">
-                  <RangeMonth
-                    month={rightMonth}
-                    onChange={setRightMonth}
-                    draftDate={draftDate}
-                    onSelect={handleRangeSelect}
-                    showOutsideDays={showOutsideDays}
-                  />
-                </div>
+                {numberOfMonths > 1 && (
+                  <div className="sm:pl-4 pt-3 sm:pt-0">
+                    <RangeMonth
+                      month={rightMonth}
+                      onChange={setRightMonth}
+                      draftDate={draftDate}
+                      onSelect={handleRangeSelect}
+                      showOutsideDays={showOutsideDays}
+                    />
+                  </div>
+                )}
               </div>
             )
           )}

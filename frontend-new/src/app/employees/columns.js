@@ -7,6 +7,7 @@ import {
   Lock,
   MoreVertical,
   Pencil,
+  Printer,
   Trash
 } from "lucide-react";
 import {
@@ -17,7 +18,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ProfilePicture from "@/components/ProfilePicture";
 
-export default (deleteEmployee, editEmployee, showHostQr) => [
+export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
   {
     key: "employee",
     header: "Personnel",
@@ -155,6 +156,17 @@ export default (deleteEmployee, editEmployee, showHostQr) => [
                 <span className="text-slate-700 dark:text-slate-200 font-medium">Host QR</span>
               </DropdownMenuItem>
             )}
+
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                if (typeof printCard === "function") printCard(employee);
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <Printer className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span className="text-slate-700 dark:text-slate-200 font-medium">Print Card</span>
+            </DropdownMenuItem>
 
             <DropdownMenuItem
               onClick={(e) => {

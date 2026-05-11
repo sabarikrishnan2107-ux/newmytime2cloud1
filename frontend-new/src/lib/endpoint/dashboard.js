@@ -6,6 +6,18 @@ export const getAttendanceCount = async (params = {}) => {
     return data;
 };
 
+export const getPresentEmployees = async (params = {}) => {
+    const queryParams = await buildQueryParams(params);
+    const { data } = await api.get("/dashboard_present_employees", { params: queryParams });
+    return data;
+};
+
+export const getAbsentEmployees = async (params = {}) => {
+    const queryParams = await buildQueryParams(params);
+    const { data } = await api.get("/dashboard_absent_employees", { params: queryParams });
+    return data;
+};
+
 export const dashboardGetCountslast7DaysChart = async (params = {}) => {
     const queryParams = await buildQueryParams(params);
     const { data } = await api.get("/dashboard_counts_last_7_days_chart", { params: queryParams });

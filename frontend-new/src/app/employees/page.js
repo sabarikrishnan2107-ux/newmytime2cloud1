@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import { getBranches, getDepartmentsByBranchIds, getEmployees, removeEmployee } from '@/lib/api';
+import { getUser } from '@/config';
 import { EmployeeExtras } from '@/components/Employees/Extras';
 
 import Columns from "./columns";
@@ -168,6 +169,194 @@ export default function EmployeesPage() {
         try { await navigator.clipboard.writeText(hostQrUrl); } catch {}
     };
 
+    const printEmployeeCard = async (employee) => {
+        if (!employee) return;
+        const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        const fmtDate = (raw) => {
+            if (!raw) return "—";
+            const d = new Date(raw);
+            if (isNaN(d.getTime())) return String(raw).slice(0, 10);
+            return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`;
+        };
+
+        const fullName = [employee.first_name, employee.last_name].filter(Boolean).join(" ").trim() || `Employee ${employee.employee_id || employee.id}`;
+        const empCode = String(employee.employee_id || employee.id || "—");
+        const designation = employee?.designation?.name || employee?.position || "—";
+        const dept = employee?.department?.name || "";
+        // Resolve the employee's company. Try the eager-loaded branch.company first;
+        // fall back to the logged-in user's company (always available); finally a generic label.
+        let company = employee?.branch?.company?.name || employee?.company?.name || "";
+        if (!company) {
+            try {
+                const u = getUser();
+                company = u?.company_name || u?.company?.name || "";
+            } catch {}
+        }
+        if (!company) company = "Company";
+        const photo = employee?.profile_picture && employee.profile_picture !== "undefined" ? employee.profile_picture : "";
+        const dojRaw = employee?.joining_date || employee?.date_of_joining || "";
+        const doj = fmtDate(dojRaw);
+        const branchName = employee?.branch?.branch_name || employee?.branch?.name || "—";
+        const initial = fullName.charAt(0).toUpperCase();
+
+        // Pre-generate the QR as a data URL so the popup doesn't need to load qrcode lib
+        let qrDataUrl = "";
+        try {
+            qrDataUrl = await QRCode.toDataURL(empCode, { width: 200, margin: 0, color: { dark: "#0f172a", light: "#ffffff" } });
+        } catch {}
+
+        const photoHtml = photo
+            ? `<img src="${esc(photo)}" alt="" onerror="this.outerHTML='<span class=\\'fallback\\'>${esc(initial)}</span>'">`
+            : `<span class="fallback">${esc(initial)}</span>`;
+
+        const html = `<!doctype html><html><head><meta charset="utf-8"><title>Access Card · ${esc(fullName)}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', system-ui, sans-serif; }
+  body { background: #f1f5f9; padding: 24px; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+
+  /* Standard CR80 ID-card size: 53.98mm × 85.6mm */
+  .card {
+    width: 53.98mm; height: 85.6mm; padding: 4mm 5mm;
+    background: #fff; color: #000; position: relative;
+    overflow: hidden; box-sizing: border-box;
+    box-shadow: 0 8px 30px rgba(15,23,42,0.18);
+    border-radius: 6px;
+  }
+  .photo-wrap {
+    width: 34mm; height: 34mm;
+    border-radius: 50%;
+    overflow: hidden; background: #f8fafc;
+    border: 0.35mm solid #000;
+    margin: 2mm auto 0;
+    display: flex; align-items: center; justify-content: center;
+    box-sizing: border-box;
+  }
+  .photo-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+  .photo-wrap .fallback { font-size: 60px; font-weight: 700; color: #94a3b8; }
+
+  .name-block { text-align: center; margin-top: 2mm; }
+  .name-block .name { font-size: 12px; font-weight: 700; line-height: 1.2; }
+  .name-block .designation { font-size: 15px; font-weight: 700; line-height: 1.2; margin-top: 1mm; }
+
+  .footer-row {
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 4mm;
+    margin-top: 2.5mm;
+  }
+  .footer-row .meta { font-size: 12.5px; font-weight: 700; line-height: 1.4; min-width: 0; flex: 1; }
+  .footer-row .meta div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .footer-row .meta div + div { margin-top: 0.5mm; }
+  .footer-row .qr { background: #fff; }
+  .footer-row .qr img { display: block; width: 50px; height: 50px; }
+
+  .brand {
+    position: absolute; left: 0; right: 0; bottom: 2mm;
+    text-align: center;
+    padding: 0 3mm;
+  }
+  .brand .logo {
+    color: #0e7490; font-family: 'Montserrat', 'Inter', system-ui, sans-serif;
+    line-height: 1; letter-spacing: 0.02em;
+    font-weight: 800;
+    font-size: 24px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* Toolbar shown only on screen, hidden in print */
+  .toolbar { display: flex; gap: 8px; }
+  .toolbar button { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; font-family: inherit; }
+  .toolbar .print { background: #0e7490; color: #fff; }
+  .toolbar .close { background: #e2e8f0; color: #0f172a; }
+
+  @media print {
+    body { background: #fff; padding: 0; gap: 0; }
+    .card { box-shadow: none; border-radius: 0; }
+    .toolbar { display: none !important; }
+    @page { size: 53.98mm 85.6mm; margin: 0; }
+  }
+</style></head>
+<body>
+  <div class="toolbar">
+    <button class="print" onclick="window.print()">Print</button>
+    <button class="close" onclick="window.close()">Close</button>
+  </div>
+  <div class="card">
+    <div class="photo-wrap">${photoHtml}</div>
+    <div class="name-block">
+      <div class="name">${esc(fullName)}</div>
+      <div class="designation">${esc(designation)}</div>
+    </div>
+    <div class="footer-row">
+      <div class="meta">
+        <div>EmpID: ${esc(empCode)}</div>
+        <div>DOJ: ${esc(doj)}</div>
+        <div>Branch: ${esc(branchName)}</div>
+      </div>
+      <div class="qr">
+        ${qrDataUrl ? `<img src="${esc(qrDataUrl)}" alt="QR">` : ""}
+      </div>
+    </div>
+    <div class="brand">
+      <div class="logo">${esc(company.toUpperCase())}</div>
+    </div>
+  </div>
+  <script>
+    // Shrink an element's font-size until its content fits inside its container.
+    function fitText(el, container, startPx, minPx) {
+      if (!el || !container) return;
+      var size = startPx;
+      el.style.fontSize = size + 'px';
+      // measure the widest child (handles multi-line meta block)
+      function widest() {
+        var max = 0;
+        var kids = el.children.length ? el.children : [el];
+        for (var i = 0; i < kids.length; i++) {
+          if (kids[i].scrollWidth > max) max = kids[i].scrollWidth;
+        }
+        return max;
+      }
+      var avail = container.clientWidth;
+      while (widest() > avail && size > minPx) {
+        size -= 0.5;
+        el.style.fontSize = size + 'px';
+      }
+    }
+    function fitAll() {
+      var brand = document.querySelector('.brand');
+      var logo  = document.querySelector('.brand .logo');
+      fitText(logo, brand, 24, 10);
+
+      var meta = document.querySelector('.footer-row .meta');
+      if (meta) {
+        // container width = meta's own slot (flex: 1) — measure parent minus QR
+        fitText(meta, meta, 12.5, 8);
+      }
+    }
+    // Wait for web fonts so measurements are accurate, then fit and print.
+    function ready() {
+      fitAll();
+      setTimeout(function () { window.print(); }, 250);
+    }
+    window.addEventListener('load', function () {
+      if (document.fonts && document.fonts.ready) {
+        document.fonts.ready.then(ready);
+      } else {
+        ready();
+      }
+    });
+  </script>
+</body></html>`;
+
+        const w = window.open("", "_blank", "width=520,height=820");
+        if (!w) {
+            notify("Pop-ups blocked", "Allow pop-ups for this site to print the ID card.", "error");
+            return;
+        }
+        w.document.open();
+        w.document.write(html);
+        w.document.close();
+    };
+
     return (
         <div className='p-3 sm:p-4 pb-4 overflow-y-auto max-h-[calc(100vh-100px)]'>
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 mb-6">
@@ -224,7 +413,7 @@ export default function EmployeesPage() {
             </div>
 
             <DataTable
-                columns={Columns(deleteEmployee, editEmployee, showHostQr)}
+                columns={Columns(deleteEmployee, editEmployee, showHostQr, (emp) => printEmployeeCard(emp))}
                 data={employees}
                 isLoading={isLoading}
                 error={error}

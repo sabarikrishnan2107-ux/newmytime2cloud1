@@ -27,6 +27,7 @@ class Company extends Model
         'expiry'      => 'date:Y/m/d',
         'created_at'  => 'datetime:d-M-y',
         'no_branch'   => 'boolean',
+        'wizard_mode' => 'boolean',
     ];
     protected $appends = ['show_member_from', 'show_expiry', "logo_raw"];
 

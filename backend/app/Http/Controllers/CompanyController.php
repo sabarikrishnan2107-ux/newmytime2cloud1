@@ -122,6 +122,7 @@ class CompanyController extends Controller
             "max_branches" => $request->max_branches ? 1 : 0,
             "lat"          => $request->lat,
             "lon"          => $request->lon,
+            "wizard_mode"  => true,
         ];
 
         if (isset($request->logo)) {
@@ -607,6 +608,29 @@ class CompanyController extends Controller
         }
 
         return $contact;
+    }
+
+    public function getWizardMode($id)
+    {
+        $company = Company::find($id);
+        if (! $company) {
+            return response()->json(['error' => 'Company not found'], 404);
+        }
+        return response()->json(['wizard_mode' => (bool) $company->wizard_mode]);
+    }
+
+    public function setWizardMode(Request $request, $id)
+    {
+        $validated = $request->validate([
+            'wizard_mode' => 'required|boolean',
+        ]);
+        $company = Company::find($id);
+        if (! $company) {
+            return response()->json(['error' => 'Company not found'], 404);
+        }
+        $company->wizard_mode = $validated['wizard_mode'];
+        $company->save();
+        return response()->json(['wizard_mode' => (bool) $company->wizard_mode]);
     }
 
     public function checkPin(Request $request): JsonResponse

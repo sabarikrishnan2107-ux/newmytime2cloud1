@@ -311,6 +311,230 @@ class ThemeController extends Controller
             "offlineDevices" => $offlineDevices,
         ];
     }
+
+    /**
+     * Coerce a possibly-string filter value (e.g. "1,2,3", "[\"1\",\"2\"]", or a single id)
+     * into a clean integer array. Returns [] for nullish/empty input.
+     */
+    private function normalizeIdList($raw): array
+    {
+        if (is_array($raw)) {
+            $values = $raw;
+        } elseif (is_string($raw) && $raw !== '') {
+            $trimmed = trim($raw);
+            if ($trimmed !== '' && $trimmed[0] === '[') {
+                $decoded = json_decode($trimmed, true);
+                $values = is_array($decoded) ? $decoded : [];
+            } else {
+                $values = explode(',', $trimmed);
+            }
+        } elseif (is_numeric($raw)) {
+            $values = [$raw];
+        } else {
+            $values = [];
+        }
+
+        return collect($values)
+            ->map(fn($v) => is_numeric($v) ? (int) $v : null)
+            ->filter(fn($v) => $v !== null && $v > 0)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Present Today drill-down: list of employees backing the dashboard "Present Today" card.
+     * Uses the same definition as getDashboardCounts (≥1 AttendanceLog today, any device).
+     */
+    public function presentEmployees(Request $request)
+    {
+        $companyId = (int) $request->input('company_id', 0);
+        $branch_id = (int) $request->input('branch_id', 0);
+        $department_id = (int) $request->input('department_id', 0);
+        $today = date('Y-m-d');
+
+        // Normalize array-style filters that may arrive as comma strings or JSON.
+        $branchIds     = $this->normalizeIdList($request->input('branch_ids'));
+        $departmentIds = $this->normalizeIdList($request->input('department_ids'));
+        $employeeIds   = $this->normalizeIdList($request->input('employee_ids'));
+
+        // DEBUG: log incoming params to verify employee_ids reaches the backend.
+        file_put_contents(
+            storage_path('logs/present_debug.log'),
+            '[' . date('Y-m-d H:i:s') . '] all=' . json_encode($request->all())
+                . ' normalized=' . json_encode([
+                    'branch_ids' => $branchIds,
+                    'department_ids' => $departmentIds,
+                    'employee_ids' => $employeeIds,
+                ]) . PHP_EOL,
+            FILE_APPEND
+        );
+
+        // Step 1: find the earliest LogTime today per UserID, filtered by company + employee scope.
+        $firstPunches = AttendanceLog::where('company_id', $companyId)
+            ->whereDate('LogTime', $today)
+            ->whereHas('employee', function ($q) use ($branch_id, $department_id, $branchIds, $departmentIds, $employeeIds, $companyId) {
+                $q->where('company_id', $companyId);
+                if ($branch_id) $q->where('branch_id', $branch_id);
+                if ($department_id) $q->where('department_id', $department_id);
+                if (!empty($branchIds)) $q->whereIn('branch_id', $branchIds);
+                if (!empty($departmentIds)) $q->whereIn('department_id', $departmentIds);
+                if (!empty($employeeIds)) $q->whereIn('id', $employeeIds);
+            })
+            ->select('UserID', DB::raw('MIN("LogTime") as first_log_time'))
+            ->groupBy('UserID')
+            ->get();
+
+        if ($firstPunches->isEmpty()) {
+            return [];
+        }
+
+        $userIds = $firstPunches->pluck('UserID')->all();
+
+        // Step 2: pull the device name for each (UserID, first_log_time) pair.
+        $devicesByUser = AttendanceLog::where('company_id', $companyId)
+            ->whereIn('UserID', $userIds)
+            ->whereDate('LogTime', $today)
+            ->whereIn('LogTime', $firstPunches->pluck('first_log_time')->all())
+            ->with('device:id,device_id,name')
+            ->get()
+            ->groupBy('UserID');
+
+        // Step 3: load matching employees with branch + department only.
+        // Disable Employee's auto-eager-loads to avoid pulling in chains that select
+        // `branch:id,branch_name as name` (which breaks on Postgres).
+        $employees = Employee::where('company_id', $companyId)
+            ->whereIn('system_user_id', $userIds)
+            ->withOut(['schedule', 'department', 'designation', 'sub_department', 'branch', 'user'])
+            ->with([
+                'branch:id,branch_name',
+                'department:id,name',
+            ])
+            ->get()
+            ->keyBy('system_user_id');
+
+        return $firstPunches
+            ->sortBy('first_log_time')
+            ->values()
+            ->map(function ($row) use ($employees, $devicesByUser) {
+                $emp = $employees->get($row->UserID);
+                if (!$emp) return null;
+
+                $deviceLogs = $devicesByUser->get($row->UserID);
+                $deviceName = $deviceLogs && $deviceLogs->first() && $deviceLogs->first()->device
+                    ? ($deviceLogs->first()->device->name ?? 'Manual')
+                    : 'Manual';
+
+                return [
+                    'id'                 => $emp->id,
+                    'system_user_id'     => $emp->system_user_id,
+                    'employee_id'        => $emp->employee_id,
+                    'first_name'         => $emp->first_name,
+                    'last_name'          => $emp->last_name,
+                    'full_name'          => trim(($emp->display_name ?: ($emp->first_name . ' ' . $emp->last_name))),
+                    'photo'              => $emp->profile_picture,
+                    'branch'             => $emp->branch && $emp->branch->id
+                        ? ['id' => $emp->branch->id, 'name' => $emp->branch->branch_name]
+                        : null,
+                    'department'         => $emp->department && $emp->department->id
+                        ? ['id' => $emp->department->id, 'name' => $emp->department->name]
+                        : null,
+                    'first_punch_time'   => $row->first_log_time,
+                    'first_punch_device' => $deviceName,
+                ];
+            })
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * Unplanned Absence drill-down: employees not present, not on leave, not on vacation today.
+     * Matches getDashboardCounts: absentCount = employeeCount - (presentCount + leaveCount + vacationCount).
+     */
+    public function absentEmployees(Request $request)
+    {
+        $companyId = (int) $request->input('company_id', 0);
+        $branch_id = (int) $request->input('branch_id', 0);
+        $department_id = (int) $request->input('department_id', 0);
+        $today = date('Y-m-d');
+
+        // Normalize array-style filters that may arrive as comma strings or JSON.
+        $branchIds     = $this->normalizeIdList($request->input('branch_ids'));
+        $departmentIds = $this->normalizeIdList($request->input('department_ids'));
+        $employeeIds   = $this->normalizeIdList($request->input('employee_ids'));
+
+        // 1. UserIDs (system_user_id) of employees present today (any device).
+        $presentUserIds = AttendanceLog::where('company_id', $companyId)
+            ->whereDate('LogTime', $today)
+            ->distinct()
+            ->pluck('UserID')
+            ->all();
+
+        // 2. system_user_ids on leave or vacation today (Attendance.employee_id maps to system_user_id).
+        $onLeaveOrVacation = Attendance::where('company_id', $companyId)
+            ->whereDate('date', $today)
+            ->whereIn('status', ['L', 'V'])
+            ->pluck('employee_id')
+            ->all();
+
+        // 3. Employees in scope, minus present + leave + vacation = absent.
+        $employees = Employee::where('company_id', $companyId)
+            ->when($branch_id, fn($q) => $q->where('branch_id', $branch_id))
+            ->when($department_id, fn($q) => $q->where('department_id', $department_id))
+            ->when(!empty($branchIds), fn($q) => $q->whereIn('branch_id', $branchIds))
+            ->when(!empty($departmentIds), fn($q) => $q->whereIn('department_id', $departmentIds))
+            ->when(!empty($employeeIds), fn($q) => $q->whereIn('id', $employeeIds))
+            ->when(!empty($presentUserIds), fn($q) => $q->whereNotIn('system_user_id', $presentUserIds))
+            ->when(!empty($onLeaveOrVacation), fn($q) => $q->whereNotIn('system_user_id', $onLeaveOrVacation))
+            ->withOut(['schedule', 'department', 'designation', 'sub_department', 'branch', 'user'])
+            ->with([
+                'branch:id,branch_name',
+                'department:id,name',
+            ])
+            ->get();
+
+        if ($employees->isEmpty()) {
+            return [];
+        }
+
+        // 4. Last seen (MAX LogTime) for each absent employee.
+        $absentUserIds = $employees->pluck('system_user_id')->filter()->all();
+        $lastSeenByUser = !empty($absentUserIds)
+            ? AttendanceLog::where('company_id', $companyId)
+                ->whereIn('UserID', $absentUserIds)
+                ->select('UserID', DB::raw('MAX("LogTime") as last_seen'))
+                ->groupBy('UserID')
+                ->get()
+                ->keyBy('UserID')
+            : collect();
+
+        return $employees
+            ->map(function ($emp) use ($lastSeenByUser) {
+                $lastSeen = optional($lastSeenByUser->get($emp->system_user_id))->last_seen;
+
+                return [
+                    'id'             => $emp->id,
+                    'system_user_id' => $emp->system_user_id,
+                    'employee_id'    => $emp->employee_id,
+                    'first_name'     => $emp->first_name,
+                    'last_name'      => $emp->last_name,
+                    'full_name'      => trim(($emp->display_name ?: ($emp->first_name . ' ' . $emp->last_name))),
+                    'photo'          => $emp->profile_picture,
+                    'branch'         => $emp->branch && $emp->branch->id
+                        ? ['id' => $emp->branch->id, 'name' => $emp->branch->branch_name]
+                        : null,
+                    'department'     => $emp->department && $emp->department->id
+                        ? ['id' => $emp->department->id, 'name' => $emp->department->name]
+                        : null,
+                    'last_seen'      => $lastSeen,
+                ];
+            })
+            ->sortBy(function ($row) {
+                // Push "Never seen" to the bottom; otherwise oldest-last-seen first.
+                return $row['last_seen'] ? strtotime($row['last_seen']) : PHP_INT_MAX;
+            })
+            ->values();
+    }
+
     public function dashboardGetCountDepartment(Request $request)
     {
         $model = Attendance::with(['employee:id,employee_id,status,system_user_id,department_id'])->where('company_id', $request->company_id)

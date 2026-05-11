@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { getUser } from "@/config/index";
+import axios from "axios";
+import { API_BASE_URL, getUser } from "@/config/index";
 import { useDarkMode } from "@/context/DarkModeContext";
 import LiveAttendanceNotifier from "@/components/LiveAttendanceNotifier";
-import { LocateFixed, Bell, PlayCircle, Sun, Moon, X } from "lucide-react";
+import { LocateFixed, Bell, PlayCircle, Sun, Moon, X, Wand2 } from "lucide-react";
 import useSse from "@/hooks/useSse";
 
 export default function Header() {
@@ -43,6 +44,66 @@ export default function Header() {
       .toUpperCase();
   }, [mounted, now]);
 
+
+  // === Wizard Mode ===
+  // Stored per-company on the backend (companies.wizard_mode) so the toggle is
+  // shared across every browser/device logged into that company. Refetched on
+  // window focus to pick up changes made on another machine.
+  const [wizardMode, setWizardMode] = useState(false);
+  const [wizardReady, setWizardReady] = useState(false);
+
+  const getCompanyId = useCallback(() => {
+    try {
+      const u = getUser();
+      return u?.company_id || u?.company?.id || null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const fetchWizardMode = useCallback(async () => {
+    const companyId = getCompanyId();
+    if (!companyId) {
+      setWizardReady(true);
+      return;
+    }
+    try {
+      const { data } = await axios.get(`${API_BASE_URL}/company/${companyId}/wizard-mode`);
+      setWizardMode(Boolean(data?.wizard_mode));
+    } catch (e) {
+      // On error, leave current state untouched but mark ready so UI unblocks
+    } finally {
+      setWizardReady(true);
+    }
+  }, [getCompanyId]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    fetchWizardMode();
+    const onFocus = () => fetchWizardMode();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+  }, [fetchWizardMode]);
+
+  const toggleWizard = useCallback(async () => {
+    const companyId = getCompanyId();
+    if (!companyId) return;
+    const next = !wizardMode;
+    setWizardMode(next); // optimistic
+    try {
+      await axios.post(`${API_BASE_URL}/company/${companyId}/wizard-mode`, { wizard_mode: next });
+    } catch (e) {
+      setWizardMode(!next); // revert on failure
+    }
+  }, [wizardMode, getCompanyId]);
+
+  // Redirect logic: when wizard is on, force the user to /setup
+  useEffect(() => {
+    if (!wizardReady || !wizardMode || !pathname) return;
+    // Allow setup, login pages, and any auth-related routes
+    const allow = pathname.startsWith("/setup") || pathname.startsWith("/login") || pathname === "/";
+    if (!allow) router.replace("/setup");
+  }, [wizardReady, wizardMode, pathname, router]);
 
   useEffect(() => {
     if ("Notification" in window) {
@@ -277,6 +338,17 @@ export default function Header() {
               title="Watch Tutorial"
             >
               <PlayCircle size={22} strokeWidth={1.8} />
+            </button>
+
+            <button
+              onClick={toggleWizard}
+              className={`relative p-2 transition-colors ${wizardMode ? "text-violet-500 hover:text-violet-400" : "text-slate-400 hover:text-violet-400"}`}
+              title={wizardMode ? "Wizard mode: ON (only Setup is accessible) — click to disable" : "Wizard mode: OFF — click to enable Setup-only mode"}
+            >
+              <Wand2 size={22} strokeWidth={1.8} />
+              <span
+                className={`absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full transition-colors ${wizardMode ? "bg-violet-500 shadow-[0_0_8px_#8b5cf6]" : "bg-transparent"}`}
+              />
             </button>
 
             <button

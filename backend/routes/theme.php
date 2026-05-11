@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Route;
 Route::apiResource('theme', ThemeController::class);
 Route::get('theme_count', [ThemeController::class, "theme_count"]);
 Route::get('dashbaord_attendance_count', [ThemeController::class, "dashboardCount"]);
+Route::get('dashboard_present_employees', [ThemeController::class, "presentEmployees"]);
+Route::get('dashboard_absent_employees', [ThemeController::class, "absentEmployees"]);
 Route::post('attendance_today_stats_whatsapp', [ThemeController::class, "whatsappTodayStats"]);
 Route::get('dashboard_counts_last_7_days', [ThemeController::class, "dashboardGetCountslast7Days"]);
 Route::get('dashboard_get_count_department', [ThemeController::class, "dashboardGetCountDepartment"]);

@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>Access Control Log Report - Sample</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif; }
+  html, body { margin: 0; padding: 0; }
+  body { font-weight: 500; background: #f1f5f9; color: #0f172a; }
+
+  /* A4 LANDSCAPE — 297mm × 210mm. */
+  @page { size: 297mm 210mm; margin: 0; }
+  @page :first { size: 297mm 210mm; margin: 0; }
+
+  @media print {
+    html, body { background: #fff !important; width: 297mm; height: 210mm; }
+    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    .page {
+      box-shadow: none !important;
+      margin: 0 !important;
+      width: 297mm !important;
+      height: 210mm !important;
+      page-break-after: always;
+      page-break-inside: avoid;
+      break-after: page;
+      break-inside: avoid;
+    }
+    .page:last-child { page-break-after: auto; break-after: auto; }
+    tr { page-break-inside: avoid !important; }
+  }
+
+  .page {
+    background: #fff;
+    width: 297mm;
+    height: 210mm;
+    box-sizing: border-box;
+    margin: 12px auto;
+    padding: 10mm 12mm 18mm 12mm;
+    page-break-inside: avoid;
+    page-break-after: always;
+    break-after: page;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ---------- Title row ---------- */
+  .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .title-row h1 { font-size: 22px; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 500; }
+  .title-row .meta { font-size: 11.5px; color: #334155; margin-top: 4px; font-weight: 500; }
+  .title-row .meta .dot { color: #94a3b8; margin: 0 6px; }
+
+  .company-badge {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 14px 8px 8px;
+    display: inline-flex; align-items: center; gap: 10px; background: #fff;
+  }
+  .company-badge .avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6d28d9;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.4px;
+  }
+  .company-badge .name { font-size: 12px; color: #0f172a; letter-spacing: 0.6px; font-weight: 500; }
+  .company-badge .sub  { font-size: 10px; color: #64748b; margin-top: 2px; font-weight: 500; letter-spacing: 0.3px; }
+
+  .ribbon {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: #f1f5f9; color: #475569; font-size: 9.5px; font-weight: 500;
+    padding: 2px 9px; border-radius: 999px; letter-spacing: 0.6px;
+    margin-top: 3px;
+  }
+  .ribbon .dot { width: 6px; height: 6px; border-radius: 50%; background: #16a34a; }
+
+  /* ---------- Summary cards ---------- */
+  .summary-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 8px; }
+  .sum-card {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 11px 14px;
+    background: #fff; position: relative; overflow: hidden;
+    display: flex; align-items: center; gap: 12px;
+  }
+  .sum-card .icon-bubble {
+    width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 500; letter-spacing: -0.2px;
+  }
+  .sum-card .stat-body { flex: 1; min-width: 0; }
+  .sum-card .stat-label { font-size: 10px; color: #475569; letter-spacing: 1.2px; text-transform: uppercase; font-weight: 500; }
+  .sum-card .stat-value { margin-top: 3px; font-size: 19px; color: #0f172a; letter-spacing: -0.3px; font-weight: 500; }
+  .sum-card .stat-sub   { margin-top: 1px; font-size: 10px; color: #64748b; font-weight: 500; }
+  .icon-bubble.b-slate  { background: #f1f5f9; color: #475569; }
+  .icon-bubble.b-blue   { background: #dbeafe; color: #1d4ed8; }
+  .icon-bubble.b-green  { background: #dcfce7; color: #15803d; }
+  .icon-bubble.b-violet { background: #ede9fe; color: #6d28d9; }
+  .icon-bubble.b-red    { background: #fee2e2; color: #b91c1c; }
+
+  /* ---------- Date section header ---------- */
+  .date-section {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px; background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 8px; margin-top: 6px; margin-bottom: 4px;
+  }
+  .date-section .label { font-size: 12.5px; color: #0f172a; font-weight: 500; letter-spacing: 0.3px; }
+  .date-section .label .dow { color: #475569; font-weight: 500; margin-left: 6px; }
+  .date-section .meta { font-size: 10.5px; color: #64748b; font-weight: 500; }
+  .date-section .meta .pill-mini {
+    display: inline-block; padding: 2px 8px; border-radius: 999px; margin-left: 4px;
+    background: #ecfeff; color: #0e7490; border: 1px solid #cffafe;
+    font-size: 10px; font-weight: 500;
+  }
+
+  /* ---------- Table ---------- */
+  .grid-wrap { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  table.acl-tbl {
+    width: 100%; border-collapse: collapse; font-size: 11px; color: #0f172a; background: #fff;
+    table-layout: fixed;
+  }
+  table.acl-tbl th, table.acl-tbl td {
+    border-right: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+    padding: 5px 9px; text-align: left; vertical-align: middle;
+  }
+  table.acl-tbl thead th {
+    background: #f1f5f9; color: #1e293b; font-size: 10.5px;
+    letter-spacing: 0.6px; text-transform: uppercase; font-weight: 500;
+  }
+  table.acl-tbl tbody tr:nth-child(even) { background: #fafbfc; }
+  table.acl-tbl td.center { text-align: center; }
+
+  /* Time cell */
+  .time-cell { font-family: "SF Mono", "Monaco", "Cascadia Mono", "Consolas", monospace; font-size: 11.5px; font-weight: 500; color: #0f172a; letter-spacing: -0.2px; }
+
+  /* Employee cell */
+  .emp-cell { display: flex; align-items: center; gap: 8px; }
+  .emp-cell .photo, .emp-cell .photo-fallback {
+    width: 26px; height: 26px; border-radius: 7px; object-fit: cover; background: #e2e8f0;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #475569; font-size: 10px; font-weight: 500; flex-shrink: 0;
+  }
+  .emp-cell .photo-fallback.c1 { background: #dbeafe; color: #1d4ed8; }
+  .emp-cell .photo-fallback.c2 { background: #fce7f3; color: #be185d; }
+  .emp-cell .photo-fallback.c3 { background: #dcfce7; color: #15803d; }
+  .emp-cell .photo-fallback.c4 { background: #fef3c7; color: #b45309; }
+  .emp-cell .photo-fallback.c5 { background: #ede9fe; color: #6d28d9; }
+  .emp-cell .photo-fallback.c6 { background: #fee2e2; color: #b91c1c; }
+  .emp-cell .name { font-size: 11.5px; color: #0f172a; font-weight: 500; line-height: 1.25; }
+  .emp-cell .id   { font-size: 10px; color: #64748b; font-weight: 500; }
+
+  /* Branch / dept */
+  .branch-cell .br   { font-size: 11px; color: #0f172a; font-weight: 500; line-height: 1.3; }
+  .branch-cell .dept { font-size: 10px; color: #64748b; font-weight: 500; }
+
+  /* Device cell */
+  .device-cell .dev   { font-size: 11px; color: #0f172a; font-weight: 500; line-height: 1.3; }
+  .device-cell .door  { font-size: 9.5px; color: #64748b; font-weight: 500; letter-spacing: 0.3px; margin-top: 1px; }
+
+  /* Direction pill */
+  .dir-pill {
+    display: inline-block; padding: 3px 10px; border-radius: 999px;
+    font-size: 10px; font-weight: 500; letter-spacing: 0.5px; min-width: 42px; text-align: center;
+  }
+  .dir-in    { background: #dcfce7; color: #15803d; }
+  .dir-out   { background: #dbeafe; color: #1d4ed8; }
+
+  /* Mode chip with icon-letter */
+  .mode-chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 10.5px; color: #0f172a; font-weight: 500;
+  }
+  .mode-chip .ic {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 500;
+  }
+  .mode-chip .ic.m-card  { background: #ede9fe; color: #6d28d9; }
+  .mode-chip .ic.m-face  { background: #dbeafe; color: #1d4ed8; }
+  .mode-chip .ic.m-finger { background: #ffedd5; color: #c2410c; }
+  .mode-chip .ic.m-pin   { background: #f1f5f9; color: #475569; }
+
+  /* Status — plain text only, color-coded */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: none !important; padding: 0;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.2px;
+  }
+  .status-pill .code {
+    background: none !important; padding: 0;
+    font-size: 10.5px; font-weight: 500;
+  }
+  .st-present { color: #15803d; }
+  .st-absent  { color: #b91c1c; }
+  .st-manual  { color: #92400e; }
+  .st-missing { color: #c2410c; }
+
+  /* Footer */
+  .report-footer {
+    position: absolute; bottom: 4mm; left: 12mm; right: 12mm;
+    padding-top: 6px; border-top: 1px solid #94a3b8;
+    font-size: 10.5px; color: #334155;
+  }
+  .report-footer .legend { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; padding: 6px 0; }
+  .report-footer .legend span { white-space: nowrap; font-weight: 500; }
+  .leg-in      { color: #15803d; }
+  .leg-out     { color: #1d4ed8; }
+  .leg-present { color: #15803d; }
+  .leg-absent  { color: #b91c1c; }
+  .leg-manual  { color: #92400e; }
+  .leg-missing { color: #c2410c; }
+  .leg-card    { color: #6d28d9; }
+  .leg-face    { color: #1d4ed8; }
+  .leg-finger  { color: #c2410c; }
+  .leg-pin     { color: #475569; }
+  .report-footer .footer-row {
+    display: flex; justify-content: space-between; align-items: center;
+    border-top: 1px solid #e2e8f0; padding-top: 6px; margin-top: 4px;
+    font-size: 10.5px; color: #475569;
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================================================== -->
+<!-- PAGE 1                                                    -->
+<!-- ======================================================== -->
+<div class="page">
+  <div class="title-row">
+    <div>
+      <h1>Access Control Log Report</h1>
+      <div class="meta">
+        01 May 2026 – 31 May 2026 <span class="dot">•</span> All Branches <span class="dot">•</span> All Devices <span class="dot">•</span> Generated 09:42 AM
+      </div>
+      <div class="ribbon"><span class="dot"></span>1,284 ACCESS EVENTS · 142 EMPLOYEES · 18 DEVICES</div>
+    </div>
+    <div class="company-badge">
+      <div class="avatar">AK</div>
+      <div>
+        <div class="name">AKIL GROUP</div>
+        <div class="sub">Bengaluru HO</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="summary-row">
+    <div class="sum-card">
+      <div class="icon-bubble b-slate">EV</div>
+      <div class="stat-body">
+        <div class="stat-label">Total Events</div>
+        <div class="stat-value">1,284</div>
+        <div class="stat-sub">Across 31 days · 4 branches</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-blue">EM</div>
+      <div class="stat-body">
+        <div class="stat-label">Unique Employees</div>
+        <div class="stat-value">142 <span style="font-size:13px;color:#94a3b8;font-weight:500;">/ 142</span></div>
+        <div class="stat-sub">100% workforce coverage</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-violet">DV</div>
+      <div class="stat-body">
+        <div class="stat-label">Unique Devices</div>
+        <div class="stat-value">18</div>
+        <div class="stat-sub">12 entry · 6 exit</div>
+      </div>
+    </div>
+    <div class="sum-card">
+      <div class="icon-bubble b-red">!</div>
+      <div class="stat-body">
+        <div class="stat-label">Missing / Manual</div>
+        <div class="stat-value" style="color:#b91c1c;">12 <span style="font-size:13px;color:#94a3b8;font-weight:500;">/ 1,284</span></div>
+        <div class="stat-sub">7 missing · 5 manual entries</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATE SECTION 1 -->
+  <div class="date-section">
+    <div class="label">09 May 2026 <span class="dow">· Saturday</span></div>
+    <div class="meta">47 events · 38 unique employees <span class="pill-mini">Peak: 09:00–10:00</span></div>
+  </div>
+
+  <div class="grid-wrap">
+    <table class="acl-tbl">
+      <colgroup>
+        <col style="width:9%" />
+        <col style="width:18%" />
+        <col style="width:13%" />
+        <col style="width:17%" />
+        <col style="width:9%" />
+        <col style="width:13%" />
+        <col style="width:11%" />
+        <col style="width:10%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Employee</th>
+          <th>Branch / Dept</th>
+          <th>Device / Door</th>
+          <th class="center">Direction</th>
+          <th>Mode</th>
+          <th>Status</th>
+          <th>User Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="time-cell">08:42:14</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">AS</div>
+              <div>
+                <div class="name">Anita Sharma</div>
+                <div class="id">EMP-1108 · DEV-1108</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Human Resources</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">08:47:02</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">SP</div>
+              <div>
+                <div class="name">Sneha Pillai</div>
+                <div class="id">EMP-1255 · DEV-1255</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Finance</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Chennai Office Reader</div>
+            <div class="door">CMD · Main Gate</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">08:51:33</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">DM</div>
+              <div>
+                <div class="name">Dinesh Murthy</div>
+                <div class="id">EMP-0942 · DEV-0942</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Warehouse</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Warehouse Side Reader</div>
+            <div class="door">WSD · Loading Bay</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-finger">Fp</span>Fingerprint</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">08:55:18</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">VP</div>
+              <div>
+                <div class="name">Vikram Patel</div>
+                <div class="id">EMP-0871 · DEV-0871</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Operations</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="status-pill st-missing"><span class="code">M</span>Missing</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">08:55:46</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">VP</div>
+              <div>
+                <div class="name">Vikram Patel</div>
+                <div class="id">EMP-0871 · DEV-0871</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Operations</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">09:02:11</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">PM</div>
+              <div>
+                <div class="name">Priya Menon</div>
+                <div class="id">EMP-1331 · DEV-1331</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Quality</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">09:14:56</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">MK</div>
+              <div>
+                <div class="name">Mohammed Khan</div>
+                <div class="id">EMP-0734 · DEV-0734</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Hyderabad</div>
+            <div class="dept">Logistics</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Hyderabad Office Reader</div>
+            <div class="door">HMD · Front Door</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-finger">Fp</span>Fingerprint</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">13:02:48</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">PM</div>
+              <div>
+                <div class="name">Priya Menon</div>
+                <div class="id">EMP-1331 · DEV-1331</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Quality</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Cafeteria Exit Reader</div>
+            <div class="door">CXD · Cafeteria</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-out">OUT</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">14:18:09</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">NV</div>
+              <div>
+                <div class="name">Neha Verma</div>
+                <div class="id">EMP-1402 · DEV-1402</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Marketing</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Server Room Reader</div>
+            <div class="door">SRD · Restricted Area</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="status-pill st-missing"><span class="code">M</span>Missing</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">19:05:42</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">HS</div>
+              <div>
+                <div class="name">Harish Shetty</div>
+                <div class="id">EMP-0855 · DEV-0855</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Admin</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Chennai Office Reader</div>
+            <div class="door">CMD · Main Gate</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-pin">Pn</span>PIN</span></td>
+          <td><span class="status-pill st-manual"><span class="code">Mn</span>Manual</span></td>
+          <td>Employee</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">
+    <div class="legend">
+      <span class="leg-in">● IN</span>
+      <span class="leg-out">● OUT</span>
+      <span class="leg-present">● P · Present</span>
+      <span class="leg-absent">● A · Absent</span>
+      <span class="leg-manual">● Mn · Manual</span>
+      <span class="leg-missing">● M · Missing</span>
+      <span class="leg-card">● Card</span>
+      <span class="leg-face">● Face</span>
+      <span class="leg-finger">● Fingerprint</span>
+      <span class="leg-pin">● PIN</span>
+    </div>
+    <div class="footer-row">
+      <div>Showing first 10 of 47 events for 09 May 2026. Continued on next page.</div>
+      <div>Page 1 of 2 · Access Control Log Report</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======================================================== -->
+<!-- PAGE 2 — second date in range                             -->
+<!-- ======================================================== -->
+<div class="page">
+  <div class="title-row">
+    <div>
+      <h1>Access Control Log Report</h1>
+      <div class="meta">
+        01 May 2026 – 31 May 2026 <span class="dot">•</span> All Branches <span class="dot">•</span> All Devices <span class="dot">•</span> Generated 09:42 AM
+      </div>
+      <div class="ribbon"><span class="dot"></span>1,284 ACCESS EVENTS · 142 EMPLOYEES · 18 DEVICES</div>
+    </div>
+    <div class="company-badge">
+      <div class="avatar">AK</div>
+      <div>
+        <div class="name">AKIL GROUP</div>
+        <div class="sub">Bengaluru HO</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATE SECTION 2 -->
+  <div class="date-section">
+    <div class="label">10 May 2026 <span class="dow">· Sunday</span></div>
+    <div class="meta">12 events · 9 unique employees <span class="pill-mini">Weekend / On-call</span></div>
+  </div>
+
+  <div class="grid-wrap">
+    <table class="acl-tbl">
+      <colgroup>
+        <col style="width:9%" />
+        <col style="width:18%" />
+        <col style="width:13%" />
+        <col style="width:17%" />
+        <col style="width:9%" />
+        <col style="width:13%" />
+        <col style="width:11%" />
+        <col style="width:10%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Employee</th>
+          <th>Branch / Dept</th>
+          <th>Device / Door</th>
+          <th class="center">Direction</th>
+          <th>Mode</th>
+          <th>Status</th>
+          <th>User Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="time-cell">07:32:18</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">AJ</div>
+              <div>
+                <div class="name">Arjun Joshi</div>
+                <div class="id">EMP-0998 · DEV-0998</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">IT</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Server Room Reader</div>
+            <div class="door">SRD · Restricted Area</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">10:05:42</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">SK</div>
+              <div>
+                <div class="name">Suresh Kamath</div>
+                <div class="id">EMP-0612 · DEV-0612</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Engineering</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Mysuru Office Reader</div>
+            <div class="door">MYD · Main Entry</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">11:18:05</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">KB</div>
+              <div>
+                <div class="name">Kavya Bhat</div>
+                <div class="id">EMP-1278 · DEV-1278</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Design</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">14:22:51</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">AJ</div>
+              <div>
+                <div class="name">Arjun Joshi</div>
+                <div class="id">EMP-0998 · DEV-0998</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">IT</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Server Room Reader</div>
+            <div class="door">SRD · Restricted Area</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-out">OUT</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">16:48:33</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">KB</div>
+              <div>
+                <div class="name">Kavya Bhat</div>
+                <div class="id">EMP-1278 · DEV-1278</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Design</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-out">OUT</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">18:11:24</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">SK</div>
+              <div>
+                <div class="name">Suresh Kamath</div>
+                <div class="id">EMP-0612 · DEV-0612</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Mysuru</div>
+            <div class="dept">Engineering</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Mysuru Office Reader</div>
+            <div class="door">MYD · Main Entry</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-out">OUT</span></td>
+          <td><span class="mode-chip"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- DATE SECTION 3 -->
+  <div class="date-section">
+    <div class="label">11 May 2026 <span class="dow">· Monday</span></div>
+    <div class="meta">52 events · 41 unique employees <span class="pill-mini">Peak: 09:00–10:00</span></div>
+  </div>
+
+  <div class="grid-wrap">
+    <table class="acl-tbl">
+      <colgroup>
+        <col style="width:9%" />
+        <col style="width:18%" />
+        <col style="width:13%" />
+        <col style="width:17%" />
+        <col style="width:9%" />
+        <col style="width:13%" />
+        <col style="width:11%" />
+        <col style="width:10%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Time</th>
+          <th>Employee</th>
+          <th>Branch / Dept</th>
+          <th>Device / Door</th>
+          <th class="center">Direction</th>
+          <th>Mode</th>
+          <th>Status</th>
+          <th>User Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="time-cell">08:38:02</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">AS</div>
+              <div>
+                <div class="name">Anita Sharma</div>
+                <div class="id">EMP-1108 · DEV-1108</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Human Resources</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">08:44:17</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">LR</div>
+              <div>
+                <div class="name">Lakshmi Rao</div>
+                <div class="id">EMP-1187 · DEV-1187</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Admin</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">08:51:08</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c6">RK</div>
+              <div>
+                <div class="name">Rahul Kumar</div>
+                <div class="id">EMP-1042 · DEV-1042</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Bengaluru HO</div>
+            <div class="dept">Sales</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Main Entrance Reader</div>
+            <div class="door">MED · Lobby Door 1</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+        <tr>
+          <td><span class="time-cell">08:58:44</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">NV</div>
+              <div>
+                <div class="name">Neha Verma</div>
+                <div class="id">EMP-1402 · DEV-1402</div>
+              </div>
+            </div>
+          </td>
+          <td class="branch-cell">
+            <div class="br">Chennai</div>
+            <div class="dept">Marketing</div>
+          </td>
+          <td class="device-cell">
+            <div class="dev">Chennai Office Reader</div>
+            <div class="door">CMD · Main Gate</div>
+          </td>
+          <td class="center"><span class="dir-pill dir-in">IN</span></td>
+          <td><span class="mode-chip"><span class="ic m-finger">Fp</span>Fingerprint</span></td>
+          <td><span class="status-pill st-present"><span class="code">P</span>Present</span></td>
+          <td>Employee</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">
+    <div class="legend">
+      <span class="leg-in">● IN</span>
+      <span class="leg-out">● OUT</span>
+      <span class="leg-present">● P · Present</span>
+      <span class="leg-absent">● A · Absent</span>
+      <span class="leg-manual">● Mn · Manual</span>
+      <span class="leg-missing">● M · Missing</span>
+      <span class="leg-card">● Card</span>
+      <span class="leg-face">● Face</span>
+      <span class="leg-finger">● Fingerprint</span>
+      <span class="leg-pin">● PIN</span>
+    </div>
+    <div class="footer-row">
+      <div>Sample showing 3 dates from May 2026. Full report continues with all dates in range.</div>
+      <div>Page 2 of 2 · Access Control Log Report</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

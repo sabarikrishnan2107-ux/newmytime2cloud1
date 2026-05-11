@@ -38,6 +38,7 @@ import PDFProgressOverlay from './PDFProgressOverlay';
 
 const reportTemplates = [
   { id: 'Template5', name: 'Monthly Report Format A' },
+  { id: 'TemplateB', name: 'Monthly Report Format B' },
   { id: `Template3`, name: `Daily` },
 ];
 
@@ -362,8 +363,8 @@ export default function AttendanceTable() {
       //   return;
       // }
 
-      // 1. Handle Template4 (Format A), Template5 (Format C), and Template3 (Daily) - Puppeteer PDF
-      if ((selectedReportTemplate === "Template4" || selectedReportTemplate === "Template5" || selectedReportTemplate === "Template3") && actionType !== "EXCEL") {
+      // 1. Handle Template4 (Format A), Template5 (Format C), TemplateB (Format B), and Template3 (Daily) - Puppeteer PDF
+      if ((selectedReportTemplate === "Template4" || selectedReportTemplate === "Template5" || selectedReportTemplate === "TemplateB" || selectedReportTemplate === "Template3") && actionType !== "EXCEL") {
         const PDF_SERVICE = process.env.NEXT_PUBLIC_PDF_SERVICE_URL || 'http://localhost:3002';
         const user = getUser();
 
@@ -387,6 +388,7 @@ export default function AttendanceTable() {
         const SUMMARY_BASE = process.env.NEXT_PUBLIC_SUMMARY_REPORT_URL || PDF_SERVICE;
         let templatePath;
         if (selectedReportTemplate === "Template5")      templatePath = "attendance-report/format-c.html";
+        else if (selectedReportTemplate === "TemplateB") templatePath = "attendance-report/format-b.html";
         else if (selectedReportTemplate === "Template3") templatePath = "daily-report/";
         else                                             templatePath = "attendance-report/";
         let templateUrl = `${SUMMARY_BASE}/${templatePath}?${t4Params.toString()}`;
@@ -548,7 +550,19 @@ export default function AttendanceTable() {
         <div className="flex flex-col min-w-[200px]">
           <DropDown
             placeholder={'Report Template'}
-            onChange={setSelectedReportTemplate}
+            onChange={(val) => {
+              setSelectedReportTemplate(val);
+              // Format B: if the existing range spans multiple months, clamp `to`
+              // back into the same month as `from` so it stays single-month.
+              if (val === "TemplateB" && from && to) {
+                const f = new Date(from);
+                const t = new Date(to);
+                if (f.getFullYear() !== t.getFullYear() || f.getMonth() !== t.getMonth()) {
+                  const monthEnd = new Date(f.getFullYear(), f.getMonth() + 1, 0);
+                  setTo(monthEnd);
+                }
+              }
+            }}
             value={selectedReportTemplate}
             items={reportTemplates}
           />
@@ -558,7 +572,7 @@ export default function AttendanceTable() {
           <DateRangeSelect
             value={{ from, to }}
             single={selectedReportTemplate === "Template3"}
-            numberOfMonths={selectedReportTemplate === "Template3" ? 1 : 2}
+            numberOfMonths={selectedReportTemplate === "Template3" || selectedReportTemplate === "TemplateB" ? 1 : 2}
             onChange={({ from: newFrom, to: newTo }) => {
               if (selectedReportTemplate === "Template3") {
                 const single = newFrom || newTo;
