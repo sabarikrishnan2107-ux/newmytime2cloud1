@@ -6,8 +6,20 @@ const puppeteer = require("puppeteer");
 const app = express();
 app.use(cors({ origin: "*", methods: ["GET", "POST", "OPTIONS"], allowedHeaders: ["Content-Type"] }));
 app.use(express.json({ limit: "10mb" }));
-app.use("/templates", express.static(path.resolve(__dirname, "..", "summary-report")));
-app.use("/attendance-report", express.static(path.resolve(__dirname, "..", "summary-report", "attendance-report")));
+const NO_CACHE_STATIC = {
+  etag: false,
+  lastModified: false,
+  maxAge: 0,
+  setHeaders: (res) => {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.set("Pragma", "no-cache");
+    res.set("Expires", "0");
+    res.set("Surrogate-Control", "no-store");
+  },
+};
+app.use("/templates", express.static(path.resolve(__dirname, "..", "summary-report"), NO_CACHE_STATIC));
+app.use("/attendance-report", express.static(path.resolve(__dirname, "..", "summary-report", "attendance-report"), NO_CACHE_STATIC));
+app.use("/access-control-report", express.static(path.resolve(__dirname, "..", "summary-report", "access-control-report"), NO_CACHE_STATIC));
 
 // -----------------------------------------------------------------------------
 // Shared browser instance.
@@ -88,7 +100,14 @@ app.post("/pdf", async (req, res) => {
     const browser = await getBrowser();
     page = await browser.newPage();
 
-    const isLandscapeView = landscape === true || url.includes("attendance-report");
+    // Always bypass HTTP cache — report templates change frequently and we
+    // never want a stale render. Without this, puppeteer's persistent disk
+    // cache can serve an old static template even after the file on disk
+    // has been updated.
+    await page.setCacheEnabled(false);
+    await page.setExtraHTTPHeaders({ "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" });
+
+    const isLandscapeView = landscape === true || url.includes("attendance-report") || url.includes("access-control-report");
     await page.setViewport({ width: isLandscapeView ? 1400 : 1280, height: 900 });
 
     page.on("pageerror", (err) => console.log("PAGE ERROR:", err.message));

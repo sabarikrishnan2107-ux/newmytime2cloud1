@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta content="width=device-width, initial-scale=1.0" name="viewport" />
+<title>Access Control Report - Sample</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, Roboto, "Helvetica Neue", Arial, sans-serif; }
+  html, body { margin: 0; padding: 0; }
+  body { font-weight: 500; background: #f1f5f9; color: #0f172a; }
+
+  @page { size: 297mm 210mm; margin: 0; }
+  @page :first { size: 297mm 210mm; margin: 0; }
+
+  @media print {
+    html, body { background: #fff !important; width: 297mm; height: 210mm; }
+    body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+    .page {
+      box-shadow: none !important;
+      margin: 0 !important;
+      width: 297mm !important;
+      height: 210mm !important;
+      page-break-after: always;
+      page-break-inside: avoid;
+      break-after: page;
+      break-inside: avoid;
+    }
+    .page:last-child { page-break-after: auto; break-after: auto; }
+    tr { page-break-inside: avoid !important; }
+  }
+
+  .page {
+    background: #fff;
+    width: 297mm;
+    height: 210mm;
+    box-sizing: border-box;
+    margin: 12px auto;
+    padding: 10mm 12mm 18mm 12mm;
+    page-break-inside: avoid;
+    page-break-after: always;
+    break-after: page;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.08);
+  }
+  .page:last-child { page-break-after: auto; break-after: auto; }
+
+  /* ---------- Title row ---------- */
+  .title-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+  .title-row h1 { font-size: 22px; color: #0f172a; letter-spacing: -0.2px; font-weight: 500; }
+  .title-row .meta { font-size: 11.5px; color: #334155; margin-top: 4px; font-weight: 500; }
+  .title-row .meta .dot { color: #94a3b8; margin: 0 6px; }
+  .live-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    background: #dcfce7; color: #15803d;
+    padding: 1px 8px; border-radius: 999px;
+    font-size: 9.5px; font-weight: 500; letter-spacing: 0.5px;
+    margin-left: 8px;
+  }
+  .live-pill .ball { width: 5px; height: 5px; border-radius: 50%; background: #15803d; }
+
+  .company-badge {
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 8px 14px 8px 8px;
+    display: inline-flex; align-items: center; gap: 10px; background: #fff;
+  }
+  .company-badge .avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe); color: #6d28d9;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.4px;
+  }
+  .company-badge .name { font-size: 12px; color: #0f172a; letter-spacing: 0.6px; font-weight: 500; }
+  .company-badge .sub  { font-size: 10px; color: #64748b; margin-top: 2px; font-weight: 500; letter-spacing: 0.3px; }
+
+  /* ---------- Filter chips row ---------- */
+  .filter-row {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px;
+  }
+  .filter-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    border: 1px solid #e2e8f0; background: #fff;
+    padding: 3px 9px; border-radius: 999px;
+    font-size: 10px; color: #334155; font-weight: 500;
+  }
+  .filter-chip .lbl { color: #64748b; }
+  .filter-chip .val { color: #0f172a; }
+
+  /* ---------- KPI cards (6 cards) ---------- */
+  .kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 8px; }
+  .kpi-card {
+    border: 1px solid #e2e8f0; border-radius: 10px;
+    padding: 10px 12px; background: #fff;
+    position: relative; overflow: hidden;
+  }
+  .kpi-card .top {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .kpi-card .label {
+    font-size: 9.5px; color: #475569; font-weight: 500;
+    letter-spacing: 1.2px; text-transform: uppercase;
+  }
+  .kpi-card .icon {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 500;
+  }
+  .kpi-card .value {
+    font-size: 22px; color: #0f172a; font-weight: 500;
+    letter-spacing: -0.4px; line-height: 1.1;
+  }
+  .kpi-card .value.small { font-size: 16px; }
+  .kpi-card .breakdown {
+    display: flex; gap: 10px; margin-top: 6px;
+    font-size: 9.5px; color: #475569; font-weight: 500;
+  }
+  .kpi-card .breakdown b { color: #0f172a; font-weight: 500; }
+  .kpi-card .sub {
+    font-size: 9.5px; color: #64748b; margin-top: 5px; font-weight: 500;
+  }
+  .kpi-card .accent-bar {
+    position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+  }
+  .kpi-card.entries .icon { background: #dcfce7; color: #15803d; }
+  .kpi-card.entries .accent-bar { background: linear-gradient(90deg, #16a34a, #4ade80); }
+  .kpi-card.exits   .icon { background: #fee2e2; color: #b91c1c; }
+  .kpi-card.exits   .accent-bar { background: linear-gradient(90deg, #dc2626, #f87171); }
+  .kpi-card.inside  .icon { background: #ede9fe; color: #6d28d9; }
+  .kpi-card.inside  .accent-bar { background: linear-gradient(90deg, #7c3aed, #a78bfa); }
+  .kpi-card.visitors .icon { background: #dbeafe; color: #1d4ed8; }
+  .kpi-card.visitors .accent-bar { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+  .kpi-card.devices .icon { background: #ede9fe; color: #6d28d9; }
+  .kpi-card.devices .accent-bar { background: linear-gradient(90deg, #6d28d9, #a78bfa); }
+  .kpi-card.health  .icon { background: #dcfce7; color: #15803d; }
+  .kpi-card.health  .accent-bar { background: linear-gradient(90deg, #16a34a, #4ade80); }
+  .health-status { color: #15803d; }
+
+  /* ---------- Table card ---------- */
+  .table-card {
+    border: 1px solid #e2e8f0; border-radius: 10px;
+    background: #fff; overflow: hidden;
+  }
+  .table-card .head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 9px 14px; border-bottom: 1px solid #e2e8f0;
+  }
+  .table-card .head .title { font-size: 12.5px; font-weight: 500; color: #0f172a; display: inline-flex; align-items: center; }
+  .table-card .head .sub   { font-size: 10px; color: #64748b; margin-top: 2px; font-weight: 500; }
+  .table-card .head .right { font-size: 10px; color: #64748b; font-weight: 500; }
+
+  table.acl-tbl {
+    width: 100%; border-collapse: collapse; font-size: 11px; color: #0f172a; background: #fff;
+    table-layout: fixed;
+  }
+  table.acl-tbl th, table.acl-tbl td {
+    border-bottom: 1px solid #f1f5f9;
+    padding: 6px 12px; text-align: left; vertical-align: middle;
+  }
+  table.acl-tbl thead th {
+    background: #f8fafc; color: #475569; font-size: 9.5px;
+    letter-spacing: 0.8px; text-transform: uppercase; font-weight: 500;
+    padding: 8px 12px;
+  }
+  table.acl-tbl tbody tr:last-child td { border-bottom: none; }
+  table.acl-tbl td.center { text-align: center; }
+
+  /* Date-time cell */
+  .dt-cell {
+    font-family: "SF Mono", "Monaco", "Cascadia Mono", "Consolas", monospace;
+    font-size: 11px; font-weight: 500; color: #0f172a; letter-spacing: -0.2px;
+    white-space: nowrap;
+  }
+
+  /* Employee cell */
+  .emp-cell { display: flex; align-items: center; gap: 9px; }
+  .emp-cell .photo, .emp-cell .photo-fallback {
+    width: 28px; height: 28px; border-radius: 50%; object-fit: cover; background: #e2e8f0;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #475569; font-size: 10px; font-weight: 500; flex-shrink: 0;
+  }
+  .emp-cell .photo-fallback.c1 { background: #dbeafe; color: #1d4ed8; }
+  .emp-cell .photo-fallback.c2 { background: #fce7f3; color: #be185d; }
+  .emp-cell .photo-fallback.c3 { background: #dcfce7; color: #15803d; }
+  .emp-cell .photo-fallback.c4 { background: #fef3c7; color: #b45309; }
+  .emp-cell .photo-fallback.c5 { background: #ede9fe; color: #6d28d9; }
+  .emp-cell .photo-fallback.c6 { background: #fee2e2; color: #b91c1c; }
+  .emp-cell .name { font-size: 11.5px; color: #0f172a; font-weight: 500; line-height: 1.25; }
+  .emp-cell .dept { font-size: 10px; color: #64748b; font-weight: 500; margin-top: 1px; }
+
+  .id-cell { font-family: "SF Mono", "Monaco", "Cascadia Mono", "Consolas", monospace; font-size: 11px; font-weight: 500; color: #334155; }
+  .device-cell { font-size: 11px; color: #0f172a; font-weight: 500; }
+  .branch-cell { font-size: 11px; color: #0f172a; font-weight: 500; letter-spacing: 0.4px; text-transform: uppercase; }
+
+  /* Mode cell — icon + text */
+  .mode-cell {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; color: #475569; font-weight: 500;
+  }
+  .mode-cell .ic {
+    width: 22px; height: 22px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 9.5px; font-weight: 500;
+  }
+  .mode-cell .ic.m-face   { background: #f1f5f9; color: #475569; }
+  .mode-cell .ic.m-finger { background: #ffedd5; color: #c2410c; }
+  .mode-cell .ic.m-card   { background: #ede9fe; color: #6d28d9; }
+  .mode-cell .ic.m-pin    { background: #f1f5f9; color: #475569; }
+
+  /* Type pill */
+  .type-pill {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 999px;
+    font-size: 10.5px; font-weight: 500; letter-spacing: 0.4px;
+  }
+  .type-in  { background: #dcfce7; color: #15803d; }
+  .type-out { background: #fee2e2; color: #b91c1c; }
+  .type-pill .arrow { font-size: 11px; }
+
+  /* Footer */
+  .report-footer {
+    position: absolute; bottom: 4mm; left: 12mm; right: 12mm;
+    padding-top: 6px; border-top: 1px solid #94a3b8;
+    font-size: 10.5px; color: #334155;
+  }
+  .report-footer .footer-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 6px 0;
+    font-size: 10.5px; color: #475569;
+  }
+</style>
+</head>
+<body>
+
+<!-- ======================================================== -->
+<!-- PAGE 1                                                    -->
+<!-- ======================================================== -->
+<div class="page">
+  <div class="title-row">
+    <div>
+      <h1>Access Control <span class="live-pill"><span class="ball"></span>LIVE</span></h1>
+      <div class="meta">
+        11 May 2026 (Monday) <span class="dot">•</span> 22 records <span class="dot">•</span> Generated 11:42 AM
+      </div>
+    </div>
+    <div class="company-badge">
+      <div class="avatar">AK</div>
+      <div>
+        <div class="name">AKIL GROUP</div>
+        <div class="sub">Hyderabad &middot; TANJORE &middot; KODAI</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Active filters -->
+  <div class="filter-row">
+    <span class="filter-chip"><span class="lbl">Branch:</span> <span class="val">All Branches</span></span>
+    <span class="filter-chip"><span class="lbl">Device:</span> <span class="val">All Devices</span></span>
+    <span class="filter-chip"><span class="lbl">User Type:</span> <span class="val">All</span></span>
+    <span class="filter-chip"><span class="lbl">Employee:</span> <span class="val">All Employees</span></span>
+    <span class="filter-chip"><span class="lbl">Date:</span> <span class="val">11 May 2026 – 11 May 2026</span></span>
+  </div>
+
+  <!-- KPI Cards (6 cards mirroring the live page) -->
+  <div class="kpi-row">
+    <div class="kpi-card entries">
+      <div class="top">
+        <div class="label">Total Entries</div>
+        <div class="icon">→</div>
+      </div>
+      <div class="value">14</div>
+      <div class="breakdown">
+        <span>👤 Employees <b>14</b></span>
+        <span>👥 Visitors <b>0</b></span>
+      </div>
+      <div class="accent-bar"></div>
+    </div>
+
+    <div class="kpi-card exits">
+      <div class="top">
+        <div class="label">Total Exits</div>
+        <div class="icon">←</div>
+      </div>
+      <div class="value">8</div>
+      <div class="breakdown">
+        <span>👤 Employees <b>8</b></span>
+        <span>👥 Visitors <b>0</b></span>
+      </div>
+      <div class="accent-bar"></div>
+    </div>
+
+    <div class="kpi-card inside">
+      <div class="top">
+        <div class="label">People Inside</div>
+        <div class="icon">●</div>
+      </div>
+      <div class="value">10</div>
+      <div class="breakdown">
+        <span>👤 Employees <b>10</b></span>
+        <span>👥 Visitors <b>0</b></span>
+      </div>
+      <div class="accent-bar"></div>
+    </div>
+
+    <div class="kpi-card visitors">
+      <div class="top">
+        <div class="label">Visitors</div>
+        <div class="icon">+</div>
+      </div>
+      <div class="value">0</div>
+      <div class="sub">0 currently on-site</div>
+      <div class="accent-bar"></div>
+    </div>
+
+    <div class="kpi-card devices">
+      <div class="top">
+        <div class="label">Active Devices</div>
+        <div class="icon">▦</div>
+      </div>
+      <div class="value">2/2</div>
+      <div class="sub">Online terminals</div>
+      <div class="accent-bar"></div>
+    </div>
+
+    <div class="kpi-card health">
+      <div class="top">
+        <div class="label">Device Health</div>
+        <div class="icon">♥</div>
+      </div>
+      <div class="value small health-status">Healthy</div>
+      <div class="sub">0 offline · 100% uptime</div>
+      <div class="accent-bar"></div>
+    </div>
+  </div>
+
+  <!-- Access Log History Table -->
+  <div class="table-card">
+    <div class="head">
+      <div>
+        <div class="title">Access Log History <span class="live-pill"><span class="ball"></span>LIVE</span></div>
+        <div class="sub">22 records · auto-refreshing</div>
+      </div>
+      <div class="right">Sorted by Date Time ↓</div>
+    </div>
+    <table class="acl-tbl">
+      <colgroup>
+        <col style="width:14%" />
+        <col style="width:24%" />
+        <col style="width:8%" />
+        <col style="width:13%" />
+        <col style="width:13%" />
+        <col style="width:14%" />
+        <col style="width:14%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Date Time ↓</th>
+          <th>Employee</th>
+          <th>ID</th>
+          <th>Device</th>
+          <th>Branch</th>
+          <th>Mode</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="dt-cell">11-May-26 11:11</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">GG</div>
+              <div>
+                <div class="name">Gunal Gunal</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">48</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 11:04</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">US</div>
+              <div>
+                <div class="name">Udayan Sivasakthivel</div>
+                <div class="dept">Front office</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3200</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-out"><span class="arrow">←</span>OUT</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 10:15</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">JA</div>
+              <div>
+                <div class="name">Jerome anotny</div>
+                <div class="dept">Kitchens</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3032</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-out"><span class="arrow">←</span>OUT</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 10:14</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">PP</div>
+              <div>
+                <div class="name">PURATCHI PUYAL</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3009</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-out"><span class="arrow">←</span>OUT</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 10:14</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">PP</div>
+              <div>
+                <div class="name">PURATCHI PUYAL</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3009</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-out"><span class="arrow">←</span>OUT</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 10:14</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">PP</div>
+              <div>
+                <div class="name">PURATCHI PUYAL</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3009</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 10:14</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">PP</div>
+              <div>
+                <div class="name">PURATCHI PUYAL</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3009</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-out"><span class="arrow">←</span>OUT</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 09:58</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">JE</div>
+              <div>
+                <div class="name">Jerome anotny</div>
+                <div class="dept">Kitchens</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3032</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-finger">Fp</span>Finger</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 09:42</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c6">SS</div>
+              <div>
+                <div class="name">SATHAM HUSAIN</div>
+                <div class="dept">Manager</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">29</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 09:31</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">PD</div>
+              <div>
+                <div class="name">PRIYA DHARSHINI</div>
+                <div class="dept">FO MANAGER</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">24</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">
+    <div class="footer-row">
+      <div>Showing first 10 of 22 records. Continued on next page.</div>
+      <div>Page 1 of 2 · Access Control Report</div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ======================================================== -->
+<!-- PAGE 2 — continuation                                     -->
+<!-- ======================================================== -->
+<div class="page">
+  <div class="title-row">
+    <div>
+      <h1>Access Control <span class="live-pill"><span class="ball"></span>LIVE</span></h1>
+      <div class="meta">
+        11 May 2026 (Monday) <span class="dot">•</span> 22 records <span class="dot">•</span> Generated 11:42 AM
+      </div>
+    </div>
+    <div class="company-badge">
+      <div class="avatar">AK</div>
+      <div>
+        <div class="name">AKIL GROUP</div>
+        <div class="sub">Hyderabad &middot; TANJORE &middot; KODAI</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="head">
+      <div>
+        <div class="title">Access Log History <span style="font-size:9.5px;color:#64748b;font-weight:500;margin-left:6px;">(continued)</span></div>
+        <div class="sub">Records 11–22 of 22</div>
+      </div>
+      <div class="right">Sorted by Date Time ↓</div>
+    </div>
+    <table class="acl-tbl">
+      <colgroup>
+        <col style="width:14%" />
+        <col style="width:24%" />
+        <col style="width:8%" />
+        <col style="width:13%" />
+        <col style="width:13%" />
+        <col style="width:14%" />
+        <col style="width:14%" />
+      </colgroup>
+      <thead>
+        <tr>
+          <th>Date Time ↓</th>
+          <th>Employee</th>
+          <th>ID</th>
+          <th>Device</th>
+          <th>Branch</th>
+          <th>Mode</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="dt-cell">11-May-26 09:18</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">SK</div>
+              <div>
+                <div class="name">Selva Kaviyan</div>
+                <div class="dept">Front office</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3025</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 09:12</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">SS</div>
+              <div>
+                <div class="name">Samynathan Samy</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3026</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-finger">Fp</span>Finger</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 09:05</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">RS</div>
+              <div>
+                <div class="name">RANJITHA S</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3109</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 09:01</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">SS</div>
+              <div>
+                <div class="name">SUDHA SUDHA.D</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3031</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 08:54</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">BB</div>
+              <div>
+                <div class="name">Barathi Barathi</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">2001</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 08:48</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c6">SK</div>
+              <div>
+                <div class="name">SATHISH KUMAR.P</div>
+                <div class="dept">Maintenance</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">31</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-finger">Fp</span>Finger</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 08:42</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c1">HN</div>
+              <div>
+                <div class="name">HAJA NAJMUDEEN</div>
+                <div class="dept">Maintenance</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">32</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 08:36</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c3">JA</div>
+              <div>
+                <div class="name">Jerome anotny</div>
+                <div class="dept">Kitchens</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3032</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-out"><span class="arrow">←</span>OUT</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 08:22</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c4">PP</div>
+              <div>
+                <div class="name">PURATCHI PUYAL</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3009</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 08:10</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c5">GG</div>
+              <div>
+                <div class="name">Gunal Gunal</div>
+                <div class="dept">Housekeeping</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">48</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">TANJORE</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 08:02</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c2">JA</div>
+              <div>
+                <div class="name">Jerome anotny</div>
+                <div class="dept">Kitchens</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">3032</span></td>
+          <td class="device-cell">TNJ</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-card">Cd</span>Card</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+        <tr>
+          <td><span class="dt-cell">11-May-26 07:55</span></td>
+          <td>
+            <div class="emp-cell">
+              <div class="photo-fallback c6">SS</div>
+              <div>
+                <div class="name">SATHAM HUSAIN</div>
+                <div class="dept">Manager</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="id-cell">29</span></td>
+          <td class="device-cell">Kodai</td>
+          <td class="branch-cell">KODAI</td>
+          <td><span class="mode-cell"><span class="ic m-face">Fa</span>Face</span></td>
+          <td><span class="type-pill type-in"><span class="arrow">→</span>IN</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="report-footer">
+    <div class="footer-row">
+      <div>End of report · 22 total records · Generated by MyTime2Cloud</div>
+      <div>Page 2 of 2 · Access Control Report</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

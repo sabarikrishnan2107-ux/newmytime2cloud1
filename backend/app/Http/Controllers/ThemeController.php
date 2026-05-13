@@ -357,18 +357,6 @@ class ThemeController extends Controller
         $departmentIds = $this->normalizeIdList($request->input('department_ids'));
         $employeeIds   = $this->normalizeIdList($request->input('employee_ids'));
 
-        // DEBUG: log incoming params to verify employee_ids reaches the backend.
-        file_put_contents(
-            storage_path('logs/present_debug.log'),
-            '[' . date('Y-m-d H:i:s') . '] all=' . json_encode($request->all())
-                . ' normalized=' . json_encode([
-                    'branch_ids' => $branchIds,
-                    'department_ids' => $departmentIds,
-                    'employee_ids' => $employeeIds,
-                ]) . PHP_EOL,
-            FILE_APPEND
-        );
-
         // Step 1: find the earliest LogTime today per UserID, filtered by company + employee scope.
         $firstPunches = AttendanceLog::where('company_id', $companyId)
             ->whereDate('LogTime', $today)
@@ -668,26 +656,22 @@ class ThemeController extends Controller
 
     public function dashboardGetCountslast7DaysChart(Request $request)
     {
-        $colors = [
-            "#14b8a6",
-            "#06b6d4",
-            "#10b981",
-            "#6366f1",
-            "#a855f7",
-            "#f59e0b",
-            "#ef4444",
-        ];
-
         $rows = $this->dashboardGetCountslast7Days($request);
 
         $data = [];
-        foreach ($rows as $index => $row) {
-            $dayLetter = substr((new DateTime($row["date"]))->format("D"), 0, 1);
+        foreach ($rows as $row) {
+            $d         = new DateTime($row["date"]);
+            $absent    = (int) ($row["absentCount"] ?? 0) + (int) ($row["missingCount"] ?? 0);
 
             $data[] = [
-                "day"   => $dayLetter,
-                "value" => (int) ($row["presentCount"] == 0 ? 100 : $row["presentCount"]),
-                "fill"  => $colors[$index % count($colors)],
+                "date"      => $row["date"],
+                "day"       => $d->format("D"),         // "Mon"
+                "dayLetter" => substr($d->format("D"), 0, 1),
+                "dateLabel" => $d->format("d M"),       // "11 May"
+                "present"   => (int) ($row["presentCount"] ?? 0),
+                "absent"    => $absent,
+                "leave"     => (int) ($row["leaveCount"] ?? 0),
+                "vacation"  => (int) ($row["vaccationCount"] ?? 0),
             ];
         }
 

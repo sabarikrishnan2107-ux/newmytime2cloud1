@@ -214,31 +214,31 @@ function EmployeeListDialog({ open, onOpenChange, variant = "present", branch_id
   }, [rows, query]);
 
   const gridTemplate = cfg.deviceColumn
-    ? "grid-cols-[40px_minmax(220px,1.4fr)_1fr_1fr_120px_140px]"
-    : "grid-cols-[40px_minmax(220px,1.6fr)_1fr_1fr_140px]";
+    ? "grid-cols-[32px_minmax(170px,1.4fr)_1fr_1fr_92px_110px]"
+    : "grid-cols-[32px_minmax(170px,1.6fr)_1fr_1fr_110px]";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
-        className="w-full sm:max-w-4xl max-h-[85vh] p-0 overflow-hidden bg-white dark:bg-[#0d1730] border border-slate-200 dark:border-[#1d2b4a]"
+        className="w-full sm:max-w-3xl max-h-[82vh] p-0 overflow-hidden bg-white dark:bg-[#0d1730] border border-slate-200 dark:border-[#1d2b4a] shadow-2xl"
       >
-        <DialogHeader className="px-6 pt-5 pb-4 border-b border-slate-200 dark:border-[#1d2b4a]">
-          <div className="flex items-center justify-between gap-3 pr-8">
-            <div className="flex items-center gap-3 min-w-0">
-              <div className={`grid place-items-center w-9 h-9 rounded-[10px] ${cfg.accent.iconBg} ${cfg.accent.iconFg}`}>
-                <IconComp className="h-4 w-4" strokeWidth={2.2} />
+        <DialogHeader className="px-4 pt-3.5 pb-3 border-b border-slate-200 dark:border-[#1d2b4a]">
+          <div className="flex items-center justify-between gap-2 pr-7">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className={`grid place-items-center w-8 h-8 rounded-[8px] ${cfg.accent.iconBg} ${cfg.accent.iconFg}`}>
+                <IconComp className="h-3.5 w-3.5" strokeWidth={2.2} />
               </div>
               <div className="min-w-0">
-                <DialogTitle className="text-base font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                <DialogTitle className="text-[13px] font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-1.5">
                   {cfg.title}
-                  <span className={`inline-flex items-center text-[11px] font-bold px-2 py-0.5 rounded-full tabular-nums ${cfg.accent.pillBg} ${cfg.accent.pillFg}`}>
+                  <span className={`inline-flex items-center text-[10px] font-bold px-1.5 py-0.5 rounded-full tabular-nums ${cfg.accent.pillBg} ${cfg.accent.pillFg}`}>
                     {loading ? "…" : rows.length}
                   </span>
                 </DialogTitle>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 truncate">
                   {formatTodayLabel()}
                   {selBranches.length || selDepartments.length || selEmployees.length ? (
-                    <span className="ml-1">· Filtered view</span>
+                    <span className="ml-1">· Filtered</span>
                   ) : null}
                 </p>
               </div>
@@ -248,16 +248,16 @@ function EmployeeListDialog({ open, onOpenChange, variant = "present", branch_id
               type="button"
               onClick={() => fetchRows({ branch_ids: selBranches, department_ids: selDepartments, employee_ids: selEmployees })}
               disabled={loading}
-              className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 disabled:opacity-50"
+              className="hidden sm:inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wider text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 disabled:opacity-50"
               title="Refresh"
             >
-              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
               Refresh
             </button>
           </div>
 
           {/* Filter row: Branch / Department / Employee */}
-          <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-3 gap-1.5">
             <MultiDropDown
               items={branchOptions}
               value={selBranches}
@@ -282,21 +282,21 @@ function EmployeeListDialog({ open, onOpenChange, variant = "present", branch_id
           </div>
 
           {/* Quick text search */}
-          <div className="mt-2 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <div className="mt-1.5 relative">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-slate-400" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Search by name, ID, branch, or department…"
-              className={`w-full h-9 pl-9 pr-3 text-sm rounded-md border border-slate-200 dark:border-[#1d2b4a] bg-white dark:bg-[#101a30] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 ${cfg.accent.ring}`}
+              className={`w-full h-8 pl-8 pr-2.5 text-[12px] rounded-md border border-slate-200 dark:border-[#1d2b4a] bg-white dark:bg-[#101a30] text-slate-700 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 ${cfg.accent.ring}`}
             />
           </div>
         </DialogHeader>
 
-        <div className="overflow-auto max-h-[60vh]">
-          <div className="min-w-[820px]">
-            <div className={`grid ${gridTemplate} px-6 py-2.5 gap-3 border-b border-slate-200 dark:border-[#1d2b4a] text-[10.5px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-white/[0.02] sticky top-0 z-10`}>
+        <div className="overflow-auto max-h-[52vh]">
+          <div className="min-w-[640px]">
+            <div className={`grid ${gridTemplate} px-4 py-2 gap-2 border-b border-slate-200 dark:border-[#1d2b4a] text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-white/[0.02] sticky top-0 z-10`}>
               <div className="text-center">#</div>
               <div>Employee</div>
               <div>Branch</div>
@@ -317,7 +317,7 @@ function EmployeeListDialog({ open, onOpenChange, variant = "present", branch_id
               filtered.map((r, idx) => (
                 <div
                   key={r.id ?? r.system_user_id ?? idx}
-                  className={`grid ${gridTemplate} px-6 py-2.5 gap-3 items-center text-sm transition-colors ${
+                  className={`grid ${gridTemplate} px-4 py-1.5 gap-2 items-center text-[12px] transition-colors ${
                     idx % 2 === 0
                       ? "bg-white dark:bg-transparent"
                       : "bg-slate-50/60 dark:bg-white/[0.015]"
@@ -327,40 +327,40 @@ function EmployeeListDialog({ open, onOpenChange, variant = "present", branch_id
                     {idx + 1}
                   </div>
 
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="size-9 min-w-[36px] rounded-full overflow-hidden border border-slate-200 dark:border-[#1d2b4a] bg-slate-100 dark:bg-[#101a30] flex items-center justify-center">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <div className="size-7 min-w-[28px] rounded-full overflow-hidden border border-slate-200 dark:border-[#1d2b4a] bg-slate-100 dark:bg-[#101a30] flex items-center justify-center">
                       <ProfilePicture src={r.photo} />
                     </div>
                     <div className="min-w-0">
-                      <div className="text-[13px] font-semibold text-slate-800 dark:text-white truncate">
+                      <div className="text-[12px] font-semibold text-slate-800 dark:text-white truncate leading-tight">
                         {r.full_name || `${r.first_name ?? ""} ${r.last_name ?? ""}`.trim() || "—"}
                       </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate">
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 truncate leading-tight">
                         ID: {r.employee_id ?? "—"}
                       </div>
                     </div>
                   </div>
 
-                  <div className="text-[13px] text-slate-700 dark:text-slate-200 truncate">
+                  <div className="text-slate-700 dark:text-slate-200 truncate">
                     {r.branch?.name || "—"}
                   </div>
 
-                  <div className="text-[13px] text-slate-700 dark:text-slate-200 truncate">
+                  <div className="text-slate-700 dark:text-slate-200 truncate">
                     {r.department?.name || "—"}
                   </div>
 
                   {cfg.extraColumn.key === "first_punch" ? (
-                    <div className={`text-center text-[13px] font-semibold tabular-nums ${cfg.accent.valueColor}`}>
+                    <div className={`text-center font-semibold tabular-nums ${cfg.accent.valueColor}`}>
                       {formatPunchTime(r.first_punch_time)}
                     </div>
                   ) : (
-                    <div className={`text-center text-[13px] font-semibold ${cfg.accent.valueColor}`}>
+                    <div className={`text-center font-semibold ${cfg.accent.valueColor}`}>
                       {formatLastSeen(r.last_seen)}
                     </div>
                   )}
 
                   {cfg.deviceColumn ? (
-                    <div className="text-[13px] text-slate-700 dark:text-slate-200 truncate" title={r.first_punch_device || ""}>
+                    <div className="text-slate-700 dark:text-slate-200 truncate" title={r.first_punch_device || ""}>
                       {r.first_punch_device || "—"}
                     </div>
                   ) : null}
@@ -370,7 +370,7 @@ function EmployeeListDialog({ open, onOpenChange, variant = "present", branch_id
           </div>
         </div>
 
-        <div className="px-6 py-2.5 border-t border-slate-200 dark:border-[#1d2b4a] flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-white/[0.02]">
+        <div className="px-4 py-2 border-t border-slate-200 dark:border-[#1d2b4a] flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 bg-slate-50/70 dark:bg-white/[0.02]">
           <span>
             Showing <span className="font-semibold text-slate-700 dark:text-slate-200 tabular-nums">{filtered.length}</span>
             {query && rows.length !== filtered.length ? (

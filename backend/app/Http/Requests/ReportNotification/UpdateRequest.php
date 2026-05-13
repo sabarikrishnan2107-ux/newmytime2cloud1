@@ -17,6 +17,8 @@ class UpdateRequest extends FormRequest
 
     public function rules()
     {
+        $isAccessControl = $this->type === "access_control";
+
         $arr = [
             'subject' => 'required',
             // 'body' => 'nullable',
@@ -26,30 +28,26 @@ class UpdateRequest extends FormRequest
             'company_id' => 'required',
             'branch_id' => 'required',
             'frequency' => 'required',
-            'time' => 'required',
+            // Access-control notifications use a from_time/to_time window
+            // instead of the single `time` field, so we relax it for that
+            // type regardless of frequency.
+            'time' => $isAccessControl ? 'nullable' : 'required',
             'reports' => 'nullable|array|max:5',
             'mediums' => 'nullable|array',
             'managers' => 'nullable|array',
-            // 'tos' => 'array|min:1',
-            // 'ccs' => 'array|nullable',
-            // 'bccs' => 'array|nullable',
         ];
 
-        // if weekly or monthly
-        if ($this->frequency == "Weekly") {
-
-            if ($this->type !== "access_control") {
+        if ($isAccessControl) {
+            $arr['from_time'] = 'required';
+            $arr['to_time']   = 'required';
+            $arr['days']      = 'required';
+        } else {
+            if ($this->frequency == "Weekly") {
                 $arr['day'] = "required";
-            } else {
-                $arr['days'] = "required";
-                $arr['from_time'] = "required";
-                $arr['to_time'] = "required";
-                $arr['time'] = "nullable";
             }
-        }
-
-        if ($this->frequency == "Monthly") {
-            $arr['date'] = "required";
+            if ($this->frequency == "Monthly") {
+                $arr['date'] = "required";
+            }
         }
 
         return $arr;

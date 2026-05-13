@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ChangeRequest\StoreRequest;
 use App\Http\Requests\ChangeRequest\UpdateRequest;
 use App\Models\Attendance;
+use App\Models\AttendanceLog;
 use App\Models\ChangeRequest;
 use App\Models\Employee;
 use App\Models\Notification;
@@ -122,6 +123,18 @@ class ChangeRequestController extends Controller
 
             $status = $data['status'];
 
+            // DEBUG: log who's approving so we can see why approved_by ends up null
+            file_put_contents(
+                storage_path('logs/change_request_debug.log'),
+                '[' . date('Y-m-d H:i:s') . '] id=' . $id
+                    . ' status=' . $status
+                    . ' approver_user_id=' . ($data['approver_user_id'] ?? 'NULL')
+                    . ' auth_id=' . (auth()->id() ?? 'NULL')
+                    . ' bearer=' . ($request->bearerToken() ? 'present' : 'missing')
+                    . PHP_EOL,
+                FILE_APPEND
+            );
+
             // Start a database transaction
             DB::beginTransaction();
 
@@ -134,6 +147,12 @@ class ChangeRequestController extends Controller
                     ->where('employee_id', $data['employee_device_id'])
                     ->whereBetween('date', [$data['from_date'], $data['to_date']])
                     ->update(['status' => "P"]);
+
+                // Also create the actual punch entries the employee asked for
+                // so the manual log shows up on the timeline / reports.
+                // approver_user_id is sent explicitly from the frontend so this
+                // works even when the route isn't behind auth:sanctum.
+                $this->createAttendanceLogsFromRequest($id, $data, $data['approver_user_id'] ?? null);
             }
 
             // Update the ChangeRequest
@@ -181,5 +200,68 @@ class ChangeRequestController extends Controller
         } else {
             return $this->response('ChangeRequest cannot delete.', null, false);
         }
+    }
+
+    /**
+     * Create AttendanceLog entries from an approved change request.
+     * Pulls from_time / to_time off the request and emits up to two punches
+     * (IN at from_date+from_time, OUT at to_date+to_time) tagged DeviceID=Manual.
+     */
+    private function createAttendanceLogsFromRequest($id, array $data, $explicitApproverId = null): void
+    {
+        $cr = ChangeRequest::find($id);
+        if (!$cr) return;
+
+        $companyId = $cr->company_id ?? ($data['company_id'] ?? null);
+        $userId    = $cr->employee_device_id ?? ($data['employee_device_id'] ?? null);
+        if (!$companyId || !$userId) return;
+
+        // Prefer explicit id from the frontend (works without auth:sanctum), fall back to auth()->id().
+        $approver = $explicitApproverId ? (int) $explicitApproverId : (auth()->id() ?: null);
+        $today    = date('Y-m-d');
+        $reason   = $cr->remarks ?? ($data['remarks'] ?? null);
+
+        $normalizeTime = function ($t) {
+            if (!$t) return null;
+            $t = trim((string) $t);
+            if ($t === '' || $t === '00:00:00' || $t === '00:00') return null;
+            // accept HH:MM or HH:MM:SS
+            if (preg_match('/^\d{1,2}:\d{2}$/', $t)) return $t . ':00';
+            if (preg_match('/^\d{1,2}:\d{2}:\d{2}$/', $t)) return $t;
+            return null;
+        };
+
+        $fromTime = $normalizeTime($cr->from_time ?? null);
+        $toTime   = $normalizeTime($cr->to_time ?? null);
+
+        $createLog = function ($date, $time, $logType) use ($userId, $companyId, $approver, $today, $reason) {
+            if (!$time) return;
+            $logTime = $date . ' ' . $time;
+            $existing = AttendanceLog::where('UserID', $userId)
+                ->where('LogTime', $logTime)
+                ->where('DeviceID', 'Manual')
+                ->first();
+            $payload = [
+                'UserID'      => $userId,
+                'LogTime'     => $logTime,
+                'DeviceID'    => 'Manual',
+                'company_id'  => $companyId,
+                'log_type'    => $logType,
+                'log_date'    => $today,
+                'approved_by' => $approver,
+                'reason'      => $reason,
+            ];
+            if ($existing) {
+                $existing->update($payload);
+            } else {
+                AttendanceLog::create($payload);
+            }
+        };
+
+        $fromDate = $cr->from_date ? date('Y-m-d', strtotime($cr->from_date)) : ($data['from_date'] ?? null);
+        $toDate   = $cr->to_date   ? date('Y-m-d', strtotime($cr->to_date))   : ($data['to_date']   ?? $fromDate);
+
+        if ($fromDate) $createLog($fromDate, $fromTime, 'In');
+        if ($toDate)   $createLog($toDate,   $toTime,   'Out');
     }
 }

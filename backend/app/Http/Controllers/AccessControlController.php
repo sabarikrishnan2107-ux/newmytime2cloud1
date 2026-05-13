@@ -54,9 +54,15 @@ class AccessControlController extends Controller
 
         $model->with('employee', function ($q) use ($request) {
             $q->where('company_id', $request->company_id);
-            $q->withOut(["schedule", "sub_department", "designation", "user"]);
+            // Include schedule (needed for shift_type_id in the Access Control
+            // log report) but skip the heavier unrelated relations.
+            $q->withOut(["sub_department", "designation", "user"]);
+            $q->with('schedule', function ($s) {
+                $s->select('id', 'employee_id', 'shift_type_id');
+            });
 
             $q->select(
+                "id",
                 "first_name",
                 "last_name",
                 "phone_number",

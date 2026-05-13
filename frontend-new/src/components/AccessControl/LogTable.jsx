@@ -1,11 +1,56 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ArrowUpDown, ChevronLeft, ChevronRight, Download, FileText, LogIn, LogOut, ScanFace, KeyRound, Fingerprint, CreditCard, Smartphone, QrCode } from "lucide-react";
+import { ArrowUpDown, ChevronLeft, ChevronRight, Download, FileText, LogIn, LogOut, ScanFace, KeyRound, Fingerprint, CreditCard, Smartphone, QrCode, Loader2, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { downloadReport } from "@/lib/endpoint/report";
+import { API_BASE_URL, getUser } from "@/config";
+import PDFProgressOverlay from "@/components/Report/PDFProgressOverlay";
+import TimeRangePopover from "@/components/AccessControl/TimeRangePopover";
 
 const PAGE_SIZE = 12;
+
+// Compact circular progress ring used inside the Download PDF button while
+// the report is rendering. Stroke-dashoffset gives the filling-up effect.
+function ProgressRing({ value = 0, size = 16, stroke = 2.5, className = "" }) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const clamped = Math.max(0, Math.min(100, value));
+  const dashOffset = circumference * (1 - clamped / 100);
+  return (
+    <svg
+      className={className}
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      style={{ transform: "rotate(-90deg)" }}
+      aria-hidden="true"
+    >
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeOpacity="0.25"
+        strokeWidth={stroke}
+      />
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={stroke}
+        strokeLinecap="round"
+        strokeDasharray={circumference}
+        strokeDashoffset={dashOffset}
+        style={{ transition: "stroke-dashoffset 200ms ease-out" }}
+      />
+    </svg>
+  );
+}
 
 function modeIcon(mode) {
   const m = String(mode || "").toLowerCase();
@@ -68,14 +113,84 @@ function exportCsv(logs) {
   URL.revokeObjectURL(url);
 }
 
-export function LogTable({ logs = [], isLoading = false, onRowClick }) {
+// Trim "HH:MM:SS" → "HH:MM" so native time inputs (HH:MM) can compare it cleanly.
+function trimToHHMM(t) {
+  if (!t) return "";
+  const m = String(t).match(/^(\d{1,2}):(\d{2})/);
+  return m ? `${m[1].padStart(2, "0")}:${m[2]}` : String(t).slice(0, 5);
+}
+
+export function LogTable({ logs = [], isLoading = false, onRowClick, filters = null, branches = [], devices = [], employees = [] }) {
   const [page, setPage] = useState(0);
   const [sortDesc, setSortDesc] = useState(true);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
+  const [timeFrom, setTimeFrom] = useState("");
+  const [timeTo, setTimeTo] = useState("");
+
+  const handleDownloadPdf = async () => {
+    if (isDownloadingPdf) return;
+    setIsDownloadingPdf(true);
+    setPdfProgress(0);
+    try {
+      const user = await getUser();
+      const PDF_SERVICE = process.env.NEXT_PUBLIC_PDF_SERVICE_URL || "http://localhost:3002";
+      const SUMMARY_BASE = process.env.NEXT_PUBLIC_SUMMARY_REPORT_URL || `${PDF_SERVICE}/templates`;
+
+      const branchId = filters?.branchIds?.[0];
+      const deviceId = filters?.deviceIds?.[0];
+      const employeeId = filters?.employeeIds?.[0];
+
+      const branchName = branchId ? (branches.find((b) => String(b.id) === String(branchId))?.branch_name || branches.find((b) => String(b.id) === String(branchId))?.name) : "";
+      const deviceName = deviceId ? (devices.find((d) => String(d.id) === String(deviceId))?.name) : "";
+      const employeeName = employeeId ? (employees.find((e) => String(e.id) === String(employeeId))?.name) : "";
+
+      const paramsObj = {
+        api_base: API_BASE_URL,
+        company_id: user?.company_id ?? "",
+        company_name: user?.company_name || user?.company?.name || "Company",
+        from_date: filters?.fromDate || "",
+        to_date: filters?.toDate || "",
+      };
+      if (branchId) { paramsObj.branch_id = branchId; if (branchName) paramsObj.branch_name = branchName; }
+      if (deviceId) { paramsObj.device_id = deviceId; if (deviceName) paramsObj.device_name = deviceName; }
+      if (employeeId) { paramsObj.employee_id = employeeId; if (employeeName) paramsObj.employee_name = employeeName; }
+      if (filters?.userType) paramsObj.user_type = filters.userType;
+      if (timeFrom) paramsObj.time_from = timeFrom;
+      if (timeTo)   paramsObj.time_to   = timeTo;
+
+      const params = new URLSearchParams(paramsObj);
+      const url = `${SUMMARY_BASE}/access-control-report/sample.html?${params.toString()}`;
+      const fileName = `Access_Control_Report_${filters?.fromDate || "report"}${filters?.toDate && filters.toDate !== filters?.fromDate ? `_to_${filters.toDate}` : ""}.pdf`;
+
+      await downloadReport(url, fileName, (p) => setPdfProgress(p));
+    } catch (err) {
+      console.error("Download PDF failed", err);
+      alert(`Failed to download PDF: ${err?.message || "Unknown error"}`);
+    } finally {
+      // Brief delay so the user actually sees 100% before the button resets.
+      setTimeout(() => {
+        setIsDownloadingPdf(false);
+        setPdfProgress(0);
+      }, 600);
+    }
+  };
+
+  const filteredByTime = useMemo(() => {
+    if (!timeFrom && !timeTo) return logs;
+    const lo = timeFrom || "00:00";
+    const hi = timeTo   || "23:59";
+    return logs.filter((l) => {
+      const t = trimToHHMM(l?.time);
+      if (!t) return false;
+      return t >= lo && t <= hi;
+    });
+  }, [logs, timeFrom, timeTo]);
 
   const sorted = useMemo(() => {
     const ts = (l) => `${l?.date || ""} ${l?.time || ""}`;
-    return [...logs].sort((a, b) => sortDesc ? ts(b).localeCompare(ts(a)) : ts(a).localeCompare(ts(b)));
-  }, [logs, sortDesc]);
+    return [...filteredByTime].sort((a, b) => sortDesc ? ts(b).localeCompare(ts(a)) : ts(a).localeCompare(ts(b)));
+  }, [filteredByTime, sortDesc]);
 
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
@@ -92,15 +207,41 @@ export function LogTable({ logs = [], isLoading = false, onRowClick }) {
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {sorted.length.toLocaleString()} record{sorted.length !== 1 && "s"} · auto-refreshing
+            {sorted.length.toLocaleString()} record{sorted.length !== 1 && "s"}
+            {(timeFrom || timeTo) && (
+              <span className="ml-1 text-cyan-500">
+                · time-filtered{" "}
+                {timeFrom && timeTo ? `${timeFrom}–${timeTo}` :
+                 timeFrom ? `from ${timeFrom}` : `until ${timeTo}`}
+              </span>
+            )}
+            {!(timeFrom || timeTo) && " · auto-refreshing"}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          {/* Time-of-day filter */}
+          <TimeRangePopover
+            timeFrom={timeFrom}
+            timeTo={timeTo}
+            onChange={(f, t) => { setTimeFrom(f); setTimeTo(t); }}
+            onClear={() => { setTimeFrom(""); setTimeTo(""); }}
+          />
+
           <Button variant="outline" size="sm" onClick={() => exportCsv(sorted)}>
             <Download className="mr-1.5 h-4 w-4" /> Export CSV
           </Button>
-          <Button size="sm" className="bg-gradient-primary text-primary-foreground hover:opacity-95">
-            <FileText className="mr-1.5 h-4 w-4" /> Download PDF
+          <Button
+            size="sm"
+            onClick={handleDownloadPdf}
+            disabled={isDownloadingPdf}
+            className="bg-gradient-primary text-primary-foreground hover:opacity-95 disabled:opacity-60"
+          >
+            {isDownloadingPdf ? (
+              <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+            ) : (
+              <FileText className="mr-1.5 h-4 w-4" />
+            )}
+            {isDownloadingPdf ? "Generating…" : "Download PDF"}
           </Button>
         </div>
       </div>
@@ -196,6 +337,8 @@ export function LogTable({ logs = [], isLoading = false, onRowClick }) {
           </Button>
         </div>
       </div>
+
+      <PDFProgressOverlay isOpen={isDownloadingPdf} progress={Math.round(pdfProgress)} />
     </div>
   );
 }

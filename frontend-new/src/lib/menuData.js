@@ -32,6 +32,13 @@ import {
   BarChart3,
   Video,
   BookUser,
+  UserX,
+  AlarmClock,
+  PalmtreeIcon,
+  Smartphone,
+  KeyRound,
+  CalendarRange,
+  Server,
 } from "lucide-react";
 
 // 1️⃣ Reusable menu groups
@@ -57,11 +64,56 @@ const leaveMenu = [
 ];
 
 const reportMenu = [
-  { href: "/report", icon: FileText, label: "Reports" },
-  { href: "/logs", icon: History, label: "Device Logs" },
-  { href: "/manual-logs", icon: Clipboard, label: "Manual Logs" },
-  { href: "/live-tracker", icon: LocateFixed, label: "Live Tracker" },
-  { href: "/tracker-history", icon: LocateFixed, label: "Tracker History" },
+  {
+    label: "Attendance",
+    icon: FileText,
+    children: [
+      { href: "/report",                   icon: FileText,   label: "Attendance Report" },
+      { href: "/report?type=absent",       icon: UserX,      label: "Absent Report" },
+      { href: "/report?type=late-early",   icon: AlarmClock, label: "Late & Early" },
+      { href: "/report?type=leave",        icon: Calendar,   label: "Leave Report" },
+      { href: "/report?type=mobile-log",   icon: Smartphone, label: "Mobile Log Report" },
+    ],
+  },
+  {
+    label: "Access Control",
+    icon: Lock,
+    children: [
+      { href: "/access_control", icon: KeyRound, label: "Access Report" },
+    ],
+  },
+  {
+    label: "Payroll Report",
+    icon: DollarSign,
+    children: [
+      { href: "/payslips/reports", icon: DollarSign, label: "Reports" },
+    ],
+  },
+  {
+    label: "Visitor Report",
+    icon: BookUser,
+    children: [
+      { href: "/visitor/reports", icon: BookUser, label: "Reports" },
+    ],
+  },
+  {
+    label: "Summary Report",
+    icon: BarChart3,
+    children: [
+      { href: "/report?type=summary-daily",   icon: Calendar,      label: "Daily Summary" },
+      { href: "/report?type=summary-monthly", icon: CalendarRange, label: "Monthly Summary" },
+    ],
+  },
+  {
+    label: "Manual Report",
+    icon: Clipboard,
+    children: [
+      { href: "/manual-logs",      icon: Clipboard,   label: "Manual Logs" },
+      { href: "/logs",             icon: Server,      label: "Device Logs" },
+      { href: "/live-tracker",     icon: LocateFixed, label: "Live Tracker" },
+      { href: "/tracker-history",  icon: History,     label: "Tracker History" },
+    ],
+  },
 ];
 
 const companyMenu = [
@@ -141,6 +193,12 @@ export const leftNavLinks = {
   "/manual-logs": reportMenu,
   "/logs": reportMenu,
   "/tracker-history": reportMenu,
+  "/live-tracker": reportMenu,
+  "/access_control": reportMenu,
+  "/access_control_logs": reportMenu,
+  "/payslips": reportMenu,
+  "/visitor/logs": reportMenu,
+  "/visitor/reports": reportMenu,
 
   "/shift": attendanceMenu,
   "/schedule": attendanceMenu,

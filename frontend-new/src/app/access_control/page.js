@@ -27,7 +27,8 @@ function todayStr() {
   return new Date().toISOString().slice(0, 10);
 }
 
-// Resolve IN/OUT for a log; returns true=OUT, false=IN, null=unknown
+// Resolve IN/OUT for a single log from the device's reported function /
+// log_type / device id. Returns null when no signal is available.
 function explicitIsOut(l) {
   const f = (l?.device?.function || "").toLowerCase();
   const t = (l?.log_type || l?.LogType || "").toLowerCase();
@@ -39,9 +40,37 @@ function explicitIsOut(l) {
   return null;
 }
 
-// Auto-classify logs: explicit signal wins; else alternate per (employee, day) by time
+// Multi (2), Auto (3) and Split (5) shifts allow multiple in/out
+// sessions per day. For those we ignore the device's reported direction
+// and alternate IN/OUT/IN/OUT by punch time — exactly how attendance
+// pairs raw punches into sessions.
+//
+// Single (6), FILO (1) and Night (4) are single-session: 1 IN + 1 OUT
+// per day. Extra punches on those shifts are duplicates from the
+// reader, so we trust the device's direction as-is (the duplicates
+// correctly stay as OUT or IN as the device reported).
+function getShiftTypeId(l) {
+  return (
+    l?.employee?.schedule?.shift_type_id ??
+    l?.employee?.shift_type_id ??
+    l?.shift_type_id ??
+    null
+  );
+}
+function isMultiSessionShift(l) {
+  const id = getShiftTypeId(l);
+  const n = typeof id === "string" ? parseInt(id, 10) : id;
+  return n === 2 || n === 3 || n === 5;
+}
+
 function classifyLogs(logs) {
-  const enriched = logs.map((l) => ({ ...l, _isOut: explicitIsOut(l) }));
+  // Phase 1: Multi/Auto/Split → null (will alternate). Others → trust device.
+  const enriched = logs.map((l) => ({
+    ...l,
+    _isOut: isMultiSessionShift(l) ? null : explicitIsOut(l),
+  }));
+
+  // Phase 2: alternate IN/OUT for unresolved logs per (employee, date).
   const groups = new Map();
   for (const l of enriched) {
     if (l._isOut !== null) continue;
@@ -59,6 +88,11 @@ function classifyLogs(logs) {
     });
     list.forEach((l, idx) => { l._isOut = idx % 2 === 1; });
   }
+
+  // Phase 3: anything still null (no shift type AND no device signal)
+  // defaults to IN.
+  enriched.forEach((l) => { if (l._isOut === null) l._isOut = false; });
+
   return enriched;
 }
 
@@ -431,7 +465,15 @@ export default function AccessControlPage() {
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-4 xl:grid-cols-[1fr_400px]">
-        <LogTable logs={tableLogs} isLoading={isLoading} onRowClick={handleRowClick} />
+        <LogTable
+          logs={tableLogs}
+          isLoading={isLoading}
+          onRowClick={handleRowClick}
+          filters={filters}
+          branches={branches}
+          devices={devices}
+          employees={employees}
+        />
         <DeviceHealthPanel
           devices={allDevices}
           openedDoors={openedDoors}
