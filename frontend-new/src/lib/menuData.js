@@ -57,7 +57,6 @@ const accessControlMenu = [
 
 const leaveMenu = [
   { href: "/leave-dashboard", icon: LayoutDashboard, label: "Dashboard" },
-  { href: "/leave-dashboard/calendar", icon: CalendarDays, label: "Team Calendar" },
   { href: "/leaves", icon: FileCheck, label: "Requests" },
   { href: "/leave-dashboard/balances", icon: Wallet, label: "Balances" },
   { href: "/leave-dashboard/reports", icon: BarChart3, label: "Reports" },

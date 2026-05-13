@@ -7,12 +7,24 @@ import {
 } from "recharts";
 import { differenceInDays, parseISO, format } from "date-fns";
 import { getLeavesRequest } from "@/lib/endpoint/leaves";
-import { getBranches, getDepartments } from "@/lib/api";
+import { getBranches, getDepartmentsByBranchIds, getScheduledEmployeeList } from "@/lib/api";
 import { api, API_BASE } from "@/lib/api-client";
 import { getUser } from "@/config";
 import MultiDropDown from "@/components/ui/MultiDropDown";
-import DropDown from "@/components/ui/DropDown";
 import ProfilePicture from "@/components/ProfilePicture";
+
+const employeeTypeOptions = [
+  { id: "Full Time",  name: "Full Time" },
+  { id: "Part Time",  name: "Part Time" },
+  { id: "Contractor", name: "Contractor" },
+  { id: "Trainee",    name: "Trainee" },
+];
+
+const statusOptions = [
+  { id: 0, name: "Pending" },
+  { id: 1, name: "Approved" },
+  { id: 2, name: "Rejected" },
+];
 
 const statusConfig = {
   0: { label: "Pending", text: "text-yellow-400" },
@@ -45,18 +57,42 @@ export default function LeaveReportsPage() {
 
   const [selectedBranchIds, setSelectedBranchIds] = useState([]);
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([]);
-  const [selectedLeaveType, setSelectedLeaveType] = useState(null);
-  const [selectedStatus, setSelectedStatus] = useState(null);
+  const [selectedEmployeeTypes, setSelectedEmployeeTypes] = useState([]);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+  const [selectedLeaveTypeIds, setSelectedLeaveTypeIds] = useState([]);
+  const [selectedStatusIds, setSelectedStatusIds] = useState([]);
+  const [employees, setEmployees] = useState([]);
+
+  const normalizeType = (s) => String(s || "").toLowerCase().replace(/[\s_-]+/g, "");
+  const matchesSelectedType = (e) => {
+    if (!selectedEmployeeTypes?.length) return true;
+    const target = normalizeType(e.employee_type);
+    return selectedEmployeeTypes.some((t) => normalizeType(t) === target);
+  };
 
   useEffect(() => {
     getBranches().then(setBranches).catch(console.error);
-    getDepartments().then(setDepartments).catch(console.error);
     fetchLeaveTypes();
   }, []);
 
   useEffect(() => {
+    (async () => {
+      try { setDepartments(await getDepartmentsByBranchIds(selectedBranchIds)); } catch (e) { /* ignore */ }
+    })();
+  }, [selectedBranchIds]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getScheduledEmployeeList(selectedDepartmentIds);
+        setEmployees((result || []).map(e => ({ ...e, name: e.full_name + (e.id ? ` (${e.id})` : "") })));
+      } catch (e) { /* ignore */ }
+    })();
+  }, [selectedDepartmentIds]);
+
+  useEffect(() => {
     fetchLeaves();
-  }, [selectedBranchIds, selectedDepartmentIds, selectedLeaveType, selectedStatus]);
+  }, [selectedBranchIds, selectedDepartmentIds, selectedEmployeeTypes, selectedEmployeeIds, selectedLeaveTypeIds, selectedStatusIds]);
 
   const fetchLeaveTypes = async () => {
     try {
@@ -80,8 +116,11 @@ export default function LeaveReportsPage() {
         end_date: `${year}-12-31`,
         branch_ids: selectedBranchIds.length > 0 ? selectedBranchIds : undefined,
         department_ids: selectedDepartmentIds.length > 0 ? selectedDepartmentIds : undefined,
-        leave_type_id: selectedLeaveType || undefined,
-        status_ids: selectedStatus !== null ? [String(selectedStatus)] : undefined,
+        employee_ids: selectedEmployeeIds.length > 0 ? selectedEmployeeIds : undefined,
+        employee_types: selectedEmployeeTypes.length > 0 ? selectedEmployeeTypes : undefined,
+        leave_type_id: selectedLeaveTypeIds.length === 1 ? selectedLeaveTypeIds[0] : undefined,
+        leave_type_ids: selectedLeaveTypeIds.length > 0 ? selectedLeaveTypeIds : undefined,
+        status_ids: selectedStatusIds.length > 0 ? selectedStatusIds.map(String) : undefined,
       };
       const result = await getLeavesRequest(params);
       setLeaveData(Array.isArray(result?.data) ? result.data : []);
@@ -228,76 +267,90 @@ export default function LeaveReportsPage() {
     };
   };
 
-  const leaveTypeItems = useMemo(() => {
-    return [
-      { id: -1, name: "All Leave Types" },
-      ...leaveTypes.map((lt) => ({ id: lt.id, name: lt.name })),
-    ];
-  }, [leaveTypes]);
+  const leaveTypeItems = useMemo(
+    () => leaveTypes.map((lt) => ({ id: lt.id, name: lt.name })),
+    [leaveTypes]
+  );
 
   return (
     <div className="p-4 md:p-6 space-y-6 overflow-y-auto max-h-[calc(100vh-80px)]">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-extrabold text-gray-600 dark:text-white">Leave Reports</h1>
-          <p className="text-sm text-slate-500 mt-0.5">Analyze leave usage across your organization</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handleExportPDF}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium"
-          >
-            <FileDown className="w-4 h-4" />
-            Export PDF
-          </button>
-          <button
-            onClick={handleExportCSV}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors text-sm font-medium"
-          >
-            <Download className="w-4 h-4" />
-            Export CSV
-          </button>
-        </div>
+      <div>
+        <h1 className="text-2xl font-extrabold text-gray-600 dark:text-white">Leave Reports</h1>
+        <p className="text-sm text-slate-500 mt-0.5">Analyze leave usage across your organization</p>
       </div>
 
-      {/* Filters */}
-      <div className="grid grid-cols-4 gap-3">
-        <MultiDropDown
-          placeholder="Select Branch"
-          items={branches}
-          value={selectedBranchIds}
-          onChange={setSelectedBranchIds}
-          badgesCount={1}
-          portalled={false}
-        />
-        <MultiDropDown
-          placeholder="Select Department"
-          items={departments}
-          value={selectedDepartmentIds}
-          onChange={setSelectedDepartmentIds}
-          badgesCount={1}
-          portalled={false}
-        />
-        <DropDown
-          placeholder="All Leave Types"
-          items={leaveTypeItems}
-          value={selectedLeaveType}
-          onChange={(val) => setSelectedLeaveType(val === -1 ? null : val)}
-          portalled={false}
-        />
-        <DropDown
-          placeholder="All Status"
-          items={[
-            { id: -1, name: "All Status" },
-            { id: 0, name: "Pending" },
-            { id: 1, name: "Approved" },
-            { id: 2, name: "Rejected" },
-          ]}
-          value={selectedStatus}
-          onChange={(val) => setSelectedStatus(val === -1 ? null : val)}
-          portalled={false}
-        />
+      {/* Filter row */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Branch"
+            items={branches}
+            value={selectedBranchIds}
+            onChange={setSelectedBranchIds}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Department"
+            items={departments}
+            value={selectedDepartmentIds}
+            onChange={setSelectedDepartmentIds}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Employee Type"
+            items={employeeTypeOptions}
+            value={selectedEmployeeTypes}
+            onChange={setSelectedEmployeeTypes}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[220px]">
+          <MultiDropDown
+            placeholder="Employees"
+            items={selectedEmployeeTypes?.length ? employees.filter(matchesSelectedType) : employees}
+            value={selectedEmployeeIds}
+            onChange={setSelectedEmployeeIds}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Leave Type"
+            items={leaveTypeItems}
+            value={selectedLeaveTypeIds}
+            onChange={setSelectedLeaveTypeIds}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Status"
+            items={statusOptions}
+            value={selectedStatusIds}
+            onChange={setSelectedStatusIds}
+            badgesCount={1}
+          />
+        </div>
+
+        <button
+          onClick={handleExportPDF}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium whitespace-nowrap"
+        >
+          <FileDown className="w-4 h-4" />
+          Export PDF
+        </button>
+        <button
+          onClick={handleExportCSV}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors text-sm font-medium whitespace-nowrap"
+        >
+          <Download className="w-4 h-4" />
+          Export CSV
+        </button>
       </div>
 
       {/* Stats */}

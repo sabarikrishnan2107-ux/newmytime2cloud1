@@ -771,6 +771,30 @@ class PayrollManagementController extends Controller
             $query->whereIn('id', explode(',', $request->record_ids));
         }
 
+        if ($request->filled('employee_ids')) {
+            $ids = is_array($request->employee_ids) ? $request->employee_ids : explode(',', $request->employee_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) $query->whereIn('employee_id', $ids);
+        }
+
+        if ($request->filled('branch_ids')) {
+            $ids = is_array($request->branch_ids) ? $request->branch_ids : explode(',', $request->branch_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) $query->whereHas('employee', fn($q) => $q->whereIn('branch_id', $ids));
+        }
+
+        if ($request->filled('department_ids')) {
+            $ids = is_array($request->department_ids) ? $request->department_ids : explode(',', $request->department_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) $query->whereHas('employee', fn($q) => $q->whereIn('department_id', $ids));
+        }
+
+        if ($request->filled('employee_types')) {
+            $types = is_array($request->employee_types) ? $request->employee_types : explode(',', $request->employee_types);
+            $types = array_filter($types, fn($v) => $v !== '' && $v !== null);
+            if (!empty($types)) $query->whereHas('employee', fn($q) => $q->whereIn('employee_type', $types));
+        }
+
         $records = $query->orderBy('id')->get();
 
         if ($records->isEmpty()) {
@@ -879,11 +903,36 @@ class PayrollManagementController extends Controller
             return response()->json(['status' => false, 'message' => 'No payroll batch found for this month'], 404);
         }
 
-        $records = PayrollRecord::where('batch_id', $batch->id)
-            ->with('employee:id,first_name,last_name,employee_id,department_id,branch_id')
+        $query = PayrollRecord::where('batch_id', $batch->id)
+            ->with('employee:id,first_name,last_name,employee_id,department_id,branch_id,employee_type')
             ->with('employee.department:id,name')
-            ->with('employee.branch:id,branch_name')
-            ->get();
+            ->with('employee.branch:id,branch_name');
+
+        if ($request->filled('employee_ids')) {
+            $ids = is_array($request->employee_ids) ? $request->employee_ids : explode(',', $request->employee_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) $query->whereIn('employee_id', $ids);
+        }
+
+        if ($request->filled('branch_ids')) {
+            $ids = is_array($request->branch_ids) ? $request->branch_ids : explode(',', $request->branch_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) $query->whereHas('employee', fn($q) => $q->whereIn('branch_id', $ids));
+        }
+
+        if ($request->filled('department_ids')) {
+            $ids = is_array($request->department_ids) ? $request->department_ids : explode(',', $request->department_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) $query->whereHas('employee', fn($q) => $q->whereIn('department_id', $ids));
+        }
+
+        if ($request->filled('employee_types')) {
+            $types = is_array($request->employee_types) ? $request->employee_types : explode(',', $request->employee_types);
+            $types = array_filter($types, fn($v) => $v !== '' && $v !== null);
+            if (!empty($types)) $query->whereHas('employee', fn($q) => $q->whereIn('employee_type', $types));
+        }
+
+        $records = $query->get();
 
         $rows = [];
         $headers = [];

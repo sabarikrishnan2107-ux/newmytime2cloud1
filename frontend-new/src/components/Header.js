@@ -7,7 +7,7 @@ import axios from "axios";
 import { API_BASE_URL, getUser } from "@/config/index";
 import { useDarkMode } from "@/context/DarkModeContext";
 import LiveAttendanceNotifier from "@/components/LiveAttendanceNotifier";
-import { LocateFixed, Bell, PlayCircle, Sun, Moon, X, Wand2 } from "lucide-react";
+import { Bell, PlayCircle, Sun, Moon, X, Wand2 } from "lucide-react";
 import useSse from "@/hooks/useSse";
 
 export default function Header() {
@@ -195,6 +195,8 @@ export default function Header() {
     { name: 'DASHBOARD', href: '/' },
     { name: 'EMPLOYEES', href: '/employees' },
     { name: 'ATTENDANCE', href: '/shift' },
+    { name: 'LEAVE', href: '/leave-dashboard' },
+    { name: 'LIVE TRACKER', href: '/live-tracker' },
     { name: 'ACCESS CONTROL', href: '/access_control' },
     { name: 'PAYROLL', href: '/payslips' },
     { name: 'VISITORS', href: '/visitor' },
@@ -324,14 +326,6 @@ export default function Header() {
                 </div>
               )}
             </div>
-
-            <button onClick={() => router.push("/live-tracker")}
-              className="relative p-2 text-slate-400 hover:text-primary transition-colors"
-              title="Watch Tutorial"
-            >
-              <LocateFixed size={22} strokeWidth={1.8} />
-              {/* <span className="material-symbols-outlined">smart_display</span> */}
-            </button>
 
             <button
               className="relative p-2 text-slate-400 hover:text-red-600 transition-colors"

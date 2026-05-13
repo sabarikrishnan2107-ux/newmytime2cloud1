@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
+import { getBranches, getDepartmentsByBranchIds, getScheduledEmployeeList } from "@/lib/api";
 
 const PDF_SERVICE_BASE = process.env.NEXT_PUBLIC_PDF_SERVICE_URL || "http://localhost:3002";
 import {
@@ -15,6 +16,15 @@ import {
   Calendar,
 } from "lucide-react";
 import MonthPicker from "@/components/ui/MonthPicker";
+import MultiDropDown from "@/components/ui/MultiDropDown";
+import DropDown from "@/components/ui/DropDown";
+
+const employeeTypeOptions = [
+  { id: "Full Time",  name: "Full Time" },
+  { id: "Part Time",  name: "Part Time" },
+  { id: "Contractor", name: "Contractor" },
+  { id: "Trainee",    name: "Trainee" },
+];
 
 // Five most important reports for payroll operations
 const REPORTS = [
@@ -59,12 +69,114 @@ export default function PayrollReports() {
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [downloading, setDownloading] = useState(null);
 
+  // Rich filters (mirrors attendance / visitor reports)
+  const [selectedBranchIds, setSelectedBranchIds] = useState([]);
+  const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([]);
+  const [selectedEmployeeTypes, setSelectedEmployeeTypes] = useState([]);
+  const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
+
+  const [branches, setBranches] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [employees, setEmployees] = useState([]);
+
+  const normalizeType = (s) => String(s || "").toLowerCase().replace(/[\s_-]+/g, "");
+  const matchesSelectedType = (e) => {
+    if (!selectedEmployeeTypes?.length) return true;
+    const target = normalizeType(e.employee_type);
+    return selectedEmployeeTypes.some((t) => normalizeType(t) === target);
+  };
+
+  useEffect(() => {
+    (async () => { try { setBranches(await getBranches()); } catch (e) { /* ignore */ } })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      try { setDepartments(await getDepartmentsByBranchIds(selectedBranchIds)); } catch (e) { /* ignore */ }
+    })();
+  }, [selectedBranchIds]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const result = await getScheduledEmployeeList(selectedDepartmentIds);
+        setEmployees((result || []).map(e => ({ ...e, name: e.full_name + (e.id ? ` (${e.id})` : "") })));
+      } catch (e) { /* ignore */ }
+    })();
+  }, [selectedDepartmentIds]);
+
+  const buildFilterParams = () => {
+    const p = {};
+    if (selectedBranchIds.length)     p.branch_ids     = selectedBranchIds.join(",");
+    if (selectedDepartmentIds.length) p.department_ids = selectedDepartmentIds.join(",");
+    if (selectedEmployeeTypes.length) p.employee_types = selectedEmployeeTypes.join(",");
+    if (selectedEmployeeIds.length)   p.employee_ids   = selectedEmployeeIds.join(",");
+    return p;
+  };
+
   const handlePdfDownload = async (reportId, reportName) => {
     setDownloading(`${reportId}-pdf`);
     try {
       const params = await buildQueryParams({});
+
+      // Payroll Register PDF renders as per-employee payslips (server-side Blade template)
+      if (reportId === "register") {
+        const bulkParams = { ...params, ...buildFilterParams(), month };
+
+        // If specific employees are selected, resolve them to record_ids client-side
+        // (works on prod today — the bulkPayslips endpoint already honors record_ids).
+        if (selectedEmployeeIds.length > 0) {
+          const batchesRes = await api.get("/payroll-management/batches", {
+            params: { ...params, per_page: 50 },
+          });
+          const batches = batchesRes.data?.data || [];
+          const batch = batches.find((b) => b.month === month);
+          if (!batch) {
+            alert("No payroll batch found for this month");
+            return;
+          }
+          const recordsRes = await api.get(`/payroll-management/records/${batch.id}`, {
+            params: { ...params, per_page: 1000 },
+          });
+          const records = recordsRes.data?.data || [];
+          const wanted = new Set(selectedEmployeeIds.map(String));
+          const matched = records
+            .filter((r) => {
+              const candidates = [
+                r.employee_id,
+                r.employee?.id,
+                r.employee?.employee_id,
+                r.employee?.system_user_id,
+              ]
+                .filter((v) => v !== undefined && v !== null)
+                .map(String);
+              return candidates.some((c) => wanted.has(c));
+            })
+            .map((r) => r.id);
+          if (matched.length === 0) {
+            alert("No payslip records found for the selected employees in this month");
+            return;
+          }
+          bulkParams.record_ids = matched.join(",");
+        }
+
+        const { data: html } = await api.get("/payroll-management/payslips-bulk", {
+          params: bulkParams,
+          responseType: "text",
+        });
+        const monthLabelLocal = new Date(month + "-01").toLocaleDateString("en-US", { month: "long", year: "numeric" });
+        const printTrigger = `<script>window.onload=()=>{document.title=${JSON.stringify(`Payslips - ${monthLabelLocal}`)};setTimeout(()=>window.print(),300)}<\/script>`;
+        const withPrint = html.includes("</body>")
+          ? html.replace("</body>", `${printTrigger}</body>`)
+          : html + printTrigger;
+        const win = window.open("", "_blank");
+        win.document.write(withPrint);
+        win.document.close();
+        return;
+      }
+
       const { data } = await api.get("/payroll-management/export-report", {
-        params: { ...params, report_type: reportId, month, format: "csv" },
+        params: { ...params, ...buildFilterParams(), report_type: reportId, month, format: "csv" },
         responseType: "text",
       });
       const lines = data.split("\n").filter((l) => l.trim());
@@ -169,7 +281,7 @@ export default function PayrollReports() {
     try {
       const params = await buildQueryParams({});
       const { data } = await api.get("/payroll-management/export-report", {
-        params: { ...params, report_type: reportId, month, format },
+        params: { ...params, ...buildFilterParams(), report_type: reportId, month, format },
         responseType: "blob",
       });
       const url = window.URL.createObjectURL(new Blob([data]));
@@ -204,29 +316,61 @@ export default function PayrollReports() {
         </p>
       </div>
 
-      {/* Toolbar */}
-      <div className="rounded-2xl border border-slate-200 dark:border-white/5 bg-slate-50/60 dark:bg-slate-900/40 backdrop-blur-sm px-3 py-2.5 flex flex-wrap items-center justify-between gap-3">
-        {/* Left: unified report + month control */}
-        <div className="flex items-stretch h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden flex-1 min-w-[420px]">
-          <div className="flex items-center gap-2 pl-4 pr-2 flex-1 min-w-0">
-            <FileText className="h-4 w-4 text-slate-400 shrink-0" />
-            <select
-              value={selectedReport}
-              onChange={(e) => setSelectedReport(e.target.value)}
-              className="h-full w-full bg-transparent text-sm font-medium text-slate-700 dark:text-slate-100 focus:outline-none cursor-pointer pr-2"
-            >
-              {REPORTS.map((r) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="w-px self-stretch bg-slate-200 dark:bg-white/10" />
-          <div className="flex items-center min-w-[200px]">
-            <MonthPicker value={month} onChange={setMonth} placeholder="Select month" />
-          </div>
+      {/* Filter + toolbar (single row) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Branch"
+            items={branches}
+            value={selectedBranchIds}
+            onChange={setSelectedBranchIds}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Department"
+            items={departments}
+            value={selectedDepartmentIds}
+            onChange={setSelectedDepartmentIds}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[180px]">
+          <MultiDropDown
+            placeholder="Employee Type"
+            items={employeeTypeOptions}
+            value={selectedEmployeeTypes}
+            onChange={setSelectedEmployeeTypes}
+            badgesCount={1}
+          />
+        </div>
+        <div className="flex flex-col min-w-[220px]">
+          <MultiDropDown
+            placeholder="Employees"
+            items={selectedEmployeeTypes?.length ? employees.filter(matchesSelectedType) : employees}
+            value={selectedEmployeeIds}
+            onChange={setSelectedEmployeeIds}
+            badgesCount={1}
+          />
         </div>
 
-        {/* Right: download actions */}
+        {/* Report Type dropdown */}
+        <div className="flex flex-col min-w-[220px]">
+          <DropDown
+            placeholder="Report Type"
+            items={REPORTS.map((r) => ({ id: r.id, name: r.name }))}
+            value={selectedReport}
+            onChange={(val) => setSelectedReport(val)}
+          />
+        </div>
+
+        {/* Month picker */}
+        <div className="flex items-center min-w-[200px] h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden">
+          <MonthPicker value={month} onChange={setMonth} placeholder="Select month" />
+        </div>
+
+        {/* Download actions */}
         <div className="flex items-center gap-2">
           <button
             onClick={() => handleDownload(selectedReport, "csv")}

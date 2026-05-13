@@ -1,250 +1,369 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Plus, RefreshCw } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
-import { getBranches, getDepartments, getDepartmentsByBranchIds, } from '@/lib/api';
+// Tailwind safelist (do not remove): bg-amber-500/10 text-amber-400 border-amber-500/20 bg-amber-400 bg-emerald-500/10 text-emerald-400 border-emerald-500/20 bg-emerald-400 bg-rose-500/10 text-rose-400 border-rose-500/20 bg-rose-400 bg-slate-500/10 text-slate-400 border-slate-500/20 bg-slate-400 bg-sky-500/10 text-sky-400 border-sky-500/20 bg-sky-400
 
-import Columns from "./columns";
-import DataTable from '@/components/ui/DataTable';
-import Pagination from '@/lib/Pagination';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Search, Download, MoreHorizontal, Plus, Eye, Check, X } from 'lucide-react';
+import * as Popover from '@radix-ui/react-popover';
+import { getBranches, getDepartmentsByBranchIds } from '@/lib/api';
+import { getLeavesRequest, approveLeave, rejectLeave } from '@/lib/endpoint/leaves';
 import { parseApiError } from '@/lib/utils';
-import MultiDropDown from '@/components/ui/MultiDropDown';
-import Input from '@/components/Theme/Input';
-import IconButton from '@/components/Theme/IconButton';
-import { getLeavesRequest } from '@/lib/endpoint/leaves';
-import DropDown from '@/components/ui/DropDown';
 import { useDebounce } from '@/hooks/useDebounce';
+import MultiDropDown from '@/components/ui/MultiDropDown';
+import Pagination from '@/lib/Pagination';
 import LeaveViewDialog from '@/components/Employees/LeaveRequests';
-
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LeaveRequestCreate from '@/components/LeaveRequest/Create';
 import { Button } from '@/components/ui/button';
 
-export default function EmployeeDataTable() {
+const TYPE_COLORS = {
+  annual: "#3b82f6", sick: "#06b6d4", casual: "#10b981",
+  emergency: "#f59e0b", maternity: "#ec4899", unpaid: "#64748b",
+  wfh: "#0ea5e9", comp: "#a855f7",
+};
+const FALLBACK_COLORS = ["#8b5cf6", "#14b8a6", "#f43f5e", "#a855f7", "#84cc16"];
 
-    const [open, setOpen] = useState(false);
+const colorForType = (name, idx = 0) => {
+  const k = (name || "").toLowerCase().split(" ")[0];
+  return TYPE_COLORS[k] || FALLBACK_COLORS[idx % FALLBACK_COLORS.length];
+};
 
-    const [employees, setEmployees] = useState([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+const STATUS_LABEL = { 0: "Pending", 1: "Approved", 2: "Rejected" };
+const fmtDate = (s) => (s ? String(s).split("T")[0] : "—");
 
-    // Pagination State
-    const [currentPage, setCurrentPage] = useState(1);
-    const [perPage, setPerPage] = useState(10);
-    const [total, setTotalEmployees] = useState(0);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [inputValue, setInputValue] = useState('');
-
-    const [selectedBranch, setSelectedBranch] = useState([]);
-    const [selectedDepartments, setSelectedDepartments] = useState([]);
-    const [selectedStatusses, setSelectedStatusses] = useState([]);
-    const [branches, setBranches] = useState([]);
-
-    const fetchBranches = async () => {
-        try {
-            setBranches([{ name: "Select All", id: "" }, ...await getBranches()]);
-        } catch (error) {
-            setError(parseApiError(error));
-        }
-    };
-
-    useEffect(() => {
-        fetchBranches();
-    }, []);
-
-
-    const fetchEmployees = useCallback(async (page, perPage) => {
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const params = {
-                page: page,
-                per_page: perPage,
-                sortDesc: 'false',
-                branch_ids: selectedBranch,
-                department_ids: selectedDepartments,
-                status_ids: selectedStatusses,
-                search: searchTerm || null, // Only include search if it's not empty
-            };
-            const result = await getLeavesRequest(params);
-
-            // Check if result has expected structure before setting state
-            if (result && Array.isArray(result.data)) {
-                setEmployees(result.data);
-                setCurrentPage(result.current_page || 1);
-                setTotalEmployees(result.total || 0);
-                setIsLoading(false);
-                return; // Success, exit
-            } else {
-                // If the API returned a 2xx status but the data structure is wrong
-                throw new Error('Invalid data structure received from API.');
-            }
-
-        } catch (error) {
-            setError(parseApiError(error));
-            setIsLoading(false);
-        }
-    }, [perPage, selectedBranch, selectedDepartments, selectedStatusses, searchTerm]);
-
-    const debouncedSetSearch = useDebounce((value) => {
-        setSearchTerm(value);
-        setCurrentPage(1); // Reset to page 1 on new search
-    }, 500);
-
-    // 4. Update the handler
-    const handleSearch = (e) => {
-        const value = e.target.value;
-        setInputValue(value);        // Update UI immediately (no lag)
-        debouncedSetSearch(value);   // Request the update to searchTerm (delayed)
-    };
-
-    const [departments, setDepartments] = useState([]);
-
-    const fetchDepartments = async () => {
-        try {
-            setDepartments(await getDepartmentsByBranchIds(selectedBranch));
-        } catch (error) {
-            setError(parseApiError(error));
-        }
-    };
-
-
-    useEffect(() => {
-        fetchDepartments();
-    }, [selectedBranch]);
-
-
-    useEffect(() => {
-        fetchEmployees(currentPage, perPage);
-    }, [currentPage, perPage, fetchEmployees]); // Re-fetch when page or perPage changes
-
-    const handleRefresh = () => {
-        setSelectedBranch([]);
-        setSelectedDepartments([]);
-        fetchEmployees(currentPage, perPage);
-    }
-
-    const [editedItem, setEditedItem] = useState(null);
-    const [isOpen, setIsOpen] = useState(false);
-
-    const editItem = async (item) => {
-        console.log(item);
-        setEditedItem(item);
-        setIsOpen(true)
-    }
-
+function Avatar({ name, src, size = 36 }) {
+  const [errored, setErrored] = useState(false);
+  const showImage = src && !errored;
+  const initials = (name || "?").split(" ").map((p) => p[0]).slice(0, 2).join("").toUpperCase();
+  const palette = ["bg-emerald-500", "bg-sky-500", "bg-amber-500", "bg-pink-500", "bg-violet-500", "bg-rose-500", "bg-cyan-500", "bg-indigo-500"];
+  const hash = (name || "").split("").reduce((s, c) => s + c.charCodeAt(0), 0);
+  const bg = palette[hash % palette.length];
+  if (showImage) {
     return (
-        <div className='p-5'>
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6  sm:space-y-0">
-                <h1 className="text-2xl font-extrabold text-gray-600 dark:text-gray-300 flex items-center">
-                    {/* <User className="w-7 h-7 mr-3 text-indigo-600" /> */}
-                    Leave Request
-                </h1>
-                <div className="flex flex-wrap items-center space-x-3 space-y-2 sm:space-y-0">
-                    <div className="relative">
-                        <MultiDropDown
-                            items={branches}
-                            value={selectedBranch}
-                            onChange={(item) => {
-                                setSelectedBranch(item);
-                                setCurrentPage(1); // Any extra logic goes here
-                            }}
-                            placeholder="Select a Branch"
-                            width="w-[320px]"
-                        />
-                    </div>
-                    <div className="relative">
-                        <MultiDropDown
-                            items={departments}
-                            value={selectedDepartments}
-                            onChange={(item) => {
-                                setSelectedDepartments(item);
-                                setCurrentPage(1); // Any extra logic goes here
-                            }}
-                            placeholder="Select a Department"
-                            width="w-[320px]"
-                        />
-                    </div>
-                    <div className="relative">
-                        <MultiDropDown
-                            items={[
-                                { id: "0", name: "Pending" },
-                                { id: "1", name: "Approved" },
-                                { id: "2", name: "Rejected" },
-                            ]}
-                            value={selectedStatusses}
-                            onChange={(item) => {
-                                setSelectedStatusses(item);
-                                setCurrentPage(1); // Any extra logic goes here
-                            }}
-                            placeholder="Select a Status"
-                            width="w-[320px]"
-                        />
-                    </div>
-
-                    <div className="relative">
-                        <Input
-                            placeholder="Search by name or ID"
-                            icon="search"
-                            value={inputValue}
-                            onChange={handleSearch}
-                        />
-                    </div>
-
-
-                    <IconButton
-                        icon={RefreshCw}
-                        onClick={handleRefresh}
-                        isLoading={isLoading}
-                        title="Refresh Data"
-                    />
-
-                    <Button onClick={() => setOpen(true)}>Apply Leave</Button>
-
-                    <Dialog open={open} onOpenChange={setOpen}>
-                        <DialogContent className="!w-[600px] !max-w-[90%] p-7 ">
-                            <DialogHeader>
-                                <DialogTitle>New Leave Request</DialogTitle>
-                            </DialogHeader>
-
-                            <LeaveRequestCreate setOpen={setOpen} onSuccess={handleRefresh} />
-                        </DialogContent>
-                    </Dialog>
-                </div>
-            </div>
-
-            {
-                editedItem && <LeaveViewDialog editedItem={editedItem} isOpen={isOpen} setIsOpen={setIsOpen} onSuccess={handleRefresh} />
-            }
-
-            <DataTable
-                columns={Columns(editItem)}
-                data={employees}
-                isLoading={isLoading}
-                error={error}
-                onRowClick={(item) => { }}
-                pagination={
-                    <Pagination
-                        page={currentPage}
-                        perPage={perPage}
-                        total={total}
-                        onPageChange={setCurrentPage}
-                        onPerPageChange={(n) => {
-                            setPerPage(n);
-                            setCurrentPage(1);
-                        }}
-                        pageSizeOptions={[10, 25, 50]}
-                    />
-                }
-            />
-        </div>
+      <img src={src} alt={name || ""} onError={() => setErrored(true)} className="rounded-full object-cover shrink-0" style={{ width: size, height: size }} />
     );
+  }
+  return (
+    <div className={`${bg} text-white font-semibold rounded-full flex items-center justify-center text-xs shrink-0`} style={{ width: size, height: size }}>
+      {initials}
+    </div>
+  );
+}
+
+function StatusPill({ status }) {
+  const cfg = {
+    0: { label: "Pending", color: "amber" },
+    1: { label: "Approved", color: "emerald" },
+    2: { label: "Rejected", color: "rose" },
+  }[status] || { label: "—", color: "slate" };
+  return (
+    <span className={`inline-flex items-center gap-1.5 rounded-full bg-${cfg.color}-500/10 text-${cfg.color}-400 border border-${cfg.color}-500/20 px-2.5 py-0.5 text-[11px] font-medium`}>
+      <span className={`h-1.5 w-1.5 rounded-full bg-${cfg.color}-400`} />
+      {cfg.label}
+    </span>
+  );
+}
+
+function TypeChip({ name }) {
+  const color = colorForType(name);
+  return (
+    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-medium" style={{ background: `${color}22`, color }}>
+      {name || "—"}
+    </span>
+  );
+}
+
+function RowMenu({ row, onAction }) {
+  const [open, setOpen] = useState(false);
+  const showApprove = row.status !== 1;
+  const showReject = row.status !== 2;
+  return (
+    <Popover.Root open={open} onOpenChange={setOpen}>
+      <Popover.Trigger asChild>
+        <button className="rounded p-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5">
+          <MoreHorizontal className="w-4 h-4" />
+        </button>
+      </Popover.Trigger>
+      <Popover.Portal>
+        <Popover.Content sideOffset={4} align="end" className="z-50 w-40 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-1 shadow-xl text-sm">
+          <button onClick={() => { onAction("view", row); setOpen(false); }} className="w-full flex items-center gap-2 rounded px-2 py-1.5 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5">
+            <Eye className="w-4 h-4" />
+            View
+          </button>
+          {showApprove && (
+            <button onClick={() => { onAction("approve", row); setOpen(false); }} className="w-full flex items-center gap-2 rounded px-2 py-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/5">
+              <Check className="w-4 h-4" />
+              Approve
+            </button>
+          )}
+          {showReject && (
+            <button onClick={() => { onAction("reject", row); setOpen(false); }} className="w-full flex items-center gap-2 rounded px-2 py-1.5 text-rose-600 dark:text-rose-400 hover:bg-slate-100 dark:hover:bg-white/5">
+              <X className="w-4 h-4" />
+              Reject
+            </button>
+          )}
+        </Popover.Content>
+      </Popover.Portal>
+    </Popover.Root>
+  );
+}
+
+const STATUS_ITEMS = [
+  { id: "0", name: "Pending" },
+  { id: "1", name: "Approved" },
+  { id: "2", name: "Rejected" },
+];
+
+export default function LeavesPage() {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [inputValue, setInputValue] = useState('');
+
+  const [selectedBranch, setSelectedBranch] = useState([]);
+  const [selectedDepartments, setSelectedDepartments] = useState([]);
+  const [selectedStatuses, setSelectedStatuses] = useState([]);
+
+  const [branches, setBranches] = useState([]);
+  const [departments, setDepartments] = useState([]);
+
+  const [editedItem, setEditedItem] = useState(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+
+  useEffect(() => {
+    getBranches().then((b) => setBranches([{ name: "Select All", id: "" }, ...b])).catch((e) => setError(parseApiError(e)));
+  }, []);
+
+  useEffect(() => {
+    getDepartmentsByBranchIds(selectedBranch).then(setDepartments).catch((e) => setError(parseApiError(e)));
+  }, [selectedBranch]);
+
+  const fetchRows = useCallback(async (page, pp) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const params = {
+        page,
+        per_page: pp,
+        sortDesc: 'false',
+        branch_ids: selectedBranch,
+        department_ids: selectedDepartments,
+        status_ids: selectedStatuses,
+        search: searchTerm || null,
+      };
+      const result = await getLeavesRequest(params);
+      if (result && Array.isArray(result.data)) {
+        setRows(result.data);
+        setCurrentPage(result.current_page || 1);
+        setTotal(result.total || 0);
+      } else {
+        throw new Error('Invalid data structure received from API.');
+      }
+    } catch (e) {
+      setError(parseApiError(e));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedBranch, selectedDepartments, selectedStatuses, searchTerm]);
+
+  const debouncedSetSearch = useDebounce((value) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  }, 500);
+
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setInputValue(value);
+    debouncedSetSearch(value);
+  };
+
+  useEffect(() => {
+    fetchRows(currentPage, perPage);
+  }, [currentPage, perPage, fetchRows]);
+
+  const handleRefresh = () => fetchRows(currentPage, perPage);
+
+  const handleRowAction = async (action, row) => {
+    try {
+      if (action === "view") {
+        setEditedItem(row);
+        setIsViewOpen(true);
+        return;
+      }
+      if (action === "approve") await approveLeave(row.id);
+      if (action === "reject") await rejectLeave(row.id);
+      handleRefresh();
+    } catch (e) { setError(parseApiError(e)); }
+  };
+
+  const handleExport = () => {
+    const csvRows = [
+      ["Employee", "ID", "Department", "Branch", "Type", "From", "To", "Days", "Reason", "Status", "Applied"],
+      ...rows.map((r) => [
+        `${r.employee?.first_name || ""} ${r.employee?.last_name || ""}`.trim() || "—",
+        r.employee?.employee_id || r.id,
+        r.employee?.department?.name || "",
+        r.employee?.branch?.name || "",
+        r.leave_type?.name || r.leave_group_type?.leave_type?.name || "",
+        fmtDate(r.from_date || r.start_date),
+        fmtDate(r.to_date || r.end_date),
+        r.total_days || r.days || "",
+        r.reason || r.leave_note || "",
+        STATUS_LABEL[r.status] || "",
+        fmtDate(r.created_at),
+      ]),
+    ];
+    const csv = csvRows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `leave-requests-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const formatLR = (r) => {
+    const num = r.id ? String(r.id).padStart(4, "0") : "—";
+    return `LR-${num}`;
+  };
+
+  return (
+    <div className="p-4 md:p-6 space-y-4 overflow-y-auto max-h-[calc(100vh-80px)]">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold text-slate-900 dark:text-slate-50">Leave Requests</h1>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{total} total requests · live across all branches</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <button onClick={handleExport} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/60 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+            <Download className="w-4 h-4" />
+            Export
+          </button>
+          <Button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5">
+            <Plus className="w-4 h-4" />
+            Apply Leave
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="w-56">
+          <MultiDropDown
+            items={branches}
+            value={selectedBranch}
+            onChange={(v) => { setSelectedBranch(v); setCurrentPage(1); }}
+            placeholder="Select a Branch"
+          />
+        </div>
+        <div className="w-56">
+          <MultiDropDown
+            items={departments}
+            value={selectedDepartments}
+            onChange={(v) => { setSelectedDepartments(v); setCurrentPage(1); }}
+            placeholder="Select a Department"
+          />
+        </div>
+        <div className="w-56">
+          <MultiDropDown
+            items={STATUS_ITEMS}
+            value={selectedStatuses}
+            onChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}
+            placeholder="Select a Status"
+          />
+        </div>
+        <div className="relative w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <input
+            type="text"
+            value={inputValue}
+            onChange={handleSearch}
+            placeholder="Search by name or ID"
+            className="w-full pl-10 pr-3 h-10 rounded-lg bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-white/10 text-sm text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+          />
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200 dark:border-white/10">
+                {["Employee", "Department", "Type", "Duration", "Days", "Reason", "Status", ""].map((h) => (
+                  <th key={h} className="text-left font-medium text-slate-500 dark:text-slate-400 px-5 py-3 text-xs uppercase tracking-wider">{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {isLoading ? (
+                <tr><td colSpan={8} className="text-center py-10 text-slate-500">Loading...</td></tr>
+              ) : error ? (
+                <tr><td colSpan={8} className="text-center py-10 text-rose-500">{String(error)}</td></tr>
+              ) : rows.length === 0 ? (
+                <tr><td colSpan={8} className="text-center py-10 text-slate-500">No leave requests found.</td></tr>
+              ) : rows.map((r) => {
+                const name = `${r.employee?.first_name || ""} ${r.employee?.last_name || ""}`.trim() || "—";
+                const dept = r.employee?.department?.name || "—";
+                const branch = r.employee?.branch?.name || "";
+                const typeName = r.leave_type?.name || r.leave_group_type?.leave_type?.name;
+                const reason = r.reason || r.leave_note || "—";
+                return (
+                  <tr key={r.id} className="border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-3">
+                        <Avatar name={name} src={r.employee?.profile_picture} />
+                        <div className="min-w-0">
+                          <p className="font-medium text-slate-900 dark:text-white truncate">{name}</p>
+                          <p className="text-xs text-slate-500">{formatLR(r)}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-5 py-3">
+                      <p className="text-slate-700 dark:text-slate-200">{dept}</p>
+                      <p className="text-xs text-slate-500">{branch}</p>
+                    </td>
+                    <td className="px-5 py-3"><TypeChip name={typeName} /></td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{fmtDate(r.from_date || r.start_date)} → {fmtDate(r.to_date || r.end_date)}</td>
+                    <td className="px-5 py-3 font-semibold text-slate-900 dark:text-white">{r.total_days || r.days || "—"}</td>
+                    <td className="px-5 py-3 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={reason}>{reason}</td>
+                    <td className="px-5 py-3"><StatusPill status={r.status} /></td>
+                    <td className="px-5 py-3 text-right"><RowMenu row={r} onAction={handleRowAction} /></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-slate-200 dark:border-white/10 px-4 py-2">
+          <Pagination
+            page={currentPage}
+            perPage={perPage}
+            total={total}
+            onPageChange={setCurrentPage}
+            onPerPageChange={(n) => { setPerPage(n); setCurrentPage(1); }}
+            pageSizeOptions={[10, 25, 50]}
+          />
+        </div>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="!w-[720px] !max-w-[95%] p-7 overflow-hidden">
+          <DialogHeader className="sr-only">
+            <DialogTitle>Apply for Leave</DialogTitle>
+          </DialogHeader>
+          <LeaveRequestCreate setOpen={setOpen} onSuccess={handleRefresh} />
+        </DialogContent>
+      </Dialog>
+
+      {editedItem && (
+        <LeaveViewDialog editedItem={editedItem} isOpen={isViewOpen} setIsOpen={setIsViewOpen} onSuccess={handleRefresh} />
+      )}
+    </div>
+  );
 }

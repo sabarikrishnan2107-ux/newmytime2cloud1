@@ -160,7 +160,7 @@ export default function LeaveViewDialog({ isOpen, setIsOpen, editedItem, onSucce
   return (
     <>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-24 pb-8">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
@@ -168,7 +168,7 @@ export default function LeaveViewDialog({ isOpen, setIsOpen, editedItem, onSucce
           ></div>
 
           {/* Modal Card */}
-          <div className="min-w-[1100px] relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 w-full max-w-4xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+          <div className="min-w-[1100px] relative bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-white/10 w-full max-w-4xl overflow-hidden transform transition-all animate-in fade-in zoom-in duration-200 flex flex-col max-h-[calc(100vh-8rem)]">
 
             {/* Header */}
             <div className="px-6 py-5 border-b border-gray-200 dark:border-white/10 flex justify-between items-center bg-white dark:bg-slate-800">

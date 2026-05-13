@@ -1,592 +1,414 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-
+import { Send, Save, Paperclip, X } from "lucide-react";
 import { notify, parseApiError } from "@/lib/utils";
 import { getUser } from "@/config/index";
-import Input from "../Theme/Input";
-import { Select } from "../ui/select";
-import TextArea from "../Theme/TextArea";
 import { createLeave, getLeaveTypesByGroupId, uploadLeaveDocuments } from "@/lib/endpoint/leaves";
-import { getEmployeesByDepartmentId, getEmployeesByDepartmentIds } from "@/lib/api/employee";
-import DatePicker from "../ui/DatePicker";
+import { getEmployeesByDepartmentId } from "@/lib/api/employee";
+import { api, buildQueryParams } from "@/lib/api-client";
 import DropDown from "../ui/DropDown";
 
 const initialPayload = {
-    leave_type_id: "",
-    start_date: new Date().toISOString().split("T")[0],
-    end_date: new Date().toISOString().split("T")[0],
-    reason: "",
-    alternate_employee_id: 0,
-    employee_id: 0,
+  leave_type_id: "",
+  start_date: new Date().toISOString().split("T")[0],
+  end_date: new Date().toISOString().split("T")[0],
+  reason: "",
+  alternate_employee_id: 0,
+  employee_id: 0,
+  day_type: "full",
+  emergency_contact: "",
 };
 
+const fieldLabel = "block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5";
+const fieldInput =
+  "h-10 w-full px-3 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500/60";
+const readOnlyInput = fieldInput + " bg-slate-50 dark:bg-slate-900/40 cursor-not-allowed";
+
 export default function LeaveRequestCreate({
-    setOpen = () => { },
-    onSuccess = () => { },
-    editData = null,
-    staffEmployeeId = null,
+  setOpen = () => {},
+  onSuccess = () => {},
+  editData = null,
+  staffEmployeeId = null,
 }) {
-    const [loading, setLoading] = useState(false);
-    const [form, setForm] = useState(initialPayload);
-    const [alternateEmployee, setAlternateEmployee] = useState(null);
-    const [departmentEmployees, setDepartmentEmployees] = useState([]);
-    const [leaveAvailableCount, setLeaveAvailableCount] = useState(0);
-    const [canApply, setCanApply] = useState(true);
-    const [documents, setDocuments] = useState([]);
-    const [showDocUpload, setShowDocUpload] = useState(false);
-    const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
+  const [form, setForm] = useState(initialPayload);
+  const [departmentEmployees, setDepartmentEmployees] = useState([]);
+  const [employeeDetails, setEmployeeDetails] = useState(null);
+  const [leaveTypes, setLeaveTypes] = useState([]);
+  const [leaveAvailableCount, setLeaveAvailableCount] = useState("");
+  const [canApply, setCanApply] = useState(true);
+  const [documents, setDocuments] = useState([]);
+  const [errors, setErrors] = useState({});
 
-    const isEdit = !!editData;
+  const isEdit = !!editData;
 
-    // Initialize form with edit data
-    useEffect(() => {
-        if (editData) {
-            setForm({
-                leave_type_id: editData.leave_type_id || "",
-                start_date: editData.start_date || "",
-                end_date: editData.end_date || "",
-                reason: editData.reason || "",
-                alternate_employee_id: editData.alternate_employee_id || 0,
-                employee_id: editData.employee_id || 0,
-            });
-            if (editData.alternate_employee) {
-                setAlternateEmployee({
-                    ...editData.alternate_employee,
-                    department: editData.alternate_employee?.department?.name,
-                    designation: editData.alternate_employee?.designation?.name,
-                });
-            }
-            if (editData.leave_type_id) {
-                verifyAvailableCount(editData.leave_type_id);
-            }
+  useEffect(() => {
+    if (editData) {
+      setForm((prev) => ({
+        ...prev,
+        leave_type_id: editData.leave_type_id || "",
+        start_date: editData.start_date || prev.start_date,
+        end_date: editData.end_date || prev.end_date,
+        reason: editData.reason || "",
+        alternate_employee_id: editData.alternate_employee_id || 0,
+        employee_id: editData.employee_id || 0,
+      }));
+    }
+  }, [editData]);
+
+  useEffect(() => {
+    fetchDepartmentEmployees();
+  }, []);
+
+  useEffect(() => {
+    if (staffEmployeeId && departmentEmployees.length > 0 && !form.employee_id) {
+      setForm((prev) => ({ ...prev, employee_id: staffEmployeeId }));
+    }
+  }, [staffEmployeeId, departmentEmployees]);
+
+  useEffect(() => {
+    const fetchEmployeeDetails = async () => {
+      if (!form.employee_id) { setEmployeeDetails(null); return; }
+      try {
+        const params = await buildQueryParams();
+        const res = await api.get(`/employeev1`, { params: { ...params, per_page: 1, employee_id: form.employee_id } });
+        const emp = res.data?.data?.[0];
+        setEmployeeDetails(emp || null);
+      } catch (e) {
+        console.error("Failed to fetch employee details:", e);
+        setEmployeeDetails(null);
+      }
+    };
+    fetchEmployeeDetails();
+  }, [form.employee_id]);
+
+  useEffect(() => {
+    const fetchLeaveTypes = async () => {
+      const selected = departmentEmployees.find((e) => e.id === Number(form.employee_id));
+      if (!selected || !selected?.leave_group_id) {
+        setLeaveTypes([]);
+        return;
+      }
+      try {
+        const data = await getLeaveTypesByGroupId(selected.leave_group_id, { per_page: 1000, employee_id: selected.id });
+        setLeaveTypes(
+          data.map((e) => ({
+            id: e.leave_type_id,
+            name: e.leave_type?.name || e.leave_type?.short_name || "Leave Type",
+            leave_type_count: e.leave_type_count,
+            employee_used: e.employee_used,
+          }))
+        );
+      } catch (error) {
+        notify("Error", parseApiError(error), "error");
+      }
+    };
+    fetchLeaveTypes();
+  }, [form.employee_id, departmentEmployees]);
+
+  useEffect(() => {
+    const f = leaveTypes.find((item) => item.id === Number(form.leave_type_id));
+    if (!f) {
+      setLeaveAvailableCount("");
+      setCanApply(true);
+      return;
+    }
+    const available = f.leave_type_count - f.employee_used;
+    setCanApply(available > 0);
+    setLeaveAvailableCount(`${f.employee_used} / ${f.leave_type_count}`);
+  }, [form.leave_type_id, leaveTypes]);
+
+  const fetchDepartmentEmployees = async () => {
+    try {
+      let data = await getEmployeesByDepartmentId();
+      let mapped = data.map((e) => ({
+        id: e.id,
+        profile_picture: e.profile_picture,
+        employee_id: e.employee_id,
+        name: e.full_name,
+        department: e?.department?.name,
+        designation: e?.designation?.name,
+        branch: e?.branch?.name,
+        leave_group_id: e.leave_group_id,
+        reporting_manager_id: e.reporting_manager_id,
+        reporting_manager: e?.reporting_manager?.full_name || e?.reporting_manager?.first_name || "",
+      }));
+      setDepartmentEmployees(mapped);
+    } catch (error) {
+      console.error("Failed to fetch employees:", error);
+    }
+  };
+
+  const handleChange = (field, value) => {
+    setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const selectedEmployee = useMemo(
+    () => departmentEmployees.find((e) => e.id === Number(form.employee_id)),
+    [departmentEmployees, form.employee_id]
+  );
+
+  const dayDifference = useMemo(() => {
+    if (!form.start_date || !form.end_date) return 0;
+    const from = new Date(form.start_date);
+    const to = new Date(form.end_date);
+    const base = Math.max(1, (to - from) / (1000 * 60 * 60 * 24) + 1);
+    if (form.day_type === "half_first" || form.day_type === "half_second") return 0.5;
+    return base;
+  }, [form.start_date, form.end_date, form.day_type]);
+
+  const onFilesPicked = (files) => {
+    const arr = Array.from(files || []);
+    setDocuments((prev) => [
+      ...prev,
+      ...arr.map((f) => ({ title: f.name, file: f, previewUrl: URL.createObjectURL(f) })),
+    ]);
+  };
+
+  const removeDoc = (i) => setDocuments((prev) => prev.filter((_, idx) => idx !== i));
+
+  const buildPayload = async () => {
+    const user = await getUser();
+    return {
+      company_id: user?.company_id || 0,
+      employee_id: form.employee_id,
+      reporting_manager_id: selectedEmployee?.reporting_manager_id || 0,
+      leave_type_id: form.leave_type_id || null,
+      start_date: form.start_date,
+      end_date: form.end_date,
+      reason: form.reason,
+      alternate_employee_id: form.alternate_employee_id || 0,
+      day_type: form.day_type,
+      emergency_contact: form.emergency_contact,
+    };
+  };
+
+  const onSaveDraft = async () => {
+    try {
+      const user = await getUser();
+      const key = `leave_draft_${user?.id || "anon"}`;
+      localStorage.setItem(key, JSON.stringify(form));
+      notify("Saved", "Draft saved locally.", "success");
+    } catch (e) {
+      notify("Error", parseApiError(e), "error");
+    }
+  };
+
+  const onSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setErrors({});
+    try {
+      const payload = await buildPayload();
+      let response = isEdit ? await createLeave(editData.id, payload) : await createLeave(null, payload);
+
+      if (response?.status === false) {
+        if (response.errors) {
+          setErrors(response.errors);
+          const firstKey = Object.keys(response.errors)[0];
+          notify("Error", response.errors[firstKey][0], "error");
+          return;
         }
-    }, [editData]);
+        notify("Error", response.message, "error");
+        onSuccess();
+        return;
+      }
 
-    // Fetch department employees on mount
-    useEffect(() => {
-        fetchDepartmentEmployees();
-    }, []);
-
-    // Auto-select logged-in employee for staff
-    useEffect(() => {
-        if (staffEmployeeId && departmentEmployees.length > 0 && !form.employee_id) {
-            handleChange("employee_id", staffEmployeeId);
-        }
-    }, [staffEmployeeId, departmentEmployees]);
-
-    const [leaveTypes, setLeaveTypes] = useState([]);
-
-    useEffect(() => {
-        const fetchLeaveTypes = async () => {
-
-            const selected = departmentEmployees.find((e) => e.id === Number(form.employee_id));
-
-            if (!selected || !selected?.leave_group_id) {
-                setLeaveTypes([]);
-                return;
-            };
-
-            try {
-                const data = await getLeaveTypesByGroupId(selected.leave_group_id, { per_page: 1000, employee_id: selected.id });
-
-                setLeaveTypes(data.map(e => ({
-                    id: e.leave_type_id,
-                    name: e.leave_type?.name || e.leave_type?.short_name || "Leave Type",
-                    leave_type_count: e.leave_type_count,
-                    employee_used: e.employee_used,
-                })));
-
-            } catch (error) {
-                console.log(error);
-                notify("Error", parseApiError(error), "error");
-            }
-        }
-
-        fetchLeaveTypes();
-
-    }, [form.employee_id, departmentEmployees]);
-
-
-    const fetchDepartmentEmployees = async () => {
+      const leaveId = response?.record?.id;
+      const validDocs = documents.filter((d) => d.file);
+      if (leaveId && validDocs.length > 0) {
         try {
-            let data = await getEmployeesByDepartmentId();
-
-            let mappedData = data.map((e) => ({
-                id: e.id,
-                profile_picture: e.profile_picture,
-                employee_id: e.employee_id,
-                name: e.full_name,
-                department: e?.department?.name,
-                designation: e?.designation?.name,
-                leave_group_id: e.leave_group_id,
-                reporting_manager_id: e.reporting_manager_id,
-
-            }));
-
-            console.log(mappedData);
-
-            setDepartmentEmployees(mappedData);
-        } catch (error) {
-            console.error("Failed to fetch employees:", error);
+          await uploadLeaveDocuments(leaveId, form.employee_id, validDocs);
+        } catch (docError) {
+          notify("Warning", "Leave created but document upload failed", "error");
         }
-    };
+      }
 
-    const handleChange = (field, value) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
-    };
+      await notify("Success", isEdit ? "Leave Updated Successfully" : "Leave Applied Successfully", "success");
+      setForm(initialPayload);
+      setDocuments([]);
+      onSuccess();
+    } catch (error) {
+      notify("Error", parseApiError(error), "error");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const verifyAvailableCount = (leaveTypeId) => {
-        const filterObject = leaveTypes.find(
-            (item) => item.id === Number(leaveTypeId)
-        );
-        if (!filterObject) return;
+  return (
+    <form onSubmit={onSubmit} className="flex flex-col max-h-[85vh]">
+      <div className="relative bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 px-6 py-5 -mx-7 -mt-7 overflow-hidden">
+        <div className="absolute -top-16 -right-16 h-48 w-48 rounded-full bg-purple-500/15 blur-3xl pointer-events-none" />
+        <div className="relative">
+          <h2 className="text-xl font-bold text-slate-50">Apply for Leave</h2>
+          <p className="text-sm text-slate-300 mt-0.5">Submit a new leave request — your manager will be notified instantly.</p>
+        </div>
+      </div>
 
-        console.log(filterObject);
+      <div className="space-y-4 overflow-y-auto flex-1 pt-5 pr-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {!staffEmployeeId && (
+            <div>
+              <label className={fieldLabel}>Employee <span className="text-rose-500">*</span></label>
+              <DropDown width="w-full" items={departmentEmployees} value={form.employee_id || 0} onChange={(v) => handleChange("employee_id", v)} />
+            </div>
+          )}
+          <div>
+            <label className={fieldLabel}>Employee ID</label>
+            <input className={readOnlyInput} value={selectedEmployee?.employee_id || employeeDetails?.employee_id || ""} readOnly placeholder="—" />
+          </div>
+          <div>
+            <label className={fieldLabel}>Branch</label>
+            <input className={readOnlyInput} value={employeeDetails?.branch?.name || ""} readOnly placeholder="—" />
+          </div>
+          <div>
+            <label className={fieldLabel}>Reporting Manager</label>
+            <input
+              className={readOnlyInput}
+              value={
+                employeeDetails?.reporting_manager?.full_name ||
+                (employeeDetails?.reporting_manager?.first_name
+                  ? `${employeeDetails.reporting_manager.first_name} ${employeeDetails.reporting_manager.last_name || ""}`.trim()
+                  : "")
+              }
+              readOnly
+              placeholder="—"
+            />
+          </div>
+        </div>
 
-        const available = filterObject.leave_type_count - filterObject.employee_used;
-        setCanApply(available > 0);
-        setLeaveAvailableCount(
-            `${filterObject.employee_used} / ${filterObject.leave_type_count}`
-        );
-    };
+        <div>
+          <label className={fieldLabel}>Leave Type <span className="text-rose-500">*</span></label>
+          <DropDown width="w-full" items={leaveTypes} value={form.leave_type_id || ""} onChange={(v) => handleChange("leave_type_id", v)} />
+          {leaveAvailableCount && (
+            <p className="mt-1 text-xs text-slate-500">Used / Total: <span className="font-medium text-slate-700 dark:text-slate-200">{leaveAvailableCount}</span></p>
+          )}
+        </div>
 
-    useEffect(() => {
-        verifyAvailableCount(form.leave_type_id);
-    }, [form.leave_type_id])
- 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={fieldLabel}>From Date <span className="text-rose-500">*</span></label>
+            <input type="date" value={form.start_date} onChange={(e) => handleChange("start_date", e.target.value)} className={fieldInput + " [color-scheme:light] dark:[color-scheme:dark]"} />
+          </div>
+          <div>
+            <label className={fieldLabel}>To Date <span className="text-rose-500">*</span></label>
+            <input type="date" value={form.end_date} min={form.start_date} onChange={(e) => handleChange("end_date", e.target.value)} className={fieldInput + " [color-scheme:light] dark:[color-scheme:dark]"} />
+          </div>
+        </div>
 
-    const handleAlternateEmployeeChange = (value) => {
-        const selected = departmentEmployees.find((e) => e.id === Number(value));
-        setAlternateEmployee(selected || null);
-        handleChange("alternate_employee_id", selected?.id || 0);
-    };
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={fieldLabel}>Total Days</label>
+            <input className={readOnlyInput} value={dayDifference || "Auto"} readOnly />
+          </div>
+          <div>
+            <label className={fieldLabel}>Day Type</label>
+            <div className="flex items-center gap-4 h-10">
+              {[
+                { id: "full", label: "Full Day" },
+                { id: "half_first", label: "First Half" },
+                { id: "half_second", label: "Second Half" },
+              ].map((opt) => (
+                <label key={opt.id} className="inline-flex items-center gap-1.5 text-sm text-slate-700 dark:text-slate-200 cursor-pointer">
+                  <input
+                    type="radio"
+                    name="day_type"
+                    value={opt.id}
+                    checked={form.day_type === opt.id}
+                    onChange={() => handleChange("day_type", opt.id)}
+                    className="accent-sky-500"
+                  />
+                  {opt.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
 
-    // Day difference calculation
-    const dayDifference = useMemo(() => {
-        if (!form.start_date || !form.end_date) return 0;
-        const from = new Date(form.start_date);
-        const to = new Date(form.end_date);
-        return Math.max(1, (to - from) / (1000 * 60 * 60 * 24) + 1);
-    }, [form.start_date, form.end_date]);
+        <div>
+          <label className={fieldLabel}>Reason</label>
+          <textarea
+            rows={3}
+            value={form.reason}
+            onChange={(e) => handleChange("reason", e.target.value)}
+            placeholder="Briefly describe the reason for your leave..."
+            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/70 text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30 focus:border-sky-500/60 resize-none"
+          />
+        </div>
 
-    // Document handling
-    const addDocument = () => {
-        setDocuments((prev) => [...prev, { title: "", file: null, previewUrl: "" }]);
-    };
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className={fieldLabel}>Emergency Contact</label>
+            <input
+              type="text"
+              value={form.emergency_contact}
+              onChange={(e) => handleChange("emergency_contact", e.target.value)}
+              placeholder="+971 50 000 0000"
+              className={fieldInput}
+            />
+          </div>
+          <div>
+            <label className={fieldLabel}>Handover To</label>
+            <DropDown
+              width="w-full"
+              items={departmentEmployees.filter((e) => e.id !== (staffEmployeeId || form.employee_id))}
+              value={form.alternate_employee_id || ""}
+              onChange={(v) => handleChange("alternate_employee_id", v)}
+            />
+          </div>
+        </div>
 
-    const removeDocument = (index) => {
-        setDocuments((prev) => prev.filter((_, i) => i !== index));
-    };
+        <div>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-100 mb-2">Attachment</p>
+          <label
+            className="block cursor-pointer rounded-lg border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 px-4 py-6 text-center hover:border-sky-500 dark:hover:border-sky-500 transition-colors"
+          >
+            <input type="file" multiple className="hidden" onChange={(e) => onFilesPicked(e.target.files)} />
+            <div className="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+              <Paperclip className="w-4 h-4" />
+              Click to upload medical certificate or supporting docs
+            </div>
+          </label>
+          {documents.length > 0 && (
+            <div className="mt-2 space-y-1.5">
+              {documents.map((d, i) => (
+                <div key={i} className="flex items-center justify-between rounded-md bg-slate-100 dark:bg-slate-800/60 px-3 py-1.5 text-xs">
+                  <span className="truncate text-slate-700 dark:text-slate-200">{d.title}</span>
+                  <button type="button" onClick={() => removeDoc(i)} className="text-slate-500 hover:text-rose-500">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-    const updateDocument = (index, field, value) => {
-        setDocuments((prev) =>
-            prev.map((doc, i) => {
-                if (i !== index) return doc;
-                if (field === "file" && value) {
-                    // if (value.size > 100 * 1024) {
-                    //     notify("Error", "File size must be less than 100KB", "error");
-                    //     return doc;
-                    // }
-                    return { ...doc, file: value, previewUrl: URL.createObjectURL(value) };
-                }
-                return { ...doc, [field]: value };
-            })
-        );
-    };
+        {errors?.reporting_manager_id && (
+          <p className="text-sm text-rose-500">Reporting Manager ID is not assigned. Contact Admin.</p>
+        )}
+        {!canApply && (
+          <p className="text-sm text-rose-500">No available leaves for the selected leave type.</p>
+        )}
+      </div>
 
-    const onSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-        setErrors({});
-
-        try {
-            const user = await getUser();
-            const selectedEmployee = departmentEmployees.find(
-                (e) => e.id === Number(form.employee_id)
-            );
-
-            const payload = {
-                company_id: user?.company_id || 0,
-                employee_id: form.employee_id,
-                reporting_manager_id: selectedEmployee?.reporting_manager_id || 0,
-                leave_type_id: form.leave_type_id || null,
-                start_date: form.start_date,
-                end_date: form.end_date,
-                reason: form.reason,
-                alternate_employee_id: alternateEmployee?.id || 0,
-            };
-
-            let response;
-            if (isEdit) {
-                response = await createLeave(editData.id, payload);
-            } else {
-                response = await createLeave(null, payload);
-            }
-
-            if (response?.status === false) {
-                if (response.errors) {
-                    setErrors(response.errors);
-                    const firstKey = Object.keys(response.errors)[0];
-                    notify("Error", response.errors[firstKey][0], "error");
-                    return;
-                } else {
-                    notify("Error", response.message, "error");
-                    onSuccess();
-                    return;
-                }
-            }
-
-            // Upload documents after leave is created
-            const leaveId = response?.record?.id;
-            const validDocs = documents.filter((doc) => doc.file && doc.title);
-
-            if (leaveId && validDocs.length > 0) {
-                try {
-                    await uploadLeaveDocuments(leaveId, form.employee_id, validDocs);
-                } catch (docError) {
-                    notify("Warning", "Leave created but document upload failed", "error");
-                    console.error("Document upload error:", docError);
-                }
-            }
-
-            await notify(
-                "Success",
-                isEdit ? "Leave Updated Successfully" : "Leave Applied Successfully",
-                "success"
-            );
-
-            setForm(initialPayload);
-            setAlternateEmployee(null);
-            setDocuments([]);
-            onSuccess();
-        } catch (error) {
-            notify("Error", parseApiError(error), "error");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-                        <form onSubmit={onSubmit} className="flex flex-col">
-                            <div className="space-y-5 overflow-y-auto flex-1">
-                                {/* Date Pickers & Day Count */}
-                                <div className="grid grid-cols-5 gap-4">
-                                    <div className="col-span-2 space-y-1.5">
-                                        <label className="block text-sm font-medium text-slate-400">
-                                            From Date <span className="text-red-400">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={form.start_date}
-                                            onChange={(e) => handleChange("start_date", e.target.value)}
-                                            className="h-11 w-full px-4 text-sm rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary [color-scheme:dark]"
-                                        />
-                                    </div>
-
-                                    <div className="col-span-2 space-y-1.5">
-                                        <label className="block text-sm font-medium text-slate-400">
-                                            To Date <span className="text-red-400">*</span>
-                                        </label>
-                                        <input
-                                            type="date"
-                                            value={form.end_date}
-                                            min={form.start_date}
-                                            onChange={(e) => handleChange("end_date", e.target.value)}
-                                            className="h-11 w-full px-4 text-sm rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary [color-scheme:dark]"
-                                        />
-                                    </div>
-
-                                    <div className="col-span-1 space-y-1.5">
-                                        <label className="block text-sm font-medium text-slate-400">
-                                            Days
-                                        </label>
-                                        <div className="flex items-center justify-center h-[42px] rounded-xl border border-border bg-gray-50 dark:bg-gray-900">
-                                            <span className="text-sm font-bold text-gray-600 dark:text-gray-300">
-                                                {dayDifference}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-
-
-                                <div className="grid grid-cols-6 gap-4">
-                                    {!staffEmployeeId && (
-                                        <div className="col-span-3 space-y-1.5">
-                                            <label className="block text-sm font-medium text-slate-400">
-                                                Employee <span className="text-red-400">*</span>
-                                            </label>
-                                            <DropDown
-                                                width="w-full"
-                                                items={departmentEmployees}
-                                                value={form.employee_id || 0}
-                                                onChange={(v) => handleChange("employee_id", v)}
-                                            />
-                                        </div>
-                                    )}
-
-                                    <div className={`${staffEmployeeId ? "col-span-6" : "col-span-3"} space-y-1.5`}>
-                                        <label className="block text-sm font-medium text-slate-400">
-                                            Alternate Employee <span className="text-red-400">*</span>
-                                        </label>
-                                        <DropDown
-                                            width="w-full"
-                                            items={departmentEmployees.filter((e) => e.id !== (staffEmployeeId || form.employee_id))}
-                                            value={form.alternate_employee_id || ""}
-                                            onChange={(title) => handleAlternateEmployeeChange(title)}
-                                        />
-                                    </div>
-                                </div>
-
-                                {/* Alternate Employee Info Card */}
-                                {alternateEmployee && (
-                                    <div className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
-                                        <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-white/10">
-                                            <span className="text-xs font-medium text-slate-400">
-                                                Alternate Employee Info
-                                            </span>
-                                        </div>
-                                        <div className="p-4 flex items-center gap-4">
-                                            <img
-                                                src={alternateEmployee.profile_picture}
-                                                alt="Profile"
-                                                className="w-12 h-12 rounded-full object-cover border-2 border-gray-200 dark:border-white/10 shrink-0"
-                                            />
-                                            <div className="flex-1 grid grid-cols-2 gap-x-6 gap-y-1.5 text-xs">
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-slate-400 whitespace-nowrap">Full Name:</span>
-                                                    <span className="text-gray-600 dark:text-gray-300 font-medium truncate">
-                                                        {alternateEmployee.name}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-slate-400 whitespace-nowrap">Employee ID:</span>
-                                                    <span className="text-gray-600 dark:text-gray-300 font-medium truncate">
-                                                        {alternateEmployee.employee_id}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-slate-400 whitespace-nowrap">Department:</span>
-                                                    <span className="text-gray-600 dark:text-gray-300 font-medium truncate">
-                                                        {alternateEmployee.department}
-                                                    </span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="text-slate-400 whitespace-nowrap">Designation:</span>
-                                                    <span className="text-gray-600 dark:text-gray-300 font-medium truncate">
-                                                        {alternateEmployee.designation}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-
-                                <div className="grid grid-cols-6 gap-4">
-                                    <div className="col-span-3 space-y-1.5">
-                                        <label className="block text-sm font-medium text-slate-400">
-                                            Leave Type <span className="text-red-400">*</span>
-                                        </label>
-                                        <DropDown
-                                            width="w-full"
-                                            items={leaveTypes}
-                                            value={form.leave_type_id || ""}
-                                            onChange={(v) => handleChange("leave_type_id", v)}
-                                        />
-                                    </div>
-
-                                    <div className="col-span-3 space-y-1.5">
-                                        <label className="block text-sm font-medium text-slate-400">
-                                            Available Leaves
-                                        </label>
-                                        <Input
-                                            value={leaveAvailableCount}
-                                            readOnly
-                                        />
-                                    </div>
-                                </div>
-
-
-
-                                {/* Reason / Note */}
-                                <div className="space-y-1.5">
-                                    <label className="block text-sm font-medium text-slate-400">
-                                        Reason / Note <span className="text-red-400">*</span>
-                                    </label>
-                                    <TextArea
-                                        placeholder="Enter reason for leave..."
-                                        rows={3}
-                                        value={form.reason}
-                                        onChange={(e) => handleChange("reason", e.target.value)}
-                                    />
-                                </div>
-
-                                {/* Upload Document Button */}
-                                <button
-                                    type="button"
-                                    onClick={() => setShowDocUpload(true)}
-                                    className="w-full px-4 py-2 rounded-lg border border-dashed border-primary text-primary hover:bg-primary/5 transition-all text-sm font-medium"
-                                >
-                                    Upload Document
-                                </button>
-
-                                {/* Document Upload Section */}
-                                {showDocUpload && (
-                                    <div className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
-                                        <div className="px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
-                                            <span className="text-xs font-medium text-slate-400">
-                                                Documents
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowDocUpload(false)}
-                                                className="text-slate-400 hover:text-slate-600 dark:hover:text-white"
-                                            >
-                                                <span className="material-symbols-outlined text-sm">
-                                                    close
-                                                </span>
-                                            </button>
-                                        </div>
-                                        <div className="p-4 space-y-3">
-                                            {documents.map((doc, index) => (
-                                                <div
-                                                    key={index}
-                                                    className="flex items-center gap-3"
-                                                >
-                                                    <Input
-                                                        placeholder="Title"
-                                                        value={doc.title}
-                                                        onChange={(e) =>
-                                                            updateDocument(index, "title", e.target.value)
-                                                        }
-                                                        className="flex-1"
-                                                    />
-                                                    <Input
-                                                        type="file"
-                                                        onChange={(e) =>
-                                                            updateDocument(
-                                                                index,
-                                                                "file",
-                                                                e.target.files[0]
-                                                            )
-                                                        }
-                                                        className="flex-1 text-sm text-slate-400 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
-                                                    />
-                                                    {doc.previewUrl && (
-                                                        <a
-                                                            href={doc.previewUrl}
-                                                            target="_blank"
-                                                            rel="noreferrer"
-                                                            className="text-primary text-xs underline whitespace-nowrap"
-                                                        >
-                                                            View
-                                                        </a>
-                                                    )}
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeDocument(index)}
-                                                        className="text-red-400 hover:text-red-600 transition-colors"
-                                                    >
-                                                        <span className="material-symbols-outlined text-sm">
-                                                            close
-                                                        </span>
-                                                    </button>
-                                                </div>
-                                            ))}
-                                            <button
-                                                type="button"
-                                                onClick={addDocument}
-                                                className="flex items-center gap-1 text-sm text-primary hover:text-blue-600 transition-colors"
-                                            >
-                                                <span className="material-symbols-outlined text-sm">
-                                                    add_circle
-                                                </span>
-                                                Add Document
-                                            </button>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Uploaded Documents Table */}
-                                {documents.length > 0 && !showDocUpload && (
-                                    <div className="rounded-xl border border-gray-200 dark:border-white/10 overflow-hidden">
-                                        <table className="w-full text-sm">
-                                            <thead>
-                                                <tr className="bg-gray-50 dark:bg-gray-800">
-                                                    <th className="text-left px-4 py-2 text-xs font-medium text-slate-400">
-                                                        Title
-                                                    </th>
-                                                    <th className="text-left px-4 py-2 text-xs font-medium text-slate-400">
-                                                        File
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody>
-                                                {documents.map((d, index) => (
-                                                    <tr
-                                                        key={index}
-                                                        className="border-t border-gray-100 dark:border-white/5"
-                                                    >
-                                                        <td className="px-4 py-2 text-gray-600 dark:text-gray-300">
-                                                            {d.title}
-                                                        </td>
-                                                        <td className="px-4 py-2">
-                                                            {d.previewUrl && (
-                                                                <a
-                                                                    href={d.previewUrl}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="text-primary text-xs underline"
-                                                                >
-                                                                    View file
-                                                                </a>
-                                                            )}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                )}
-
-                                {/* Error Display */}
-                                {errors && errors.reporting_manager_id && (
-                                    <p className="text-sm text-red-400">
-                                        Reporting Manager ID is not assigned. Contact Admin.
-                                    </p>
-                                )}
-
-                                {!canApply && (
-                                    <p className="text-sm text-red-400">
-                                        No available leaves for the selected leave type.
-                                    </p>
-                                )}
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex justify-end gap-3">
-                                <button
-                                    type="button"
-                                    onClick={() => setOpen(false)}
-                                    className="px-4 py-2 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all text-sm font-bold"
-                                >
-                                    Cancel
-                                </button>
-                                {canApply && (
-                                    <button
-                                        type="submit"
-                                        disabled={loading}
-                                        className="px-4 py-2 rounded-lg bg-primary text-white hover:bg-blue-600 transition-all text-sm font-bold shadow-lg shadow-primary/20 disabled:opacity-50"
-                                    >
-                                        {loading
-                                            ? "Submitting..."
-                                            : isEdit
-                                                ? "Update"
-                                                : "Submit"}
-                                    </button>
-                                )}
-                            </div>
-                        </form>
-    );
+      <div className="border-t border-slate-200 dark:border-white/10 -mx-7 px-6 py-3 mt-4 flex items-center justify-end gap-2">
+        <button type="button" onClick={() => setOpen(false)} className="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white">
+          Cancel
+        </button>
+        <button type="button" onClick={onSaveDraft} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/60 px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+          <Save className="w-4 h-4" />
+          Save Draft
+        </button>
+        <button
+          type="submit"
+          disabled={loading || !canApply}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500 px-4 py-2 text-sm font-semibold text-white hover:bg-sky-600 disabled:opacity-50 shadow-md shadow-sky-500/20"
+        >
+          <Send className="w-4 h-4" />
+          {loading ? "Submitting..." : isEdit ? "Update Request" : "Submit Request"}
+        </button>
+      </div>
+    </form>
+  );
 }

@@ -48,6 +48,20 @@ export const getBranches = async () => {
     return data;
 };
 
+export const getVisitorHosts = async () => {
+    const { data } = await axios.get(`${API_BASE}/visitor-management/hosts`, {
+        params: await buildQueryParams(),
+    });
+    return (Array.isArray(data) ? data : []).map(h => {
+        const emp = h.employee || {};
+        const empName = `${emp.first_name || ''} ${emp.last_name || ''}`.trim();
+        return {
+            id: h.id,
+            name: empName || `Host ${h.id}`,
+        };
+    });
+};
+
 export const getRoles = async () => {
 
     const user = await getUser();

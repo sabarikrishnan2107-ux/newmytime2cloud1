@@ -30,3 +30,6 @@ Route::get('visitor-management/zones', [VisitorManagementController::class, 'zon
 
 // Host Employees (for dropdowns)
 Route::get('visitor-management/host-employees', [VisitorManagementController::class, 'hostEmployees']);
+
+// Hosts (host_companies, for Visitor Reports filter)
+Route::get('visitor-management/hosts', [VisitorManagementController::class, 'hosts']);

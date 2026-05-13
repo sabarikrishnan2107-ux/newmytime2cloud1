@@ -7,6 +7,7 @@ use App\Models\VisitorAttendance;
 use App\Models\VisitorBlacklist;
 use App\Models\VisitorPreRegistration;
 use App\Models\Employee;
+use App\Models\HostCompany;
 use App\Models\Zone;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -185,12 +186,74 @@ class VisitorManagementController extends Controller
     {
         $companyId = $request->company_id;
 
-        return VisitorAttendance::where('company_id', $companyId)
-            ->with('visitor:id,first_name,last_name,visitor_company_name,system_user_id')
-            ->when($request->date, fn($q) => $q->whereDate('date', $request->date))
-            ->when($request->branch_id, fn($q) => $q->where('branch_id', $request->branch_id))
-            ->orderBy('id', 'desc')
+        $query = VisitorAttendance::where('company_id', $companyId)
+            ->with([
+                'visitor:id,first_name,last_name,visitor_company_name,system_user_id,host_company_id,host_name,host_company_name,zone_id',
+                'visitor.zone:id,name',
+                'visitor.host.employee:id,first_name,last_name',
+                'branch:id,branch_name',
+            ]);
+
+        // Date range (preferred) or single date (back-compat)
+        if ($request->filled('from_date') && $request->filled('to_date')) {
+            $query->whereBetween('date', [$request->from_date, $request->to_date]);
+        } elseif ($request->filled('date')) {
+            $query->whereDate('date', $request->date);
+        }
+
+        // Multi-branch; falls back to single branch_id for back-compat
+        if ($request->filled('branch_ids')) {
+            $ids = is_array($request->branch_ids) ? $request->branch_ids : explode(',', $request->branch_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) $query->whereIn('branch_id', $ids);
+        } elseif ($request->filled('branch_id')) {
+            $query->where('branch_id', $request->branch_id);
+        }
+
+        // Host filter: visitor.host_company_id IN (...)
+        if ($request->filled('host_ids')) {
+            $ids = is_array($request->host_ids) ? $request->host_ids : explode(',', $request->host_ids);
+            $ids = array_filter($ids, fn($v) => $v !== '' && $v !== null);
+            if (!empty($ids)) {
+                $query->whereHas('visitor', fn($q) => $q->whereIn('host_company_id', $ids));
+            }
+        }
+
+        // Status filter: translate UI states to attendance fields
+        if ($request->filled('statuses')) {
+            $statuses = is_array($request->statuses) ? $request->statuses : explode(',', $request->statuses);
+            $statuses = array_filter($statuses, fn($v) => $v !== '' && $v !== null);
+            if (!empty($statuses)) {
+                $query->where(function ($q) use ($statuses) {
+                    foreach ($statuses as $s) {
+                        $q->orWhere(function ($qq) use ($s) {
+                            if ($s === 'on-site') {
+                                $qq->whereNull('out')->whereNull('over_stay');
+                            } elseif ($s === 'completed') {
+                                $qq->whereNotNull('out');
+                            } elseif ($s === 'overstayed') {
+                                $qq->whereNotNull('over_stay');
+                            }
+                            // 'no-show' would require a pre-registrations join — not supported here
+                        });
+                    }
+                });
+            }
+        }
+
+        // Note: visitor_types is accepted but ignored (no schema column for it).
+
+        return $query->orderBy('id', 'desc')
             ->paginate($request->per_page ?? 50);
+    }
+
+    // ── Hosts (for dropdowns) ──
+    public function hosts(Request $request)
+    {
+        return HostCompany::where('company_id', $request->company_id)
+            ->with('employee:id,first_name,last_name,employee_id')
+            ->orderBy('id', 'desc')
+            ->get(['id', 'company_id', 'employee_id']);
     }
 
     // ── Directory (all visitors) ──
