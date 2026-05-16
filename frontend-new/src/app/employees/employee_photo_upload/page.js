@@ -24,7 +24,7 @@ const SyncStatusModal = ({ results, total, currentCount, isOpen, onClose, isLoad
   if (!isOpen) return null;
   console.log("SyncStatusModal Rendered with results:", results);
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center px-4">
+    <div className="fixed inset-x-0 bottom-0 top-[72px] z-[100] flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={!isLoading ? onClose : null}></div>
       <div className="relative bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-white/10 w-full max-w-2xl overflow-hidden flex flex-col max-h-[80vh]">
 

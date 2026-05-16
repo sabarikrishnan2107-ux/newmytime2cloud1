@@ -59,56 +59,20 @@ const leaveMenu = [
   { href: "/leave-dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/leaves", icon: FileCheck, label: "Requests" },
   { href: "/leave-dashboard/balances", icon: Wallet, label: "Balances" },
+  { href: "/settings/leave", icon: Settings, label: "Settings" },
   { href: "/leave-dashboard/reports", icon: BarChart3, label: "Reports" },
 ];
 
 const reportMenu = [
+  { href: "/report", icon: FileText, label: "Attendance" },
+  { href: "/access-report", icon: Lock, label: "Access Control" },
+  { href: "/payslips/reports", icon: DollarSign, label: "Payroll Report" },
+  { href: "/visitor/reports", icon: BookUser, label: "Visitor Report" },
+  { href: "/manual-report", icon: Clipboard, label: "Manual Report" },
   {
-    label: "Attendance",
-    icon: FileText,
+    label: "Tracking",
+    icon: LocateFixed,
     children: [
-      { href: "/report",                   icon: FileText,   label: "Attendance Report" },
-      { href: "/report?type=absent",       icon: UserX,      label: "Absent Report" },
-      { href: "/report?type=late-early",   icon: AlarmClock, label: "Late & Early" },
-      { href: "/report?type=leave",        icon: Calendar,   label: "Leave Report" },
-      { href: "/report?type=mobile-log",   icon: Smartphone, label: "Mobile Log Report" },
-    ],
-  },
-  {
-    label: "Access Control",
-    icon: Lock,
-    children: [
-      { href: "/access_control", icon: KeyRound, label: "Access Report" },
-    ],
-  },
-  {
-    label: "Payroll Report",
-    icon: DollarSign,
-    children: [
-      { href: "/payslips/reports", icon: DollarSign, label: "Reports" },
-    ],
-  },
-  {
-    label: "Visitor Report",
-    icon: BookUser,
-    children: [
-      { href: "/visitor/reports", icon: BookUser, label: "Reports" },
-    ],
-  },
-  {
-    label: "Summary Report",
-    icon: BarChart3,
-    children: [
-      { href: "/report?type=summary-daily",   icon: Calendar,      label: "Daily Summary" },
-      { href: "/report?type=summary-monthly", icon: CalendarRange, label: "Monthly Summary" },
-    ],
-  },
-  {
-    label: "Manual Report",
-    icon: Clipboard,
-    children: [
-      { href: "/manual-logs",      icon: Clipboard,   label: "Manual Logs" },
-      { href: "/logs",             icon: Server,      label: "Device Logs" },
       { href: "/live-tracker",     icon: LocateFixed, label: "Live Tracker" },
       { href: "/tracker-history",  icon: History,     label: "Tracker History" },
     ],
@@ -129,7 +93,6 @@ const companyMenu = [
   { href: "/holiday", icon: CalendarDays, label: "Holidays" },
   { href: "/announcements", icon: Megaphone, label: "Announcements" },
   { href: "/activity", icon: ActivitySquare, label: "Activity" },
-  { href: "/settings/leave", icon: Calendar, label: "Leave" },
   { href: "/payslips", icon: DollarSign, label: "Payroll" },
 ];
 
@@ -195,6 +158,8 @@ export const leftNavLinks = {
   "/live-tracker": reportMenu,
   "/access_control": reportMenu,
   "/access_control_logs": reportMenu,
+  "/access-report": reportMenu,
+  "/manual-report": reportMenu,
   "/payslips": reportMenu,
   "/visitor/logs": reportMenu,
   "/visitor/reports": reportMenu,
@@ -229,7 +194,7 @@ export const leftNavLinks = {
   "/geo-fencing": companyMenu,
   "/setup/geofencing": companyMenu,
   "/live-tracker": companyMenu,
-  "/settings/leave": companyMenu,
+  "/settings/leave": leaveMenu,
 };
 
 // notificaiton top is missing

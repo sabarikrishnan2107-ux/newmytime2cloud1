@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { BadgeCheck, Play, User, Briefcase, Contact, CreditCard, RefreshCw, Eye, EyeOff, Info, } from 'lucide-react';
+import { BadgeCheck, Play, User, Briefcase, Contact, CreditCard, RefreshCw, Eye, EyeOff, Info, ScanLine, Loader2 } from 'lucide-react';
 import Input from '@/components/Theme/Input';
 import { Label, SectionTitle } from '@/components/ui/label';
 import RadioGroup from '@/components/Theme/RadioGroup';
@@ -49,12 +49,168 @@ const Form = ({ action = "Add", payload }) => {
     const [designations, setDesignations] = useState([]);
 
     const [loading, setLoading] = useState(false);
+    const [eidScriptReady, setEidScriptReady] = useState(false);
+    const [scanning, setScanning] = useState(false);
 
 
     useEffect(() => {
         if (!payload) return;
         setForm({ ...payload, employee_type: payload.employee_type || "Full Time" });
     }, [payload])
+
+    // Load the Emirates ID toolkit script (same source as the Visitor Reception flow).
+    useEffect(() => {
+        if (typeof window === "undefined") return;
+        if (window.Toolkit) { setEidScriptReady(true); return; }
+        const existing = document.querySelector('script[data-eida-toolkit]');
+        if (existing) {
+            existing.addEventListener("load", () => setEidScriptReady(true));
+            return;
+        }
+        const s = document.createElement("script");
+        s.src = "/eidatoolkit.js";
+        s.async = true;
+        s.dataset.eidaToolkit = "true";
+        s.onload = () => setEidScriptReady(true);
+        s.onerror = () => console.error("Failed to load eidatoolkit.js");
+        document.body.appendChild(s);
+    }, []);
+
+    const readEmiratesIdPublicData = () => {
+        return new Promise((resolve, reject) => {
+            if (typeof window === "undefined" || !window.Toolkit) {
+                reject(new Error("EID Toolkit not loaded"));
+                return;
+            }
+            let ToolkitOB = null;
+            let readerClass = null;
+            let settled = false;
+            const done = (fn, arg) => {
+                if (settled) return;
+                settled = true;
+                try { if (readerClass && readerClass.disconnect) readerClass.disconnect(() => { }); } catch (_) { }
+                fn(arg);
+            };
+            const fail = (msg) => done(reject, new Error(msg));
+
+            const options = {
+                debugEnabled: false,
+                agent_tls_enabled: false,
+                agent_host_name: "toolkitagent.emiratesid.ae",
+                jnlp_address: "/IDCardToolkitService.jnlp",
+                toolkitConfig:
+                    'vg_connection_timeout = 60 \n' +
+                    'log_level = "INFO" \n' +
+                    'log_performance_time = true \n' +
+                    'read_publicdata_offline = false \n',
+            };
+
+            const onOpen = (_resp, error) => {
+                if (error) return fail("Agent open failed: " + (error.message || error));
+                ToolkitOB.getReaderWithEmiratesId(onListReaders);
+            };
+            const onClose = () => { };
+            const onError = (err) => fail("Agent error: " + (err && err.message ? err.message : err));
+
+            const onListReaders = (response, error) => {
+                if (error) return fail("No reader: " + (error.message || error.description || error));
+                readerClass = response;
+                if (!readerClass) return fail("No reader found. Plug in the card reader.");
+                readerClass.connect(onCardConnected);
+            };
+            const onCardConnected = (_resp, error) => {
+                if (error) return fail("Card not connected: " + (error.message || error.code || error));
+                readerClass.getInterfaceType(onInterface);
+            };
+            const onInterface = (response, error) => {
+                if (error) return fail("Interface check failed: " + (error.message || error));
+                const isNfc = response === 2;
+                const requestId = btoa(String(Math.random()).slice(2) + Date.now());
+                readerClass.readPublicData(
+                    requestId, true, true, true, true, !isNfc,
+                    (resp, err) => {
+                        if (err) return fail("Read failed: " + (err.message || err));
+                        resp.isNfc = isNfc;
+                        done(resolve, resp);
+                    }
+                );
+            };
+
+            try { ToolkitOB = new window.Toolkit(onOpen, onClose, onError, options); }
+            catch (e) { fail("Could not start toolkit: " + e); }
+        });
+    };
+
+    // EID returns dates as "DD/MM/YYYY" or "YYYY-MM-DD" depending on locale.
+    // Normalize to ISO "YYYY-MM-DD" so the DatePicker can read it.
+    const normalizeEidDate = (raw) => {
+        if (!raw) return null;
+        const s = String(raw).trim();
+        const ymd = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+        if (ymd) return `${ymd[1]}-${ymd[2]}-${ymd[3]}`;
+        const dmy = s.match(/^(\d{2})[\/.\-](\d{2})[\/.\-](\d{4})/);
+        if (dmy) return `${dmy[3]}-${dmy[2]}-${dmy[1]}`;
+        const d = new Date(s);
+        if (!isNaN(d.getTime())) {
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, "0");
+            const day = String(d.getDate()).padStart(2, "0");
+            return `${y}-${m}-${day}`;
+        }
+        return null;
+    };
+
+    const photoMimeFromBase64 = (b64) => {
+        if (!b64) return "image/jpeg";
+        if (b64.indexOf("/9j/") === 0) return "image/jpeg";
+        if (b64.indexOf("Qk") === 0) return "image/bmp";
+        if (b64.indexOf("iVBOR") === 0) return "image/png";
+        return "image/jpeg";
+    };
+
+    const handleScanEmiratesID = async () => {
+        if (!eidScriptReady) {
+            notify("Loading", "Emirates ID Toolkit is still loading. Please try again in a moment.", "info");
+            return;
+        }
+        setScanning(true);
+        try {
+            const resp = await readEmiratesIdPublicData();
+            const nm = resp.nonModifiablePublicData || {};
+            const home = resp.homeAddress || {};
+            // EID may return commas between name parts (e.g. "RADHAKRISHNAN,,,FIRST,").
+            // Treat commas as separators, collapse spaces, drop empties.
+            const cleanName = (nm.fullNameEnglish || "")
+                .replace(/,+/g, " ")
+                .replace(/\s+/g, " ")
+                .trim();
+            const parts = cleanName.split(" ").filter(Boolean);
+            const firstName = parts[0] || "";
+            const lastName = parts.slice(1).join(" ") || "";
+            const fullName = cleanName;
+            const photoB64 = resp.cardHolderPhoto
+                ? `data:${photoMimeFromBase64(resp.cardHolderPhoto)};base64,${resp.cardHolderPhoto}`
+                : null;
+            setForm((prev) => ({
+                ...prev,
+                first_name: firstName || prev.first_name,
+                last_name: lastName || prev.last_name,
+                full_name: fullName || prev.full_name,
+                gender: nm.gender ? (String(nm.gender).toLowerCase().startsWith("f") ? "Female" : "Male") : prev.gender,
+                date_of_birth: normalizeEidDate(nm.dateOfBirth) || prev.date_of_birth,
+                nationality: nm.nationalityEnglish || nm.nationality || prev.nationality,
+                phone_number: home.mobilePhoneNumber || prev.phone_number,
+                employee_id: resp.iDNumber || prev.employee_id,
+                profile_image_base64: photoB64 || prev.profile_image_base64,
+                profile_picture: photoB64 || prev.profile_picture,
+            }));
+            notify("Success", "Employee details auto-filled from Emirates ID.", "success");
+        } catch (e) {
+            notify("EID read failed", e?.message || String(e), "error");
+        } finally {
+            setScanning(false);
+        }
+    };
 
     const fetchBranches = async () => {
         try {
@@ -112,10 +268,16 @@ const Form = ({ action = "Add", payload }) => {
     };
 
     useEffect(() => {
-        setForm(prev => ({
-            ...prev,
-            full_name: `${prev.first_name} ${prev.last_name}`.trim()
-        }));
+        setForm(prev => {
+            const f = (prev.first_name || "").trim();
+            const l = (prev.last_name || "").trim();
+            const autoDisplay = f && l ? `${f} ${l.charAt(0).toUpperCase()}.` : f;
+            return {
+                ...prev,
+                full_name: `${f} ${l}`.trim(),
+                display_name: autoDisplay,
+            };
+        });
     }, [form.first_name, form.last_name]);
 
     const handleImageUpload = (e) => {
@@ -169,7 +331,17 @@ const Form = ({ action = "Add", payload }) => {
                         }
                         <h1 className="text-xl font-bold text-slate-900 dark:text-white tracking-tight mt-3">{action} Employee</h1>
                     </div>
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="hidden md:flex items-center gap-3">
+                        <button
+                            type="button"
+                            onClick={handleScanEmiratesID}
+                            disabled={scanning || !eidScriptReady}
+                            className="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-bold px-3 py-2 shadow-sm transition-all"
+                            title="Scan Emirates ID to auto-fill employee details"
+                        >
+                            {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CreditCard className="w-3.5 h-3.5" />}
+                            {scanning ? "Scanning..." : "Scan ID"}
+                        </button>
                         <a href="#" className="group flex items-center gap-2 text-xs font-bold text-slate-600 hover:text-red-600 dark:text-slate-400 bg-white dark:bg-slate-800 px-3 py-1.5 rounded-full transition-all border border-slate-200 dark:border-slate-600 shadow-sm">
                             <span className="w-5 h-5 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-red-600 group-hover:bg-red-600 group-hover:text-white transition-colors">
                                 <Play size={10} fill="currentColor" />

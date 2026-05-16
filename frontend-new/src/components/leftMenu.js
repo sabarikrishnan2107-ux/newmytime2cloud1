@@ -177,22 +177,11 @@ export default function LeftMenu() {
                     ${open ? "max-h-[600px]" : "max-h-0"}`}
                 >
                   <div className="mt-1 ml-7 mb-1 flex flex-col">
-                    {link.children.map((child, idx) => {
+                    {link.children.map((child) => {
                       const active = isChildActive(child);
-                      const isLast = idx === link.children.length - 1;
                       const ChildIcon = child.icon;
                       return (
-                        <div key={child.label + child.href} className="relative pl-5">
-                          {/* Vertical trunk — runs full height except for the last child, which stops at its midpoint to form an "L" */}
-                          <span
-                            aria-hidden="true"
-                            className={`absolute left-0 top-0 w-px bg-slate-300 dark:bg-slate-700 ${isLast ? "h-1/2" : "h-full"}`}
-                          />
-                          {/* Horizontal branch from trunk to child */}
-                          <span
-                            aria-hidden="true"
-                            className="absolute left-0 top-1/2 -translate-y-1/2 h-px w-3 bg-slate-300 dark:bg-slate-700"
-                          />
+                        <div key={child.label + child.href}>
                           <Link
                             href={child.href}
                             className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-[14px] whitespace-nowrap transition-colors my-0.5

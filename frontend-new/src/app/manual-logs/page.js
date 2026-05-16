@@ -421,7 +421,7 @@ export default function ManualLogsPage() {
 
       {/* Center Popup Modal */}
       {selectedLog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center px-4">
           <div className="absolute inset-0 bg-black/50" onClick={() => setSelectedLog(null)}></div>
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl border border-gray-200 dark:border-white/10 p-6 w-[500px] max-h-[80vh] overflow-y-auto shadow-2xl">
             <div className="flex items-center justify-between mb-6">

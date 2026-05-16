@@ -120,7 +120,7 @@ export default function AttendanceDailyDialog({isOpen, setIsOpen}) {
 
       {/* Dialog Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center p-4 sm:p-6">
           {/* Backdrop */}
           <div 
             className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity"

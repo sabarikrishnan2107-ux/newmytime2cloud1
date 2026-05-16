@@ -22,16 +22,48 @@ const statusColors = {
   "pre-registered": "bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400",
 };
 
-function KpiCard({ icon: Icon, title, value, change, changeType, iconColor }) {
-  const changeColors = { positive: "text-emerald-500", negative: "text-red-500", neutral: "text-gray-400" };
+const KPI_ACCENTS = {
+  neutral: { iconBg: "rgba(100,116,139,.18)", iconFg: "#94a3b8", label: "#94a3b8" },
+  green:   { iconBg: "rgba(34,197,94,.20)",   iconFg: "#4ade80", label: "#4ade80" },
+  red:     { iconBg: "rgba(239,68,68,.22)",   iconFg: "#fca5a5", label: "#fb7185" },
+  purple:  { iconBg: "rgba(168,85,247,.20)",  iconFg: "#c084fc", label: "#c084fc" },
+  amber:   { iconBg: "rgba(245,158,11,.22)",  iconFg: "#fbbf24", label: "#fbbf24" },
+  blue:    { iconBg: "rgba(59,130,246,.20)",  iconFg: "#60a5fa", label: "#60a5fa" },
+  emerald: { iconBg: "rgba(16,185,129,.20)",  iconFg: "#34d399", label: "#34d399" },
+};
+
+function KpiCard({ icon: Icon, title, value, accent = "neutral", badge }) {
+  const a = KPI_ACCENTS[accent] || KPI_ACCENTS.neutral;
   return (
-    <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4 shadow-sm">
-      <div className="flex items-center gap-2 mb-3">
-        <div className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-800 ${iconColor || "text-primary"}`}><Icon className="w-4 h-4" /></div>
+    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1d2b4a] dark:bg-[#101a30]">
+      <div className="flex items-start justify-between gap-2">
+        <p
+          className="text-[11px] font-semibold tracking-[0.14em] uppercase"
+          style={{ color: a.label }}
+        >
+          {title}
+        </p>
+        <div
+          className="grid place-items-center w-9 h-9 rounded-[10px]"
+          style={{ background: a.iconBg, color: a.iconFg }}
+        >
+          <Icon className="h-4 w-4" strokeWidth={2} />
+        </div>
       </div>
-      <div className="text-2xl font-bold text-gray-800 dark:text-gray-100">{value}</div>
-      <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{title}</div>
-      {change && <div className={`text-[10px] mt-1 ${changeColors[changeType] || "text-gray-400"}`}>{change}</div>}
+
+      <div className="mt-2 flex items-end gap-2">
+        <span className="text-[28px] font-extrabold leading-none tracking-tight tabular-nums text-gray-900 dark:text-white">
+          {value}
+        </span>
+        {badge && (
+          <span
+            className="text-[10px] font-semibold px-1.5 py-0.5 rounded mb-1"
+            style={{ color: a.iconFg, background: a.iconBg }}
+          >
+            {badge}
+          </span>
+        )}
+      </div>
     </div>
   );
 }
@@ -161,29 +193,23 @@ export default function VisitorDashboard() {
 
       {/* Primary KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Users} title="Total Visitors Today" value={stats?.total_today ?? 0} change="" changeType="neutral" />
-        <KpiCard icon={UserCheck} title="Currently Inside" value={stats?.checked_in ?? 0} change="" changeType="neutral" />
-        <KpiCard icon={Clock} title="Pending Approvals" value={stats?.pending_approvals ?? 0} change="" changeType="negative" iconColor="text-amber-500" />
-        <KpiCard icon={AlertTriangle} title="Blacklisted" value={stats?.blacklisted ?? 0} change="" changeType="negative" iconColor="text-red-500" />
+        <KpiCard icon={Users}          title="Total Visitors Today" value={stats?.total_today ?? 0}        accent="neutral" />
+        <KpiCard icon={UserCheck}      title="Currently Inside"     value={stats?.checked_in ?? 0}         accent="green" />
+        <KpiCard icon={Clock}          title="Pending Approvals"    value={stats?.pending_approvals ?? 0}  accent="amber" />
+        <KpiCard icon={AlertTriangle}  title="Blacklisted"          value={stats?.blacklisted ?? 0}        accent="red" />
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: "Pre-Registered", value: stats?.pre_registered ?? 0, icon: CalendarCheck, color: "text-purple-500" },
-          { label: "Weekly Total", value: stats?.weekly_count ?? 0, icon: DoorOpen, color: "text-blue-500" },
-          { label: "Overstayed", value: stats?.overstayed ?? 0, icon: UserX, color: "text-amber-500" },
-          { label: "Badges Printed", value: stats?.total_today ?? 0, icon: BadgeCheck, color: "text-emerald-500" },
-          { label: "Face Verifications", value: 0, icon: Fingerprint, color: "text-blue-400" },
-          { label: "Avg Wait Time", value: "---", icon: Clock, color: "text-purple-400" },
+          { label: "Pre-Registered",    value: stats?.pre_registered ?? 0, icon: CalendarCheck, accent: "purple" },
+          { label: "Weekly Total",      value: stats?.weekly_count ?? 0,   icon: DoorOpen,      accent: "blue" },
+          { label: "Overstayed",        value: stats?.overstayed ?? 0,     icon: UserX,         accent: "amber" },
+          { label: "Badges Printed",    value: stats?.total_today ?? 0,    icon: BadgeCheck,    accent: "emerald" },
+          { label: "Face Verifications",value: 0,                          icon: Fingerprint,   accent: "blue" },
+          { label: "Avg Wait Time",     value: "---",                      icon: Clock,         accent: "purple" },
         ].map((kpi) => (
-          <div key={kpi.label} className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <kpi.icon className={`w-3.5 h-3.5 ${kpi.color}`} />
-              <span className="text-[10px] text-gray-500 dark:text-gray-400">{kpi.label}</span>
-            </div>
-            <div className="text-xl font-bold text-gray-800 dark:text-gray-100">{kpi.value}</div>
-          </div>
+          <KpiCard key={kpi.label} icon={kpi.icon} title={kpi.label} value={kpi.value} accent={kpi.accent} />
         ))}
       </div>
 
@@ -392,7 +418,7 @@ export default function VisitorDashboard() {
 
       {/* Visitor Detail Dialog */}
       {selectedVisitor && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedVisitor(null)}></div>
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">

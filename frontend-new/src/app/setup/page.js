@@ -116,7 +116,7 @@ export default function Index() {
     };
 
     return (
-        <Card className="flex flex-col border-none shadow-none rounded-none h-[calc(100vh-64px)]">
+        <Card className="flex flex-col border-none shadow-none rounded-none h-[calc(100vh-64px)] bg-transparent dark:bg-[#0b1326]">
             {/* Top nav — same style as the Automation page tabs (underline on active) */}
             <CardContent className="shrink-0 px-4 pt-3 bg-transparent">
                 <div className="flex space-x-5 overflow-x-auto whitespace-nowrap scrollbar-none">

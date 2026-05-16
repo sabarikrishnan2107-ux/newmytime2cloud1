@@ -120,37 +120,43 @@ class EmployeeLeavesController extends Controller
             $data = $request->validated();
             $data["order"] = -1;
             $data["leave_type_id"] = $data["leave_type_id"] ?? 0;
+            $isDraft = (bool) ($data["is_draft"] ?? false);
 
             // Create leave record
             $record = EmployeeLeaves::create($data);
             $record->load("employee");
 
-            // Create timeline entry
-            EmployeeLeaveTimeline::create([
-                "employee_leave_id" => $record->id,
-                "description" => "Employee <b>{$record->employee->first_name}</b> has sent a leave request.",
-            ]);
+            if (!$isDraft) {
+                // Create timeline entry only for submitted requests
+                EmployeeLeaveTimeline::create([
+                    "employee_leave_id" => $record->id,
+                    "description" => "Employee <b>{$record->employee->first_name}</b> has sent a leave request.",
+                ]);
+            }
 
             DB::commit();
 
-            // Send realtime notification via central Notify service
-            Notify::push(
-                $record->employee->company_id ?? null,
-                "leave_request",
-                "New Leave Request Came",
-                [
-                    "leave_id" => $record->id,
-                    "employee_id" => $record->employee->id,
-                    "employee_name" => $record->employee->first_name,
-                    "branch_id" => $record->employee->branch_id ?? null,
-                    "department_id" => $record->employee->department_id ?? null,
-                    "source" => "mobile",
-                    "timestamp" => now()->format("Y-m-d H:i"),
-                    "access_url" => "/leaves"
-                ]
-            );
+            if (!$isDraft) {
+                // Send realtime notification only for submitted requests
+                Notify::push(
+                    $record->employee->company_id ?? null,
+                    "leave_request",
+                    "New Leave Request Came",
+                    [
+                        "leave_id" => $record->id,
+                        "employee_id" => $record->employee->id,
+                        "employee_name" => $record->employee->first_name,
+                        "branch_id" => $record->employee->branch_id ?? null,
+                        "department_id" => $record->employee->department_id ?? null,
+                        "source" => "mobile",
+                        "timestamp" => now()->format("Y-m-d H:i"),
+                        "access_url" => "/leaves"
+                    ]
+                );
+            }
 
-            return $this->response('Employee Leave Successfully created.', $record, true);
+            $message = $isDraft ? 'Leave draft saved.' : 'Employee Leave Successfully created.';
+            return $this->response($message, $record, true);
         } catch (\Throwable $th) {
             DB::rollback();
             // Optional: log the error

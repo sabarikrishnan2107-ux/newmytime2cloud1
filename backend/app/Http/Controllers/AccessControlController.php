@@ -34,20 +34,33 @@ class AccessControlController extends Controller
             }
         });
 
-        // $model->when(request()->filled("user_type"), function ($query) use ($request) {
-        //     if ($request->user_type == "Employee") {
-        //         return $query->where('status', $request->user_type);
-        //     } else if ($request->user_type == "Visitor") {
-        //         return $query->where('status', $request->user_type);
-        //     }
-        // });
+        $model->when(request()->filled("user_type"), function ($query) use ($request) {
+            if ($request->user_type == "Employee") {
+                $query->whereHas('employee');
+            } else if ($request->user_type == "Visitor") {
+                $query->whereDoesntHave('employee');
+            }
+        });
 
         $model->when(request()->filled("UserID"), function ($query) use ($request) {
             return $query->where('UserID', $request->UserID);
         });
 
+        $model->when(request()->filled("user_ids"), function ($query) use ($request) {
+            return $query->whereIn('UserID', (array) $request->user_ids);
+        });
+
         $model->when(request()->filled("DeviceID"), function ($query) use ($request) {
             return $query->where('DeviceID', $request->DeviceID);
+        });
+
+        $model->when(request()->filled("device_ids"), function ($query) use ($request) {
+            return $query->whereIn('DeviceID', (array) $request->device_ids);
+        });
+
+        $model->when(request()->filled("branch_ids"), function ($query) use ($request) {
+            $ids = (array) $request->branch_ids;
+            $query->whereHas('employee', fn(Builder $q) => $q->whereIn('branch_id', $ids));
         });
 
         $model->with("device");
@@ -58,7 +71,7 @@ class AccessControlController extends Controller
             // log report) but skip the heavier unrelated relations.
             $q->withOut(["sub_department", "designation", "user"]);
             $q->with('schedule', function ($s) {
-                $s->select('id', 'employee_id', 'shift_type_id');
+                $s->select('id', 'employee_id', 'shift_type_id', 'shift_id');
             });
 
             $q->select(
@@ -77,7 +90,8 @@ class AccessControlController extends Controller
         })
             // ->distinct("LogTime", "UserID", "company_id")
             ->when($request->filled('department_ids'), function ($q) use ($request) {
-                $q->whereHas('employee', fn(Builder $query) => $query->where('department_id', $request->department_ids));
+                $ids = (array) $request->department_ids;
+                $q->whereHas('employee', fn(Builder $query) => $query->whereIn('department_id', $ids));
             })
 
             ->with('device', function ($q) use ($request) {
@@ -192,7 +206,8 @@ class AccessControlController extends Controller
         })
             // ->distinct("LogTime", "UserID", "company_id")
             ->when($request->filled('department_ids'), function ($q) use ($request) {
-                $q->whereHas('employee', fn(Builder $query) => $query->where('department_id', $request->department_ids));
+                $ids = (array) $request->department_ids;
+                $q->whereHas('employee', fn(Builder $query) => $query->whereIn('department_id', $ids));
             })
 
             ->with('device', function ($q) use ($request) {
@@ -320,7 +335,8 @@ class AccessControlController extends Controller
         })
             // ->distinct("LogTime", "UserID", "company_id")
             ->when($request->filled('department_ids'), function ($q) use ($request) {
-                $q->whereHas('employee', fn(Builder $query) => $query->where('department_id', $request->department_ids));
+                $ids = (array) $request->department_ids;
+                $q->whereHas('employee', fn(Builder $query) => $query->whereIn('department_id', $ids));
             })
 
             ->with('device', function ($q) use ($request) {

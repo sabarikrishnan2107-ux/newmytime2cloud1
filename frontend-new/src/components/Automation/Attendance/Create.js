@@ -216,7 +216,7 @@ export default function AttendanceAutomationDialog({
                 <div
                     aria-modal="true"
                     role="dialog"
-                    className="fixed inset-0 z-50 flex justify-end"
+                    className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex justify-end"
                 >
                     {/* Backdrop */}
                     <div

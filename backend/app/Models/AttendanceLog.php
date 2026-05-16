@@ -139,7 +139,10 @@ class AttendanceLog extends Model
 
         $model->with('employee', function ($q) use ($request) {
             $q->where('company_id', $request->company_id);
-            $q->withOut(["schedule", "sub_department", "designation", "user"]);
+            $q->withOut(["sub_department", "designation", "user"]);
+            $q->with('schedule', function ($s) {
+                $s->select('id', 'employee_id', 'shift_type_id', 'shift_id');
+            });
 
             $q->select(
                 "first_name",

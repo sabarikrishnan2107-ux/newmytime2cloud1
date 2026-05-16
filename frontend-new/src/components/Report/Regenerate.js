@@ -238,7 +238,7 @@ const RegenerateReport = ({ shift_type_id, onSuccess = () => { } }) => {
                 <div
                     aria-modal="true"
                     role="dialog"
-                    className="fixed inset-0 z-50 flex items-center justify-center px-4"
+                    className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center px-4"
                 >
                     {/* Backdrop/Overlay */}
                     <div
@@ -347,7 +347,7 @@ const RegenerateReport = ({ shift_type_id, onSuccess = () => { } }) => {
                                 </section>
 
                                 {response.length > 0 && (
-                                    <div className="fixed inset-0 z-[100] flex items-center justify-center">
+                                    <div className="fixed inset-x-0 bottom-0 top-[72px] z-[100] flex items-center justify-center">
                                         <div className="absolute inset-0 bg-black/50" />
                                         <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-2xl border border-gray-200 dark:border-white/10 min-w-[350px] text-center">
                                             {loading ? (

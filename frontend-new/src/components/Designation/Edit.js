@@ -67,7 +67,7 @@ const EditDesignation = ({ defaultPayload, onSuccess = () => { } }) => {
         <div
           aria-modal="true"
           role="dialog"
-          className="fixed inset-0 z-50 flex items-center justify-center px-4"
+          className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center px-4"
         >
           {/* Backdrop/Overlay */}
           <div

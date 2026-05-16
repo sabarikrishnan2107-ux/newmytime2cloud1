@@ -484,16 +484,24 @@ function EmployeeDetailModal({ employee, onClose }) {
     .filter((l) => String(l.log_type || "").toLowerCase() === "out")
     .sort((a, b) => String(b.time).localeCompare(String(a.time)))[0]?.time;
 
-  const workMinutes = (() => {
-    if (!firstInToday || !lastOutToday) return 0;
-    const [h1, m1] = firstInToday.split(":").map(Number);
-    const [h2, m2] = lastOutToday.split(":").map(Number);
-    return Math.max(0, h2 * 60 + m2 - (h1 * 60 + m1));
-  })();
-  const fmtHM = (mins) => `${String(Math.floor(mins / 60)).padStart(2, "0")}:${String(mins % 60).padStart(2, "0")}`;
-  const workTime = fmtHM(workMinutes);
-  const remaining = Math.max(0, 9 * 60 - workMinutes);
-  const overTime = Math.max(0, workMinutes - 9 * 60);
+  // Shift info from schedule (same pattern as access control EmployeeLogsDialog)
+  const shift =
+    employee?.employee?.schedule?.shift ||
+    employee?.schedule?.shift ||
+    employee?.employee?.shift ||
+    employee?.shift;
+  const shiftType =
+    employee?.employee?.schedule?.shift_type ||
+    employee?.schedule?.shift_type;
+  const fmtTime = (t) => {
+    if (!t) return "";
+    const s = String(t);
+    return s.length >= 5 ? s.slice(0, 5) : s;
+  };
+  const shiftName = shift?.name || shiftType?.name || "—";
+  const shiftStart = fmtTime(shift?.on_duty_time || shift?.beginning_in || shift?.start_time);
+  const shiftEnd = fmtTime(shift?.off_duty_time || shift?.ending_out || shift?.end_time);
+  const shiftTime = shiftStart && shiftEnd ? `${shiftStart} – ${shiftEnd}` : (shiftStart || "—");
 
   // 10-day stats
   const dateSet = new Set();
@@ -525,18 +533,17 @@ function EmployeeDetailModal({ employee, onClose }) {
       onClick={onClose}
     >
       <div
-        className="w-[560px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700"
+        className="relative w-[560px] max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl shadow-2xl bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 pt-4"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-end px-4 pt-3">
-          <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-full flex items-center justify-center text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-500/10 transition"
-            title="Close"
-          >
-            <X size={16} />
-          </button>
-        </div>
+        <button
+          onClick={onClose}
+          title="Close"
+          className="group absolute top-3 right-3 z-20 h-8 w-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-200 shadow-md hover:bg-rose-500 hover:text-white active:bg-rose-600 hover:scale-110 active:scale-95 transition-all duration-200"
+        >
+          <X size={16} className="transition-transform duration-200 group-hover:rotate-90" />
+        </button>
+
 
         <div className="grid grid-cols-[160px_1fr] gap-x-4 gap-y-3 px-4 pb-4">
           {/* Row 1: Avatar+name | Stat boxes */}
@@ -570,12 +577,17 @@ function EmployeeDetailModal({ employee, onClose }) {
             </div>
           </div>
 
-          {/* Right side: stat cards on top, table below */}
+          {/* Right side: shift info on top, table below */}
           <div className="flex flex-col gap-3 min-w-0">
-            <div className="grid grid-cols-3 gap-3">
-              <StatBox label="Work Time" value={workTime} />
-              <StatBox label="Remaing Hours" value={fmtHM(remaining)} />
-              <StatBox label="OverTime" value={fmtHM(overTime)} />
+            <div className="grid grid-cols-2 gap-3">
+              <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-3 text-center">
+                <div className="text-sm text-slate-700 dark:text-white">Shift</div>
+                <div className="text-base font-medium text-slate-800 dark:text-white truncate mt-1">{shiftName}</div>
+              </div>
+              <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-3 text-center">
+                <div className="text-sm text-slate-700 dark:text-white">Shift Time</div>
+                <div className="text-base font-medium text-slate-800 dark:text-white tabular-nums mt-1">{shiftTime}</div>
+              </div>
             </div>
 
             <div className="text-[12px]">
@@ -605,6 +617,7 @@ function EmployeeDetailModal({ employee, onClose }) {
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );
@@ -612,7 +625,7 @@ function EmployeeDetailModal({ employee, onClose }) {
 
 function StatBox({ label, value }) {
   return (
-    <div className="rounded-md border border-slate-200 dark:border-slate-700 px-3 py-2.5 text-center">
+    <div className="rounded-md px-3 py-2.5 text-center">
       <div className="text-base font-bold text-slate-800 dark:text-white">{value}</div>
       <div className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">{label}</div>
     </div>

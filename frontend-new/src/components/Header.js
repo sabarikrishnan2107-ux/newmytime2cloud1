@@ -216,7 +216,7 @@ export default function Header() {
   return (
     <>
       <LiveAttendanceNotifier />
-      <header className="flex items-center justify-between bg-white dark:bg-[#293548] px-4 py-3 shadow-[0_8px_20px_-4px_rgba(15,23,42,0.06)] dark:shadow-[0_12px_30px_-4px_rgba(0,0,0,0.9)] z-20">
+      <header className="relative flex items-center justify-between bg-white dark:bg-[#293548] px-4 py-3 h-[72px] shadow-[0_8px_20px_-4px_rgba(15,23,42,0.06)] dark:shadow-none z-[55]">
         <div className="flex items-center space-x-4">
           <div className="flex items-center">
             <img alt="MyTime Cloud logo" className="h-32 w-auto object-contain -my-9" src="/logo22.png" />

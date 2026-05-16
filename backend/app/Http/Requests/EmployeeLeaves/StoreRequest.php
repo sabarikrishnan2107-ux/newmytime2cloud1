@@ -25,15 +25,20 @@ class StoreRequest extends FormRequest
      */
     public function rules()
     {
+        $isDraft = $this->boolean('is_draft');
+
         return [
             'company_id' => 'required',
             'employee_id' => 'required',
             'leave_type_id' => 'nullable',
-            'start_date' => 'required',
-            'end_date' => 'required',
-            'reason' => 'required',
-            'reporting_manager_id' => 'required',
+            'start_date' => $isDraft ? 'nullable' : 'required',
+            'end_date' => $isDraft ? 'nullable' : 'required',
+            'reason' => $isDraft ? 'nullable' : 'required',
+            'reporting_manager_id' => $isDraft ? 'nullable' : 'required',
             'alternate_employee_id' => 'nullable',
+            'day_type' => 'nullable|in:full,half_first,half_second',
+            'emergency_contact' => 'nullable|string|max:64',
+            'is_draft' => 'nullable|boolean',
         ];
     }
 }

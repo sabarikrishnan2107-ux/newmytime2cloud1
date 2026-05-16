@@ -95,7 +95,7 @@ export default function ChangeRequestDialog({ isOpen, setIsOpen, editedItem, onS
   if (!isOpen || !editedItem) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+    <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center px-4">
       <div
         className="absolute inset-0 bg-black/70 backdrop-blur-sm transition-opacity animate-in fade-in duration-300"
         onClick={toggleModal}

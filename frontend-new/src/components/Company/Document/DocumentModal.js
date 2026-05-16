@@ -58,7 +58,7 @@ const DocumentModal = ({ onSuccess = () => { }, employee_id }) => {
 
       {/* Modal Overlay */}
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
 
           {/* Modal Container - Reference style from Education Modal */}
           <div className="relative w-full max-w-[640px] max-h-[90vh] flex flex-col bg-white dark:bg-slate-900 rounded-xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800">

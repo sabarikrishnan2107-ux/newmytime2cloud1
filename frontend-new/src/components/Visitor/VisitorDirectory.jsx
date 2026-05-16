@@ -140,7 +140,7 @@ export default function VisitorDirectory() {
       </div>
 
       {selectedVisitor && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedVisitor(null)}></div>
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-white/10 shadow-2xl overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 px-5 py-4 flex items-center justify-between">
@@ -162,7 +162,7 @@ export default function VisitorDirectory() {
 
       {/* Add Visitor Dialog */}
       {addDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAddDialog(false)}></div>
           <div className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">

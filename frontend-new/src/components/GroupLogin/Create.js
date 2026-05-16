@@ -170,7 +170,7 @@ const Create = ({ isEditOpen = false, defaultPayload = {}, pageTitle = "Add Item
       </Button>
 
       {open && (
-        <div className="fixed inset-0 z-[10] flex items-center justify-center p-4">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center p-4">
           {/* Backdrop with native dark support */}
           <div
             className="absolute inset-0 transition-opacity backdrop-blur-sm "
@@ -178,10 +178,10 @@ const Create = ({ isEditOpen = false, defaultPayload = {}, pageTitle = "Add Item
           />
 
           {/* Modal Container */}
-          <div className="relative z-10 w-full max-w-xl border rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in duration-200 transition-colors bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700 dark:shadow-black">
+          <div className="relative z-10 w-full max-w-xl max-h-[85vh] flex flex-col border rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in duration-200 transition-colors bg-white border-slate-200 dark:bg-slate-900 dark:border-slate-700 dark:shadow-black">
 
             {/* Header */}
-            <div className="px-10 pt-10 pb-4 flex justify-between items-start">
+            <div className="px-10 pt-10 pb-4 flex justify-between items-start flex-shrink-0">
               <div className="flex items-center gap-4">
                 <div className="p-3 rounded-2xl transition-colors bg-primary/20 text-primary dark:bg-primary/10 dark:text-primary-400">
                   <ShieldCheck size={32} strokeWidth={2.5} />
@@ -211,7 +211,7 @@ const Create = ({ isEditOpen = false, defaultPayload = {}, pageTitle = "Add Item
               </div>
             )}
 
-            <form className="p-10 pt-2 space-y-4" onSubmit={onSubmit}>
+            <form className="p-10 pt-2 space-y-4 flex-1 min-h-0 overflow-y-auto" onSubmit={onSubmit}>
 
               {/* Branch & Dept */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

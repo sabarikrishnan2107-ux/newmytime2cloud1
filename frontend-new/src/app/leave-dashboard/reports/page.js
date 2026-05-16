@@ -1,11 +1,14 @@
 "use client";
 
-import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Download, FileText, Filter, FileDown } from "lucide-react";
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-} from "recharts";
+import React, { useState, useMemo, useEffect } from "react";
+import { Download, RefreshCw } from "lucide-react";
 import { differenceInDays, parseISO, format } from "date-fns";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { getLeavesRequest } from "@/lib/endpoint/leaves";
 import { getBranches, getDepartmentsByBranchIds, getScheduledEmployeeList } from "@/lib/api";
 import { api, API_BASE } from "@/lib/api-client";
@@ -55,12 +58,20 @@ export default function LeaveReportsPage() {
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
 
+  // Staged selections (live with the dropdowns)
   const [selectedBranchIds, setSelectedBranchIds] = useState([]);
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([]);
   const [selectedEmployeeTypes, setSelectedEmployeeTypes] = useState([]);
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState([]);
   const [selectedLeaveTypeIds, setSelectedLeaveTypeIds] = useState([]);
   const [selectedStatusIds, setSelectedStatusIds] = useState([]);
+  // Applied filters (only update on Submit) — these drive fetching + filtering
+  const [appliedBranchIds, setAppliedBranchIds] = useState([]);
+  const [appliedDepartmentIds, setAppliedDepartmentIds] = useState([]);
+  const [appliedEmployeeTypes, setAppliedEmployeeTypes] = useState([]);
+  const [appliedEmployeeIds, setAppliedEmployeeIds] = useState([]);
+  const [appliedLeaveTypeIds, setAppliedLeaveTypeIds] = useState([]);
+  const [appliedStatusIds, setAppliedStatusIds] = useState([]);
   const [employees, setEmployees] = useState([]);
 
   const normalizeType = (s) => String(s || "").toLowerCase().replace(/[\s_-]+/g, "");
@@ -90,9 +101,20 @@ export default function LeaveReportsPage() {
     })();
   }, [selectedDepartmentIds]);
 
+  // Fetch whenever applied filters change (Submit click) and on initial mount
   useEffect(() => {
     fetchLeaves();
-  }, [selectedBranchIds, selectedDepartmentIds, selectedEmployeeTypes, selectedEmployeeIds, selectedLeaveTypeIds, selectedStatusIds]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appliedBranchIds, appliedDepartmentIds, appliedEmployeeIds, appliedEmployeeTypes, appliedLeaveTypeIds, appliedStatusIds]);
+
+  const handleSubmit = () => {
+    setAppliedBranchIds(selectedBranchIds);
+    setAppliedDepartmentIds(selectedDepartmentIds);
+    setAppliedEmployeeTypes(selectedEmployeeTypes);
+    setAppliedEmployeeIds(selectedEmployeeIds);
+    setAppliedLeaveTypeIds(selectedLeaveTypeIds);
+    setAppliedStatusIds(selectedStatusIds);
+  };
 
   const fetchLeaveTypes = async () => {
     try {
@@ -114,13 +136,13 @@ export default function LeaveReportsPage() {
         per_page: 2000,
         start_date: `${year}-01-01`,
         end_date: `${year}-12-31`,
-        branch_ids: selectedBranchIds.length > 0 ? selectedBranchIds : undefined,
-        department_ids: selectedDepartmentIds.length > 0 ? selectedDepartmentIds : undefined,
-        employee_ids: selectedEmployeeIds.length > 0 ? selectedEmployeeIds : undefined,
-        employee_types: selectedEmployeeTypes.length > 0 ? selectedEmployeeTypes : undefined,
-        leave_type_id: selectedLeaveTypeIds.length === 1 ? selectedLeaveTypeIds[0] : undefined,
-        leave_type_ids: selectedLeaveTypeIds.length > 0 ? selectedLeaveTypeIds : undefined,
-        status_ids: selectedStatusIds.length > 0 ? selectedStatusIds.map(String) : undefined,
+        branch_ids: appliedBranchIds.length > 0 ? appliedBranchIds : undefined,
+        department_ids: appliedDepartmentIds.length > 0 ? appliedDepartmentIds : undefined,
+        employee_ids: appliedEmployeeIds.length > 0 ? appliedEmployeeIds : undefined,
+        employee_types: appliedEmployeeTypes.length > 0 ? appliedEmployeeTypes : undefined,
+        leave_type_id: appliedLeaveTypeIds.length === 1 ? appliedLeaveTypeIds[0] : undefined,
+        leave_type_ids: appliedLeaveTypeIds.length > 0 ? appliedLeaveTypeIds : undefined,
+        status_ids: appliedStatusIds.length > 0 ? appliedStatusIds.map(String) : undefined,
       };
       const result = await getLeavesRequest(params);
       setLeaveData(Array.isArray(result?.data) ? result.data : []);
@@ -132,34 +154,45 @@ export default function LeaveReportsPage() {
     }
   };
 
-  // Chart data
-  const chartData = useMemo(() => {
-    const deptMap = {};
-    leaveData.forEach((lr) => {
-      const dept = lr.employee?.department?.name || "Unknown";
-      if (!deptMap[dept]) deptMap[dept] = { department: dept, totalDays: 0, approvedDays: 0 };
-      const days = calcDays(lr);
-      deptMap[dept].totalDays += days;
-      if (lr.status === 1) deptMap[dept].approvedDays += days;
-    });
-    return Object.values(deptMap).filter((d) => d.totalDays > 0).sort((a, b) => b.totalDays - a.totalDays);
-  }, [leaveData]);
+  // Client-side fallback filtering for fields the backend doesn't narrow on.
+  // Reads from applied state (only updates on Submit), NOT the live dropdown state.
+  const filteredLeaveData = useMemo(() => {
+    let data = leaveData;
 
-  const monthlyData = useMemo(() => {
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    return months.map((month, idx) => {
-      const monthLeaves = leaveData.filter((l) => new Date(l.start_date).getMonth() === idx);
-      return {
-        month,
-        total: monthLeaves.reduce((s, l) => s + calcDays(l), 0),
-        approved: monthLeaves.filter((l) => l.status === 1).reduce((s, l) => s + calcDays(l), 0),
-      };
-    }).filter((m) => m.total > 0);
-  }, [leaveData]);
+    if (appliedEmployeeIds.length > 0) {
+      const wanted = new Set(appliedEmployeeIds.map(String));
+      data = data.filter((lr) => {
+        const candidates = [
+          lr.employee_id,
+          lr.employee?.id,
+          lr.employee?.employee_id,
+          lr.employee?.system_user_id,
+        ]
+          .filter((v) => v !== undefined && v !== null)
+          .map(String);
+        return candidates.some((c) => wanted.has(c));
+      });
+    }
+
+    if (appliedEmployeeTypes.length > 0) {
+      const normTypes = new Set(appliedEmployeeTypes.map(normalizeType));
+      data = data.filter((lr) => normTypes.has(normalizeType(lr.employee?.employee_type)));
+    }
+
+    if (appliedLeaveTypeIds.length > 1) {
+      const wanted = new Set(appliedLeaveTypeIds.map(String));
+      data = data.filter((lr) => {
+        const ltId = lr.leave_type_id ?? lr.leave_type?.id ?? lr.leave_group_type?.leave_type?.id;
+        return ltId !== undefined && ltId !== null && wanted.has(String(ltId));
+      });
+    }
+
+    return data;
+  }, [leaveData, appliedEmployeeIds, appliedEmployeeTypes, appliedLeaveTypeIds]);
 
   // Table rows
   const tableRows = useMemo(() => {
-    return leaveData.map((lr) => ({
+    return filteredLeaveData.map((lr) => ({
       id: lr.id,
       employee: lr.employee?.first_name || "Unknown",
       profile_picture: lr.employee?.profile_picture,
@@ -170,7 +203,7 @@ export default function LeaveReportsPage() {
       startDate: lr.start_date,
       endDate: lr.end_date,
     }));
-  }, [leaveData]);
+  }, [filteredLeaveData]);
 
   // Stats
   const totalDays = tableRows.reduce((s, r) => s + r.days, 0);
@@ -338,84 +371,35 @@ export default function LeaveReportsPage() {
         </div>
 
         <button
-          onClick={handleExportPDF}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 hover:bg-red-500/20 transition-colors text-sm font-medium whitespace-nowrap"
+          onClick={handleSubmit}
+          className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap"
         >
-          <FileDown className="w-4 h-4" />
-          Export PDF
+          <RefreshCw className={`w-4 h-4 mr-1 ${loading ? "animate-spin" : ""}`} /> Submit
         </button>
-        <button
-          onClick={handleExportCSV}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-primary/10 border border-primary/20 text-primary hover:bg-primary/20 transition-colors text-sm font-medium whitespace-nowrap"
-        >
-          <Download className="w-4 h-4" />
-          Export CSV
-        </button>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Total Requests</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{tableRows.length}</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Total Days</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">{totalDays}</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Approved Days</p>
-          <p className="text-2xl font-bold text-emerald-400 mt-1">{approvedDays}</p>
-        </div>
-        <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-4">
-          <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase">Pending</p>
-          <p className="text-2xl font-bold text-yellow-400 mt-1">{pendingCount}</p>
-        </div>
-      </div>
-
-      {/* Charts */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Leave Usage by Department</h3>
-          </div>
-          {chartData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={chartData} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="department" tick={{ fontSize: 11, fill: "#94a3b8" }} stroke="rgba(255,255,255,0.05)" />
-                <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} stroke="rgba(255,255,255,0.05)" />
-                <Tooltip contentStyle={{ borderRadius: "8px", background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: 13 }} />
-                <Bar dataKey="totalDays" name="Total Days" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="approvedDays" name="Approved" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-sm text-slate-500 text-center py-16">{loading ? "Loading..." : "No data available"}</p>
-          )}
-        </div>
-
-        <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <FileText className="w-4 h-4 text-slate-400" />
-            <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Monthly Trends</h3>
-          </div>
-          {monthlyData.length > 0 ? (
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={monthlyData} barGap={4}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="month" tick={{ fontSize: 12, fill: "#94a3b8" }} stroke="rgba(255,255,255,0.05)" />
-                <YAxis tick={{ fontSize: 12, fill: "#94a3b8" }} stroke="rgba(255,255,255,0.05)" />
-                <Tooltip contentStyle={{ borderRadius: "8px", background: "#1e293b", border: "1px solid rgba(255,255,255,0.1)", color: "#fff", fontSize: 13 }} />
-                <Bar dataKey="total" name="Total Days" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="approved" name="Approved" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <p className="text-sm text-slate-500 text-center py-16">{loading ? "Loading..." : "No data available"}</p>
-          )}
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap focus:outline-none focus:ring-0">
+              <Download className="w-4 h-4" /> Download
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1">
+            <DropdownMenuItem
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <img src="/icons/pdf.png" alt="PDF Icon" className="w-4 h-4" />
+              <span className="text-slate-600 dark:text-slate-300 font-medium">PDF</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={handleExportCSV}
+              className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <img src="/icons/excel.png" alt="Excel Icon" className="w-4 h-4" />
+              <span className="text-slate-600 dark:text-slate-300 font-medium">Excel</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
 
       {/* Data Table */}
@@ -445,7 +429,7 @@ export default function LeaveReportsPage() {
                 <tr><td colSpan={6} className="text-center py-10 text-slate-500">No leave records found</td></tr>
               ) : (
                 tableRows.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-200 dark:border-white/5 last:border-0 hover:bg-slate-100 dark:hover:bg-white dark:bg-white/5 transition-colors">
+                  <tr key={row.id} className="border-b border-slate-200 dark:border-white/5 last:border-0 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-2">
                         <ProfilePicture src={row.profile_picture} className="w-7 h-7" />

@@ -28,7 +28,7 @@ export default (deleteItem, onEdit, onView) => {
                     <ProfilePicture src={e.profile_picture} />
 
                     <div>
-                        <p className="font-medium text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">{e?.first_name}</p>
+                        <p className="font-medium text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">{`${e?.first_name || ""} ${e?.last_name || ""}`.trim() || e?.full_name || "—"}</p>
                         <p className="text-sm text-gray-500">
                             ID: {e.employee_id}
                         </p>

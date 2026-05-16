@@ -218,7 +218,7 @@ const DeviceSettings = ({ device, device_id, open, setOpen, onSuccess = () => { 
                 <div
                     aria-modal="true"
                     role="dialog"
-                    className="fixed inset-0 z-50 flex items-center justify-center px-4"
+                    className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center px-4"
                 >
                     <div
                         className="absolute inset-0 bg-black/70 frosted-glass transition-opacity animate-in fade-in duration-300"

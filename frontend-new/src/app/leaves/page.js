@@ -3,15 +3,17 @@
 // Tailwind safelist (do not remove): bg-amber-500/10 text-amber-400 border-amber-500/20 bg-amber-400 bg-emerald-500/10 text-emerald-400 border-emerald-500/20 bg-emerald-400 bg-rose-500/10 text-rose-400 border-rose-500/20 bg-rose-400 bg-slate-500/10 text-slate-400 border-slate-500/20 bg-slate-400 bg-sky-500/10 text-sky-400 border-sky-500/20 bg-sky-400
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { Search, Download, MoreHorizontal, Plus, Eye, Check, X } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
 import { getBranches, getDepartmentsByBranchIds } from '@/lib/api';
-import { getLeavesRequest, approveLeave, rejectLeave } from '@/lib/endpoint/leaves';
+import { getLeavesRequest, approveLeave, rejectLeave, uploadLeaveDocuments } from '@/lib/endpoint/leaves';
+import { Paperclip } from 'lucide-react';
 import { parseApiError } from '@/lib/utils';
 import { useDebounce } from '@/hooks/useDebounce';
 import MultiDropDown from '@/components/ui/MultiDropDown';
+import DateRangeSelect from '@/components/ui/DateRange';
 import Pagination from '@/lib/Pagination';
-import LeaveViewDialog from '@/components/Employees/LeaveRequests';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import LeaveRequestCreate from '@/components/LeaveRequest/Create';
 import { Button } from '@/components/ui/button';
@@ -30,6 +32,19 @@ const colorForType = (name, idx = 0) => {
 
 const STATUS_LABEL = { 0: "Pending", 1: "Approved", 2: "Rejected" };
 const fmtDate = (s) => (s ? String(s).split("T")[0] : "—");
+
+const computeTotalDays = (r) => {
+  if (r?.total_days) return r.total_days;
+  if (r?.days) return r.days;
+  const s = r?.from_date || r?.start_date;
+  const e = r?.to_date || r?.end_date;
+  if (!s || !e) return null;
+  const ms = new Date(e).getTime() - new Date(s).getTime();
+  if (isNaN(ms) || ms < 0) return null;
+  const days = Math.floor(ms / 86400000) + 1;
+  if (r?.day_type === "half_first" || r?.day_type === "half_second") return days - 0.5;
+  return days;
+};
 
 function Avatar({ name, src, size = 36 }) {
   const [errored, setErrored] = useState(false);
@@ -115,7 +130,10 @@ const STATUS_ITEMS = [
 ];
 
 export default function LeavesPage() {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [reasonDialog, setReasonDialog] = useState({ open: false, action: null, row: null, notes: "", file: null });
+  const [isSubmittingReason, setIsSubmittingReason] = useState(false);
   const [rows, setRows] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -129,12 +147,13 @@ export default function LeavesPage() {
   const [selectedBranch, setSelectedBranch] = useState([]);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
+
+  const toDateStr = (d) => (d ? new Date(d).toISOString().split("T")[0] : undefined);
 
   const [branches, setBranches] = useState([]);
   const [departments, setDepartments] = useState([]);
-
-  const [editedItem, setEditedItem] = useState(null);
-  const [isViewOpen, setIsViewOpen] = useState(false);
 
   useEffect(() => {
     getBranches().then((b) => setBranches([{ name: "Select All", id: "" }, ...b])).catch((e) => setError(parseApiError(e)));
@@ -156,6 +175,8 @@ export default function LeavesPage() {
         department_ids: selectedDepartments,
         status_ids: selectedStatuses,
         search: searchTerm || null,
+        start_date: toDateStr(fromDate),
+        end_date: toDateStr(toDate),
       };
       const result = await getLeavesRequest(params);
       if (result && Array.isArray(result.data)) {
@@ -170,7 +191,7 @@ export default function LeavesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedBranch, selectedDepartments, selectedStatuses, searchTerm]);
+  }, [selectedBranch, selectedDepartments, selectedStatuses, searchTerm, fromDate, toDate]);
 
   const debouncedSetSearch = useDebounce((value) => {
     setSearchTerm(value);
@@ -189,17 +210,39 @@ export default function LeavesPage() {
 
   const handleRefresh = () => fetchRows(currentPage, perPage);
 
-  const handleRowAction = async (action, row) => {
+  const handleRowAction = (action, row) => {
+    if (action === "view") {
+      router.push(`/leaves/view?id=${row.id}`);
+      return;
+    }
+    if (action === "approve" || action === "reject") {
+      setReasonDialog({ open: true, action, row, notes: "", file: null });
+    }
+  };
+
+  const handleConfirmReason = async () => {
+    const { action, row, notes, file } = reasonDialog;
+    if (!row) return;
+    const rowId = row.id;
+    const employeeId = row.employee?.id;
+    setIsSubmittingReason(true);
+    // Close the dialog immediately on click — API runs in the background.
+    setReasonDialog({ open: false, action: null, row: null, notes: "", file: null });
     try {
-      if (action === "view") {
-        setEditedItem(row);
-        setIsViewOpen(true);
-        return;
+      const payload = { approve_reject_notes: notes || "" };
+      if (action === "approve") await approveLeave(rowId, payload);
+      if (action === "reject") await rejectLeave(rowId, payload);
+      if (file) {
+        try {
+          await uploadLeaveDocuments(rowId, employeeId, [{ title: file.name, file }]);
+        } catch (docErr) { console.warn("document upload failed", docErr); }
       }
-      if (action === "approve") await approveLeave(row.id);
-      if (action === "reject") await rejectLeave(row.id);
       handleRefresh();
-    } catch (e) { setError(parseApiError(e)); }
+    } catch (e) {
+      setError(parseApiError(e));
+    } finally {
+      setIsSubmittingReason(false);
+    }
   };
 
   const handleExport = () => {
@@ -213,7 +256,7 @@ export default function LeavesPage() {
         r.leave_type?.name || r.leave_group_type?.leave_type?.name || "",
         fmtDate(r.from_date || r.start_date),
         fmtDate(r.to_date || r.end_date),
-        r.total_days || r.days || "",
+        computeTotalDays(r) ?? "",
         r.reason || r.leave_note || "",
         STATUS_LABEL[r.status] || "",
         fmtDate(r.created_at),
@@ -248,7 +291,7 @@ export default function LeavesPage() {
           </button>
           <Button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5">
             <Plus className="w-4 h-4" />
-            Apply Leave
+            New Leave
           </Button>
         </div>
       </div>
@@ -276,6 +319,17 @@ export default function LeavesPage() {
             value={selectedStatuses}
             onChange={(v) => { setSelectedStatuses(v); setCurrentPage(1); }}
             placeholder="Select a Status"
+          />
+        </div>
+        <div className="min-w-[240px]">
+          <DateRangeSelect
+            value={{ from: fromDate, to: toDate }}
+            numberOfMonths={2}
+            onChange={({ from: newFrom, to: newTo }) => {
+              setFromDate(newFrom);
+              setToDate(newTo);
+              setCurrentPage(1);
+            }}
           />
         </div>
         <div className="relative w-64">
@@ -313,8 +367,9 @@ export default function LeavesPage() {
                 const branch = r.employee?.branch?.name || "";
                 const typeName = r.leave_type?.name || r.leave_group_type?.leave_type?.name;
                 const reason = r.reason || r.leave_note || "—";
+                const openDetails = () => { router.push(`/leaves/view?id=${r.id}`); };
                 return (
-                  <tr key={r.id} className="border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/[0.02]">
+                  <tr key={r.id} onClick={openDetails} className="border-b border-slate-100 dark:border-white/5 last:border-0 hover:bg-slate-50 dark:hover:bg-white/[0.02] cursor-pointer">
                     <td className="px-5 py-3">
                       <div className="flex items-center gap-3">
                         <Avatar name={name} src={r.employee?.profile_picture} />
@@ -330,10 +385,10 @@ export default function LeavesPage() {
                     </td>
                     <td className="px-5 py-3"><TypeChip name={typeName} /></td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-400 whitespace-nowrap">{fmtDate(r.from_date || r.start_date)} → {fmtDate(r.to_date || r.end_date)}</td>
-                    <td className="px-5 py-3 font-semibold text-slate-900 dark:text-white">{r.total_days || r.days || "—"}</td>
+                    <td className="px-5 py-3 font-semibold text-slate-900 dark:text-white">{computeTotalDays(r) ?? "—"}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={reason}>{reason}</td>
                     <td className="px-5 py-3"><StatusPill status={r.status} /></td>
-                    <td className="px-5 py-3 text-right"><RowMenu row={r} onAction={handleRowAction} /></td>
+                    <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}><RowMenu row={r} onAction={handleRowAction} /></td>
                   </tr>
                 );
               })}
@@ -361,9 +416,59 @@ export default function LeavesPage() {
         </DialogContent>
       </Dialog>
 
-      {editedItem && (
-        <LeaveViewDialog editedItem={editedItem} isOpen={isViewOpen} setIsOpen={setIsViewOpen} onSuccess={handleRefresh} />
-      )}
+      <Dialog
+        open={reasonDialog.open}
+        onOpenChange={(v) => !isSubmittingReason && setReasonDialog((d) => ({ ...d, open: v }))}
+      >
+        <DialogContent className="!w-[460px] !max-w-[95%] p-6">
+          <DialogHeader>
+            <DialogTitle>
+              {reasonDialog.action === "approve" ? "Approve Leave Request" : "Reject Leave Request"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mt-3 space-y-3">
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              {reasonDialog.row?.employee?.first_name
+                ? `${reasonDialog.row.employee.first_name} ${reasonDialog.row.employee.last_name || ""}`.trim()
+                : "Employee"}
+              {" — "}
+              {reasonDialog.row?.leave_type?.name || reasonDialog.row?.leave_group_type?.leave_type?.name || "Leave"}
+            </p>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-200">
+              Reason {reasonDialog.action === "reject" && <span className="text-rose-500">*</span>}
+            </label>
+            <textarea
+              value={reasonDialog.notes}
+              onChange={(e) => setReasonDialog((d) => ({ ...d, notes: e.target.value }))}
+              placeholder={
+                reasonDialog.action === "approve"
+                  ? "Optional note for the approval…"
+                  : "Reason for rejecting this request…"
+              }
+              rows={4}
+              className="w-full rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-3 text-sm text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-primary outline-none"
+            />
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                onClick={() => setReasonDialog({ open: false, action: null, row: null, notes: "", file: null })}
+                disabled={isSubmittingReason}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmReason}
+                disabled={isSubmittingReason || (reasonDialog.action === "reject" && !reasonDialog.notes.trim())}
+                className={reasonDialog.action === "approve" ? "bg-emerald-600 hover:bg-emerald-700 text-white" : "bg-rose-600 hover:bg-rose-700 text-white"}
+              >
+                {isSubmittingReason ? "Saving…" : reasonDialog.action === "approve" ? "Approve" : "Reject"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 }

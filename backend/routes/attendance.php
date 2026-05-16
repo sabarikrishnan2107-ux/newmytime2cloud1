@@ -469,6 +469,8 @@ Route::get('employee-attendance-summary', function (Request $request) {
         $today = $now->copy()->startOfDay();
         // Log window. Range param: 1w (default, 7 days), 1m (30 days), 6m (180 days).
         $isCurrentMonth = $monthStart->year === $now->year && $monthStart->month === $now->month;
+        // Data cutoff: for current month, don't count pre-seeded future rows in the stats.
+        $monthDataEnd = $isCurrentMonth ? $today : $monthEnd;
         $logRange = strtolower((string) ($request->log_range ?? '1w'));
         $logDaysCount = ['1w' => 7, '1m' => 30, '6m' => 180][$logRange] ?? 7;
         $logEnd = $isCurrentMonth ? $today : $monthEnd;
@@ -495,10 +497,10 @@ Route::get('employee-attendance-summary', function (Request $request) {
             return $m > 0 ? "{$h}h {$m}m" : "{$h}h";
         };
 
-        // === This month rows ===
+        // === This month rows (capped at today for current month) ===
         $monthRows = \App\Models\Attendance::where('employee_id', $sysId)
             ->where('company_id', $companyId)
-            ->whereBetween('date', [$monthStart->toDateString(), $monthEnd->toDateString()])
+            ->whereBetween('date', [$monthStart->toDateString(), $monthDataEnd->toDateString()])
             ->selectRaw('date, "in" as in_time, "out" as out_time, status, late_coming, total_hrs, device_id_in, device_id_out')
             ->orderBy('date', 'asc')
             ->get();
@@ -524,9 +526,9 @@ Route::get('employee-attendance-summary', function (Request $request) {
         $standardDayMinutes = 480; // 8h
         $overtimeMinutes = max(0, $totalMinutes - ($workingDays * $standardDayMinutes));
         $avgPerDayMinutes = $workingDays > 0 ? intdiv($totalMinutes, $workingDays) : 0;
-        $totalDaysInMonth = $monthEnd->day;
+        $totalDaysInMonth = $monthDataEnd->day;
         $workingDaysInMonth = 0;
-        for ($d = $monthStart->copy(); $d->lte($monthEnd); $d->addDay()) {
+        for ($d = $monthStart->copy(); $d->lte($monthDataEnd); $d->addDay()) {
             $dow = $d->dayOfWeek;
             if ($dow !== \Carbon\Carbon::FRIDAY && $dow !== \Carbon\Carbon::SATURDAY) $workingDaysInMonth++;
         }

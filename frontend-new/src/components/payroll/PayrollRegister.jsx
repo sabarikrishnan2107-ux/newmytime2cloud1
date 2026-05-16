@@ -658,7 +658,7 @@ export default function PayrollRegister() {
 
       {/* Detail Drawer (legacy — kept hidden; inline detail view is now used) */}
       {false && drawerOpen && selectedEmp && (
-        <div className="fixed inset-0 z-50 flex justify-end">
+        <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setDrawerOpen(false)}></div>
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-white/10 shadow-2xl overflow-y-auto">
             {/* Hero header */}

@@ -303,8 +303,8 @@ export default function LeaveBalancesPage() {
       {/* Drawer */}
       {selectedEmployee && (
         <>
-          <div className="fixed inset-0 bg-black/50 z-40" onClick={() => setSelectedEmployee(null)} />
-          <div className="fixed top-0 right-0 h-full w-full max-w-lg z-50 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-white/10 shadow-2xl overflow-y-auto">
+          <div className="fixed inset-x-0 bottom-0 top-[72px] bg-black/50 z-40" onClick={() => setSelectedEmployee(null)} />
+          <div className="fixed top-[72px] right-0 bottom-0 w-full max-w-lg z-50 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-white/10 shadow-2xl overflow-y-auto">
             <div className="sticky top-0 bg-white dark:bg-slate-900/95 backdrop-blur border-b border-slate-200 dark:border-white/10 px-6 py-4 flex items-center justify-between z-10">
               <div className="flex items-center gap-3">
                 <ProfilePicture src={selectedEmployee.profile_picture} className="w-10 h-10" />

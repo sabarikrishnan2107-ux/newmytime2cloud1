@@ -8,6 +8,21 @@ import { createLeave, getLeaveTypesByGroupId, uploadLeaveDocuments } from "@/lib
 import { getEmployeesByDepartmentId } from "@/lib/api/employee";
 import { api, buildQueryParams } from "@/lib/api-client";
 import DropDown from "../ui/DropDown";
+import MultiDropDown from "../ui/MultiDropDown";
+import DateRangeSelect from "@/components/ui/DateRange";
+import { getBranches } from "@/lib/api";
+
+const toYMD = (d) => {
+  if (!d) return "";
+  if (typeof d === "string") return d.slice(0, 10);
+  if (d instanceof Date && !isNaN(d.getTime())) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  return "";
+};
 
 const initialPayload = {
   leave_type_id: "",
@@ -17,7 +32,6 @@ const initialPayload = {
   alternate_employee_id: 0,
   employee_id: 0,
   day_type: "full",
-  emergency_contact: "",
 };
 
 const fieldLabel = "block text-sm font-medium text-slate-700 dark:text-slate-200 mb-1.5";
@@ -35,6 +49,9 @@ export default function LeaveRequestCreate({
   const [form, setForm] = useState(initialPayload);
   const [departmentEmployees, setDepartmentEmployees] = useState([]);
   const [employeeDetails, setEmployeeDetails] = useState(null);
+  const [reportingManager, setReportingManager] = useState(null);
+  const [branches, setBranches] = useState([]);
+  const [selectedBranchIds, setSelectedBranchIds] = useState([]);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [leaveAvailableCount, setLeaveAvailableCount] = useState("");
   const [canApply, setCanApply] = useState(true);
@@ -59,6 +76,9 @@ export default function LeaveRequestCreate({
 
   useEffect(() => {
     fetchDepartmentEmployees();
+    (async () => {
+      try { setBranches(await getBranches()); } catch (e) { /* ignore */ }
+    })();
   }, []);
 
   useEffect(() => {
@@ -72,7 +92,7 @@ export default function LeaveRequestCreate({
       if (!form.employee_id) { setEmployeeDetails(null); return; }
       try {
         const params = await buildQueryParams();
-        const res = await api.get(`/employeev1`, { params: { ...params, per_page: 1, employee_id: form.employee_id } });
+        const res = await api.get(`/employeev1`, { params: { ...params, per_page: 1, id: form.employee_id } });
         const emp = res.data?.data?.[0];
         setEmployeeDetails(emp || null);
       } catch (e) {
@@ -82,6 +102,36 @@ export default function LeaveRequestCreate({
     };
     fetchEmployeeDetails();
   }, [form.employee_id]);
+
+  const selectedEmployee = useMemo(
+    () => departmentEmployees.find((e) => e.id === Number(form.employee_id)),
+    [departmentEmployees, form.employee_id]
+  );
+
+  // Reporting Manager isn't eager-loaded by /employeev1, but the dropdown data
+  // already has reporting_manager_id. Use selectedEmployee directly (no race with
+  // employeeDetails); fetch the manager's name by PK via id= (NOT employee_id=,
+  // which is an ILIKE prefix match on the HR string column).
+  useEffect(() => {
+    const fetchManager = async () => {
+      const managerId = selectedEmployee?.reporting_manager_id;
+      if (!managerId) {
+        setReportingManager(null);
+        return;
+      }
+      try {
+        const params = await buildQueryParams();
+        const res = await api.get(`/employeev1`, {
+          params: { ...params, per_page: 1, id: managerId },
+        });
+        setReportingManager(res.data?.data?.[0] || null);
+      } catch (e) {
+        setReportingManager(null);
+      }
+    };
+    fetchManager();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedEmployee?.reporting_manager_id]);
 
   useEffect(() => {
     const fetchLeaveTypes = async () => {
@@ -129,10 +179,15 @@ export default function LeaveRequestCreate({
         name: e.full_name,
         department: e?.department?.name,
         designation: e?.designation?.name,
-        branch: e?.branch?.name,
+        branch: e?.branch?.branch_name || e?.branch?.name || "",
+        branch_id: e.branch_id,
         leave_group_id: e.leave_group_id,
         reporting_manager_id: e.reporting_manager_id,
-        reporting_manager: e?.reporting_manager?.full_name || e?.reporting_manager?.first_name || "",
+        reporting_manager:
+          e?.reporting_manager?.full_name ||
+          (e?.reporting_manager?.first_name
+            ? `${e.reporting_manager.first_name} ${e.reporting_manager.last_name || ""}`.trim()
+            : ""),
       }));
       setDepartmentEmployees(mapped);
     } catch (error) {
@@ -144,10 +199,24 @@ export default function LeaveRequestCreate({
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const selectedEmployee = useMemo(
-    () => departmentEmployees.find((e) => e.id === Number(form.employee_id)),
-    [departmentEmployees, form.employee_id]
-  );
+  // Employees shown in the dropdown, narrowed by Branch selection
+  const filteredEmployees = useMemo(() => {
+    if (!selectedBranchIds.length) return departmentEmployees;
+    const wanted = new Set(selectedBranchIds.map(String));
+    return departmentEmployees.filter((e) => wanted.has(String(e.branch_id)));
+  }, [departmentEmployees, selectedBranchIds]);
+
+  // If the currently picked employee no longer matches the Branch filter, clear it
+  useEffect(() => {
+    if (
+      form.employee_id &&
+      selectedBranchIds.length > 0 &&
+      !filteredEmployees.some((e) => e.id === Number(form.employee_id))
+    ) {
+      setForm((prev) => ({ ...prev, employee_id: 0 }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedBranchIds, filteredEmployees]);
 
   const dayDifference = useMemo(() => {
     if (!form.start_date || !form.end_date) return 0;
@@ -159,7 +228,11 @@ export default function LeaveRequestCreate({
   }, [form.start_date, form.end_date, form.day_type]);
 
   const onFilesPicked = (files) => {
-    const arr = Array.from(files || []);
+    const arr = Array.from(files || []).filter((f) => {
+      const ok = f.type === "application/pdf" || f.type.startsWith("image/");
+      if (!ok) notify("Invalid file", `${f.name}: only PDF or image files are allowed`, "error");
+      return ok;
+    });
     setDocuments((prev) => [
       ...prev,
       ...arr.map((f) => ({ title: f.name, file: f, previewUrl: URL.createObjectURL(f) })),
@@ -180,18 +253,35 @@ export default function LeaveRequestCreate({
       reason: form.reason,
       alternate_employee_id: form.alternate_employee_id || 0,
       day_type: form.day_type,
-      emergency_contact: form.emergency_contact,
     };
   };
 
   const onSaveDraft = async () => {
+    if (!form.employee_id) {
+      notify("Error", "Please select an employee before saving a draft.", "error");
+      return;
+    }
+    setLoading(true);
     try {
-      const user = await getUser();
-      const key = `leave_draft_${user?.id || "anon"}`;
-      localStorage.setItem(key, JSON.stringify(form));
-      notify("Saved", "Draft saved locally.", "success");
+      const payload = await buildPayload();
+      payload.is_draft = true;
+      const response = await createLeave(null, payload);
+      if (response?.status === false) {
+        if (response.errors) {
+          setErrors(response.errors);
+          const firstKey = Object.keys(response.errors)[0];
+          notify("Error", response.errors[firstKey][0], "error");
+          return;
+        }
+        notify("Error", response.message, "error");
+        return;
+      }
+      notify("Saved", "Draft saved.", "success");
+      onSuccess();
     } catch (e) {
       notify("Error", parseApiError(e), "error");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -251,7 +341,7 @@ export default function LeaveRequestCreate({
           {!staffEmployeeId && (
             <div>
               <label className={fieldLabel}>Employee <span className="text-rose-500">*</span></label>
-              <DropDown width="w-full" items={departmentEmployees} value={form.employee_id || 0} onChange={(v) => handleChange("employee_id", v)} />
+              <DropDown width="w-full" items={filteredEmployees} value={form.employee_id || 0} onChange={(v) => handleChange("employee_id", v)} />
             </div>
           )}
           <div>
@@ -260,7 +350,14 @@ export default function LeaveRequestCreate({
           </div>
           <div>
             <label className={fieldLabel}>Branch</label>
-            <input className={readOnlyInput} value={employeeDetails?.branch?.name || ""} readOnly placeholder="—" />
+            <MultiDropDown
+              placeholder="Select Branch"
+              items={branches}
+              value={selectedBranchIds}
+              onChange={setSelectedBranchIds}
+              badgesCount={1}
+              width="w-full"
+            />
           </div>
           <div>
             <label className={fieldLabel}>Reporting Manager</label>
@@ -270,7 +367,13 @@ export default function LeaveRequestCreate({
                 employeeDetails?.reporting_manager?.full_name ||
                 (employeeDetails?.reporting_manager?.first_name
                   ? `${employeeDetails.reporting_manager.first_name} ${employeeDetails.reporting_manager.last_name || ""}`.trim()
-                  : "")
+                  : "") ||
+                reportingManager?.full_name ||
+                (reportingManager?.first_name
+                  ? `${reportingManager.first_name} ${reportingManager.last_name || ""}`.trim()
+                  : "") ||
+                selectedEmployee?.reporting_manager ||
+                ""
               }
               readOnly
               placeholder="—"
@@ -289,11 +392,34 @@ export default function LeaveRequestCreate({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className={fieldLabel}>From Date <span className="text-rose-500">*</span></label>
-            <input type="date" value={form.start_date} onChange={(e) => handleChange("start_date", e.target.value)} className={fieldInput + " [color-scheme:light] dark:[color-scheme:dark]"} />
+            <DateRangeSelect
+              value={{ from: form.start_date, to: form.start_date }}
+              single
+              numberOfMonths={1}
+              onChange={({ from: newFrom, to: newTo }) => {
+                const picked = toYMD(newFrom || newTo);
+                setForm((prev) => ({
+                  ...prev,
+                  start_date: picked,
+                  end_date: prev.end_date && prev.end_date >= picked ? prev.end_date : picked,
+                }));
+              }}
+            />
           </div>
           <div>
             <label className={fieldLabel}>To Date <span className="text-rose-500">*</span></label>
-            <input type="date" value={form.end_date} min={form.start_date} onChange={(e) => handleChange("end_date", e.target.value)} className={fieldInput + " [color-scheme:light] dark:[color-scheme:dark]"} />
+            <DateRangeSelect
+              value={{ from: form.end_date, to: form.end_date }}
+              single
+              numberOfMonths={1}
+              onChange={({ from: newFrom, to: newTo }) => {
+                const picked = toYMD(newFrom || newTo);
+                setForm((prev) => ({
+                  ...prev,
+                  end_date: picked < (prev.start_date || picked) ? prev.start_date : picked,
+                }));
+              }}
+            />
           </div>
         </div>
 
@@ -339,16 +465,6 @@ export default function LeaveRequestCreate({
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className={fieldLabel}>Emergency Contact</label>
-            <input
-              type="text"
-              value={form.emergency_contact}
-              onChange={(e) => handleChange("emergency_contact", e.target.value)}
-              placeholder="+971 50 000 0000"
-              className={fieldInput}
-            />
-          </div>
-          <div>
             <label className={fieldLabel}>Handover To</label>
             <DropDown
               width="w-full"
@@ -364,7 +480,7 @@ export default function LeaveRequestCreate({
           <label
             className="block cursor-pointer rounded-lg border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 px-4 py-6 text-center hover:border-sky-500 dark:hover:border-sky-500 transition-colors"
           >
-            <input type="file" multiple className="hidden" onChange={(e) => onFilesPicked(e.target.files)} />
+            <input type="file" multiple accept="application/pdf,image/*" className="hidden" onChange={(e) => { onFilesPicked(e.target.files); e.target.value = ""; }} />
             <div className="flex items-center justify-center gap-2 text-sm text-slate-500 dark:text-slate-400">
               <Paperclip className="w-4 h-4" />
               Click to upload medical certificate or supporting docs

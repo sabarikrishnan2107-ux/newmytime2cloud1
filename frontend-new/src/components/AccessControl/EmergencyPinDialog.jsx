@@ -35,7 +35,7 @@ export default function EmergencyPinDialog({ open, onCancel, onUnlock, deviceCou
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/60">
+    <div className="fixed inset-x-0 bottom-0 top-[72px] z-50 flex items-center justify-center px-4 bg-black/60">
       <div className="relative w-full max-w-md rounded-2xl bg-card shadow-elevated overflow-hidden">
         {/* Header */}
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">

@@ -155,14 +155,7 @@ export default function Branch() {
 
 
       {/* Create Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="!w-[600px] !max-w-[90%] p-7">
-          <DialogHeader>
-            <DialogTitle>New Branch</DialogTitle>
-          </DialogHeader>
-          <Create setOpen={setOpen} onSuccess={handleSuccess} />
-        </DialogContent>
-      </Dialog>
+      {open && <Create setOpen={setOpen} onSuccess={handleSuccess} />}
 
       {/* Edit Dialog (controlled by row click) */}
       {editingBranch && (
