@@ -1,0 +1,96 @@
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\report\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\report\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\setup\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\setup\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.t9tdarhop8g'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.t9tdarhop8g'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.acs9c7762hw'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.acs9c7762hw'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\setup\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\setup\\page\\app-build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\report\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\report\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.l3okoqmj8w'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.l3okoqmj8w'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.qx060ix1xi'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.qx060ix1xi'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.re6k4w3wx09'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.re6k4w3wx09'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.3v1c8z1jt6y'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.3v1c8z1jt6y'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\setup\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\setup\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.42t1gsshhl4'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.42t1gsshhl4'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\setup\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\setup\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.yuq7kazfi7'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.yuq7kazfi7'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.vbu3gt2d63'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.vbu3gt2d63'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\favicon.ico\[__metadata_id__]\route\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\favicon.ico\\[__metadata_id__]\\route\\app-paths-manifest.json'
+}

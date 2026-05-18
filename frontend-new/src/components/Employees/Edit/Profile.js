@@ -53,7 +53,13 @@ const Profile = ({ action = "Add", payload }) => {
 
     useEffect(() => {
         if (!payload) return;
-        setForm({ ...payload, employee_type: payload.employee_type || "Full Time" });
+        setForm({
+            ...payload,
+            employee_type: payload.employee_type || "Full Time",
+            // Don't surface stored credentials when editing — admin must type to change.
+            rfid_card_number: "",
+            password: "",
+        });
     }, [payload])
 
     const fetchBranches = async () => {
@@ -396,7 +402,13 @@ dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 dark:hover:text-sl
                     <h4 className="text-xs font-bold flex items-center gap-2 text-gray-600 dark:text-slate-300"><CreditCard size={14} /> Authentication</h4>
                     <div>
                         <Label>RFID Card</Label>
-                        <Input value={form.rfid_card_number} onChange={(e) => setForm({ ...form, rfid_card_number: e.target.value })} placeholder="Scan Card..." />
+                        <Input
+                            value={form.rfid_card_number}
+                            onChange={(e) => setForm({ ...form, rfid_card_number: e.target.value })}
+                            placeholder="Scan Card..."
+                            autoComplete="off"
+                            name="emp-rfid-card-no-fill"
+                        />
                     </div>
                     <div>
                         <Label>System Password</Label>
@@ -409,6 +421,8 @@ dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 dark:hover:text-sl
                                         ...form,
                                         password: e.target.value
                                     })}
+                                    autoComplete="new-password"
+                                    name="emp-system-password-no-fill"
                                 />
                                 <button
                                     type="button"

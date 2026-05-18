@@ -59,8 +59,20 @@ class ReportNotificationCrons extends Command
             return;
         }
 
+        $typeToSlug = [
+            'attendance' => 'daily',
+            'absent' => 'absent',
+            'access_control' => 'access_control',
+            'device' => 'device',
+            'document_expiry' => 'document_expiry',
+        ];
+
         try {
 
+            // Email and Whatsapp deliveries are attendance-shaped (the mail template
+            // and Whatsapp file paths target daily_report_*.pdf). Keep them scoped
+            // to attendance rules only — non-attendance types are handled below by
+            // the rule-level FTP/API dispatcher and by their own alert commands.
             $modelsQuery = ReportNotification::where("type", "attendance")
                 ->with(["managers", "company.company_mail_content"])
                 ->with("managers", function ($query) use ($company_id) {
@@ -176,6 +188,59 @@ class ReportNotificationCrons extends Command
                                 }
                             }
                         }
+                    }
+                }
+
+                // FTP / API rule-level deliveries for ATTENDANCE rules
+                // (independent of managers list; one job per format).
+                $fileSlug = $typeToSlug[$model->type] ?? 'daily';
+                $formats = is_array($model->formats) && !empty($model->formats) ? $model->formats : ['PDF'];
+
+                if (in_array('FTP', $model->mediums ?? [], true) && $model->ftp_config) {
+                    foreach ($formats as $fmt) {
+                        \App\Jobs\DeliverReportViaFtpJob::dispatch($model->id, $fileSlug, $yesterday, $fmt);
+                    }
+                }
+                if (in_array('API', $model->mediums ?? [], true) && $model->api_config) {
+                    foreach ($formats as $fmt) {
+                        \App\Jobs\DeliverReportViaApiJob::dispatch($model->id, $fileSlug, $yesterday, $fmt);
+                    }
+                }
+            }
+
+            // FTP / API delivery for non-attendance types (Absent / AccessControl /
+            // Device / DocumentExpiry). These types do NOT go through the attendance
+            // Email / Whatsapp loop above — Email for them is handled by the existing
+            // alert commands (AlertAbsents etc.), and Whatsapp is not wired in this
+            // iteration. Only the new file-based mediums (FTP / API) fire here.
+            $nonAttendanceTypes = array_diff(array_keys($typeToSlug), ['attendance']);
+            $otherRulesQuery = ReportNotification::whereIn('type', $nonAttendanceTypes)
+                ->where('company_id', $company_id);
+            if ($notification_id) {
+                $otherRulesQuery->where('id', $notification_id);
+            }
+
+            foreach ($otherRulesQuery->get() as $rule) {
+                $hasFtp = in_array('FTP', $rule->mediums ?? [], true) && $rule->ftp_config;
+                $hasApi = in_array('API', $rule->mediums ?? [], true) && $rule->api_config;
+                if (!$hasFtp && !$hasApi) {
+                    continue;
+                }
+
+                $fileSlug = $typeToSlug[$rule->type] ?? null;
+                if (!$fileSlug) {
+                    continue;
+                }
+                $formats = is_array($rule->formats) && !empty($rule->formats) ? $rule->formats : ['PDF'];
+
+                if ($hasFtp) {
+                    foreach ($formats as $fmt) {
+                        \App\Jobs\DeliverReportViaFtpJob::dispatch($rule->id, $fileSlug, $yesterday, $fmt);
+                    }
+                }
+                if ($hasApi) {
+                    foreach ($formats as $fmt) {
+                        \App\Jobs\DeliverReportViaApiJob::dispatch($rule->id, $fileSlug, $yesterday, $fmt);
                     }
                 }
             }

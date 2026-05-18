@@ -77,18 +77,25 @@ class VisitorManagementController extends Controller
         $companyId = $request->company_id;
         $today = Carbon::today();
 
-        // Hourly traffic for today
+        // Hourly traffic for today. Range can be narrowed via ?from_hour=&to_hour= (0–23).
+        $fromHour = (int) ($request->input('from_hour', 0));
+        $toHour = (int) ($request->input('to_hour', 23));
+        $fromHour = max(0, min(23, $fromHour));
+        $toHour = max($fromHour, min(23, $toHour));
+
         $hourlyData = [];
         $todayAttendance = VisitorAttendance::where('company_id', $companyId)
             ->whereDate('date', $today->toDateString())->get();
 
-        for ($h = 6; $h <= 18; $h++) {
+        for ($h = $fromHour; $h <= $toHour; $h++) {
             $hour = str_pad($h, 2, '0', STR_PAD_LEFT);
             $count = $todayAttendance->filter(function ($a) use ($hour) {
                 $inHour = $a->in ? (int) substr($a->in, 0, 2) : -1;
                 return $inHour == (int) $hour;
             })->count();
-            $label = $h < 12 ? "{$h}AM" : ($h == 12 ? "12PM" : ($h - 12) . "PM");
+            $label = $h == 0
+                ? '12AM'
+                : ($h < 12 ? "{$h}AM" : ($h == 12 ? '12PM' : ($h - 12) . 'PM'));
             $hourlyData[] = ['hour' => $label, 'visitors' => $count, 'expected' => 0];
         }
 

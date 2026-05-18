@@ -9,6 +9,8 @@ import Input from "@/components/Theme/Input";
 import TimePicker from "@/components/ui/TimePicker";
 import { storeReportNotification, updateReportNotification } from "@/lib/endpoint/automation";
 import { getUser } from "@/config";
+import FtpDestinationSection from "@/components/Automation/_shared/FtpDestinationSection";
+import ApiDestinationSection from "@/components/Automation/_shared/ApiDestinationSection";
 
 // Use the shared endpoint function for updating
 async function updateAttendanceNotification(id, payload) {
@@ -80,7 +82,10 @@ export default function AttendanceAutomationDialog({
             report_type: "Daily",
             days: ["1"],
             mediums: ["Email"],
+            formats: ["PDF"],
             managers: [],
+            ftp_config: null,
+            api_config: null,
         }),
         []
     );
@@ -122,10 +127,13 @@ export default function AttendanceAutomationDialog({
                 report_type: "Daily",
                 days: editItemPayload?.days || ["1"],
                 mediums: editItemPayload?.mediums || ["Email"],
+                formats: editItemPayload?.formats || ["PDF"],
                 managers: (editItemPayload?.managers || []).map(m => ({
                     name: m.name || "",
                     email: m.email || "",
                 })),
+                ftp_config: editItemPayload?.ftp_config || null,
+                api_config: editItemPayload?.api_config || null,
             });
         } else {
             setForm(defaultForm);
@@ -139,6 +147,13 @@ export default function AttendanceAutomationDialog({
         setForm((p) => ({
             ...p,
             days: p.days.includes(id) ? p.days.filter((d) => d !== id) : [...p.days, id],
+        }));
+    };
+
+    const toggleFormat = (f) => {
+        setForm((p) => ({
+            ...p,
+            formats: p.formats.includes(f) ? p.formats.filter((x) => x !== f) : [...p.formats, f],
         }));
     };
 
@@ -173,8 +188,11 @@ export default function AttendanceAutomationDialog({
                 to_time: form.to_time,
                 days: form.days,
                 mediums: form.mediums,
+                formats: form.formats,
                 managers: form.managers.map(e => ({ ...e, company_id: user.company_id, branch_id: form.branch_id })).filter((m) => m.name || m.email),
                 frequency: "Daily",
+                ftp_config: form.mediums.includes("FTP") ? form.ftp_config : null,
+                api_config: form.mediums.includes("API") ? form.api_config : null,
             };
 
             console.log(payload);
@@ -218,19 +236,18 @@ export default function AttendanceAutomationDialog({
                         onClick={toggleModal}
                     />
 
-                    {/* Right-side drawer */}
+                    {/* Right-side drawer — single scroll container so header, body, and footer scroll together */}
                     <div
                         className={[
                             "relative w-full max-w-2xl",
-                            "h-full overflow-hidden",
+                            "h-full overflow-y-auto custom-scrollbar",
                             "bg-white dark:bg-slate-800 shadow-2xl",
                             "border-l border-gray-100 dark:border-white/10",
                             "transform transition-all animate-in slide-in-from-right duration-200",
-                            "flex flex-col",
                         ].join(" ")}
                     >
                         {/* Header */}
-                        <div className="px-6 py-5 border-b border-gray-200 dark:border-white/10 flex justify-between items-center">
+                        <div className="px-6 py-5 flex justify-between items-center">
                             <div>
                                 <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300">
                                     {editItemPayload?.id ? "Edit Access Control Notification" : "Add Access Control Notification"}
@@ -251,7 +268,7 @@ export default function AttendanceAutomationDialog({
                         </div>
 
                         {/* Body */}
-                        <div className="flex-1 overflow-y-auto p-5 custom-scrollbar bg-surface-variant/30 dark:bg-black/20">
+                        <div className="p-5 bg-surface-variant/30 dark:bg-black/20">
                             <div className="flex flex-col gap-4">
                                 <section className="bg-surface-light dark:bg-surface-dark rounded-2xl p-5 shadow-elevation-1 border border-gray-200 dark:border-white/5">
                                     <h2 className="text-sm font-bold text-gray-600 dark:text-white mb-4">
@@ -278,10 +295,20 @@ export default function AttendanceAutomationDialog({
                                     </div>
 
                                     <div className="mt-4 grid grid-cols-2 gap-3">
+                                        <div className="space-y-1 col-span-2">
+                                            <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wider">Format</label>
+                                            <div className="flex flex-wrap gap-2 mt-1">
+                                                <ChipToggle label="PDF" active={form.formats.includes("PDF")} onClick={() => toggleFormat("PDF")} />
+                                                <ChipToggle label="Excel" active={form.formats.includes("Excel")} onClick={() => toggleFormat("Excel")} />
+                                            </div>
+                                        </div>
+
                                         <div className="space-y-1">
                                             <label className="text-xs font-semibold text-slate-500 dark:text-slate-400 ml-1 uppercase tracking-wider">Medium</label>
                                             <div className="flex flex-wrap gap-2 mt-1">
                                                 <ChipToggle label="Email" active={form.mediums.includes("Email")} onClick={() => toggleMedium("Email")} />
+                                                <ChipToggle label="FTP" active={form.mediums.includes("FTP")} onClick={() => toggleMedium("FTP")} />
+                                                <ChipToggle label="API" active={form.mediums.includes("API")} onClick={() => toggleMedium("API")} />
                                             </div>
                                         </div>
 
@@ -302,6 +329,21 @@ export default function AttendanceAutomationDialog({
                                         </div>
                                     </div>
                                 </section>
+
+                                {form.mediums.includes("FTP") && (
+                                    <FtpDestinationSection
+                                        config={form.ftp_config}
+                                        onChange={(c) => setField("ftp_config", c)}
+                                        isEditing={!!editItemPayload?.id}
+                                    />
+                                )}
+                                {form.mediums.includes("API") && (
+                                    <ApiDestinationSection
+                                        config={form.api_config}
+                                        onChange={(c) => setField("api_config", c)}
+                                        isEditing={!!editItemPayload?.id}
+                                    />
+                                )}
 
                                 <section className="bg-surface-light dark:bg-surface-dark rounded-2xl p-5 shadow-elevation-1 border border-gray-200 dark:border-white/5">
                                     <div className="flex justify-between items-center mb-4">
@@ -363,7 +405,7 @@ export default function AttendanceAutomationDialog({
                         </div>
 
                         {/* Footer */}
-                        <div className="px-6 py-4 border-t border-gray-200 dark:border-white/10 flex justify-end gap-3">
+                        <div className="px-6 py-4 flex justify-end gap-3">
                             <button
                                 type="button"
                                 onClick={toggleModal}

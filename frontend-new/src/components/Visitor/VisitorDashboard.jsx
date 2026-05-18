@@ -11,6 +11,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
+import KpiDetailDialog from "@/components/Visitor/KpiDetailDialog";
 
 const accessMethodData = [];
 
@@ -32,10 +33,19 @@ const KPI_ACCENTS = {
   emerald: { iconBg: "rgba(16,185,129,.20)",  iconFg: "#34d399", label: "#34d399" },
 };
 
-function KpiCard({ icon: Icon, title, value, accent = "neutral", badge }) {
+function KpiCard({ icon: Icon, title, value, accent = "neutral", badge, onClick }) {
   const a = KPI_ACCENTS[accent] || KPI_ACCENTS.neutral;
+  const clickable = typeof onClick === "function";
+  const interactive = clickable
+    ? "cursor-pointer transition-all hover:ring-1 hover:ring-white/20 hover:shadow-lg hover:shadow-black/20"
+    : "";
+  const Tag = clickable ? "button" : "div";
   return (
-    <div className="relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1d2b4a] dark:bg-[#101a30]">
+    <Tag
+      onClick={onClick}
+      type={clickable ? "button" : undefined}
+      className={`relative overflow-hidden rounded-xl border border-gray-200 bg-white px-4 py-3.5 dark:border-[#1d2b4a] dark:bg-[#0e1730] w-full text-left ${interactive}`}
+    >
       <div className="flex items-start justify-between gap-2">
         <p
           className="text-[11px] font-semibold tracking-[0.14em] uppercase"
@@ -64,7 +74,7 @@ function KpiCard({ icon: Icon, title, value, accent = "neutral", badge }) {
           </span>
         )}
       </div>
-    </div>
+    </Tag>
   );
 }
 
@@ -88,15 +98,30 @@ const notifColors = {
   alert: "border-l-red-500 bg-red-50 dark:bg-red-900/10",
 };
 
+// Traffic chart time-range presets — keyed by id, used both for the dropdown
+// label and as the from_hour / to_hour query params passed to analytics.
+const TRAFFIC_RANGES = {
+  "24h":      { label: "24 Hours",          from: 0,  to: 23 },
+  "business": { label: "Business (6AM-6PM)", from: 6,  to: 18 },
+  "morning":  { label: "Morning (6AM-12PM)", from: 6,  to: 12 },
+  "afternoon":{ label: "Afternoon (12PM-6PM)", from: 12, to: 18 },
+  "evening":  { label: "Evening (6PM-12AM)", from: 18, to: 23 },
+  "night":    { label: "Night (12AM-6AM)",   from: 0,  to: 6 },
+};
+
 export default function VisitorDashboard() {
   const [weeklyChartType, setWeeklyChartType] = useState("bar");
   const [trafficChartType, setTrafficChartType] = useState("area");
+  const [trafficRange, setTrafficRange] = useState("24h");
   const [selectedVisitor, setSelectedVisitor] = useState(null);
   const [visitorSearch, setVisitorSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
   const [notifications, setNotifications] = useState([]);
   const [stats, setStats] = useState(null);
+  const [kpiDialog, setKpiDialog] = useState({ open: false, kpiKey: null, title: "" });
+  const openKpiDialog = (kpiKey, title) => setKpiDialog({ open: true, kpiKey, title });
+  const closeKpiDialog = () => setKpiDialog((s) => ({ ...s, open: false }));
   const [liveVisitors, setLiveVisitors] = useState([]);
   const [realHourlyData, setRealHourlyData] = useState([]);
   const [realWeeklyTrend, setRealWeeklyTrend] = useState([]);
@@ -109,13 +134,6 @@ export default function VisitorDashboard() {
         const { data } = await api.get("/visitor-management/dashboard", { params });
         setStats(data);
       } catch (e) { console.warn("Dashboard stats error", e); }
-      try {
-        const { data } = await api.get("/visitor-management/analytics", { params });
-        setRealHourlyData(Array.isArray(data.hourly_data) ? data.hourly_data : []);
-        setRealWeeklyTrend(Array.isArray(data.weekly_trend) ? data.weekly_trend : []);
-        setRealTypeData(Array.isArray(data.type_data) ? data.type_data : []);
-        setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
-      } catch (e) { console.warn("Analytics error", e); }
       try {
         const today = new Date().toISOString().split("T")[0];
         const { data } = await api.get("/visitor-management/logs", { params: { ...params, date: today, per_page: 10 } });
@@ -138,6 +156,26 @@ export default function VisitorDashboard() {
     };
     fetchData();
   }, []);
+
+  // Analytics depends on the traffic range — refetch when the user picks a new window.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const baseParams = await buildQueryParams({});
+      const r = TRAFFIC_RANGES[trafficRange] || TRAFFIC_RANGES["24h"];
+      try {
+        const { data } = await api.get("/visitor-management/analytics", {
+          params: { ...baseParams, from_hour: r.from, to_hour: r.to },
+        });
+        if (cancelled) return;
+        setRealHourlyData(Array.isArray(data.hourly_data) ? data.hourly_data : []);
+        setRealWeeklyTrend(Array.isArray(data.weekly_trend) ? data.weekly_trend : []);
+        setRealTypeData(Array.isArray(data.type_data) ? data.type_data : []);
+        setNotifications(Array.isArray(data.notifications) ? data.notifications : []);
+      } catch (e) { console.warn("Analytics error", e); }
+    })();
+    return () => { cancelled = true; };
+  }, [trafficRange]);
 
   const displayVisitors = liveVisitors;
 
@@ -193,39 +231,57 @@ export default function VisitorDashboard() {
 
       {/* Primary KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Users}          title="Total Visitors Today" value={stats?.total_today ?? 0}        accent="neutral" />
-        <KpiCard icon={UserCheck}      title="Currently Inside"     value={stats?.checked_in ?? 0}         accent="green" />
-        <KpiCard icon={Clock}          title="Pending Approvals"    value={stats?.pending_approvals ?? 0}  accent="amber" />
-        <KpiCard icon={AlertTriangle}  title="Blacklisted"          value={stats?.blacklisted ?? 0}        accent="red" />
+        <KpiCard icon={Users}          title="Total Visitors Today" value={stats?.total_today ?? 0}        accent="neutral" onClick={() => openKpiDialog("total_today", "Total Visitors Today")} />
+        <KpiCard icon={UserCheck}      title="Currently Inside"     value={stats?.checked_in ?? 0}         accent="green"   onClick={() => openKpiDialog("currently_inside", "Currently Inside")} />
+        <KpiCard icon={Clock}          title="Pending Approvals"    value={stats?.pending_approvals ?? 0}  accent="amber"   onClick={() => openKpiDialog("pending_approvals", "Pending Approvals")} />
+        <KpiCard icon={AlertTriangle}  title="Blacklisted"          value={stats?.blacklisted ?? 0}        accent="red"     onClick={() => openKpiDialog("blacklisted", "Blacklisted Visitors")} />
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: "Pre-Registered",    value: stats?.pre_registered ?? 0, icon: CalendarCheck, accent: "purple" },
-          { label: "Weekly Total",      value: stats?.weekly_count ?? 0,   icon: DoorOpen,      accent: "blue" },
-          { label: "Overstayed",        value: stats?.overstayed ?? 0,     icon: UserX,         accent: "amber" },
+          { label: "Pre-Registered",    value: stats?.pre_registered ?? 0, icon: CalendarCheck, accent: "purple",  kpiKey: "pre_registered" },
+          { label: "Weekly Total",      value: stats?.weekly_count ?? 0,   icon: DoorOpen,      accent: "blue",    kpiKey: "weekly_total" },
+          { label: "Overstayed",        value: stats?.overstayed ?? 0,     icon: UserX,         accent: "amber",   kpiKey: "overstayed" },
           { label: "Badges Printed",    value: stats?.total_today ?? 0,    icon: BadgeCheck,    accent: "emerald" },
           { label: "Face Verifications",value: 0,                          icon: Fingerprint,   accent: "blue" },
           { label: "Avg Wait Time",     value: "---",                      icon: Clock,         accent: "purple" },
         ].map((kpi) => (
-          <KpiCard key={kpi.label} icon={kpi.icon} title={kpi.label} value={kpi.value} accent={kpi.accent} />
+          <KpiCard
+            key={kpi.label}
+            icon={kpi.icon}
+            title={kpi.label}
+            value={kpi.value}
+            accent={kpi.accent}
+            onClick={kpi.kpiKey ? () => openKpiDialog(kpi.kpiKey, kpi.label) : undefined}
+          />
         ))}
       </div>
 
       {/* Charts Row */}
       <div className="grid lg:grid-cols-12 gap-6">
         {/* Traffic Chart */}
-        <div className="lg:col-span-6 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
-          <div className="flex items-center justify-between mb-4">
+        <div className="lg:col-span-6 glass-panel rounded-2xl p-5 relative overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
             <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Visitor Traffic — Today</h3>
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-              {[["area", "Area"], ["bar", "Bar"], ["line", "Line"]].map(([type, label]) => (
-                <button key={type} onClick={() => setTrafficChartType(type)}
-                  className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${trafficChartType === type ? "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                  {label}
-                </button>
-              ))}
+            <div className="flex items-center gap-2">
+              <select
+                value={trafficRange}
+                onChange={(e) => setTrafficRange(e.target.value)}
+                className="text-[11px] font-medium rounded-md border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+              >
+                {Object.entries(TRAFFIC_RANGES).map(([key, r]) => (
+                  <option key={key} value={key}>{r.label}</option>
+                ))}
+              </select>
+              <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
+                {[["area", "Area"], ["bar", "Bar"], ["line", "Line"]].map(([type, label]) => (
+                  <button key={type} onClick={() => setTrafficChartType(type)}
+                    className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${trafficChartType === type ? "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={220}>
@@ -259,7 +315,7 @@ export default function VisitorDashboard() {
         </div>
 
         {/* Visitor Types */}
-        <div className="lg:col-span-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
+        <div className="lg:col-span-3 glass-panel rounded-2xl p-5 relative overflow-hidden">
           <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-4">Visitor Types</h3>
           {realTypeData.length === 0 ? (
             <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">No visitor type data</div>
@@ -283,7 +339,7 @@ export default function VisitorDashboard() {
         </div>
 
         {/* Access Methods */}
-        <div className="lg:col-span-3 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
+        <div className="lg:col-span-3 glass-panel rounded-2xl p-5 relative overflow-hidden">
           <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-4">Access Methods</h3>
           {accessMethodData.length === 0 ? (
             <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">No access method data</div>
@@ -308,7 +364,7 @@ export default function VisitorDashboard() {
       </div>
 
       {/* Weekly Trend */}
-      <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
+      <div className="glass-panel rounded-2xl p-5 relative overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Weekly Trend</h3>
@@ -345,7 +401,7 @@ export default function VisitorDashboard() {
       </div>
 
       {/* Recent Visitors Table */}
-      <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden">
+      <div className="glass-panel rounded-2xl relative overflow-hidden">
         <div className="p-4 border-b border-gray-200 dark:border-white/10 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -465,6 +521,13 @@ export default function VisitorDashboard() {
           </div>
         </div>
       )}
+
+      <KpiDetailDialog
+        open={kpiDialog.open}
+        onClose={closeKpiDialog}
+        kpiKey={kpiDialog.kpiKey}
+        title={kpiDialog.title}
+      />
 
     </div>
   );

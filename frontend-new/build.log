@@ -1,4 +1,4 @@
-﻿
+
 > mytime2cloud@0.1.0 build
 > next build
 
@@ -6,13 +6,7 @@
    - Environments: .env.local
 
    Creating an optimized production build ...
-node.exe :  ⚠ Compiled with warnings in 8.0s
-At line:1 char:1
-+ & "C:\Program Files\nodejs/node.exe" "C:\Users\sabar\AppData\Roaming\ ...
-+ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    + CategoryInfo          : NotSpecified: ( ⚠ Compiled with warnings in 8.0s:String) [], RemoteException
-    + FullyQualifiedErrorId : NativeCommandError
- 
+ ⚠ Compiled with warnings in 10.9s
 
 ./node_modules/node-fetch/lib/index.es.js
 Module not found: Can't resolve 'encoding' in 'D:\newmytime2cloud\frontend-new\node_modules\node-fetch\lib'
@@ -25,7 +19,7 @@ Import trace for requested module:
 ./src/components/ImageUploader.jsx
 ./src/components/Employees/Form.js
 
- ⚠ Compiled with warnings in 4.5s
+ ⚠ Compiled with warnings in 9.4s
 
 ./node_modules/face-api.js/build/es6/env/createFileSystem.js
 Module not found: Can't resolve 'fs' in 'D:\newmytime2cloud\frontend-new\node_modules\face-api.js\build\es6\env'
@@ -35,64 +29,64 @@ Import trace for requested module:
 ./node_modules/face-api.js/build/es6/env/index.js
 ./node_modules/face-api.js/build/es6/index.js
 ./src/lib/faceCrop.js
-./src/components/Visitor/Reception.jsx
-./src/app/visitor/reception/page.js
+./src/components/ImageUploader.jsx
+./src/components/Employees/Form.js
 
- ✓ Compiled successfully in 12.7s
+ ✓ Compiled successfully in 20.4s
    Linting and checking validity of types ...
    Collecting page data ...
-   Generating static pages (0/102) ...
-   Generating static pages (25/102) 
-   Generating static pages (50/102) 
-   Generating static pages (76/102) 
- ✓ Generating static pages (102/102)
+   Generating static pages (0/103) ...
+   Generating static pages (25/103) 
+   Generating static pages (51/103) 
+   Generating static pages (77/103) 
+ ✓ Generating static pages (103/103)
    Finalizing page optimization ...
    Collecting build traces ...
    Exporting (0/2) ...
  ✓ Exporting (2/2)
 
 Route (app)                                 Size  First Load JS
-┌ ○ /                                    24.4 kB         426 kB
+┌ ○ /                                    24.5 kB         426 kB
 ├ ○ /_not-found                             1 kB         103 kB
 ├ ○ /access_control                      18.1 kB         231 kB
 ├ ○ /access_control_logs                 5.22 kB         221 kB
 ├ ○ /access-report                       7.64 kB         227 kB
 ├ ○ /activity                            4.59 kB         217 kB
 ├ ○ /announcements                       12.4 kB         217 kB
-├ ○ /announcements/create                3.77 kB         220 kB
+├ ○ /announcements/create                3.76 kB         220 kB
 ├ ○ /announcements/short-list            2.23 kB         205 kB
 ├ ○ /attendance                            785 B         359 kB
 ├ ○ /attendance/change_request           2.32 kB         220 kB
-├ ○ /automation                          10.1 kB         220 kB
-├ ○ /automation/create                   3.77 kB         220 kB
+├ ○ /automation                          10.5 kB         222 kB
+├ ○ /automation/create                   3.76 kB         220 kB
 ├ ○ /branch                               4.2 kB         241 kB
 ├ ○ /company                             14.2 kB         265 kB
 ├ ○ /department-tabs                     7.83 kB         199 kB
 ├ ○ /device                              5.67 kB         218 kB
 ├ ○ /device/create                       6.53 kB         195 kB
-├ ○ /document-expiry                     2.34 kB         204 kB
-├ ○ /employees                           3.45 kB         226 kB
+├ ○ /document-expiry                     2.34 kB         206 kB
+├ ○ /employees                           3.45 kB         227 kB
 ├ ○ /employees/create                    10.7 kB         204 kB
-├ ○ /employees/edit                      17.7 kB         219 kB
-├ ○ /employees/employee_photo_upload     8.87 kB         200 kB
+├ ○ /employees/edit                      18.1 kB         220 kB
+├ ○ /employees/employee_photo_upload     8.84 kB         200 kB
 ├ ○ /employees/short                     2.09 kB         337 kB
 ├ ○ /geo-fencing                         8.06 kB         199 kB
 ├ ○ /holiday                             9.11 kB         236 kB
-├ ○ /leave-dashboard                     10.2 kB         297 kB
+├ ○ /leave-dashboard                     10.1 kB         297 kB
 ├ ○ /leave-dashboard/assignment          5.35 kB         197 kB
 ├ ○ /leave-dashboard/balances            4.85 kB         199 kB
 ├ ○ /leave-dashboard/calendar            7.47 kB         209 kB
-├ ○ /leave-dashboard/leave-groups        2.77 kB         159 kB
+├ ○ /leave-dashboard/leave-groups        2.93 kB         159 kB
 ├ ○ /leave-dashboard/leave-types         3.42 kB         158 kB
 ├ ○ /leave-dashboard/reports             6.47 kB         215 kB
-├ ○ /leave-dashboard/settings            3.37 kB         162 kB
+├ ○ /leave-dashboard/settings            3.54 kB         162 kB
 ├ ○ /leaves                              6.72 kB         229 kB
 ├ ○ /leaves/create                       5.86 kB         108 kB
-├ ○ /leaves/view                         9.96 kB         182 kB
+├ ○ /leaves/view                         9.72 kB         182 kB
 ├ ○ /live-camera                           258 B         134 kB
 ├ ○ /live-camera/register                5.47 kB         158 kB
 ├ ○ /live-camera/stream                  7.03 kB         159 kB
-├ ○ /live-tracker                        7.26 kB         181 kB
+├ ○ /live-tracker                        7.16 kB         181 kB
 ├ ○ /login                                6.5 kB         159 kB
 ├ ○ /login/manager-login                 15.7 kB         216 kB
 ├ ○ /logs                                11.5 kB         236 kB
@@ -104,27 +98,28 @@ Route (app)                                 Size  First Load JS
 ├ ○ /payslips/adjustments                9.58 kB         182 kB
 ├ ○ /payslips/create                     3.77 kB         220 kB
 ├ ○ /payslips/employees                  9.12 kB         209 kB
-├ ○ /payslips/loans                        14 kB         223 kB
+├ ○ /payslips/loans                      13.9 kB         224 kB
 ├ ○ /payslips/register                   7.35 kB         187 kB
 ├ ○ /payslips/reports                    8.73 kB         200 kB
 ├ ○ /payslips/salary-structures            13 kB         194 kB
 ├ ○ /payslips/settings                   5.68 kB         130 kB
 ├ ○ /payslips/short-list                   14 kB         349 kB
-├ ○ /report                              1.11 kB         359 kB
-├ ○ /report/change_request               2.27 kB         220 kB
-├ ○ /roles                               7.69 kB         195 kB
-├ ○ /roles/create                        8.93 kB         170 kB
-├ ○ /schedule                            3.68 kB         240 kB
+├ ○ /report                              1.06 kB         359 kB
+├ ○ /report/change_request               2.28 kB         220 kB
+├ ○ /roles                               7.85 kB         195 kB
+├ ○ /roles/create                        9.09 kB         170 kB
+├ ○ /schedule                            3.69 kB         240 kB
 ├ ○ /schedule/create                     3.77 kB         220 kB
 ├ ○ /schedule/short-list                 2.23 kB         205 kB
+├ ○ /settings/emirate-id                 5.76 kB         136 kB
 ├ ○ /settings/leave                      4.53 kB         196 kB
-├ ○ /setup                               13.9 kB         363 kB
+├ ○ /setup                               13.9 kB         364 kB
 ├ ○ /setup/geofencing                     5.6 kB         158 kB
-├ ○ /shift                               8.28 kB         196 kB
+├ ○ /shift                               8.42 kB         196 kB
 ├ ○ /shift/create                        14.7 kB         203 kB
 ├ ○ /staff/announcement                  2.63 kB         127 kB
-├ ○ /staff/attendance                    7.82 kB         217 kB
-├ ○ /staff/change-request                7.66 kB         176 kB
+├ ○ /staff/attendance                    7.71 kB         217 kB
+├ ○ /staff/change-request                7.55 kB         176 kB
 ├ ○ /staff/change-request/new              172 B         106 kB
 ├ ○ /staff/chat                          4.05 kB         128 kB
 ├ ○ /staff/dashboard                     8.83 kB         136 kB
@@ -139,7 +134,7 @@ Route (app)                                 Size  First Load JS
 ├ ○ /staff/visitor                         172 B         106 kB
 ├ ○ /staff/visitor/new                     172 B         106 kB
 ├ ○ /tracker-history                     4.81 kB         203 kB
-├ ○ /visitor                             7.81 kB         249 kB
+├ ○ /visitor                             9.02 kB         294 kB
 ├ ○ /visitor/blacklist                   4.48 kB         129 kB
 ├ ○ /visitor/check-in                    5.52 kB         130 kB
 ├ ○ /visitor/dashboard                   2.71 kB         216 kB
@@ -147,7 +142,7 @@ Route (app)                                 Size  First Load JS
 ├ ○ /visitor/host-checkin                5.27 kB         129 kB
 ├ ○ /visitor/logs                        3.59 kB         128 kB
 ├ ○ /visitor/pre-register                6.43 kB         139 kB
-├ ○ /visitor/reception                   27.5 kB         218 kB
+├ ○ /visitor/reception                   27.6 kB         218 kB
 ├ ○ /visitor/reports                     7.72 kB         232 kB
 ├ ○ /visitor/settings                    5.66 kB         108 kB
 └ ○ /visitor/zones                       4.01 kB         106 kB

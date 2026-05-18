@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Eye, File, Printer, RefreshCw, RefreshCcw, Pencil, MoreVertical, DownloadCloudIcon, Download, Paperclip, FileText, MessageSquare, Sheet } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { getAttendanceReports, getBranches, getDepartmentsByBranchIds, getScheduledEmployeeList, getStatuses } from '@/lib/api';
@@ -42,7 +43,11 @@ const reportTemplates = [
   { id: `Template3`, name: `Daily` },
 ];
 
-export default function AttendanceTable() {
+function AttendanceTableInner() {
+
+  const searchParams = useSearchParams();
+  const activeType = searchParams.get('type') || '';
+  const isAbsentTab = activeType === 'absent';
 
   const [isLogsOpen, setIsLogsOpen] = useState(false);
   const [selectedLogRow, setSelectedLogRow] = useState(null);
@@ -85,6 +90,11 @@ export default function AttendanceTable() {
     { id: "Trainee", name: "Trainee" },
   ];
   const [selectedReportTemplate, setSelectedReportTemplate] = useState("Template1");
+  const [absentMode, setAbsentMode] = useState("monthly");
+  const absentTemplates = [
+    { id: "daily", name: "Daily" },
+    { id: "monthly", name: "Monthly" },
+  ];
 
   const [from, setFrom] = useState(defaultDates.from);
   const [to, setTo] = useState(defaultDates.to);
@@ -281,7 +291,7 @@ export default function AttendanceTable() {
         from_date: formatDateDubai(from),
         to_date: formatDateDubai(to),
         employee_id: selectedEmployeeIds,
-        statuses: selectedStatusIds,
+        statuses: isAbsentTab ? ['A'] : selectedStatusIds,
         department_ids: selectedDepartmentIds,
         employee_types: selectedEmployeeTypes,
         showTabs: JSON.stringify(orginalTabSet),
@@ -311,12 +321,12 @@ export default function AttendanceTable() {
   const [queryStringUrl] = useState("");
 
   const process_file_in_child_comp = async (type, actionType) => {
-    if (selectedEmployeeIds.length === 0) {
+    if (selectedEmployeeIds.length === 0 && !isAbsentTab) {
       notify("Warning", "Employee not selected", "warning");
       return;
     }
 
-    if (!selectedReportTemplate) {
+    if (!selectedReportTemplate && !isAbsentTab) {
       notify("Warning", "Template not selected", "warning");
       return;
     }
@@ -328,6 +338,47 @@ export default function AttendanceTable() {
     }
 
     try {
+
+      // --- Absent tab branch (Daily/Monthly auto-selected by date range) ---
+      if (isAbsentTab && actionType === 'PDF') {
+        const PDF_SERVICE = process.env.NEXT_PUBLIC_PDF_SERVICE_URL || 'http://localhost:3002';
+        const SUMMARY_BASE = process.env.NEXT_PUBLIC_SUMMARY_REPORT_URL || PDF_SERVICE;
+        const userAbs = getUser();
+        const fromDateAbs = formatDateDubai(from);
+        const toDateAbs = absentMode === 'daily' ? fromDateAbs : formatDateDubai(to);
+        const mode = absentMode;
+        const templatePath = `absent-report/${mode}.html`;
+
+        const paramsObj = {
+          mode,
+          from_date: fromDateAbs,
+          to_date: toDateAbs,
+          company_id: userAbs?.company_id ?? 0,
+          api_base: API_BASE_URL,
+          company_name: userAbs?.company_name || userAbs?.company?.name || 'Company',
+        };
+        if (selectedBranchIds?.length)     paramsObj.branch_ids     = selectedBranchIds.join(',');
+        if (selectedDepartmentIds?.length) paramsObj.department_ids = selectedDepartmentIds.join(',');
+        if (selectedEmployeeIds?.length)   paramsObj.employee_ids   = selectedEmployeeIds.join(',');
+        if (selectedEmployeeTypes?.length) paramsObj.employee_types = selectedEmployeeTypes.join(',');
+
+        const templateUrl = `${SUMMARY_BASE}/${templatePath}?${new URLSearchParams(paramsObj).toString()}`;
+
+        const filename = mode === 'daily'
+          ? `Daily-Absent-Report-${fromDateAbs}.pdf`
+          : `Monthly-Absent-Report-${fromDateAbs}-to-${toDateAbs}.pdf`;
+
+        setIsPdfDownloading(true);
+        setPdfProgress(0);
+        try {
+          await downloadReport(templateUrl, filename, (p) => setPdfProgress(p));
+        } catch (err) {
+          await notify("Error", `Download failed: ${err.message}`, "error");
+        } finally {
+          setTimeout(() => { setIsPdfDownloading(false); setPdfProgress(0); }, 1000);
+        }
+        return;
+      }
 
       const isMultiShift = [2, 5].includes(Number(shiftTypeId));
       const endpointPrefix = isMultiShift ? "multi_in_out_" : "";
@@ -485,15 +536,15 @@ export default function AttendanceTable() {
 
 
   return (
-    <div className='pt-2 pb-4 px-3 md:pt-2 md:pb-6 md:px-6 lg:pt-2 lg:pb-8 lg:px-10 overflow-x-hidden'>
+    <div className='pt-2 pb-4 px-3 md:pt-2 md:pb-6 md:px-6 lg:pt-2 lg:pb-8 lg:px-10 xl:px-12 2xl:px-16 overflow-x-hidden'>
       <PDFProgressOverlay isOpen={isPdfDownloading} progress={pdfProgress} />
       <h3 className="text-2xl font-extrabold text-gray-600 dark:text-slate-300 flex items-center">
-        Attendance Report
+        {isAbsentTab ? 'Absent Report' : 'Attendance Report'}
       </h3>
 
 
       <div className='flex flex-wrap items-center gap-2 my-2'>
-        <div className="flex flex-col min-w-[180px]">
+        <div className="flex-1 min-w-[160px]">
           <MultiDropDown
             placeholder={'Status'}
             items={statusses}
@@ -503,7 +554,7 @@ export default function AttendanceTable() {
           />
         </div>
 
-        <div className="flex flex-col min-w-[180px]">
+        <div className="flex-1 min-w-[160px]">
           <MultiDropDown
             placeholder={'Branch'}
             items={branches}
@@ -513,7 +564,7 @@ export default function AttendanceTable() {
           />
         </div>
 
-        <div className="flex flex-col min-w-[180px]">
+        <div className="flex-1 min-w-[160px]">
           <MultiDropDown
             placeholder={'Department'}
             items={departments}
@@ -523,7 +574,7 @@ export default function AttendanceTable() {
           />
         </div>
 
-        <div className="flex flex-col min-w-[180px]">
+        <div className="flex-1 min-w-[160px]">
           <MultiDropDown
             placeholder={'Employee Type'}
             items={employeeTypeOptions}
@@ -533,7 +584,7 @@ export default function AttendanceTable() {
           />
         </div>
 
-        <div className="flex flex-col min-w-[220px]">
+        <div className="flex-1 min-w-[180px]">
           <MultiDropDown
             placeholder={'Employees'}
             items={
@@ -547,34 +598,53 @@ export default function AttendanceTable() {
           />
         </div>
 
-        <div className="flex flex-col min-w-[200px]">
-          <DropDown
-            placeholder={'Report Template'}
-            onChange={(val) => {
-              setSelectedReportTemplate(val);
-              // Format B: if the existing range spans multiple months, clamp `to`
-              // back into the same month as `from` so it stays single-month.
-              if (val === "TemplateB" && from && to) {
-                const f = new Date(from);
-                const t = new Date(to);
-                if (f.getFullYear() !== t.getFullYear() || f.getMonth() !== t.getMonth()) {
-                  const monthEnd = new Date(f.getFullYear(), f.getMonth() + 1, 0);
-                  setTo(monthEnd);
+        {!isAbsentTab && (
+          <div className="flex-1 min-w-[180px]">
+            <DropDown
+              placeholder={'Report Template'}
+              onChange={(val) => {
+                setSelectedReportTemplate(val);
+                // Format B: if the existing range spans multiple months, clamp `to`
+                // back into the same month as `from` so it stays single-month.
+                if (val === "TemplateB" && from && to) {
+                  const f = new Date(from);
+                  const t = new Date(to);
+                  if (f.getFullYear() !== t.getFullYear() || f.getMonth() !== t.getMonth()) {
+                    const monthEnd = new Date(f.getFullYear(), f.getMonth() + 1, 0);
+                    setTo(monthEnd);
+                  }
                 }
-              }
-            }}
-            value={selectedReportTemplate}
-            items={reportTemplates}
-          />
-        </div>
+              }}
+              value={selectedReportTemplate}
+              items={reportTemplates}
+            />
+          </div>
+        )}
 
-        <div className="flex flex-col min-w-[240px]">
+        {isAbsentTab && (
+          <div className="flex-1 min-w-[180px]">
+            <DropDown
+              placeholder={'Format'}
+              onChange={(val) => {
+                setAbsentMode(val);
+                // When switching to Daily, collapse range to single date
+                if (val === "daily" && from && to) {
+                  setTo(from);
+                }
+              }}
+              value={absentMode}
+              items={absentTemplates}
+            />
+          </div>
+        )}
+
+        <div className="flex-1 min-w-[220px]">
           <DateRangeSelect
             value={{ from, to }}
-            single={selectedReportTemplate === "Template3"}
-            numberOfMonths={selectedReportTemplate === "Template3" || selectedReportTemplate === "TemplateB" ? 1 : 2}
+            single={selectedReportTemplate === "Template3" || (isAbsentTab && absentMode === "daily")}
+            numberOfMonths={selectedReportTemplate === "Template3" || selectedReportTemplate === "TemplateB" || (isAbsentTab && absentMode === "daily") ? 1 : 2}
             onChange={({ from: newFrom, to: newTo }) => {
-              if (selectedReportTemplate === "Template3") {
+              if (selectedReportTemplate === "Template3" || (isAbsentTab && absentMode === "daily")) {
                 const single = newFrom || newTo;
                 setFrom(single);
                 setTo(single);
@@ -585,45 +655,49 @@ export default function AttendanceTable() {
             }} />
         </div>
 
-        {/* Refresh Button */}
-        <button onClick={handleSubmit} className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap">
-          <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} /> Submit
-        </button>
+        {/* Action buttons — kept together so they don't split across rows */}
+        <div className="flex items-center gap-2 shrink-0 ml-auto">
+          <button onClick={handleSubmit} className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap">
+            <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} /> Submit
+          </button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            asChild
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap focus:outline-none focus:ring-0"
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              asChild
+              onClick={(e) => e.stopPropagation()}
             >
-              <Download className="w-4 h-4" /> Download
-            </button>
+              <button
+                className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap focus:outline-none focus:ring-0"
+              >
+                <Download className="w-4 h-4" /> Download
+              </button>
 
-          </DropdownMenuTrigger>
+            </DropdownMenuTrigger>
 
-          <DropdownMenuContent
-            align="end"
-            className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1"
-          >
-            <DropdownMenuItem
-              onClick={() => { process_file_in_child_comp('monthly_download_pdf', 'PDF'); setIsMenuOpen(false); }}
-              className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+            <DropdownMenuContent
+              align="end"
+              className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1"
             >
-              <img src="/icons/pdf.png" alt="PDF Icon" className="w-4 h-4" />
-              <span className="text-slate-600 dark:text-slate-300 font-medium">PDF</span>
-            </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => { process_file_in_child_comp('monthly_download_pdf', 'PDF'); setIsMenuOpen(false); }}
+                className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+              >
+                <img src="/icons/pdf.png" alt="PDF Icon" className="w-4 h-4" />
+                <span className="text-slate-600 dark:text-slate-300 font-medium">PDF</span>
+              </DropdownMenuItem>
 
-            <DropdownMenuItem
-              onClick={() => { process_file_in_child_comp('monthly_download_csv', 'EXCEL'); setIsMenuOpen(false); }}
-              className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-            >
-              <img src="/icons/excel.png" alt="Excel Icon" className="w-4 h-4" />
-              <span className="text-slate-600 dark:text-slate-300 font-medium">Excel</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+              {!isAbsentTab && (
+                <DropdownMenuItem
+                  onClick={() => { process_file_in_child_comp('monthly_download_csv', 'EXCEL'); setIsMenuOpen(false); }}
+                  className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                >
+                  <img src="/icons/excel.png" alt="Excel Icon" className="w-4 h-4" />
+                  <span className="text-slate-600 dark:text-slate-300 font-medium">Excel</span>
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
 
       </div>
 
@@ -854,5 +928,13 @@ export default function AttendanceTable() {
 
 
     </div>
+  );
+}
+
+export default function AttendanceTable() {
+  return (
+    <Suspense fallback={null}>
+      <AttendanceTableInner />
+    </Suspense>
   );
 }

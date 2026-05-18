@@ -52,7 +52,6 @@ export default function EmployeeEditClient() {
           per_page: 1000,
           sortDesc: "false",
           branch_id: selectedBranch,
-          search: searchTerm || null,
         };
         const result = await getEmployees(params);
 
@@ -72,7 +71,7 @@ export default function EmployeeEditClient() {
         setGlobalError(parseApiError(error));
       }
     },
-    [perPage, selectedBranch, searchTerm, employeeId],
+    [perPage, selectedBranch, employeeId],
   );
 
   useEffect(() => {
@@ -167,9 +166,50 @@ export default function EmployeeEditClient() {
                 </div>
               )}
             </div>
+
+            {/* Employee search */}
+            <div className="relative">
+              <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-[18px] pointer-events-none">
+                search
+              </span>
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search employee name or ID..."
+                className="w-full pl-9 pr-9 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm placeholder-slate-400 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200 dark:placeholder-slate-500"
+              />
+              {searchTerm && (
+                <button
+                  type="button"
+                  onClick={() => setSearchTerm("")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded"
+                  aria-label="Clear search"
+                >
+                  <span className="material-symbols-outlined text-[16px]">close</span>
+                </button>
+              )}
+            </div>
           </div>
           <div className="flex-1 overflow-y-auto max-h-[calc(100vh-100px)]">
-            <ul className="">{employees.map(renderEmployeeRow)}</ul>
+            {(() => {
+              const q = searchTerm.trim().toLowerCase();
+              const visible = !q
+                ? employees
+                : employees.filter((e) => {
+                    const full = (e.full_name || `${e.first_name || ""} ${e.last_name || ""}`).toLowerCase();
+                    const eid = String(e.employee_id || "").toLowerCase();
+                    return full.includes(q) || eid.includes(q);
+                  });
+              if (visible.length === 0) {
+                return (
+                  <p className="px-5 py-6 text-center text-sm text-slate-500">
+                    No employees match "{searchTerm}".
+                  </p>
+                );
+              }
+              return <ul className="">{visible.map(renderEmployeeRow)}</ul>;
+            })()}
           </div>
         </div>
         <div className="flex-1 pt-5 pr-5">

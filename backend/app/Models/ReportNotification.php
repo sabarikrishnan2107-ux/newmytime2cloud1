@@ -19,6 +19,9 @@ class ReportNotification extends Model
         'ccs' => 'array',
         'bccs' => 'array',
         'days' => 'array',
+        'formats' => 'array',
+        'ftp_config' => 'encrypted:array',
+        'api_config' => 'encrypted:array',
     ];
 
     public function branch()

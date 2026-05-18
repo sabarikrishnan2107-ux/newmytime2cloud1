@@ -1,10 +1,20 @@
 <?php
 namespace App\Console\Commands;
 
+use App\Jobs\GenerateAbsentReportExcel;
+use App\Jobs\GenerateAbsentReportPDF;
+use App\Jobs\GenerateAccessControlReportExcel;
+use App\Jobs\GenerateAccessControlReportPDF;
+use App\Jobs\GenerateAttendanceReportExcel;
 use App\Jobs\GenerateAttendanceSummaryReport;
 use App\Jobs\GenerateDailyReportPDF;
+use App\Jobs\GenerateDeviceReportExcel;
+use App\Jobs\GenerateDeviceReportPDF;
+use App\Jobs\GenerateDocumentExpiryReportExcel;
+use App\Jobs\GenerateDocumentExpiryReportPDF;
 use App\Jobs\GenerateFormatCReportPDF;
 use App\Models\Company;
+use App\Models\ReportNotification;
 use App\Models\Shift;
 use Illuminate\Console\Command;
 
@@ -86,10 +96,54 @@ class GeneralDailyReport extends Command
             $branchName = $notification?->branch?->branch_name ?? 'N/A';
             $branchId   = (int) ($notification?->branch_id ?? 0);
             $name       = $company['name'] ?? 'Unknown';
+            $formats    = is_array($notification->formats ?? null) && !empty($notification->formats) ? $notification->formats : ['PDF'];
 
-            $this->info("Daily-format report for Company $name (id=$company_id) Branch $branchName (id=$branchId)");
+            $this->info("Daily-format report for Company $name (id=$company_id) Branch $branchName (id=$branchId) formats=" . implode(',', $formats));
 
-            GenerateDailyReportPDF::dispatch($company_id, $branchId, $from_date);
+            if (in_array('PDF', $formats, true)) {
+                GenerateDailyReportPDF::dispatch($company_id, $branchId, $from_date);
+            }
+            if (in_array('Excel', $formats, true)) {
+                GenerateAttendanceReportExcel::dispatch($company_id, $branchId, $from_date);
+            }
+        }
+
+        // ---- Non-attendance daily reports (Absent / AccessControl / Device / DocumentExpiry) ----
+        $nonAttendanceJobs = [
+            'absent' => [GenerateAbsentReportPDF::class, GenerateAbsentReportExcel::class],
+            'access_control' => [GenerateAccessControlReportPDF::class, GenerateAccessControlReportExcel::class],
+            'device' => [GenerateDeviceReportPDF::class, GenerateDeviceReportExcel::class],
+            'document_expiry' => [GenerateDocumentExpiryReportPDF::class, GenerateDocumentExpiryReportExcel::class],
+        ];
+
+        $otherTypeRules = ReportNotification::whereIn('type', array_keys($nonAttendanceJobs))
+            ->where('company_id', $company_id)
+            ->with('branch:id,branch_name')
+            ->get();
+
+        foreach ($otherTypeRules as $rule) {
+            // Only generate new daily reports for non-attendance rules that
+            // actually need a file delivered (FTP or API medium). Rules with
+            // only Email medium continue to be served by the existing alert
+            // commands (AlertAbsents etc.) and don't need a PDF/Excel file.
+            $needsFile = in_array('FTP', $rule->mediums ?? [], true)
+                || in_array('API', $rule->mediums ?? [], true);
+            if (!$needsFile) {
+                continue;
+            }
+
+            $branchId = (int) ($rule->branch_id ?? 0);
+            $formats = is_array($rule->formats) && !empty($rule->formats) ? $rule->formats : ['PDF'];
+            [$pdfJob, $xlsxJob] = $nonAttendanceJobs[$rule->type];
+
+            $this->info("{$rule->type} report for Company id=$company_id Branch id=$branchId formats=" . implode(',', $formats));
+
+            if (in_array('PDF', $formats, true)) {
+                $pdfJob::dispatch($company_id, $branchId, $from_date);
+            }
+            if (in_array('Excel', $formats, true)) {
+                $xlsxJob::dispatch($company_id, $branchId, $from_date);
+            }
         }
 
         // ---- Weekly / Monthly — Format C via Puppeteer (one file per branch × shift_type) ----

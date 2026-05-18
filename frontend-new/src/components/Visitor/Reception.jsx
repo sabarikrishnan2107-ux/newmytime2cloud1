@@ -45,7 +45,7 @@ function fmtTime(t) {
   return `${hh}:${String(m || 0).padStart(2, "0")} ${ampm}`;
 }
 
-const TILE_CLASS = "bg-card border border-border/50 rounded-xl p-4 shadow-card";
+const TILE_CLASS = "bg-card dark:bg-[#0e1730] border border-border/50 rounded-xl p-4 shadow-card";
 
 const expectedVisitors = [
   { id: "v1", name: "David Park", company: "Samsung Electronics", host: "Jennifer Lee", time: "10:30 AM", type: "Business", photo: false, email: "d.park@samsung.com", phone: "+971 50 444 1122", purpose: "Quarterly partnership review", department: "Engineering", duration: "2h", vehicle: "DXB-A-44291", preCheck: true, qr: "QR-VST-8F3A21B7", rfid: "RFID-04:A2:9B:7C:11:8E", nfc: "NFC-UID-E7C40A22" },

@@ -18,3 +18,13 @@ export const deleteReportNotification = async (id) => {
     const { data } = await api.delete(`/report_notification/${id}`);
     return data;
 };
+
+export const testFtpConnection = async (cfg = {}) => {
+    const { data } = await api.post(`/automation/test-ftp`, cfg);
+    return data;
+};
+
+export const testApiConnection = async (cfg = {}) => {
+    const { data } = await api.post(`/automation/test-api`, cfg);
+    return data;
+};

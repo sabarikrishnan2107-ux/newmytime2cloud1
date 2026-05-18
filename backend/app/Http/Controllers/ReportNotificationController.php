@@ -105,8 +105,28 @@ class ReportNotificationController extends Controller
         if (!$request->filled('sortBy')) {
             $model = $model->orderBy('updated_at', 'desc');
         }
-        return $model->with("branch")
-            ->paginate($request->per_page);
+        $page = $model->with("branch")->paginate($request->per_page);
+        $page->getCollection()->transform(fn($n) => $this->maskSecrets($n));
+        return $page;
+    }
+
+    private function maskSecrets(ReportNotification $model): ReportNotification
+    {
+        if (is_array($model->ftp_config) && array_key_exists('password', $model->ftp_config)) {
+            $cfg = $model->ftp_config;
+            if ($cfg['password'] !== null && $cfg['password'] !== '') {
+                $cfg['password'] = '********';
+                $model->ftp_config = $cfg;
+            }
+        }
+        if (is_array($model->api_config) && array_key_exists('auth_value', $model->api_config)) {
+            $cfg = $model->api_config;
+            if ($cfg['auth_value'] !== null && $cfg['auth_value'] !== '') {
+                $cfg['auth_value'] = '********';
+                $model->api_config = $cfg;
+            }
+        }
+        return $model;
     }
     public function testmail()
     {
@@ -127,7 +147,12 @@ class ReportNotificationController extends Controller
             return false;
 
         try {
-            $record = ReportNotification::create($request->except('managers'));
+            $data = $request->except('managers');
+            // Back-compat: if caller didn't send formats, default to PDF.
+            if (empty($data['formats'])) {
+                $data['formats'] = ['PDF'];
+            }
+            $record = ReportNotification::create($data);
 
             if ($record) {
                 $notification_id = $record->id;
@@ -153,7 +178,7 @@ class ReportNotificationController extends Controller
 
     public function show(ReportNotification $ReportNotification)
     {
-        return $ReportNotification->load("branch");
+        return $this->maskSecrets($ReportNotification->load("branch"));
     }
 
     public function update(UpdateRequest $request, ReportNotification $ReportNotification)
@@ -164,7 +189,21 @@ class ReportNotificationController extends Controller
             if (!$request->validated())
                 return false;
 
-            $record = $ReportNotification->update($request->except('managers'));
+            $data = $request->except('managers');
+
+            // Preserve secrets on update when frontend omits them (user didn't retype).
+            if (array_key_exists('ftp_config', $data) && is_array($data['ftp_config'])
+                && (!array_key_exists('password', $data['ftp_config']) || $data['ftp_config']['password'] === null || $data['ftp_config']['password'] === '')
+                && is_array($ReportNotification->ftp_config)) {
+                $data['ftp_config']['password'] = $ReportNotification->ftp_config['password'] ?? null;
+            }
+            if (array_key_exists('api_config', $data) && is_array($data['api_config'])
+                && (!array_key_exists('auth_value', $data['api_config']) || $data['api_config']['auth_value'] === null || $data['api_config']['auth_value'] === '')
+                && is_array($ReportNotification->api_config)) {
+                $data['api_config']['auth_value'] = $ReportNotification->api_config['auth_value'] ?? null;
+            }
+
+            $record = $ReportNotification->update($data);
 
             if ($record) {
 

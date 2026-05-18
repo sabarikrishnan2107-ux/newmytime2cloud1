@@ -18,28 +18,45 @@ class StoreRequest extends FormRequest
     public function rules()
     {
         $isAccessControl = $this->type === "access_control";
+        $mediums = (array) $this->input('mediums', []);
 
         $arr = [
             'automation' => 'nullable',
             'subject' => 'required',
-            // 'body' => 'nullable',
             'email_body' => 'nullable|string|max:5000',
             'day' => 'nullable',
             'date' => 'nullable',
             'company_id' => 'required',
             'branch_id' => 'required',
             'frequency' => 'required',
-            // Access-control notifications run on a window (from_time/to_time)
-            // and don't use the single `time` field, so we relax it for that
-            // type regardless of frequency.
             'time' => $isAccessControl ? 'nullable' : 'required',
             'reports' => 'nullable|array|max:5',
             'mediums' => 'nullable|array',
+            'mediums.*' => 'in:Email,Whatsapp,FTP,API',
+            'formats' => 'nullable|array',
+            'formats.*' => 'in:PDF,Excel',
             'managers' => 'nullable|array',
         ];
 
+        if (in_array('FTP', $mediums, true)) {
+            $arr['ftp_config'] = 'required|array';
+            $arr['ftp_config.protocol'] = 'required|in:ftp,sftp';
+            $arr['ftp_config.host'] = 'required|string';
+            $arr['ftp_config.port'] = 'nullable|integer';
+            $arr['ftp_config.username'] = 'required|string';
+            $arr['ftp_config.password'] = 'required|string';
+            $arr['ftp_config.remote_path'] = 'required|string';
+        }
+
+        if (in_array('API', $mediums, true)) {
+            $arr['api_config'] = 'required|array';
+            $arr['api_config.endpoint'] = 'required|url';
+            $arr['api_config.auth_type'] = 'required|in:none,api_key,bearer,basic';
+            $arr['api_config.auth_value'] = 'required_unless:api_config.auth_type,none|nullable|string';
+            $arr['api_config.auth_header_name'] = 'required_if:api_config.auth_type,api_key|nullable|string';
+        }
+
         if ($isAccessControl) {
-            // Access control always needs a time window + at least one day
             $arr['from_time'] = 'required';
             $arr['to_time']   = 'required';
             $arr['days']      = 'required';

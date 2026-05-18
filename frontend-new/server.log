@@ -1,289 +1,88 @@
-﻿ INFO  Accepting connections at http://localhost:3001
- HTTP  15/05/2026 6:27:07 PM ::1 GET /employees/create/
- HTTP  15/05/2026 6:27:07 PM ::1 Returned 200 in 42 ms
- HTTP  15/05/2026 6:27:07 PM ::1 GET /_next/static/css/e52d105b64419d13.css
- HTTP  15/05/2026 6:27:07 PM ::1 Returned 200 in 10 ms
- HTTP  15/05/2026 6:27:07 PM 127.0.0.1 GET /logo22.png
- HTTP  15/05/2026 6:27:07 PM 127.0.0.1 GET /_next/static/chunks/webpack-e4426bb3840f3199.js
- HTTP  15/05/2026 6:27:07 PM ::1 GET /_next/static/chunks/main-app-e8f6d1c6cec109df.js
- HTTP  15/05/2026 6:27:07 PM ::1 GET /_next/static/chunks/4bd1b696-182b6b13bdad92e3.js
- HTTP  15/05/2026 6:27:07 PM ::1 GET /_next/static/chunks/1255-f1b4181a87abbba2.js
- HTTP  15/05/2026 6:27:07 PM 127.0.0.1 Returned 304 in 7 ms
- HTTP  15/05/2026 6:27:07 PM ::1 Returned 304 in 6 ms
- HTTP  15/05/2026 6:27:07 PM ::1 Returned 304 in 7 ms
- HTTP  15/05/2026 6:27:07 PM ::1 Returned 304 in 7 ms
- HTTP  15/05/2026 6:27:07 PM 127.0.0.1 Returned 304 in 20 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/147e179b-60f13e02b9fc7dc7.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/1029-b6e345a333841a3a.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/5125-9876791c4dcf463a.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/2619-04bc32f026a0d946.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/2843-e5b3debc9e1bd338.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/5490-d38be868a3cc3b79.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/9891-6c1cfe6c4945cd41.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/app/layout-ae684e1c603f86f5.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 6 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 6 ms
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/41ade5dc-020667901316d9d2.js
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/4909-725bb5626f16c299.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/1221-385aeaf972c26d76.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/6093-da8af415b686f250.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/1691-afbaa69463e08b54.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/3499-2a6e0fff63f898b6.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/6145-8e756ec1eaca34bc.js
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/9566-ca31e344c382307c.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/app/employees/create/page-88dd1c9e6cc27c78.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/4128-f797ae9c87be818c.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/581-e34b5a42b205e18b.js
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM ::1 GET /eidatoolkit.js
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/2043.2dc9583fe08644df.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:08 PM ::1 GET /employees/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /shift/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /leave-dashboard/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 4 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 200 in 4 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 200 in 4 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /live-tracker/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/9717-a5d88b30b19268cf.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/7731-19f8928266550240.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/7818-5c0423e3a4d9e7eb.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/1701-16fd913fc40bd87f.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /_next/static/chunks/8116-ae2a4b01fdcf1644.js
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/5280-a6f303bd1d77a1bb.js
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/app/page-fd162bf46e669d3e.js
- HTTP  15/05/2026 6:27:08 PM ::1 GET /access_control/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 GET /_next/static/chunks/4127-35d78e9d1074522e.js
- HTTP  15/05/2026 6:27:08 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:08 PM 127.0.0.1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/7971-ba51c80fc05f8619.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/css/a1215abce9854eff.css
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/2769-5b75c7bddf7ca30a.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/8115-d20438bb43323195.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/8888-2bc48dc6cdab90b2.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/employees/page-006426449116cf30.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /payslips/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/shift/page-b1b8421cf2ccb2bf.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /visitor/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/343-f4634ac7c7c1fa0e.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/leave-dashboard/page-4df8fd6fa773c159.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /report/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/6046-6dae7f38a9a90f42.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/live-tracker/page-b06fed662a2ef0ae.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /setup/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/1163-ff8e8021a5c871ca.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/4599-f4d7530980116362.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/2857-5bbd99420d82dc1c.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/8419-f05b91990b267357.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/access_control/page-fe2fdfde6b41c6fd.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /employees/employee_photo_upload/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/5449-f6444def8cdbcb0e.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/4531-12b15ea44d7fb9c9.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/9708-e557f46ba14ca544.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/app/payslips/page-10515f169373aef1.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /leaves/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/3318-3454a7230fa3f266.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/app/visitor/page-b5f322c41a4d225d.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /document-expiry/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/8889-7ecd83c7bb9a8602.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/7560-856bb8c5f356ec4a.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/1826-cb0b9013d6fd147a.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/report/page-81ca26b8255d0939.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /logs/index.txt?_rsc=9wmwd
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/4e6af11a-91848a65c1aa4511.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/1733-1f8b2a790fca4605.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/4543-02cf67a4c3e09597.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/9464-dab20c484513f605.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/8060-11601f0db54e2680.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/284-88b83c24697bc96b.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/2085-b988bcbdac809b72.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/app/setup/page-e5defee61bf3492a.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/app/employees/employee_photo_upload/page-003c7577f0332b68.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/1385-b91450d7ee59cdd3.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/leaves/page-a3d05fd8d5a3a4ca.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 GET /_next/static/chunks/7759-769e690ec452cb14.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/document-expiry/page-6340f24584b5a700.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/739-4b58ece20fc867c9.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/app/logs/page-4fb641c9a85cbcf4.js
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 5 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 4 ms
- HTTP  15/05/2026 6:27:09 PM 127.0.0.1 Returned 304 in 5 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 4 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 4 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 4 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/b478a885.3ddcc9a460f07513.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/3c932782.f92c44fd0d08e517.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 5 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/5000.e9a0af4c617c4d54.js
- HTTP  15/05/2026 6:27:09 PM ::1 GET /_next/static/chunks/5019.bd3216b75ff26d31.js
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /models/tiny_face_detector_model-weights_manifest.json
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 GET /favicon.ico
- HTTP  15/05/2026 6:27:09 PM ::1 GET /models/tiny_face_detector_model-shard1
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 2 ms
- HTTP  15/05/2026 6:27:09 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /company/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 GET /branch/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 GET /department-tabs/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 GET /login/manager-login/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /device/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/company/page-32959fe032b0fc81.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/department-tabs/page-dd2764c67ffbc595.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/5238-03a3a9eb658b8fe1.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /automation/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/3874-60c9b2ac0e1c2c5a.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /roles/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 304 in 4 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/login/manager-login/page-ecffda6768423210.js
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/branch/page-20c83a14448243bf.js
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /live-camera/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/device/page-7ca94200bcde25ec.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /geo-fencing/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /holiday/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/automation/page-6721afad65f4da2b.js
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/roles/page-5cace30393540008.js
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /announcements/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/geo-fencing/page-aa6286cfe8e12d67.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/5601-b158666129ed2f52.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/1030-928c728c4e97d595.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /activity/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/holiday/page-07eba75da26da741.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/live-camera/page-52f8e5f523a7ce29.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/4666-8a119cc061570338.js
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/announcements/page-59e0cad074a77d09.js
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 304 in 3 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:29:43 PM ::1 GET /_next/static/chunks/app/activity/page-bdf2063e4948a575.js
- HTTP  15/05/2026 6:29:43 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:40:22 PM ::1 GET /holiday/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:40:22 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:40:24 PM ::1 GET /announcements/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:40:24 PM ::1 Returned 304 in 1 ms
- HTTP  15/05/2026 6:40:54 PM ::1 GET /employees/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:40:54 PM ::1 Returned 200 in 0 ms
- HTTP  15/05/2026 6:40:55 PM ::1 GET /shift/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:40:55 PM ::1 GET /leave-dashboard/index.txt?_rsc=1df51
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:40:55 PM ::1 GET /leaves/index.txt?_rsc=xmll0
- HTTP  15/05/2026 6:40:55 PM ::1 GET /leave-dashboard/balances/index.txt?_rsc=xmll0
- HTTP  15/05/2026 6:40:55 PM ::1 GET /settings/leave/index.txt?_rsc=xmll0
- HTTP  15/05/2026 6:40:55 PM ::1 GET /leave-dashboard/reports/index.txt?_rsc=xmll0
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 1 ms
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 36 ms
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 36 ms
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 49 ms
- HTTP  15/05/2026 6:40:55 PM ::1 GET /_next/static/chunks/7643-b09888f01c320039.js
- HTTP  15/05/2026 6:40:55 PM ::1 GET /_next/static/chunks/1046-e7f36e68abc903b4.js
- HTTP  15/05/2026 6:40:55 PM ::1 GET /_next/static/chunks/app/settings/leave/page-d95da11dca613cd7.js
- HTTP  15/05/2026 6:40:55 PM ::1 GET /_next/static/chunks/9729-d68a4ade9f68b669.js
- HTTP  15/05/2026 6:40:55 PM ::1 GET /_next/static/chunks/app/leave-dashboard/reports/page-4cf1e84a216e0bdf.js
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 6 ms
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 6 ms
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 7 ms
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 3 ms
- HTTP  15/05/2026 6:40:55 PM ::1 GET /_next/static/chunks/app/leave-dashboard/balances/page-5861ad347e5a255b.js
- HTTP  15/05/2026 6:40:55 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:40:58 PM ::1 GET /leaves/view/index.txt?id=1000000138&_rsc=kv4fk
- HTTP  15/05/2026 6:40:58 PM ::1 Returned 200 in 2 ms
- HTTP  15/05/2026 6:40:58 PM ::1 GET /_next/static/chunks/app/leaves/view/page-c29e0007d3afa1d5.js
- HTTP  15/05/2026 6:40:58 PM ::1 Returned 200 in 1 ms
+
+> mytime2cloud@0.1.0 dev
+> next dev --turbopack -p 3001 -H 0.0.0.0
+
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://0.0.0.0:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1158ms
+ ○ Compiling / ...
+ ✓ Compiled / in 3.7s
+ GET / 200 in 4596ms
+ ○ Compiling /report ...
+ ✓ Compiled /report in 926ms
+ GET /report/?type=absent 200 in 1191ms
+ ○ Compiling /visitor/dashboard ...
+ ✓ Compiled /visitor/dashboard in 518ms
+ GET /visitor/dashboard/ 200 in 694ms
+ GET / 200 in 187ms
+ ✓ Compiled /favicon.ico in 207ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 542ms
+ ✓ Compiled /_not-found/page in 331ms
+ GET /undefined/ 404 in 478ms
+ ○ Compiling /visitor ...
+ ✓ Compiled /visitor in 576ms
+ GET /visitor/ 200 in 645ms
+ GET / 200 in 96ms
+ GET /undefined/ 404 in 112ms
+ ✓ Compiled in 398ms
+ GET /visitor/ 200 in 210ms
+ ✓ Compiled in 386ms
+ ✓ Compiled in 366ms
+ GET / 200 in 89ms
+ GET /undefined/ 404 in 106ms
+ ✓ Compiled in 360ms
+ GET /visitor/ 200 in 180ms
+ GET /visitor/ 200 in 103ms
+ ✓ Compiled in 400ms
+ GET /visitor/ 200 in 438ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 315ms
+ GET / 200 in 80ms
+ GET /undefined/ 404 in 102ms
+ GET /visitor/ 200 in 77ms
+ ○ Compiling /visitor/reception ...
+ ✓ Compiled /visitor/reception in 1611ms
+ GET /visitor/reception/ 200 in 1700ms
+ GET /visitor/reception/ 200 in 119ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 283ms
+ GET /visitor/ 200 in 80ms
+ ✓ Compiled in 387ms
+ ✓ Compiled in 480ms
+ ✓ Compiled in 400ms
+ ✓ Compiled in 429ms
+ ✓ Compiled in 370ms
+ ✓ Compiled in 352ms
+ ✓ Compiled in 362ms
+ ✓ Compiled in 358ms
+ GET /report/ 200 in 96ms
+ GET /report/ 200 in 72ms
+ GET /visitor/dashboard/ 200 in 165ms
+ GET /visitor/ 200 in 137ms
+ ✓ Compiled in 422ms
+ ✓ Compiled in 389ms
+ ○ Compiling /setup ...
+ ✓ Compiled /setup in 1136ms
+ GET /setup/ 200 in 1213ms
+ GET /setup/ 200 in 106ms
+ GET /setup/ 200 in 75ms
+ ✓ Compiled /automation in 386ms
+ GET /automation/ 200 in 453ms
+ ✓ Compiled in 350ms
+ ✓ Compiled in 356ms
+ ✓ Compiled in 432ms
+ ✓ Compiled in 386ms
+ ✓ Compiled in 417ms
+ ✓ Compiled in 346ms
+ ✓ Compiled in 344ms
+ ✓ Compiled in 339ms
+ ✓ Compiled in 350ms
+ GET /report/ 200 in 95ms
+ ✓ Compiled in 357ms
+ ✓ Compiled in 355ms
+ ✓ Compiled in 364ms
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 3.7s
+[?25h

@@ -20,6 +20,7 @@ const NO_CACHE_STATIC = {
 app.use("/templates", express.static(path.resolve(__dirname, "..", "summary-report"), NO_CACHE_STATIC));
 app.use("/attendance-report", express.static(path.resolve(__dirname, "..", "summary-report", "attendance-report"), NO_CACHE_STATIC));
 app.use("/access-control-report", express.static(path.resolve(__dirname, "..", "summary-report", "access-control-report"), NO_CACHE_STATIC));
+app.use("/absent-report", express.static(path.resolve(__dirname, "..", "summary-report", "absent-report"), NO_CACHE_STATIC));
 
 // -----------------------------------------------------------------------------
 // Shared browser instance.
@@ -46,17 +47,38 @@ const BROWSER_LAUNCH_OPTS = {
 
 let browserPromise = null;
 
+// Recycle Chromium proactively after this many successful PDFs to prevent the
+// long-running-process state accumulation that causes "detached Frame" errors
+// and slow memory growth. Tunable via env var.
+const MAX_REQUESTS_PER_BROWSER = Number(process.env.PDF_MAX_REQUESTS_PER_BROWSER || 50);
+let browserRequestCount = 0;
+let browserStartedAt = 0;
+let totalPdfsServed = 0;
+let totalRetries = 0;
+let totalRecycles = 0;
+
 async function getBrowser() {
   if (browserPromise) {
     try {
       const b = await browserPromise;
-      if (b.isConnected()) return b;
+      if (b.isConnected()) {
+        // Proactive recycle when we've used the same browser too many times.
+        if (browserRequestCount >= MAX_REQUESTS_PER_BROWSER) {
+          console.log(`Browser hit ${browserRequestCount} requests, recycling proactively`);
+          totalRecycles++;
+          await recycleBrowser();
+        } else {
+          return b;
+        }
+      }
     } catch (_) {
       // fall through — relaunch below
     }
   }
+  browserRequestCount = 0;
   browserPromise = puppeteer.launch(BROWSER_LAUNCH_OPTS).then((b) => {
     console.log("Chromium launched (pid=" + b.process()?.pid + ")");
+    browserStartedAt = Date.now();
     b.on("disconnected", () => {
       console.warn("Chromium disconnected — next request will relaunch");
       browserPromise = null;
@@ -87,6 +109,42 @@ function releaseSlot() {
   if (next) next();
 }
 
+// Errors that indicate the browser/page is in a bad state and we should retry
+// on a fresh browser. Common Puppeteer variants:
+//   "Attempted to use detached Frame ..."
+//   "Navigating frame was detached"
+//   "Frame was detached"
+//   "Target closed"
+//   "Session closed"
+//   "Protocol error (...): Target closed"
+//   "Connection closed"
+//   "Execution context was destroyed"
+// All point to the same root cause: the browser was disconnected/recycled
+// mid-operation but getBrowser() returned a stale handle.
+function isTransientBrowserError(err) {
+  const msg = String(err?.message || err || "").toLowerCase();
+  return (
+    msg.includes("detached") ||              // covers all "detached frame" / "frame was detached" variants
+    msg.includes("target closed") ||
+    msg.includes("session closed") ||
+    msg.includes("protocol error") ||
+    msg.includes("connection closed") ||
+    msg.includes("execution context was destroyed") ||
+    msg.includes("navigation failed because browser has disconnected")
+  );
+}
+
+async function recycleBrowser() {
+  if (!browserPromise) return;
+  try {
+    const b = await browserPromise;
+    await b.close();
+  } catch (_) {
+    // ignore — we're going to relaunch anyway
+  }
+  browserPromise = null;
+}
+
 app.post("/pdf", async (req, res) => {
   req.setTimeout(300000);
   res.setTimeout(300000);
@@ -96,9 +154,14 @@ app.post("/pdf", async (req, res) => {
   console.log("Generating PDF for:", url);
   await acquireSlot();
   let page;
+  let attempt = 0;
+  const MAX_ATTEMPTS = 2;
   try {
-    const browser = await getBrowser();
-    page = await browser.newPage();
+    while (true) {
+      attempt++;
+      try {
+        const browser = await getBrowser();
+        page = await browser.newPage();
 
     // Always bypass HTTP cache — report templates change frequently and we
     // never want a stale render. Without this, puppeteer's persistent disk
@@ -107,7 +170,7 @@ app.post("/pdf", async (req, res) => {
     await page.setCacheEnabled(false);
     await page.setExtraHTTPHeaders({ "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" });
 
-    const isLandscapeView = landscape === true || url.includes("attendance-report") || url.includes("access-control-report");
+    const isLandscapeView = landscape === true || url.includes("attendance-report") || url.includes("access-control-report") || url.includes("absent-report");
     await page.setViewport({ width: isLandscapeView ? 1400 : 1280, height: 900 });
 
     page.on("pageerror", (err) => console.log("PAGE ERROR:", err.message));
@@ -146,14 +209,17 @@ app.post("/pdf", async (req, res) => {
     console.log("Page info:", JSON.stringify(info));
 
     const isDailyReport = url.includes("daily-report");
-    // For daily-report, use the @page margins from the HTML (they reserve room for footer).
+    const isAbsentDaily = url.includes("absent-report/daily");
+    const isAbsentMonthly = url.includes("absent-report/monthly");
+    const isAbsentReport = isAbsentDaily || isAbsentMonthly;
+    // For daily-report and absent-report, use the @page margins from the HTML (they reserve room for footer).
     // For everything else, keep the legacy 5mm margins.
     const pdfOptions = {
       format: format || "A4",
       landscape: isLandscapeView,
       printBackground: true,
-      preferCSSPageSize: isDailyReport,
-      margin: isDailyReport
+      preferCSSPageSize: isDailyReport || isAbsentReport,
+      margin: (isDailyReport || isAbsentReport)
         ? undefined
         : { top: "5mm", bottom: "5mm", left: "5mm", right: "5mm" },
     };
@@ -181,11 +247,87 @@ app.post("/pdf", async (req, res) => {
         </div>
       `;
     }
-    const pdf = await page.pdf(pdfOptions);
+    if (isAbsentReport) {
+      const meta = await page.evaluate(() => ({
+        totalCount: document.body.dataset.totalCount || '0',
+        totalEmployees: document.body.dataset.totalEmployees || '0',
+      }));
+      pdfOptions.displayHeaderFooter = true;
+      pdfOptions.headerTemplate = '<div></div>';
+
+      if (isAbsentDaily) {
+        const dailyLeft = `Showing ${meta.totalCount} of ${meta.totalEmployees} absentees. Sorted: unapproved / longest streak first. Streak = consecutive days absent.`;
+        pdfOptions.footerTemplate = `
+          <div style="font-size: 8pt; color: #6b7280; width: 100%; padding: 0 10mm; font-family: Helvetica, Arial, sans-serif;">
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 6px; width: 100%;">
+              <div style="text-align: center; margin-bottom: 4px; font-weight: 600; letter-spacing: 0.4px;">
+                <span style="color:#b91c1c">&#9679;</span> NO-SHOW &nbsp;&nbsp;
+                <span style="color:#c2410c">&#9679;</span> LOP &nbsp;&nbsp;
+                <span style="color:#854d0e">&#9679;</span> CASUAL LEAVE &nbsp;&nbsp;
+                <span style="color:#92400e">&#9679;</span> SICK LEAVE &nbsp;&nbsp;
+                <span style="color:#1d4ed8">&#9679;</span> PERMISSION &nbsp;&nbsp;
+                <span style="color:#047857">&#9679;</span> APPROVED
+              </div>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="text-align: left; width: 60%;">${dailyLeft}</td>
+                  <td style="text-align: right; width: 40%;">Page <span class="pageNumber"></span> of <span class="totalPages"></span> &nbsp;·&nbsp; Daily Absent Report</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        `;
+      } else {
+        const monthlyLeft = `Showing top ${meta.totalCount} of ${meta.totalCount} employees with absences. Streak = longest consecutive absent days in the period.`;
+        pdfOptions.footerTemplate = `
+          <div style="font-size: 8pt; color: #6b7280; width: 100%; padding: 0 10mm; font-family: Helvetica, Arial, sans-serif;">
+            <div style="border-top: 1px solid #e5e7eb; padding-top: 6px; width: 100%;">
+              <div style="text-align: center; margin-bottom: 4px; font-weight: 600; letter-spacing: 0.4px;">
+                <span style="color:#047857">&#9679;</span> APPROVED LEAVE &nbsp;&nbsp;
+                <span style="color:#be123c">&#9679;</span> UNAPPROVED / NO-SHOW &nbsp;&nbsp;
+                <span style="color:#6b7280; font-weight: 400;">Sorted by Total Absent &darr; — worst absentees on top</span>
+              </div>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="text-align: left; width: 60%;">${monthlyLeft}</td>
+                  <td style="text-align: right; width: 40%;">Page <span class="pageNumber"></span> of <span class="totalPages"></span> &nbsp;·&nbsp; Monthly Absent Report</td>
+                </tr>
+              </table>
+            </div>
+          </div>
+        `;
+      }
+    }
+    // Hard cap on the pdf() call so a wedged renderer can't pin this worker slot.
+    const pdf = await Promise.race([
+      page.pdf(pdfOptions),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("page.pdf() hard timeout after 90s")), 90000)
+      ),
+    ]);
 
     console.log("PDF generated:", pdf.length, "bytes");
     res.set({ "Content-Type": "application/pdf", "Content-Disposition": "attachment" });
     res.send(pdf);
+        browserRequestCount++;
+        totalPdfsServed++;
+        break; // success — exit retry loop
+      } catch (err) {
+        // close the bad page so we don't leak handles
+        if (page) {
+          try { await page.close(); } catch (_) {}
+          page = null;
+        }
+        // retry once on transient browser-state errors (detached frame, target closed, etc.)
+        if (attempt < MAX_ATTEMPTS && isTransientBrowserError(err)) {
+          console.warn(`Transient browser error on attempt ${attempt}/${MAX_ATTEMPTS}, recycling and retrying: ${err.message}`);
+          totalRetries++;
+          await recycleBrowser();
+          continue;
+        }
+        throw err;
+      }
+    }
   } catch (err) {
     console.error("PDF error:", err.message);
     if (!res.headersSent) res.status(500).json({ error: err.message });
@@ -201,7 +343,23 @@ app.post("/pdf", async (req, res) => {
 app.get("/healthz", async (_req, res) => {
   try {
     const b = await getBrowser();
-    res.json({ ok: true, chromium: b.isConnected(), inflight, queued: queue.length });
+    const mem = process.memoryUsage();
+    res.json({
+      ok: true,
+      chromium: b.isConnected(),
+      chromium_pid: b.process()?.pid ?? null,
+      browser_age_ms: browserStartedAt ? Date.now() - browserStartedAt : 0,
+      requests_on_current_browser: browserRequestCount,
+      max_requests_per_browser: MAX_REQUESTS_PER_BROWSER,
+      total_pdfs_served: totalPdfsServed,
+      total_retries: totalRetries,
+      total_recycles: totalRecycles,
+      inflight,
+      queued: queue.length,
+      max_concurrent: MAX_CONCURRENT,
+      node_rss_mb: Math.round(mem.rss / 1024 / 1024),
+      node_heap_mb: Math.round(mem.heapUsed / 1024 / 1024),
+    });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }

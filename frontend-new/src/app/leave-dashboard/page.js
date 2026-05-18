@@ -219,8 +219,7 @@ function HeaderBand({
   onExport,
 }) {
   return (
-    <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-gradient-to-r dark:from-slate-900 dark:via-indigo-950 dark:to-slate-900 p-6 relative overflow-hidden">
-      <div className="absolute -top-20 -right-20 h-64 w-64 rounded-full bg-purple-500/10 blur-3xl pointer-events-none hidden dark:block" />
+    <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-transparent p-6 relative">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 relative">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-1 text-xs text-slate-700 dark:text-slate-200">

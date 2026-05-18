@@ -39,6 +39,7 @@ import {
   KeyRound,
   CalendarRange,
   Server,
+  CreditCard,
 } from "lucide-react";
 
 // 1️⃣ Reusable menu groups
@@ -94,6 +95,7 @@ const companyMenu = [
   { href: "/announcements", icon: Megaphone, label: "Announcements" },
   { href: "/activity", icon: ActivitySquare, label: "Activity" },
   { href: "/payslips", icon: DollarSign, label: "Payroll" },
+  { href: "/settings/emirate-id", icon: CreditCard, label: "Emirate ID Setup" },
 ];
 
 const payrollMenu = [

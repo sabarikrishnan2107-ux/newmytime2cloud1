@@ -115,8 +115,6 @@ function LeaveViewInner() {
   const [decisionDialog, setDecisionDialog] = useState({ open: false, action: null, notes: "", file: null });
   const [isDecisionSubmitting, setIsDecisionSubmitting] = useState(false);
   const [leaveQuota, setLeaveQuota] = useState([]); // [{ name, total, used }]
-  const [showQuota, setShowQuota] = useState(false);
-  const [activeViewTab, setActiveViewTab] = useState("details"); // "details" | "quota" | "document"
 
   const fetchRows = async () => {
     setLoading(true);
@@ -379,210 +377,172 @@ function LeaveViewInner() {
       {/* Main panel */}
       <main className="flex-1 overflow-y-auto">
         <div className="px-6 py-6 space-y-5">
-          <div className="flex flex-wrap items-center gap-x-8 gap-y-2">
-            {[
-              { id: "details",  label: "Leave Details" },
-              { id: "quota",    label: "Quota" },
-              { id: "document", label: "Document" },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveViewTab(tab.id)}
-                className={`pb-2 text-sm font-bold tracking-wide uppercase transition-colors border-b-[3px] ${
-                  activeViewTab === tab.id
-                    ? "border-[#7f19e6] text-[#7f19e6]"
-                    : "border-transparent text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
-
           {!leave ? (
             <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/50 p-10 text-center text-slate-500">
               {loading ? "Loading..." : "Select a leave request from the left to view details."}
             </div>
           ) : (
             <>
-              {/* Profile + info grid */}
-              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/50 p-6 relative overflow-hidden">
-                <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
-                <div className="relative flex flex-col lg:flex-row gap-6">
-                  <div className="flex flex-col items-center text-center lg:w-60 shrink-0">
-                    <div className="relative">
-                      <Avatar name={name} src={employee?.profile_picture} size={140} />
-                      <span className="absolute bottom-2 right-2 h-4 w-4 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
-                    </div>
-                    <p className="mt-3 text-lg font-medium text-slate-900 dark:text-white">{name}</p>
-                    <div className="mt-1"><StatusPill status={leave.status} /></div>
-                    <p className="mt-2 text-xs text-slate-500">{employee?.designation?.name || "—"} · ID {employee?.employee_id || "—"}</p>
-                    <div className="mt-3 flex flex-wrap gap-1.5 justify-center">
-                      {branchName && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] text-slate-700 dark:text-slate-200">
-                          <MapPin className="w-3 h-3" /> {branchName}
-                        </span>
-                      )}
-                      {typeName && <TypeChip name={typeName} />}
+              {/* Two-column layout: Details on the left, Overview (quota / reason / documents) on the right */}
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+
+                {/* ===== LEFT: Details ===== */}
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/50 p-6 relative overflow-hidden">
+                  <div className="absolute -top-20 -right-20 h-56 w-56 rounded-full bg-violet-500/10 blur-3xl pointer-events-none" />
+                  <div className="relative space-y-6">
+
+                    {/* Profile header */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-4 pb-5 border-b border-slate-200 dark:border-white/10">
+                      <div className="relative shrink-0 self-center sm:self-auto">
+                        <Avatar name={name} src={employee?.profile_picture} size={88} />
+                        <span className="absolute bottom-1 right-1 h-3 w-3 rounded-full bg-emerald-500 border-2 border-white dark:border-slate-900" />
+                      </div>
+                      <div className="min-w-0 flex-1 text-center sm:text-left">
+                        <p className="text-lg font-semibold text-slate-900 dark:text-white truncate">{name}</p>
+                        <p className="text-xs text-slate-500 mt-0.5 truncate">{employee?.designation?.name || "—"} · ID {employee?.employee_id || "—"}</p>
+                        <div className="mt-2 flex flex-wrap gap-1.5 justify-center sm:justify-start">
+                          <StatusPill status={leave.status} />
+                          {branchName && (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 dark:bg-slate-800 px-2.5 py-1 text-[11px] text-slate-700 dark:text-slate-200">
+                              <MapPin className="w-3 h-3" /> {branchName}
+                            </span>
+                          )}
+                          {typeName && <TypeChip name={typeName} />}
+                        </div>
+                      </div>
                     </div>
 
-                    {/* Employee info listed under the profile (mirrors the Employee section) */}
-                    <div className="mt-5 w-full space-y-2.5 text-left">
-                      <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-sky-500 font-semibold">
-                        <span className="h-1.5 w-1.5 rounded-full bg-sky-500" />
-                        Employee
+                    {/* Employee meta */}
+                    <section>
+                      <SectionTitle label="Employee" accent="#0ea5e9" />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <InfoCard icon={IdCard} label="Employee ID" value={employee?.employee_id} accent="#0ea5e9" />
+                        <InfoCard icon={MapPin} label="Branch" value={branchName} accent="#0ea5e9" />
+                        <InfoCard icon={User} label="Reporting Manager" value={reportingManagerName} accent="#0ea5e9" />
+                        <InfoCard icon={Briefcase} label="Designation" value={employee?.designation?.name} accent="#0ea5e9" />
                       </div>
-                      <div className="flex items-center gap-2.5 px-1">
-                        <IdCard className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="text-[10px] uppercase tracking-wide text-slate-500">Employee ID</div>
-                          <div className="text-sm font-medium text-slate-800 dark:text-white truncate">{employee?.employee_id || "—"}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2.5 px-1">
-                        <MapPin className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="text-[10px] uppercase tracking-wide text-slate-500">Branch</div>
-                          <div className="text-sm font-medium text-slate-800 dark:text-white truncate">{branchName || "—"}</div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2.5 px-1">
-                        <User className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                        <div className="min-w-0">
-                          <div className="text-[10px] uppercase tracking-wide text-slate-500">Reporting Manager</div>
-                          <div className="text-sm font-medium text-slate-800 dark:text-white truncate">{reportingManagerName || "—"}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    </section>
 
-                  <div className="flex-1 space-y-6">
-                    {activeViewTab === "details" && (
+                    {/* Leave Schedule */}
                     <section>
                       <SectionTitle label="Leave Schedule" accent="#8b5cf6" />
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <InfoCard icon={Briefcase} label="Leave Type" value={typeName} accent="#8b5cf6" required />
+                        <InfoCard icon={Sun} label="Day Type" value={leave?.day_type === "half_first" ? "First Half" : leave?.day_type === "half_second" ? "Second Half" : "Full Day"} accent="#8b5cf6" />
                         <InfoCard icon={Calendar} label="From Date" value={fmtDate(leave?.from_date || leave?.start_date)} accent="#8b5cf6" required />
                         <InfoCard icon={Calendar} label="To Date" value={fmtDate(leave?.to_date || leave?.end_date)} accent="#8b5cf6" required />
                         <InfoCard icon={Calendar} label="Total Days" value={computedTotalDays} accent="#10b981" />
-                        <InfoCard icon={Sun} label="Day Type" value={leave?.day_type === "half_first" ? "First Half" : leave?.day_type === "half_second" ? "Second Half" : "Full Day"} accent="#10b981" />
+                        <InfoCard icon={User} label="Handover To" value={leave?.alternate_employee ? `${leave.alternate_employee.first_name || ""} ${leave.alternate_employee.last_name || ""}`.trim() : ""} accent="#f59e0b" />
                       </div>
                     </section>
-                    )}
 
-                    {activeViewTab === "quota" && (
-                      <section>
-                        <SectionTitle label="Leave Quotta" accent="#8b5cf6" />
-                        <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 overflow-hidden">
-                          <table className="w-full text-sm">
-                            <thead className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                              <tr className="border-b border-slate-200 dark:border-white/10">
-                                <th className="text-left font-medium px-4 py-2.5">Leave Group</th>
-                                <th className="text-center font-medium px-4 py-2.5">Total</th>
-                                <th className="text-center font-medium px-4 py-2.5">Used</th>
-                                <th className="text-center font-medium px-4 py-2.5">Available</th>
+                  </div>
+                </div>
+
+                {/* ===== RIGHT: Overview (Quota / Reason / Documents) ===== */}
+                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/50 p-6 relative overflow-hidden">
+                  <div className="absolute -top-20 -left-20 h-56 w-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
+                  <div className="relative space-y-6">
+
+                    {/* Quota */}
+                    <section>
+                      <SectionTitle label="Leave Quota" accent="#8b5cf6" />
+                      <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 overflow-hidden">
+                        <table className="w-full text-sm">
+                          <thead className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                            <tr className="border-b border-slate-200 dark:border-white/10">
+                              <th className="text-left font-medium px-4 py-2.5">Leave Type</th>
+                              <th className="text-center font-medium px-4 py-2.5">Total</th>
+                              <th className="text-center font-medium px-4 py-2.5">Used</th>
+                              <th className="text-center font-medium px-4 py-2.5">Available</th>
+                            </tr>
+                          </thead>
+                          <tbody className="text-slate-700 dark:text-slate-200">
+                            {leaveQuota.length === 0 ? (
+                              <tr>
+                                <td colSpan={4} className="px-4 py-4 text-center text-xs text-slate-500">No quota data available.</td>
                               </tr>
-                            </thead>
-                            <tbody className="text-slate-700 dark:text-slate-200">
-                              {leaveQuota.length === 0 ? (
-                                <tr>
-                                  <td colSpan={4} className="px-4 py-4 text-center text-xs text-slate-500">No quota data available.</td>
-                                </tr>
-                              ) : leaveQuota.map((q, i) => (
-                                <tr key={i} className="border-b border-slate-200 dark:border-white/10 last:border-0">
-                                  <td className="px-4 py-2.5">{q.name}</td>
-                                  <td className="px-4 py-2.5 text-center tabular-nums">{q.total}</td>
-                                  <td className="px-4 py-2.5 text-center tabular-nums">{q.used}</td>
-                                  <td className="px-4 py-2.5 text-center tabular-nums font-medium">{Math.max(0, q.total - q.used)}</td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                      </section>
-                    )}
-
-                    {activeViewTab === "document" && (
-                      <section>
-                        <div className="flex items-center gap-2 mb-3">
-                          <Paperclip className="w-4 h-4 text-violet-500 dark:text-violet-300" />
-                          <h3 className="text-sm font-medium text-slate-900 dark:text-white">Attachments</h3>
-                        </div>
-                        {leaveDocuments.length === 0 ? (
-                          <div className="rounded-lg border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 px-4 py-10 text-center text-sm text-slate-500">
-                            No attachments uploaded.
-                          </div>
-                        ) : (
-                          <ul className="space-y-2">
-                            {leaveDocuments.map((doc, i) => (
-                              <li key={doc.id || i} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 px-3 py-2.5 text-sm">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <FileText className="w-4 h-4 text-violet-500 shrink-0" />
-                                  <span className="truncate text-slate-700 dark:text-slate-200">{doc.key || `Document ${i + 1}`}</span>
-                                </div>
-                                <a
-                                  href={doc.value}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-300 hover:bg-violet-500/20 transition-colors text-xs font-medium"
-                                >
-                                  View
-                                </a>
-                              </li>
+                            ) : leaveQuota.map((q, i) => (
+                              <tr key={i} className="border-b border-slate-200 dark:border-white/10 last:border-0">
+                                <td className="px-4 py-2.5">{q.name}</td>
+                                <td className="px-4 py-2.5 text-center tabular-nums">{q.total}</td>
+                                <td className="px-4 py-2.5 text-center tabular-nums">{q.used}</td>
+                                <td className="px-4 py-2.5 text-center tabular-nums font-medium">{Math.max(0, q.total - q.used)}</td>
+                              </tr>
                             ))}
-                          </ul>
-                        )}
-                      </section>
-                    )}
-
-                    {activeViewTab === "details" && (
-                    <section className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                      <div>
-                        <SectionTitle label="Backup" accent="#f59e0b" />
-                        <div className="grid grid-cols-1 gap-3">
-                          <InfoCard icon={User} label="Handover To" value={leave?.alternate_employee ? `${leave.alternate_employee.first_name || ""} ${leave.alternate_employee.last_name || ""}`.trim() : ""} accent="#f59e0b" />
-                        </div>
-                      </div>
-
-                      <div className="space-y-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-3">
-                            <FileText className="w-4 h-4 text-violet-500 dark:text-violet-300" />
-                            <h3 className="text-sm font-medium text-slate-900 dark:text-white">Reason</h3>
-                          </div>
-                          <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap min-h-[80px]">
-                            {reason}
-                          </div>
-                          <p className="mt-2 text-[11px] text-slate-500">Applied {fmtDate(leave?.created_at)} · Updated {fmtDate(leave?.updated_at)}</p>
-                        </div>
-
-                        {leave?.approve_reject_notes && (
-                          <div>
-                            <div className="flex items-center gap-2 mb-3">
-                              <FileText className={`w-4 h-4 ${leave?.status === 2 ? "text-rose-500 dark:text-rose-300" : "text-emerald-500 dark:text-emerald-300"}`} />
-                              <h3 className="text-sm font-medium text-slate-900 dark:text-white">
-                                Admin Note <span className="text-xs font-normal text-slate-500">({leave?.status === 2 ? "Rejected" : leave?.status === 1 ? "Approved" : "Pending"})</span>
-                              </h3>
-                            </div>
-                            <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap min-h-[60px]">
-                              {leave.approve_reject_notes}
-                            </div>
-                          </div>
-                        )}
+                          </tbody>
+                        </table>
                       </div>
                     </section>
-                    )}
+
+                    {/* Reason */}
+                    <section>
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText className="w-4 h-4 text-violet-500 dark:text-violet-300" />
+                        <h3 className="text-sm font-medium text-slate-900 dark:text-white">Reason</h3>
+                      </div>
+                      <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap min-h-[80px]">
+                        {reason}
+                      </div>
+                      <p className="mt-2 text-[11px] text-slate-500">Applied {fmtDate(leave?.created_at)} · Updated {fmtDate(leave?.updated_at)}</p>
+
+                      {leave?.approve_reject_notes && (
+                        <div className="mt-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className={`w-4 h-4 ${leave?.status === 2 ? "text-rose-500 dark:text-rose-300" : "text-emerald-500 dark:text-emerald-300"}`} />
+                            <h3 className="text-sm font-medium text-slate-900 dark:text-white">
+                              Admin Note <span className="text-xs font-normal text-slate-500">({leave?.status === 2 ? "Rejected" : leave?.status === 1 ? "Approved" : "Pending"})</span>
+                            </h3>
+                          </div>
+                          <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 p-3 text-sm text-slate-700 dark:text-slate-200 whitespace-pre-wrap min-h-[60px]">
+                            {leave.approve_reject_notes}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+
+                    {/* Documents */}
+                    <section>
+                      <div className="flex items-center gap-2 mb-3">
+                        <Paperclip className="w-4 h-4 text-violet-500 dark:text-violet-300" />
+                        <h3 className="text-sm font-medium text-slate-900 dark:text-white">Documents</h3>
+                      </div>
+                      {leaveDocuments.length === 0 ? (
+                        <div className="rounded-lg border-2 border-dashed border-slate-300 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 px-4 py-10 text-center text-sm text-slate-500">
+                          No attachments uploaded.
+                        </div>
+                      ) : (
+                        <ul className="space-y-2">
+                          {leaveDocuments.map((doc, i) => (
+                            <li key={doc.id || i} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 px-3 py-2.5 text-sm">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText className="w-4 h-4 text-violet-500 shrink-0" />
+                                <span className="truncate text-slate-700 dark:text-slate-200">{doc.key || `Document ${i + 1}`}</span>
+                              </div>
+                              <a
+                                href={doc.value}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-violet-500/10 text-violet-600 dark:text-violet-300 hover:bg-violet-500/20 transition-colors text-xs font-medium"
+                              >
+                                View
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </section>
 
                   </div>
                 </div>
               </div>
 
-              {activeViewTab === "details" && (
-                <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/50 p-5">
-                  <div className="flex items-center gap-2 mb-3">
-                    <BarChart3 className="w-4 h-4 text-violet-500 dark:text-violet-300" />
-                    <h3 className="text-sm font-medium text-slate-900 dark:text-white">Leave History</h3>
-                  </div>
+              {/* Leave History (full width below the split) */}
+              <div className="rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900/50 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="w-4 h-4 text-violet-500 dark:text-violet-300" />
+                  <h3 className="text-sm font-medium text-slate-900 dark:text-white">Leave History</h3>
+                </div>
                   <div className="rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 overflow-hidden">
                     <table className="w-full text-sm">
                       <thead className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
@@ -639,7 +599,6 @@ function LeaveViewInner() {
                     </table>
                   </div>
                 </div>
-              )}
 
               {/* Footer actions */}
               <div className="flex items-center justify-end gap-2.5 pt-2">
@@ -673,40 +632,6 @@ function LeaveViewInner() {
           )}
         </div>
       </main>
-
-      <Dialog open={showQuota} onOpenChange={setShowQuota}>
-        <DialogContent className="!w-[560px] !max-w-[95%] p-6">
-          <DialogHeader>
-            <DialogTitle>Leave Quota — {name}</DialogTitle>
-          </DialogHeader>
-          <div className="mt-3 rounded-lg border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-900/40 overflow-hidden">
-            <table className="w-full text-sm">
-              <thead className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
-                <tr className="border-b border-slate-200 dark:border-white/10">
-                  <th className="text-left font-medium px-4 py-2.5">Leave Group</th>
-                  <th className="text-center font-medium px-4 py-2.5">Total</th>
-                  <th className="text-center font-medium px-4 py-2.5">Used</th>
-                  <th className="text-center font-medium px-4 py-2.5">Available</th>
-                </tr>
-              </thead>
-              <tbody className="text-slate-700 dark:text-slate-200">
-                {leaveQuota.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="px-4 py-4 text-center text-xs text-slate-500">No quota data available.</td>
-                  </tr>
-                ) : leaveQuota.map((q, i) => (
-                  <tr key={i} className="border-b border-slate-200 dark:border-white/10 last:border-0">
-                    <td className="px-4 py-2.5">{q.name}</td>
-                    <td className="px-4 py-2.5 text-center tabular-nums">{q.total}</td>
-                    <td className="px-4 py-2.5 text-center tabular-nums">{q.used}</td>
-                    <td className="px-4 py-2.5 text-center tabular-nums font-medium">{Math.max(0, q.total - q.used)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <Dialog
         open={decisionDialog.open}

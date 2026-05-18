@@ -31,8 +31,8 @@ export function KpiCard({
       className={cn(
         "relative overflow-hidden rounded-[14px] border transition-all duration-300",
         emergency
-          ? "bg-red-50 dark:bg-[#0c1220] border-red-300 dark:border-[rgba(239,68,68,.35)]"
-          : "bg-white dark:bg-[#0c1220] border-gray-200 dark:border-[#1a2238]",
+          ? "bg-red-50 dark:bg-transparent border-red-300 dark:border-[rgba(239,68,68,.35)]"
+          : "bg-white dark:bg-transparent border-gray-200 dark:border-[#1a2238]",
         onClick && !cta ? "cursor-pointer hover:-translate-y-0.5" : ""
       )}
     >

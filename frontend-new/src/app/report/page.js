@@ -9,7 +9,7 @@ const ATTENDANCE_TABS = [
     { type: '',               label: 'Attendance Report' },
     { type: 'absent',         label: 'Absent Report' },
     { type: 'late-early',     label: 'Late & Early' },
-    { type: 'leave',          label: 'Leave Report', href: '/leaves' },
+    { type: 'leave',          label: 'Leave Report', href: '/leave-dashboard/reports' },
     { type: 'mobile-log',     label: 'Mobile Log Report' },
     { type: 'summary-daily',  label: 'Summary' },
 ];
