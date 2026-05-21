@@ -75,21 +75,21 @@ const PAYLOAD = {
         endEnd: "02:00",
     },
 
-    "overtime_type": "Both",
+    "overtime_type": "None",
     "weekend_allowed_ot": false, //new
     "holiday_allowed_ot": false, // new
     "overtime_interval": "01:00",
     "daily_ot_allowed_mins": "01:00", // new
 
     "late_time": "00:15",
-    "attendanc_rule_late_coming": "No Action",
+    "attendanc_rule_late_coming": "Late Mark",
     "absent_min_in": "01:00",
 
     "significant_attendanc_rule_late_coming": "No Action",
 
 
     "early_time": "00:15",
-    "attendanc_rule_early_going": "No Action",
+    "attendanc_rule_early_going": "Early Mark",
     "absent_min_out": "01:00",
 
     "significant_attendanc_rule_early_going": "No Action",

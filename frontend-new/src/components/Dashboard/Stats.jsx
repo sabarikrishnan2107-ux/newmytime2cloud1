@@ -1,5 +1,6 @@
 import { getAttendanceCount } from "@/lib/endpoint/dashboard";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Users,
   UserCheck,
@@ -20,7 +21,7 @@ const ACCENTS = {
   orange:  { line: "#f97316", glow: "rgba(249,115,22,.55)",   iconBg: "rgba(249,115,22,.20)",   iconFg: "#fb923c", label: "#fdba74" },
 };
 
-function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert = false, onClick }) {
+function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert = false, alertLabel = "Alert", onClick }) {
   const a = ACCENTS[accent] || ACCENTS.neutral;
   const clickable = typeof onClick === "function";
   const handleKeyDown = (e) => {
@@ -74,7 +75,7 @@ function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert =
             className="inline-flex items-center gap-1 text-[10px] font-semibold px-1.5 py-0.5 rounded mb-1"
             style={{ color: a.iconFg, background: a.iconBg }}
           >
-            <AlertTriangle className="h-3 w-3" /> Alert
+            <AlertTriangle className="h-3 w-3" /> {alertLabel}
           </span>
         )}
       </div>
@@ -84,6 +85,7 @@ function StatCard({ label, value, icon: Icon, accent = "neutral", badge, alert =
 }
 
 function Stats({ branch_ids, department_ids }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState({
     employeeCount: 0,
     presentCount: 0,
@@ -108,13 +110,13 @@ function Stats({ branch_ids, department_ids }) {
   return (
     <>
       <StatCard
-        label="Total Headcount"
+        label={t('dashboard.stats.totalHeadcount')}
         value={stats.employeeCount}
         icon={Users}
         accent="neutral"
       />
       <StatCard
-        label="Present Today"
+        label={t('dashboard.stats.presentToday')}
         value={stats.presentCount}
         icon={UserCheck}
         accent="green"
@@ -122,7 +124,7 @@ function Stats({ branch_ids, department_ids }) {
         onClick={() => setOpenVariant("present")}
       />
       <StatCard
-        label="Unplanned Absence"
+        label={t('dashboard.stats.unplannedAbsence')}
         value={stats.absentCount}
         icon={UserX}
         accent="red"
@@ -130,23 +132,24 @@ function Stats({ branch_ids, department_ids }) {
         onClick={() => setOpenVariant("absent")}
       />
       <StatCard
-        label="Scheduled Leave"
+        label={t('dashboard.stats.scheduledLeave')}
         value={stats.leaveCount}
         icon={CalendarDays}
         accent="purple"
       />
       <StatCard
-        label="Vacation"
+        label={t('dashboard.stats.vacation')}
         value={stats.vacationCount}
         icon={Plane}
         accent="indigo"
       />
       <StatCard
-        label="Offline Nodes"
+        label={t('dashboard.stats.offlineNodes')}
         value={stats.offlineDevices}
         icon={ServerOff}
         accent="orange"
         alert={stats.offlineDevices > 0}
+        alertLabel={t('dashboard.stats.alert')}
       />
 
       <EmployeeListDialog

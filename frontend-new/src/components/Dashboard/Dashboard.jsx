@@ -8,10 +8,12 @@ import WelnessCard from "@/components/Dashboard/WelnessCard";
 import { getBranches, getDepartmentsByBranchIds } from "@/lib/api";
 import { parseApiError } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import Dropdown from "../Theme/DropDown";
 import MultiDropDown from "../ui/MultiDropDown";
 
 const AdminDashboard = () => {
+  const { t } = useTranslation();
   const [selectedBranchIds, setSelectedBranchIds] = useState([]);
   const [selectedDepartmentIds, setSelectedDepartmentIds] = useState([]);
   const [departments, setDepartments] = useState([]);
@@ -46,7 +48,7 @@ const AdminDashboard = () => {
     <div className="p-4 pb-24 overflow-y-auto max-h-[calc(100vh-100px)]">
       <div className="px-2 mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-extrabold text-gray-700 dark:text-gray-100 font-display tracking-tight">
-          Executive Overview
+          {t('dashboard.header.pageTitle')}
         </h2>
 
         <div className="flex flex-wrap items-center space-x-3 space-y-2 sm:space-y-0">
@@ -57,12 +59,12 @@ const AdminDashboard = () => {
               onChange={(item) => {
                 setSelectedBranchIds(item);
               }}
-              placeholder="Select a Branch"
+              placeholder={t('dashboard.header.selectBranchPlaceholder')}
             />
           </div>
           <div className="relative">
             <MultiDropDown
-              placeholder={"Select Department"}
+              placeholder={t('dashboard.header.selectDepartmentPlaceholder')}
               items={departments}
               value={selectedDepartmentIds}
               onChange={setSelectedDepartmentIds}

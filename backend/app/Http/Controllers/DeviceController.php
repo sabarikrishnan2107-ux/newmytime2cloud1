@@ -208,6 +208,137 @@ class DeviceController extends Controller
         // return $model->with(['status'])->where('company_id', $request->company_id)->where("model_number", "!=", "Manual")
         //     ->where("model_number",  'not like', "%Mobile%")->orderBy("name", "asc")->get();
     }
+
+    /**
+     * Probe a single device's SDK for a given employee's enrollment.
+     * Aligns with getDevicePersonDetails — calls the same SDK paths
+     * but returns a structured availability+capabilities array instead
+     * of the legacy faceImage-only shape.
+     *
+     * @return array{available: bool, face: bool, rfid: bool, pin: bool}|null
+     *         null = not enrolled or call failed
+     */
+    public function probeDevicePerson(Device $device, $systemUserId): ?array
+    {
+        if (!$systemUserId || $systemUserId <= 0) {
+            return null;
+        }
+
+        try {
+            if ($device->model_number === 'OX-900') {
+                $resp = (new DeviceCameraModel2Controller(
+                    $device->camera_sdk_url,
+                    $device->serial_number
+                ))->getPersonDetails($systemUserId);
+
+                // Per DeviceCameraModel2Controller::getPersonDetails: returns []
+                // when no person is found, or a populated array (with userCode,
+                // name, faceImage) when found.
+                if (!is_array($resp) || empty($resp)) {
+                    return null;
+                }
+                return [
+                    'available' => true,
+                    'face'      => !empty($resp['faceImage'] ?? null),
+                    'rfid'      => !empty($resp['cardNumber'] ?? null) && ($resp['cardNumber'] ?? '') !== 'FFFFFFFF',
+                    'pin'       => !empty($resp['password'] ?? null),
+                ];
+            }
+
+            if ($device->model_number === 'MYTIME1') {
+                $resp = (new FaceDeviceController())
+                    ->gatewayRequest(
+                        'GET',
+                        "api/device/{$device->serial_number}/person/{$systemUserId}",
+                        [],
+                        ['picture' => 1]
+                    );
+                $resp = $resp instanceof \Illuminate\Http\JsonResponse
+                    ? $resp->getData(true)
+                    : $resp;
+                // Matches getDevicePersonDetails MYTIME1 branch: info presence
+                // indicates an enrolled person.
+                if (!is_array($resp) || empty($resp['info'])) {
+                    return null;
+                }
+                $info = is_array($resp['info']) ? $resp['info'] : [];
+                $card = $info['cardNo'] ?? null;
+                return [
+                    'available' => true,
+                    'face'      => !empty($resp['pic'] ?? null) || !empty($info['faceTemplate'] ?? null),
+                    'rfid'      => !empty($card) && $card !== 'FFFFFFFF',
+                    'pin'       => !empty($info['password'] ?? null),
+                ];
+            }
+
+            // Generic / unknown model (e.g. OXAI, OX-866) — delegate to
+            // SDKController, which routes to the external SDK URL.
+            $resp = (new SDKController())->getPersonDetails($device->device_id, $systemUserId);
+            if (!is_array($resp)) {
+                return null;
+            }
+
+            // Real SDK failures use status 102 (exception). Status 200 / 0
+            // can both be "success" depending on SDK firmware, so we don't
+            // gate on status alone.
+            if (($resp['status'] ?? null) === 102) {
+                return null;
+            }
+
+            $data = $resp['data'] ?? null;
+            // SDK can return either {data: {...person...}} or a flatter
+            // payload (some firmwares put fields at the top level).
+            if (!is_array($data) || empty($data)) {
+                // Fall back to top-level payload — strip wrapper fields
+                $data = $resp;
+                unset($data['status'], $data['message'], $data['code']);
+                if (empty($data)) {
+                    return null;
+                }
+            }
+
+            $face = !empty($data['faceImage'] ?? null)
+                || !empty($data['face'] ?? null)
+                || !empty($data['photo'] ?? null)
+                || !empty($data['picture'] ?? null);
+            $card = $data['cardData'] ?? $data['cardNumber'] ?? $data['card'] ?? $data['rfid'] ?? null;
+            $rfid = !empty($card) && $card !== 'FFFFFFFF';
+            $pin  = !empty($data['password'] ?? null)
+                || !empty($data['pin'] ?? null)
+                || !empty($data['Password'] ?? null);
+
+            // Any positive signal — including the mere presence of a
+            // userCode / name record — means the user is enrolled.
+            $hasRecord = $face
+                || $rfid
+                || $pin
+                || !empty($data['userCode'] ?? null)
+                || !empty($data['UserCode'] ?? null)
+                || !empty($data['user_code'] ?? null)
+                || !empty($data['system_user_id'] ?? null)
+                || !empty($data['name'] ?? null)
+                || array_key_exists('faceImage', $data);
+
+            if (!$hasRecord) {
+                return null;
+            }
+
+            return [
+                'available' => true,
+                'face'      => $face,
+                'rfid'      => $rfid,
+                'pin'       => $pin,
+            ];
+        } catch (\Throwable $e) {
+            Logger::warning('probeDevicePerson failed', [
+                'device_id'      => $device->device_id,
+                'system_user_id' => $systemUserId,
+                'error'          => $e->getMessage(),
+            ]);
+            return null;
+        }
+    }
+
     public function getDevicePersonDetails(Request $request)
     {
         if ($request->system_user_id > 0) {

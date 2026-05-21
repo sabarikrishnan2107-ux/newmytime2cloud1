@@ -3,6 +3,7 @@ import HolidaysAll from "@/components/Holidays/page";
 import AnnouncementsAll from "@/components/Announcements/page";
 
 import React, { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Sparkles,
   Workflow,
@@ -38,15 +39,16 @@ const TYPE_COLORS = {
 };
 
 const TABS = [
-  { id: "Automation",      label: "Automation",      icon: Workflow },
-  { id: "Holidays",        label: "Holidays",        icon: CalendarDays },
-  { id: "Announcements",   label: "Announcements",   icon: Megaphone },
-  { id: "Document Expiry", label: "Document Expiry", icon: FileWarning },
-  { id: "AI Feeds",        label: "AI Feeds",        icon: Bot },
-  { id: "Wishes",          label: "Wishes",          icon: Cake },
+  { id: "Automation",      labelKey: "dashboard.insights.tabAutomation",     icon: Workflow },
+  { id: "Holidays",        labelKey: "dashboard.insights.tabHolidays",       icon: CalendarDays },
+  { id: "Announcements",   labelKey: "dashboard.insights.tabAnnouncements",  icon: Megaphone },
+  { id: "Document Expiry", labelKey: "dashboard.insights.tabDocumentExpiry", icon: FileWarning },
+  { id: "AI Feeds",        labelKey: "dashboard.insights.tabAIFeeds",        icon: Bot },
+  { id: "Wishes",          labelKey: "dashboard.insights.tabWishes",         icon: Cake },
 ];
 
 function EventsAndInsights({ branch_ids }) {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("Automation");
   const currentData = useMemo(() => MOCK_DATA[activeTab] || [], [activeTab]);
 
@@ -61,9 +63,9 @@ function EventsAndInsights({ branch_ids }) {
             </div>
             <div>
               <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100 leading-tight">
-                Insights & Events
+                {t('dashboard.insights.title')}
               </h3>
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">Live activity stream</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{t('dashboard.insights.subtitle')}</p>
             </div>
           </div>
         </div>
@@ -84,7 +86,7 @@ function EventsAndInsights({ branch_ids }) {
                 }`}
               >
                 <TabIcon className="h-3.5 w-3.5" strokeWidth={2.2} />
-                {tab.label}
+                {t(tab.labelKey)}
               </button>
             );
           })}
@@ -108,9 +110,9 @@ function EventsAndInsights({ branch_ids }) {
         ) : (
           <div className="flex-1 overflow-y-auto custom-scrollbar p-2">
             <div className="grid grid-cols-12 px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-              <div className="col-span-6">Event</div>
-              <div className="col-span-3">Source</div>
-              <div className="col-span-3 text-right">Time</div>
+              <div className="col-span-6">{t('dashboard.insights.colEvent')}</div>
+              <div className="col-span-3">{t('dashboard.insights.colSource')}</div>
+              <div className="col-span-3 text-right">{t('dashboard.insights.colTime')}</div>
             </div>
 
             {currentData.length > 0 ? (
@@ -135,7 +137,7 @@ function EventsAndInsights({ branch_ids }) {
             ) : (
               <div className="flex flex-col items-center justify-center py-10 text-slate-400 dark:text-slate-500">
                 <Inbox className="h-10 w-10 mb-2 opacity-50" />
-                <p className="text-[10px] font-bold uppercase tracking-widest">No Events Found</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest">{t('dashboard.insights.noEventsFound')}</p>
               </div>
             )}
           </div>

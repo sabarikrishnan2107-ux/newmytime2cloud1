@@ -1,10 +1,12 @@
 import { useDarkMode } from "@/context/DarkModeContext";
 import { getAttendanceCount } from "@/lib/endpoint/dashboard";
 import { useEffect, useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { PieChart, Pie, ResponsiveContainer } from "recharts";
 import { ShieldCheck, AlertTriangle, ShieldAlert, Activity } from "lucide-react";
 
 function WelnessCard({ branch_ids, department_ids }) {
+  const { t } = useTranslation();
   const { isDark } = useDarkMode();
   const [stats, setStats] = useState({
     employeeCount: 0,
@@ -37,10 +39,10 @@ function WelnessCard({ branch_ids, department_ids }) {
   const safeWellnessValue = Number.isFinite(wellnessValue) ? wellnessValue : 0;
 
   const status = useMemo(() => {
-    if (safeWellnessValue >= 80) return { label: "Optimal",  color: "#10b981", icon: ShieldCheck, glow: "rgba(16,185,129,0.45)", textCls: "text-emerald-500", bgCls: "bg-emerald-500/15" };
-    if (safeWellnessValue >= 60) return { label: "Stable",   color: "#22c55e", icon: ShieldCheck, glow: "rgba(34,197,94,0.45)",  textCls: "text-green-500",   bgCls: "bg-green-500/15" };
-    if (safeWellnessValue >= 40) return { label: "Caution",  color: "#f59e0b", icon: AlertTriangle, glow: "rgba(245,158,11,0.45)", textCls: "text-amber-500",   bgCls: "bg-amber-500/15" };
-    return { label: "Critical", color: "#ef4444", icon: ShieldAlert, glow: "rgba(239,68,68,0.45)",  textCls: "text-rose-500",    bgCls: "bg-rose-500/15" };
+    if (safeWellnessValue >= 80) return { labelKey: "dashboard.wellness.statusOptimal",  color: "#10b981", icon: ShieldCheck, glow: "rgba(16,185,129,0.45)", textCls: "text-emerald-500", bgCls: "bg-emerald-500/15" };
+    if (safeWellnessValue >= 60) return { labelKey: "dashboard.wellness.statusStable",   color: "#22c55e", icon: ShieldCheck, glow: "rgba(34,197,94,0.45)",  textCls: "text-green-500",   bgCls: "bg-green-500/15" };
+    if (safeWellnessValue >= 40) return { labelKey: "dashboard.wellness.statusCaution",  color: "#f59e0b", icon: AlertTriangle, glow: "rgba(245,158,11,0.45)", textCls: "text-amber-500",   bgCls: "bg-amber-500/15" };
+    return { labelKey: "dashboard.wellness.statusCritical", color: "#ef4444", icon: ShieldAlert, glow: "rgba(239,68,68,0.45)",  textCls: "text-rose-500",    bgCls: "bg-rose-500/15" };
   }, [safeWellnessValue]);
 
   const StatusIcon = status.icon;
@@ -53,9 +55,9 @@ function WelnessCard({ branch_ids, department_ids }) {
     <>
       <div className="absolute top-5 left-5 z-10">
         <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100">
-          Workforce Wellness
+          {t('dashboard.wellness.title')}
         </h3>
-        <p className="text-[11px] text-slate-500 dark:text-slate-400">Burnout Risk Monitor</p>
+        <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('dashboard.wellness.subtitle')}</p>
       </div>
 
       {/* Gauge */}
@@ -106,7 +108,7 @@ function WelnessCard({ branch_ids, department_ids }) {
             <span className="text-base font-bold text-slate-500 dark:text-slate-400 ml-0.5">%</span>
           </span>
           <span className={`mt-1 text-[10px] font-bold uppercase tracking-[0.12em] ${status.textCls} ${status.bgCls} px-2 py-0.5 rounded-full`}>
-            {status.label}
+            {t(status.labelKey)}
           </span>
         </div>
       </div>
@@ -123,10 +125,10 @@ function WelnessCard({ branch_ids, department_ids }) {
           </div>
           <div className="min-w-0">
             <p className={`text-[11px] font-semibold leading-tight ${status.textCls}`}>
-              {safeWellnessValue < 70 ? "Attention Required" : "System Healthy"}
+              {safeWellnessValue < 70 ? t('dashboard.wellness.attentionRequired') : t('dashboard.wellness.systemHealthy')}
             </p>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-              {stats.absentCount} unplanned absences today
+              {t('dashboard.wellness.unplannedAbsencesToday', { count: stats.absentCount })}
             </p>
           </div>
         </div>

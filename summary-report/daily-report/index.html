@@ -235,6 +235,46 @@
         }
     }
 
+    // Helpers for the "worked less than scheduled" indicator.
+    // Applies to single/night shifts only — only renderSingleTable uses this.
+    function toMin(t) {
+        if (!t) return NaN;
+        var parts = String(t).split(":").map(function(n) { return parseInt(n, 10); });
+        if (isNaN(parts[0])) return NaN;
+        return (parts[0] || 0) * 60 + (parts[1] || 0);
+    }
+    function shiftWorkingHours(e) {
+        if (e && e.shift && e.shift.working_hours) return e.shift.working_hours;
+        if (e && e.working_hours) return e.working_hours;
+        // Fall back: derive duration from "HH:MM - HH:MM" shift_time.
+        if (e && e.shift_time) {
+            var parts = String(e.shift_time).split("-");
+            if (parts.length === 2) {
+                var startM = toMin(parts[0].trim());
+                var endM = toMin(parts[1].trim());
+                if (!isNaN(startM) && !isNaN(endM)) {
+                    var diff = endM >= startM ? endM - startM : (24 * 60 - startM) + endM;
+                    var h = Math.floor(diff / 60), m = diff % 60;
+                    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+                }
+            }
+        }
+        return null;
+    }
+    function isShortOfShift(e) {
+        var s = e && e.status;
+        if (s !== "P" && s !== "LC" && s !== "EG") return false;
+        var worked = e && e.total_hrs;
+        var sched = shiftWorkingHours(e);
+        if (!worked || !sched) return false;
+        var wM = toMin(worked), sM = toMin(sched);
+        if (isNaN(wM) || isNaN(sM)) return false;
+        return wM < sM;
+    }
+    function shortStar(e) {
+        return isShortOfShift(e) ? ' <span style="color:#dc2626;font-weight:700;margin-left:2px;">&#9733;</span>' : '';
+    }
+
     var sectionLabel = {
         single_night: "Single, Night &amp; Flexible Shift",
         split:        "Split Shift",
@@ -369,7 +409,7 @@
                 '<td>' + (e.early || '---') + '</td>' +
                 '<td>' + (e.ot    || '---') + '</td>' +
                 '<td>' + (e.total_hrs || '---') + '</td>' +
-                '<td><span class="' + statusClass(e.status) + '">' + statusLetter(e.status) + '</span></td>' +
+                '<td><span class="' + statusClass(e.status) + '">' + statusLetter(e.status) + '</span>' + shortStar(e) + '</td>' +
               '</tr>';
         }).join("");
 

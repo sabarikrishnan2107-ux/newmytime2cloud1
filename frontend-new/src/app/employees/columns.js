@@ -8,7 +8,8 @@ import {
   MoreVertical,
   Pencil,
   Printer,
-  Trash
+  Trash,
+  MonitorSmartphone,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -18,10 +19,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ProfilePicture from "@/components/ProfilePicture";
 
-export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
+export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnrolledDevices) => [
   {
     key: "employee",
-    header: "Personnel",
+    header: t('employees.columns.personnel'),
     align: "left",
     render: (e) => (
       <div className="flex items-center gap-5">
@@ -37,7 +38,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
   },
   {
     key: "branch",
-    header: "Branch",
+    header: t('employees.columns.branch'),
     align: "left",
     render: (employee) => (
       <div className="text-sm text-slate-600 dark:text-stone-100">
@@ -47,7 +48,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
   },
   {
     key: "department",
-    header: "Department",
+    header: t('employees.columns.department'),
     align: "left",
     render: (employee) => (
       <div className="text-sm text-slate-600 dark:text-stone-100">
@@ -57,7 +58,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
   },
   {
     key: "position",
-    header: "Position",
+    header: t('employees.columns.position'),
     align: "left",
     render: (employee) => (
       <div className="text-sm text-slate-600 dark:text-stone-100">
@@ -67,7 +68,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
   },
   {
     key: "mobile_email",
-    header: "Mobile / Email",
+    header: t('employees.columns.mobileEmail'),
     align: "left",
     render: (employee) => (
       <div className="text-sm">
@@ -78,7 +79,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
   },
   {
     key: "timezone",
-    header: "Join Date",
+    header: t('employees.columns.joinDate'),
     align: "left",
     render: (employee) => (
       <div className="text-sm text-slate-600 dark:text-stone-100">
@@ -88,7 +89,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
   },
   {
     key: "access",
-    header: "Access",
+    header: t('employees.columns.access'),
     align: "center",
     render: (employee) => {
       const { rfid_card_number, finger_prints, rfid_card_password, palms, profile_picture } = employee;
@@ -103,18 +104,18 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
 
       return (
         <div className="flex items-center justify-center space-x-2 text-[#15803D] dark:text-stone-100">
-          {isFace && <ScanFace className="w-5 h-5 hover:text-indigo-600 transition-colors" title="Face" />}
-          {isCardNumberSet && <QrCode className="w-5 h-5 hover:text-indigo-600 transition-colors" title="Card" />}
-          {isFingerPrint && <Fingerprint className="w-5 h-5 hover:text-indigo-600 transition-colors" title="Fingerprint" />}
-          {isPalms && <Hand className="w-5 h-5 hover:text-indigo-600 transition-colors" title="Palms" />}
-          {isPasswordSet && <Lock className="w-5 h-5 hover:text-indigo-600 transition-colors" title="Password" />}
+          {isFace && <ScanFace className="w-5 h-5 hover:text-indigo-600 transition-colors" title={t('employees.access.face')} />}
+          {isCardNumberSet && <QrCode className="w-5 h-5 hover:text-indigo-600 transition-colors" title={t('employees.access.card')} />}
+          {isFingerPrint && <Fingerprint className="w-5 h-5 hover:text-indigo-600 transition-colors" title={t('employees.access.fingerprint')} />}
+          {isPalms && <Hand className="w-5 h-5 hover:text-indigo-600 transition-colors" title={t('employees.access.palms')} />}
+          {isPasswordSet && <Lock className="w-5 h-5 hover:text-indigo-600 transition-colors" title={t('employees.access.password')} />}
         </div>
       );
     },
   },
   {
     key: "actions",
-    header: "Actions",
+    header: t('common.actions'),
     align: "center",
     render: (employee) => (
       <div className="flex justify-center">
@@ -141,7 +142,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
               className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
             >
               <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" />
-              <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
+              <span className="text-slate-700 dark:text-slate-200 font-medium">{t('common.edit')}</span>
             </DropdownMenuItem>
 
             {showHostQr && (
@@ -153,7 +154,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
                 className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
               >
                 <QrCode className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <span className="text-slate-700 dark:text-slate-200 font-medium">Host QR</span>
+                <span className="text-slate-700 dark:text-slate-200 font-medium">{t('employees.actions.hostQr')}</span>
               </DropdownMenuItem>
             )}
 
@@ -165,7 +166,18 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
               className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
             >
               <Printer className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span className="text-slate-700 dark:text-slate-200 font-medium">Print Card</span>
+              <span className="text-slate-700 dark:text-slate-200 font-medium">{t('employees.actions.printCard')}</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              onClick={(e) => {
+                e.stopPropagation();
+                if (typeof showEnrolledDevices === "function") showEnrolledDevices(employee);
+              }}
+              className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+            >
+              <MonitorSmartphone className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-slate-700 dark:text-slate-200 font-medium">{t('employees.actions.devices')}</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem
@@ -176,7 +188,7 @@ export default (deleteEmployee, editEmployee, showHostQr, printCard) => [
               className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
             >
               <Trash className="w-4 h-4 text-red-600 dark:text-red-400" />
-              <span className="text-red-600 dark:text-red-400 font-medium">Delete</span>
+              <span className="text-red-600 dark:text-red-400 font-medium">{t('common.delete')}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

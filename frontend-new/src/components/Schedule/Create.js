@@ -218,10 +218,11 @@ const Create = ({ onSuccess = () => { } }) => {
 
             await notify("Success", "Shift has been assign", "success");
             setOpen(false);
+            onSuccess();
         } catch (error) {
             await notify("Error", parseApiError(error), "error");
         } finally {
-            // setLoading(false);
+            setLoading(false);
         }
     };
 

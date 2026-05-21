@@ -153,6 +153,34 @@
       }
       function rowIsAbsent(s) { return s === 'A'; }
 
+      // Helpers for the "worked less than scheduled" indicator.
+      // Applies to single/night shifts only — only renderSingleTable uses this.
+      function toMin(t) {
+        if (!t) return NaN;
+        var parts = String(t).split(':').map(function(n) { return parseInt(n, 10); });
+        if (isNaN(parts[0])) return NaN;
+        return (parts[0] || 0) * 60 + (parts[1] || 0);
+      }
+      function shiftWorkingHours(r) {
+        if (r && r.shift && r.shift.working_hours) return r.shift.working_hours;
+        if (r && r.shift_type && r.shift_type.working_hours) return r.shift_type.working_hours;
+        if (r && r.working_hours) return r.working_hours;
+        return null;
+      }
+      function isShortOfShift(r) {
+        var s = r && r.status;
+        if (s !== 'P' && s !== 'LC' && s !== 'EG') return false;
+        var worked = r && r.total_hrs;
+        var sched = shiftWorkingHours(r);
+        if (!worked || !sched) return false;
+        var wM = toMin(worked), sM = toMin(sched);
+        if (isNaN(wM) || isNaN(sM)) return false;
+        return wM < sM;
+      }
+      function shortStar(r) {
+        return isShortOfShift(r) ? ' <span style="color:#dc2626;font-weight:700;margin-left:2px;">&#9733;</span>' : '';
+      }
+
       // --- URL params ---
       var companyId = qs('company_id');
       var employeeIds = (qs('employee_ids') || '').split(',').filter(Boolean);
@@ -487,7 +515,7 @@
             + '<td>' + esc(r.early_going || '—') + '</td>'
             + '<td>' + esc(r.ot || '—') + '</td>'
             + '<td>' + esc(r.total_hrs || '—') + '</td>'
-            + '<td class="' + statusClass(r.status) + '">' + statusLabel(r.status) + '</td>'
+            + '<td class="' + statusClass(r.status) + '">' + statusLabel(r.status) + shortStar(r) + '</td>'
             + '</tr>';
         }).join('');
         return ''

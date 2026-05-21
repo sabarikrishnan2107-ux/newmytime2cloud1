@@ -4,12 +4,13 @@ import React, { Suspense } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import AttendanceTable from '@/components/Report/Report';
 import ExecutiveAttendanceDashboardPage from '@/components/Report/Summary';
+import LeaveReportsPage from '@/app/leave-dashboard/reports/page';
 
 const ATTENDANCE_TABS = [
     { type: '',               label: 'Attendance Report' },
     { type: 'absent',         label: 'Absent Report' },
     { type: 'late-early',     label: 'Late & Early' },
-    { type: 'leave',          label: 'Leave Report', href: '/leave-dashboard/reports' },
+    { type: 'leave',          label: 'Leave Report' },
     { type: 'mobile-log',     label: 'Mobile Log Report' },
     { type: 'summary-daily',  label: 'Summary' },
 ];
@@ -20,6 +21,7 @@ function AttendancePageInner() {
     const searchParams = useSearchParams();
     const activeType = searchParams.get('type') || '';
     const isSummary = activeType.startsWith('summary');
+    const isLeave = activeType === 'leave';
     const REPORT_TABS = ATTENDANCE_TABS;
 
     const handleTabClick = (tab) => {
@@ -57,7 +59,9 @@ function AttendancePageInner() {
             </div>
 
             <div className="animate-in fade-in duration-500 overflow-y-auto max-h-[calc(100vh-100px)]">
-                {isSummary ? <ExecutiveAttendanceDashboardPage /> : <AttendanceTable />}
+                {isSummary ? <ExecutiveAttendanceDashboardPage />
+                    : isLeave ? <LeaveReportsPage />
+                    : <AttendanceTable />}
             </div>
         </div>
     );

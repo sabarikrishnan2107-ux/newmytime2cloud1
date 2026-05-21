@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { leftNavLinks } from '../lib/menuData';
 import { LogOut, ChevronDown } from "lucide-react";
 import { getUser } from "@/config";
@@ -11,6 +12,7 @@ import { getCompanyLogo } from "@/lib/endpoint/company";
 export default function LeftMenu() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
   const [user, setUser] = useState(null);
   const [companyLogo, setCompanyLogo] = useState(null);
   const [openGroups, setOpenGroups] = useState({});
@@ -128,7 +130,7 @@ export default function LeftMenu() {
 
   return (
     <aside
-      className="group relative w-20 hover:w-60 border-r border-gray-200 dark:border-slate-800
+      className="group relative w-20 hover:w-60 border-e border-gray-200 dark:border-slate-800
                  bg-white dark:bg-slate-900
                  flex flex-col py-4 transition-all duration-300 ease-in-out overflow-y-auto max-h-[calc(100vh-50px)]
                  shadow-[1px_0_8px_-4px_rgba(0,0,0,0.1)] dark:shadow-none"
@@ -146,7 +148,7 @@ export default function LeftMenu() {
                 <button
                   type="button"
                   onClick={() => toggleGroup(link.label)}
-                  title={link.label}
+                  title={t(link.label)}
                   className={`relative flex items-center w-14 group-hover:w-full rounded-xl px-0 group-hover:px-3.5 py-3.5
                     transition-all duration-300 ease-in-out overflow-hidden
                     ${groupHasActive
@@ -155,14 +157,14 @@ export default function LeftMenu() {
                     }`}
                 >
                   {groupHasActive && (
-                    <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-r-full bg-white/80" />
+                    <span aria-hidden className="absolute start-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-e-full bg-white/80" />
                   )}
                   <div className="flex justify-center w-14 group-hover:w-8 group-hover:justify-start shrink-0 transition-all duration-300">
                     {Icon && <Icon size={24} strokeWidth={groupHasActive ? 2.2 : 1.8} />}
                   </div>
                   <span className="overflow-hidden w-0 opacity-0 group-hover:w-auto group-hover:opacity-100
-                    transition-all duration-300 whitespace-nowrap text-[15px] font-medium ml-0 group-hover:ml-2.5 flex-1 text-left">
-                    {link.label}
+                    transition-all duration-300 whitespace-nowrap text-[15px] font-medium ms-0 group-hover:ms-2.5 flex-1 text-start">
+                    {t(link.label)}
                   </span>
                   <ChevronDown
                     size={16}
@@ -176,7 +178,7 @@ export default function LeftMenu() {
                     w-0 opacity-0 group-hover:w-full group-hover:opacity-100
                     ${open ? "max-h-[600px]" : "max-h-0"}`}
                 >
-                  <div className="mt-1 ml-7 mb-1 flex flex-col">
+                  <div className="mt-1 ms-7 mb-1 flex flex-col">
                     {link.children.map((child) => {
                       const active = isChildActive(child);
                       const ChildIcon = child.icon;
@@ -197,7 +199,7 @@ export default function LeftMenu() {
                                 className={active ? "text-primary" : "text-slate-500 dark:text-slate-400"}
                               />
                             )}
-                            <span>{child.label}</span>
+                            <span>{t(child.label)}</span>
                           </Link>
                         </div>
                       );
@@ -214,7 +216,7 @@ export default function LeftMenu() {
             <Link
               key={link.label}
               href={link.href}
-              title={link.label}
+              title={t(link.label)}
               className={`relative flex items-center w-14 group-hover:w-full rounded-xl px-0 group-hover:px-3.5 py-3.5
                 transition-all duration-300 ease-in-out overflow-hidden
                 ${isActive
@@ -223,15 +225,15 @@ export default function LeftMenu() {
                 }`}
             >
               {isActive && (
-                <span aria-hidden className="absolute left-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-r-full bg-white/80" />
+                <span aria-hidden className="absolute start-0 top-1/2 -translate-y-1/2 h-7 w-1 rounded-e-full bg-white/80" />
               )}
 
               <div className="flex justify-center w-14 group-hover:w-8 group-hover:justify-start shrink-0 transition-all duration-300">
                 {Icon && <Icon size={24} strokeWidth={isActive ? 2.2 : 1.8} />}
               </div>
               <span className="overflow-hidden w-0 opacity-0 group-hover:w-auto group-hover:opacity-100
-                transition-all duration-300 whitespace-nowrap text-[15px] font-medium ml-0 group-hover:ml-2.5">
-                {link.label}
+                transition-all duration-300 whitespace-nowrap text-[15px] font-medium ms-0 group-hover:ms-2.5">
+                {t(link.label)}
               </span>
             </Link>
           );
@@ -242,7 +244,7 @@ export default function LeftMenu() {
       <div className="mt-auto px-2.5 pb-2">
         <div
           onClick={handleLogout}
-          title="Click to logout"
+          title={t('header.logoutHint')}
           className="flex items-center w-14 group-hover:w-full rounded-xl px-0 group-hover:px-3 py-2.5 cursor-pointer transition-all duration-300 ease-in-out hover:bg-red-500/10"
         >
           <div className="flex justify-center w-14 group-hover:w-10 shrink-0 transition-all duration-300">
@@ -261,8 +263,8 @@ export default function LeftMenu() {
             </div>
           </div>
           <span className="overflow-hidden w-0 opacity-0 group-hover:w-auto group-hover:opacity-100
-            transition-all duration-300 whitespace-nowrap text-[15px] font-medium text-slate-600 dark:text-slate-200 ml-0 group-hover:ml-2.5">
-            Logout
+            transition-all duration-300 whitespace-nowrap text-[15px] font-medium text-slate-600 dark:text-slate-200 ms-0 group-hover:ms-2.5">
+            {t('header.logout')}
           </span>
         </div>
       </div>

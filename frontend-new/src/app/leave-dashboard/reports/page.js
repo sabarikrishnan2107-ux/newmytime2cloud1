@@ -52,7 +52,8 @@ const getLeaveTypeName = (lr) => {
 };
 
 export default function LeaveReportsPage() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
   const [leaveData, setLeaveData] = useState([]);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -101,11 +102,13 @@ export default function LeaveReportsPage() {
     })();
   }, [selectedDepartmentIds]);
 
-  // Fetch whenever applied filters change (Submit click) and on initial mount
+  // Fetch only after the user has clicked Submit at least once; refetch when
+  // applied filters change (Submit click). No fetch on initial mount.
   useEffect(() => {
+    if (!hasSubmitted) return;
     fetchLeaves();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [appliedBranchIds, appliedDepartmentIds, appliedEmployeeIds, appliedEmployeeTypes, appliedLeaveTypeIds, appliedStatusIds]);
+  }, [hasSubmitted, appliedBranchIds, appliedDepartmentIds, appliedEmployeeIds, appliedEmployeeTypes, appliedLeaveTypeIds, appliedStatusIds]);
 
   const handleSubmit = () => {
     setAppliedBranchIds(selectedBranchIds);
@@ -114,6 +117,7 @@ export default function LeaveReportsPage() {
     setAppliedEmployeeIds(selectedEmployeeIds);
     setAppliedLeaveTypeIds(selectedLeaveTypeIds);
     setAppliedStatusIds(selectedStatusIds);
+    setHasSubmitted(true);
   };
 
   const fetchLeaveTypes = async () => {
@@ -402,7 +406,8 @@ export default function LeaveReportsPage() {
         </DropdownMenu>
       </div>
 
-      {/* Data Table */}
+      {/* Data Table — only shown after the user clicks Submit */}
+      {hasSubmitted && (
       <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl">
         <div className="p-5 border-b border-slate-200 dark:border-white/10">
           <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Leave Details</h3>
@@ -452,6 +457,7 @@ export default function LeaveReportsPage() {
           </table>
         </div>
       </div>
+      )}
     </div>
   );
 }

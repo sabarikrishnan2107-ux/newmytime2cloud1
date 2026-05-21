@@ -3,11 +3,13 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, RefreshCw, Download, Copy, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 import QRCode from 'qrcode';
 import { getBranches, getDepartmentsByBranchIds, getEmployees, removeEmployee } from '@/lib/api';
 import { getUser } from '@/config';
 import { EmployeeExtras } from '@/components/Employees/Extras';
+import EnrolledDevicesModal from '@/components/Employees/EnrolledDevicesModal';
 
 import Columns from "./columns";
 import DataTable from '@/components/ui/DataTable';
@@ -19,6 +21,7 @@ import MultiDropDown from '@/components/ui/MultiDropDown';
 
 export default function EmployeesPage() {
 
+    const { t } = useTranslation();
     const router = useRouter();
 
     const [branches, setBranches] = useState([]);
@@ -108,7 +111,7 @@ export default function EmployeesPage() {
     }
 
     const deleteEmployee = async (id) => {
-        if (confirm("Are you sure you want to delete this employee?")) {
+        if (confirm(t('employees.list.confirmDelete'))) {
             try {
                 await removeEmployee(id);
                 fetchEmployees(currentPage, perPage);
@@ -123,6 +126,7 @@ export default function EmployeesPage() {
     }
 
     const [hostQrEmployee, setHostQrEmployee] = useState(null);
+    const [devicesEmployee, setDevicesEmployee] = useState(null);
     const [hostQrDataUrl, setHostQrDataUrl] = useState(null);
     const [hostQrUrl, setHostQrUrl] = useState("");
 
@@ -361,12 +365,12 @@ export default function EmployeesPage() {
         <div className='p-3 sm:p-4 pb-4 overflow-y-auto max-h-[calc(100vh-100px)]'>
             <div className="flex flex-col lg:flex-row lg:justify-between lg:items-center gap-3 mb-6">
                 <h1 className="text-xl sm:text-2xl font-extrabold text-gray-600 dark:text-gray-300 flex items-center shrink-0">
-                    Employees
+                    {t('employees.list.pageTitle')}
                 </h1>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <div className="relative w-full sm:w-auto">
                         <MultiDropDown
-                            placeholder={'Select Branch'}
+                            placeholder={t('employees.list.selectBranchPlaceholder')}
                             items={branches}
                             value={selectedBranchIds}
                             onChange={setSelectedBranchIds}
@@ -376,7 +380,7 @@ export default function EmployeesPage() {
                     </div>
                     <div className="relative w-full sm:w-auto">
                         <MultiDropDown
-                            placeholder={'Select Department'}
+                            placeholder={t('employees.list.selectDepartmentPlaceholder')}
                             items={departments}
                             value={selectedDepartmentIds}
                             onChange={setSelectedDepartmentIds}
@@ -386,7 +390,7 @@ export default function EmployeesPage() {
                     </div>
                     <div className="relative w-full sm:w-auto">
                         <Input
-                            placeholder="Search by name or ID"
+                            placeholder={t('employees.list.searchPlaceholder')}
                             icon="search"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -397,7 +401,7 @@ export default function EmployeesPage() {
                         icon={RefreshCw}
                         onClick={handleRefresh}
                         isLoading={isLoading}
-                        title="Refresh Data"
+                        title={t('employees.list.refreshTitle')}
                     />
 
                     <EmployeeExtras data={employees} onUploadSuccess={fetchEmployees} />
@@ -406,14 +410,14 @@ export default function EmployeesPage() {
                     <Link href="/employees/create">
                         <button className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap">
                             <Plus className="w-4 h-4" />
-                            <span>New</span>
+                            <span>{t('employees.list.newButton')}</span>
                         </button>
                     </Link>
                 </div>
             </div>
 
             <DataTable
-                columns={Columns(deleteEmployee, editEmployee, showHostQr, (emp) => printEmployeeCard(emp))}
+                columns={Columns(t, deleteEmployee, editEmployee, showHostQr, (emp) => printEmployeeCard(emp), setDevicesEmployee)}
                 data={employees}
                 isLoading={isLoading}
                 error={error}
@@ -431,6 +435,12 @@ export default function EmployeesPage() {
                         pageSizeOptions={[10, 25, 50, 100]}
                     />
                 }
+            />
+
+            <EnrolledDevicesModal
+                open={!!devicesEmployee}
+                employee={devicesEmployee}
+                onClose={() => setDevicesEmployee(null)}
             />
 
             {hostQrEmployee && (

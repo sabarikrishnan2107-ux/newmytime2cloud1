@@ -17,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { useLiveAttendance } from "@/context/LiveAttendanceContext";
 
 // 1. Define the base icon mapping
@@ -51,6 +52,7 @@ const iconGroups = {
 };
 
 function LiveFeed({ branch_ids, department_ids }) {
+  const { t } = useTranslation();
   const router = useRouter();
 
   const { lastAttendanceEvent } = useLiveAttendance();
@@ -265,7 +267,7 @@ function LiveFeed({ branch_ids, department_ids }) {
         <div className="flex items-center gap-3">
           <div className="size-2 rounded-full bg-emerald-500 animate-pulse"></div>
           <h3 className="text-lg font-bold text-gray-600 dark:text-gray-300 font-display tracking-wide">
-            Live Recognition Feed
+            {t('dashboard.feed.title')}
           </h3>
 
           <RefreshCw
@@ -279,7 +281,7 @@ function LiveFeed({ branch_ids, department_ids }) {
             onClick={() => router.push("/logs")}
             className="text-sm font-bold text-primary hover:text-gray-600 dark:text-gray-300 transition-colors uppercase tracking-wider"
           >
-            View Full Log
+            {t('dashboard.feed.viewFullLog')}
           </button>
         </div>
       </div>
@@ -287,14 +289,14 @@ function LiveFeed({ branch_ids, department_ids }) {
       {/* Table Header - Equal-width columns */}
       <div className="overflow-x-auto">
       <div className="grid grid-cols-8 px-6 py-3 gap-4 border-y border-gray-200 dark:border-white/5 text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-white/[0.02] min-w-[1100px]">
-        <div className="text-center">#</div>
-        <div className="text-left">Employee</div>
-        <div className="text-center">Branch</div>
-        <div className="text-center">Department</div>
-        <div className="text-center">Date & Time</div>
-        <div className="text-center">In/Out</div>
-        <div className="text-center">Mode</div>
-        <div className="text-center">Device Name</div>
+        <div className="text-center">{t('dashboard.feed.colNumber')}</div>
+        <div className="text-left">{t('dashboard.feed.colEmployee')}</div>
+        <div className="text-center">{t('dashboard.feed.colBranch')}</div>
+        <div className="text-center">{t('dashboard.feed.colDepartment')}</div>
+        <div className="text-center">{t('dashboard.feed.colDateTime')}</div>
+        <div className="text-center">{t('dashboard.feed.colInOut')}</div>
+        <div className="text-center">{t('dashboard.feed.colMode')}</div>
+        <div className="text-center">{t('dashboard.feed.colDeviceName')}</div>
       </div>
 
       {/* List Body */}
@@ -431,6 +433,7 @@ function LiveFeed({ branch_ids, department_ids }) {
 }
 
 function EmployeeDetailModal({ employee, onClose }) {
+  const { t } = useTranslation();
   const [logs, setLogs] = React.useState([]);
   const [loading, setLoading] = React.useState(true);
 
@@ -538,7 +541,7 @@ function EmployeeDetailModal({ employee, onClose }) {
       >
         <button
           onClick={onClose}
-          title="Close"
+          title={t('dashboard.feedDialog.close')}
           className="group absolute top-3 right-3 z-20 h-8 w-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-200 shadow-md hover:bg-rose-500 hover:text-white active:bg-rose-600 hover:scale-110 active:scale-95 transition-all duration-200"
         >
           <X size={16} className="transition-transform duration-200 group-hover:rotate-90" />
@@ -568,12 +571,12 @@ function EmployeeDetailModal({ employee, onClose }) {
 
             {/* Sidebar stats stacked under avatar */}
             <div className="w-full text-xs space-y-2 text-slate-700 dark:text-slate-200 mt-3 text-left">
-              <StatRow label="Presents" value={presents} />
-              <StatRow label="Absence" value={absence} />
-              <StatRow label="Incomplete" value={incomplete} />
-              <StatRow label="Manual Entry" value={manualEntry} />
-              <StatRow label="Leaves" value={0} />
-              <StatRow label="Holidays" value={0} />
+              <StatRow label={t('dashboard.feedDialog.presents')} value={presents} />
+              <StatRow label={t('dashboard.feedDialog.absence')} value={absence} />
+              <StatRow label={t('dashboard.feedDialog.incomplete')} value={incomplete} />
+              <StatRow label={t('dashboard.feedDialog.manualEntry')} value={manualEntry} />
+              <StatRow label={t('dashboard.feedDialog.leaves')} value={0} />
+              <StatRow label={t('dashboard.feedDialog.holidays')} value={0} />
             </div>
           </div>
 
@@ -581,11 +584,11 @@ function EmployeeDetailModal({ employee, onClose }) {
           <div className="flex flex-col gap-3 min-w-0">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-3 text-center">
-                <div className="text-sm text-slate-700 dark:text-white">Shift</div>
+                <div className="text-sm text-slate-700 dark:text-white">{t('dashboard.feedDialog.shift')}</div>
                 <div className="text-base font-medium text-slate-800 dark:text-white truncate mt-1">{shiftName}</div>
               </div>
               <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-3 text-center">
-                <div className="text-sm text-slate-700 dark:text-white">Shift Time</div>
+                <div className="text-sm text-slate-700 dark:text-white">{t('dashboard.feedDialog.shiftTime')}</div>
                 <div className="text-base font-medium text-slate-800 dark:text-white tabular-nums mt-1">{shiftTime}</div>
               </div>
             </div>
@@ -593,9 +596,9 @@ function EmployeeDetailModal({ employee, onClose }) {
             <div className="text-[12px]">
               <div className="grid grid-cols-[28px_1fr_60px_70px] gap-x-3 text-slate-500 dark:text-slate-400 font-semibold text-[11px] pb-1 border-b border-slate-100 dark:border-slate-800">
                 <div>#</div>
-                <div>Date Time</div>
-                <div>In/Out</div>
-                <div>Device</div>
+                <div>{t('dashboard.feedDialog.dateTime')}</div>
+                <div>{t('dashboard.feed.colInOut')}</div>
+                <div>{t('dashboard.feedDialog.device')}</div>
               </div>
               {loading ? (
                 <div className="py-3 text-center text-slate-500 dark:text-slate-400">Loading…</div>

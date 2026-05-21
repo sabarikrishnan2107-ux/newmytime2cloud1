@@ -1,5 +1,6 @@
 import { dashboardGetCountslast7DaysChart } from "@/lib/endpoint/dashboard";
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { TrendingUp, TrendingDown, Minus } from "lucide-react";
 import {
   BarChart,
@@ -16,7 +17,7 @@ import {
 // Per-day accent palette (same intent as before, but heights now reflect ABSENT count).
 const DAY_COLORS = ["#14b8a6", "#06b6d4", "#10b981", "#6366f1", "#a855f7", "#f59e0b", "#ef4444"];
 
-function ChartTooltip({ active, payload }) {
+function ChartTooltip({ active, payload, absentLabel, presentLabel }) {
   if (!active || !payload || !payload.length) return null;
   const r = payload[0].payload;
   return (
@@ -26,16 +27,17 @@ function ChartTooltip({ active, payload }) {
       </p>
       <div className="mt-1 flex items-baseline gap-1.5">
         <span className="text-lg font-bold text-rose-600 dark:text-rose-400 tabular-nums">{r.absent ?? 0}</span>
-        <span className="text-[11px] text-slate-500 dark:text-slate-400">absent</span>
+        <span className="text-[11px] text-slate-500 dark:text-slate-400">{absentLabel}</span>
       </div>
       <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 tabular-nums">
-        Present: {r.present ?? 0}
+        {presentLabel} {r.present ?? 0}
       </p>
     </div>
   );
 }
 
 function AttendanceCard({ branch_ids, department_ids }) {
+  const { t } = useTranslation();
   const [stats, setStats] = useState([]);
 
   useEffect(() => {
@@ -97,9 +99,9 @@ function AttendanceCard({ branch_ids, department_ids }) {
       <div className="flex justify-between items-start mb-3">
         <div>
           <h3 className="text-sm font-bold text-gray-700 dark:text-gray-100">
-            Daily Absences
+            {t('dashboard.absences.title')}
           </h3>
-          <p className="text-[11px] text-slate-500 dark:text-slate-400">Last 7 days · bar height = absent count</p>
+          <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('dashboard.absences.subtitle')}</p>
         </div>
         <div className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 px-2.5 py-1.5">
           <div className="flex items-center gap-1.5" title="Absence trend: recent days vs earlier days">
@@ -113,15 +115,15 @@ function AttendanceCard({ branch_ids, department_ids }) {
 
       <div className="flex items-center gap-4 mb-2 text-[11px]">
         <div>
-          <span className="text-slate-500 dark:text-slate-400">Avg </span>
+          <span className="text-slate-500 dark:text-slate-400">{t('dashboard.absences.avg')} </span>
           <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums">{avgAbsent}</span>
         </div>
         <div>
-          <span className="text-slate-500 dark:text-slate-400">Peak </span>
+          <span className="text-slate-500 dark:text-slate-400">{t('dashboard.absences.peak')} </span>
           <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums">{peakAbsent}</span>
         </div>
         <div>
-          <span className="text-slate-500 dark:text-slate-400">Total </span>
+          <span className="text-slate-500 dark:text-slate-400">{t('dashboard.absences.total')} </span>
           <span className="font-semibold text-slate-800 dark:text-slate-100 tabular-nums">{totalAbsent}</span>
         </div>
       </div>
@@ -154,7 +156,10 @@ function AttendanceCard({ branch_ids, department_ids }) {
               dy={4}
             />
             <YAxis hide allowDecimals={false} domain={[0, (dataMax) => Math.max(dataMax + 2, 5)]} />
-            <Tooltip cursor={{ fill: "currentColor", fillOpacity: 0.05 }} content={<ChartTooltip />} />
+            <Tooltip
+              cursor={{ fill: "currentColor", fillOpacity: 0.05 }}
+              content={<ChartTooltip absentLabel={t('dashboard.absences.tooltipAbsent')} presentLabel={t('dashboard.absences.tooltipPresent')} />}
+            />
             <ReferenceLine
               y={avgAbsent}
               stroke="currentColor"

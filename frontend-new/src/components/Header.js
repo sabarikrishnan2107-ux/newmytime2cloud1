@@ -3,16 +3,19 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
 import { API_BASE_URL, getUser } from "@/config/index";
 import { useDarkMode } from "@/context/DarkModeContext";
 import LiveAttendanceNotifier from "@/components/LiveAttendanceNotifier";
+import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Bell, PlayCircle, Sun, Moon, X, Wand2 } from "lucide-react";
 import useSse from "@/hooks/useSse";
 
 export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
   const { isDark, setIsDark } = useDarkMode();
 
@@ -192,16 +195,16 @@ export default function Header() {
   if (pathname?.startsWith("/visitor/host-checkin")) return null;
 
   const navLinks = [
-    { name: 'DASHBOARD', href: '/' },
-    { name: 'EMPLOYEES', href: '/employees' },
-    { name: 'ATTENDANCE', href: '/shift' },
-    { name: 'LEAVE', href: '/leave-dashboard' },
-    { name: 'LIVE TRACKER', href: '/live-tracker' },
-    { name: 'ACCESS CONTROL', href: '/access_control' },
-    { name: 'PAYROLL', href: '/payslips' },
-    { name: 'VISITORS', href: '/visitor' },
-    { name: 'REPORTS', href: '/report' },
-    { name: 'SETTINGS', href: '/setup' },
+    { name: 'DASHBOARD', labelKey: 'header.nav.dashboard', href: '/' },
+    { name: 'EMPLOYEES', labelKey: 'header.nav.employees', href: '/employees' },
+    { name: 'ATTENDANCE', labelKey: 'header.nav.attendance', href: '/shift' },
+    { name: 'LEAVE', labelKey: 'header.nav.leave', href: '/leave-dashboard' },
+    { name: 'LIVE TRACKER', labelKey: 'header.nav.liveTracker', href: '/live-tracker' },
+    { name: 'ACCESS CONTROL', labelKey: 'header.nav.accessControl', href: '/access_control' },
+    { name: 'PAYROLL', labelKey: 'header.nav.payroll', href: '/payslips' },
+    { name: 'VISITORS', labelKey: 'header.nav.visitors', href: '/visitor' },
+    { name: 'REPORTS', labelKey: 'header.nav.reports', href: '/report' },
+    { name: 'SETTINGS', labelKey: 'header.nav.settings', href: '/setup' },
   ];
 
   const restrictedNames = ['SETTINGS', 'PAYROLL', 'ACCESS CONTROL'];
@@ -238,7 +241,7 @@ export default function Header() {
                 href={link.href}
                 className={`${baseClasses} ${isActive ? activeClasses : inactiveClasses}`}
               >
-                {link.name}
+                {t(link.labelKey)}
               </Link>
             );
           })}
@@ -254,7 +257,7 @@ export default function Header() {
                   setNotificationCount(0);
                 }}
                 className="relative p-2 text-slate-400 hover:text-primary transition-colors"
-                title="Notifications"
+                title={t('header.tooltips.notifications')}
               >
                 <Bell
                   size={22}
@@ -262,7 +265,7 @@ export default function Header() {
                   className={`transition-colors duration-300 ${notificationCount > 0 ? "text-primary" : ""} ${isShaking ? "bell-shake" : ""}`}
                 />
                 {notificationCount > 0 && (
-                  <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full leading-none shadow-sm">
+                  <span className="absolute top-0.5 end-0.5 min-w-[18px] h-[18px] px-1 flex items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full leading-none shadow-sm">
                     {notificationCount > 99 ? "99+" : notificationCount}
                   </span>
                 )}
@@ -270,17 +273,17 @@ export default function Header() {
 
               {/* Dropdown Panel */}
               {showDropdown && (
-                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden">
+                <div className="absolute end-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-gray-100 dark:border-slate-700 z-50 overflow-hidden">
                   {/* Header */}
                   <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-slate-700">
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">Notifications</span>
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">{t('header.notifications.title')}</span>
                     <div className="flex items-center gap-2">
                       {notifications.length > 0 && (
                         <button
                           onClick={() => setNotifications([])}
                           className="text-[11px] text-gray-400 hover:text-red-500 transition-colors"
                         >
-                          Clear all
+                          {t('header.notifications.clearAll')}
                         </button>
                       )}
                       <button onClick={() => setShowDropdown(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
@@ -293,7 +296,7 @@ export default function Header() {
                   <ul className="max-h-72 overflow-y-auto divide-y divide-gray-50 dark:divide-slate-700">
                     {notifications.length === 0 ? (
                       <li className="px-4 py-8 text-center text-sm text-gray-400 dark:text-slate-500">
-                        No notifications yet
+                        {t('header.notifications.empty')}
                       </li>
                     ) : (
                       notifications.map((notif) => (
@@ -305,7 +308,7 @@ export default function Header() {
                                 setShowDropdown(false);
                                 router.push(notif.access_url);
                               }}
-                              className="w-full flex flex-col gap-0.5 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/60 transition-colors text-left cursor-pointer"
+                              className="w-full flex flex-col gap-0.5 px-4 py-3 hover:bg-gray-50 dark:hover:bg-slate-700/60 transition-colors text-start cursor-pointer"
                             >
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{notif.message}</span>
                               <span className="text-[11px] text-gray-400 dark:text-slate-500">{notif.timestamp}</span>
@@ -329,7 +332,7 @@ export default function Header() {
 
             <button
               className="relative p-2 text-slate-400 hover:text-red-600 transition-colors"
-              title="Watch Tutorial"
+              title={t('header.tooltips.watchTutorial')}
             >
               <PlayCircle size={22} strokeWidth={1.8} />
             </button>
@@ -337,18 +340,18 @@ export default function Header() {
             <button
               onClick={toggleWizard}
               className={`relative p-2 transition-colors ${wizardMode ? "text-violet-500 hover:text-violet-400" : "text-slate-400 hover:text-violet-400"}`}
-              title={wizardMode ? "Wizard mode: ON (only Setup is accessible) — click to disable" : "Wizard mode: OFF — click to enable Setup-only mode"}
+              title={wizardMode ? t('header.tooltips.wizardOn') : t('header.tooltips.wizardOff')}
             >
               <Wand2 size={22} strokeWidth={1.8} />
               <span
-                className={`absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full transition-colors ${wizardMode ? "bg-violet-500 shadow-[0_0_8px_#8b5cf6]" : "bg-transparent"}`}
+                className={`absolute top-1.5 end-1.5 w-1.5 h-1.5 rounded-full transition-colors ${wizardMode ? "bg-violet-500 shadow-[0_0_8px_#8b5cf6]" : "bg-transparent"}`}
               />
             </button>
 
             <button
               onClick={() => setIsDark(!isDark)}
               className="relative p-2 text-slate-400 hover:text-gold-glow transition-all duration-300 active-pop"
-              title={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={isDark ? t('header.tooltips.lightMode') : t('header.tooltips.darkMode')}
             >
               <span className="inline-flex transition-transform duration-500 rotate-0 dark:rotate-[360deg]">
                 {isDark
@@ -357,11 +360,11 @@ export default function Header() {
                 }
               </span>
               <span
-                className={`absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full transition-colors ${isDark ? "bg-gold-glow shadow-[0_0_8px_#fbbf24]" : "bg-transparent"}`}
+                className={`absolute top-1.5 end-1.5 w-1.5 h-1.5 rounded-full transition-colors ${isDark ? "bg-gold-glow shadow-[0_0_8px_#fbbf24]" : "bg-transparent"}`}
               />
             </button>
 
-            <div className="text-right hidden sm:block">
+            <div className="text-end hidden sm:block">
               <h2 className="text-sm font-bold text-gray-300 font-display">
                 {time}
               </h2>
@@ -369,6 +372,8 @@ export default function Header() {
                 {date}
               </p>
             </div>
+
+            <LanguageSwitcher />
           </div>
         </div>
       </header>

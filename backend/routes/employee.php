@@ -6,6 +6,7 @@ use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EmployeeAccessController;
 use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeControllerNew;
+use App\Http\Controllers\EmployeeDeviceEnrollmentController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/employee-statistics', [EmployeeDashboard::class, 'statistics']);
@@ -71,3 +72,6 @@ Route::get('employee-details/{id}', [EmployeeControllerNew::class, 'show']);
 Route::get('employees-json/{id}', [EmployeeControllerNew::class, 'employeesJson']);
 
 Route::get('/employee-ai-related-info/{id}', [EmployeeControllerNew::class, 'employeeAiRelatedInfo']);
+
+Route::get('employees/{employeeId}/enrolled-devices', [EmployeeDeviceEnrollmentController::class, 'index']);
+Route::delete('employees/{employeeId}/enrolled-devices/{deviceId}', [EmployeeDeviceEnrollmentController::class, 'destroy']);

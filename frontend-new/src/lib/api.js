@@ -140,7 +140,10 @@ export const removeEmployeeSchedule = async (id) => {
         employee_id: id,
         company_id: user?.company_id || 0
     }
-    await axios.post(`${API_BASE}/schedule_employees_delete`, payload);
+    const { data } = await axios.post(`${API_BASE}/schedule_employees_delete`, payload);
+    if (data?.status === false) {
+        throw new Error(data?.message || "Failed to delete employee schedule");
+    }
     return true;
 };
 

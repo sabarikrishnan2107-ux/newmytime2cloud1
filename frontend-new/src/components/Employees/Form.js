@@ -542,8 +542,10 @@ const Form = ({ action = "Add", payload }) => {
 
                 {/* Footer Actions */}
                 <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/50 shrink-0 flex justify-end gap-3">
-                    <button className="px-4 py-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all bg-gray-200 text-gray-500 hover:bg-gray-300 hover:text-gray-500
-dark:bg-slate-700 dark:text-slate-400 dark:hover:bg-slate-600 dark:hover:text-slate-300">
+                    <button
+                        type="button"
+                        onClick={() => router.push('/employees')}
+                        className="px-4 py-2 text-xs font-bold uppercase tracking-wide rounded-lg transition-all bg-red-500 hover:bg-red-600 text-white shadow-md">
                         Cancel
                     </button>
                     <button

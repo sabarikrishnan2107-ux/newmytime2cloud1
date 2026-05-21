@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { hhmmToMinutes, minutesToHHMM } from "@/lib/utils";
 import TimePicker from "../ui/TimePicker";
 
@@ -12,14 +11,17 @@ const shiftTime = (timeStr, offsetMinutes) => {
 };
 
 const SingleAndNight = ({ shift = "", handleChange = () => {} }) => {
-  // Auto-update Beginning/Ending Window when on_duty/off_duty changes
-  useEffect(() => {
-    if (!shift.on_duty_time || !shift.off_duty_time) return;
-    handleChange("beginning_in", shiftTime(shift.on_duty_time, -60));
-    handleChange("beginning_out", shiftTime(shift.on_duty_time, 60));
-    handleChange("ending_in", shiftTime(shift.off_duty_time, -60));
-    handleChange("ending_out", shiftTime(shift.off_duty_time, 60));
-  }, [shift.on_duty_time, shift.off_duty_time]);
+  const handleOnDutyChange = (val) => {
+    handleChange("on_duty_time", val);
+    handleChange("beginning_in", shiftTime(val, -60));
+    handleChange("beginning_out", shiftTime(val, 60));
+  };
+
+  const handleOffDutyChange = (val) => {
+    handleChange("off_duty_time", val);
+    handleChange("ending_in", shiftTime(val, -60));
+    handleChange("ending_out", shiftTime(val, 60));
+  };
 
   return (
     <section className="space-y-4">
@@ -38,7 +40,7 @@ const SingleAndNight = ({ shift = "", handleChange = () => {} }) => {
             </label>
             <TimePicker
               defaultValue={shift.on_duty_time}
-              onChange={(val) => handleChange("on_duty_time", val)}
+              onChange={handleOnDutyChange}
             />
           </div>
           <div className="space-y-2">
@@ -50,7 +52,7 @@ const SingleAndNight = ({ shift = "", handleChange = () => {} }) => {
             </label>
             <TimePicker
               defaultValue={shift.off_duty_time}
-              onChange={(val) => handleChange("off_duty_time", val)}
+              onChange={handleOffDutyChange}
             />
           </div>
         </div>

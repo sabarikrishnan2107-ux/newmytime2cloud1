@@ -1,6 +1,7 @@
 // app/layout.js
 import "./globals.css";
 import LayoutShell from "@/components/LayoutShell";
+import LanguageProvider from "@/components/LanguageProvider";
 import { DarkModeProvider } from "@/context/DarkModeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { LiveAttendanceProvider } from "@/context/LiveAttendanceContext";
@@ -51,13 +52,15 @@ export default function RootLayout({ children }) {
       </head>
 
       <body className="text-slate-200 overflow-hidden h-screen flex flex-col">
-        <DarkModeProvider>
-          <AuthProvider>
-            <LiveAttendanceProvider>
-              <LayoutShell>{children}</LayoutShell>
-            </LiveAttendanceProvider>
-          </AuthProvider>
-        </DarkModeProvider>
+        <LanguageProvider>
+          <DarkModeProvider>
+            <AuthProvider>
+              <LiveAttendanceProvider>
+                <LayoutShell>{children}</LayoutShell>
+              </LiveAttendanceProvider>
+            </AuthProvider>
+          </DarkModeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

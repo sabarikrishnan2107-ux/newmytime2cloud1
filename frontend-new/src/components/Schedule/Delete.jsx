@@ -116,21 +116,14 @@ const Delete = ({ onSuccess = () => {} }) => {
         }
         setLoading(true);
         try {
-            const idToEmployeeId = new Map(
-                employees.map((e) => [e.id, e.employee_id])
-            );
-            const targets = selectedIds
-                .map((id) => idToEmployeeId.get(id))
-                .filter(Boolean);
-
             const results = await Promise.allSettled(
-                targets.map((empId) => removeEmployeeSchedule(empId))
+                selectedIds.map((systemUserId) => removeEmployeeSchedule(systemUserId))
             );
             const failures = results.filter((r) => r.status === "rejected");
 
             if (failures.length === 0) {
                 notify("Success", "Schedules deleted", "success");
-            } else if (failures.length === targets.length) {
+            } else if (failures.length === selectedIds.length) {
                 notify(
                     "Error",
                     parseApiError(failures[0].reason) || "Failed to delete",
@@ -139,7 +132,7 @@ const Delete = ({ onSuccess = () => {} }) => {
             } else {
                 notify(
                     "Partial",
-                    `${failures.length} of ${targets.length} failed`,
+                    `${failures.length} of ${selectedIds.length} failed`,
                     "error"
                 );
             }

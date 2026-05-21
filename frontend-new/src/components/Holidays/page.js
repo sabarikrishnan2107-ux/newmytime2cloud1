@@ -1,12 +1,18 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { CalendarDays, MapPin, Building2, Tag, Clock, ArrowRight } from 'lucide-react';
 import { getHolidays } from '@/lib/endpoint/holidays';
 import { getBranches } from '@/lib/api';
 import { api } from '@/lib/api';
 import { API_BASE, buildQueryParams } from '@/lib/api-client';
 import { Badge } from '../ui/badge';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 
 const statusBadge = (startDate) => {
     const today = new Date();
@@ -32,9 +38,32 @@ const statusBadge = (startDate) => {
     );
 };
 
+const formatDate = (iso) => {
+    if (!iso) return 'N/A';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return iso;
+    return d.toLocaleDateString(undefined, { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' });
+};
+
+const relativeText = (startDate) => {
+    if (!startDate) return null;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const start = new Date(startDate);
+    if (Number.isNaN(start.getTime())) return null;
+    start.setHours(0, 0, 0, 0);
+    const diffMs = start.getTime() - today.getTime();
+    const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+    if (diffDays === 0) return 'Today';
+    if (diffDays === 1) return 'Tomorrow';
+    if (diffDays === -1) return 'Yesterday';
+    if (diffDays > 1) return `In ${diffDays} days`;
+    return `${Math.abs(diffDays)} days ago`;
+};
+
 export default function HolidaysPage() {
-    const router = useRouter();
     const [rows, setRows] = useState([]);
+    const [selectedHoliday, setSelectedHoliday] = useState(null);
 
     useEffect(() => {
         let cancelled = false;
@@ -152,9 +181,9 @@ export default function HolidaysPage() {
                         rows.map((row) => (
                             <tr
                                 key={row.id}
-                                onClick={() => router.push('/holiday')}
+                                onClick={() => setSelectedHoliday(row)}
                                 className="hover:bg-slate-50 dark:hover:bg-slate-800/70 transition-colors group relative cursor-pointer"
-                                title="Go to Holidays"
+                                title="View holiday details"
                             >
                                 <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-300">{row?.branch?.branch_name || 'N/A'}</td>
                                 <td className="px-6 py-4 whitespace-nowrap text-xs text-slate-600 dark:text-slate-300">{row?.name || 'N/A'}</td>
@@ -178,6 +207,107 @@ export default function HolidaysPage() {
                     )}
                 </tbody>
             </table>
+
+            {/* Holiday Detail Dialog */}
+            <Dialog open={!!selectedHoliday} onOpenChange={(open) => !open && setSelectedHoliday(null)}>
+                <DialogContent className="sm:max-w-md p-0 overflow-hidden">
+                    {selectedHoliday && (
+                        <>
+                            {/* Header with gradient */}
+                            <div className="relative bg-gradient-to-br from-primary/90 to-purple-600/90 px-6 pt-6 pb-8 text-white">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-12 -mt-12 pointer-events-none" />
+                                <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/5 rounded-full blur-2xl -ml-8 -mb-8 pointer-events-none" />
+                                <div className="relative z-10 flex items-start gap-3">
+                                    <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm shrink-0">
+                                        <CalendarDays className="h-5 w-5" strokeWidth={2.2} />
+                                    </div>
+                                    <div className="flex-1 min-w-0 pr-6">
+                                        <DialogHeader className="space-y-1">
+                                            <DialogTitle className="text-xl font-bold text-white leading-tight">
+                                                {selectedHoliday.name || 'Holiday'}
+                                            </DialogTitle>
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                {statusBadge(selectedHoliday.start_date)}
+                                                {relativeText(selectedHoliday.start_date) && (
+                                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-white/90 bg-white/15 backdrop-blur-sm px-2 py-0.5 rounded-full">
+                                                        <Clock className="h-3 w-3" />
+                                                        {relativeText(selectedHoliday.start_date)}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </DialogHeader>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Body details */}
+                            <div className="px-6 py-5 space-y-4 bg-white dark:bg-slate-800">
+                                {/* Duration row with start -> end */}
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary shrink-0">
+                                        <CalendarDays className="h-4 w-4" strokeWidth={2.2} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Duration</p>
+                                        <div className="flex items-center gap-2 flex-wrap text-sm font-medium text-slate-700 dark:text-slate-200">
+                                            <span>{formatDate(selectedHoliday.start_date)}</span>
+                                            {selectedHoliday.end_date && selectedHoliday.end_date !== selectedHoliday.start_date && (
+                                                <>
+                                                    <ArrowRight className="h-3.5 w-3.5 text-slate-400" />
+                                                    <span>{formatDate(selectedHoliday.end_date)}</span>
+                                                </>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Total Days */}
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-500 shrink-0">
+                                        <Clock className="h-4 w-4" strokeWidth={2.2} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Total Days</p>
+                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                            {selectedHoliday.total_days || 1} {selectedHoliday.total_days === 1 || !selectedHoliday.total_days ? 'day' : 'days'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Branch */}
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-500/10 text-blue-500 shrink-0">
+                                        <MapPin className="h-4 w-4" strokeWidth={2.2} />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Branch</p>
+                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                            {selectedHoliday?.branch?.branch_name || 'N/A'}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                {/* Source */}
+                                <div className="flex items-start gap-3">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-500/10 text-amber-500 shrink-0">
+                                        {selectedHoliday.source === 'government' ? (
+                                            <Building2 className="h-4 w-4" strokeWidth={2.2} />
+                                        ) : (
+                                            <Tag className="h-4 w-4" strokeWidth={2.2} />
+                                        )}
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-slate-400 mb-1">Source</p>
+                                        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                            {selectedHoliday.source === 'government' ? 'Government Holiday' : 'Company Holiday'}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

@@ -2,6 +2,44 @@ import ProfilePicture from "@/components/ProfilePicture";
 import { getBgColor, getTextColor, setStatusLabel } from "@/lib/utils";
 import { Eye } from "lucide-react";
 
+// Returns the last punch-out value, handling single-shift (`out`) and
+// multi-in/out shifts (`out1`..`out5`).
+const getLastOut = (log) => {
+    if (log?.out) return log.out;
+    for (let i = 5; i >= 1; i--) {
+        if (log?.[`out${i}`]) return log[`out${i}`];
+    }
+    return null;
+};
+
+const toMinutes = (t) => {
+    if (!t) return NaN;
+    const parts = String(t).split(":").map((n) => parseInt(n, 10));
+    if (Number.isNaN(parts[0])) return NaN;
+    return (parts[0] || 0) * 60 + (parts[1] || 0);
+};
+
+// Single (6) and Night (4) shift types only — split/multi have ambiguous
+// "shift duration" and are skipped.
+const isSingleOrNight = (shiftTypeId) =>
+    String(shiftTypeId) === "4" || String(shiftTypeId) === "6";
+
+// True when the row currently displays as "Present" (status P / LC / EG) but
+// total worked hours are less than the shift's scheduled working hours.
+// Used to render a red star indicator next to the Present label.
+const isShortOfShift = (log, shiftTypeId) => {
+    if (!isSingleOrNight(shiftTypeId)) return false;
+    const s = log?.status;
+    if (s !== "P" && s !== "LC" && s !== "EG") return false;
+    const worked = log?.total_hrs;
+    const scheduled = log?.shift?.working_hours;
+    if (!worked || !scheduled) return false;
+    const wMin = toMinutes(worked);
+    const sMin = toMinutes(scheduled);
+    if (Number.isNaN(wMin) || Number.isNaN(sMin)) return false;
+    return wMin < sMin;
+};
+
 export default (shiftTypeId, { onViewLogs } = {}) => {
     // 1. Base columns (common to all types)
     const columns = [
@@ -81,16 +119,25 @@ export default (shiftTypeId, { onViewLogs } = {}) => {
         {
             key: "status",
             header: "Status",
-            render: (log) => (
-                <div className="flex flex-col items-center">
-                    <span className={`text-sm ${getBgColor(log.status)}`}
-                        style={{ padding: "2px 10px", borderRadius: "50px" }}
-                    >
-                        {setStatusLabel(log?.status)}
-                    </span>
-                    {log.is_manual_entry && <span className="text-xs text-red-500 mt-1">Manual</span>}
-                </div>
-            ),
+            render: (log) => {
+                const short = isShortOfShift(log, shiftTypeId);
+                return (
+                    <div className="flex flex-col items-center">
+                        <span className={`text-sm inline-flex items-center gap-1 ${getBgColor(log.status)}`}
+                            style={{ padding: "2px 10px", borderRadius: "50px" }}
+                        >
+                            {setStatusLabel(log?.status)}
+                            {short && (
+                                <span
+                                    className="text-red-500 font-bold leading-none"
+                                    title="Worked less than scheduled shift hours"
+                                >★</span>
+                            )}
+                        </span>
+                        {log.is_manual_entry && <span className="text-xs text-red-500 mt-1">Manual</span>}
+                    </div>
+                );
+            },
         },
         {
             accessorKey: "actions",
