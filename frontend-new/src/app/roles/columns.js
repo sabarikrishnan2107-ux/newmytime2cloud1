@@ -14,7 +14,7 @@ import {
 
 
 
-export default (deleteItem) => [
+export default (deleteItem, editItem) => [
 
   {
     key: "name",
@@ -62,15 +62,15 @@ export default (deleteItem) => [
 
         <DropdownMenuContent align="end" className="w-30  shadow-md rounded-md py-1">
           <DropdownMenuItem
-            onClick={() => console.log("Edit", item.id)}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-slate-300"
+            onSelect={() => editItem(item.id)}
+            className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-slate-300 cursor-pointer"
           >
             <Pencil className="w-4 h-4" /> <span>Edit</span>
           </DropdownMenuItem>
 
           <DropdownMenuItem
-            onClick={() => deleteItem(item.id)}
-            className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-slate-300"
+            onSelect={() => deleteItem(item.id)}
+            className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-slate-300 cursor-pointer"
           >
             <Trash className="w-4 h-4" /> <span>Delete</span>
           </DropdownMenuItem>

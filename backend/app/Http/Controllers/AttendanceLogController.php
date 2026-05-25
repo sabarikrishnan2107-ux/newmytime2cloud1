@@ -590,7 +590,24 @@ class AttendanceLogController extends Controller
                 ];
             }
 
-            AttendanceLog::create($payload);
+            try {
+                AttendanceLog::create($payload);
+            } catch (\Throwable $createError) {
+                // The mobile app can fire the same clock-in twice within one minute
+                // (LogTime is minute-precision), so the second insert collides with the
+                // (DeviceID, LogTime, UserID) unique key even though the punch is already
+                // recorded. Detect that specific duplicate-key error from the exception
+                // itself (no extra query — safe even mid-transaction on PostgreSQL) and
+                // treat it as success; re-throw anything else as a genuine failure.
+                $msg = $createError->getMessage();
+                $isDuplicateKey = str_contains($msg, '23505')        // PostgreSQL unique_violation
+                    || str_contains($msg, 'attendance_logs_uniq')    // the unique index name
+                    || str_contains($msg, 'Duplicate entry');        // MySQL unique violation
+
+                if (! $isDuplicateKey) {
+                    throw $createError; // genuine failure — handled by the outer catch
+                }
+            }
 
             return [
                 'status'  => true,

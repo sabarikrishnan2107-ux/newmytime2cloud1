@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyTime2Cloud — 3D Login (Sample)</title>
+
+  <!-- Tailwind (Play CDN) so classes map 1:1 to the React app later -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js for the 3D animated globe -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+          colors: { brand: { DEFAULT: '#3713ec', light: '#5b3ff5', dark: '#2c0fb8' } },
+          keyframes: {
+            fadeUp: { '0%': { opacity: 0, transform: 'translateY(24px)' }, '100%': { opacity: 1, transform: 'translateY(0)' } },
+            floaty: { '0%,100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(-8px)' } },
+          },
+          animation: {
+            fadeUp: 'fadeUp .8s cubic-bezier(.16,1,.3,1) both',
+            floaty: 'floaty 6s ease-in-out infinite',
+          },
+        },
+      },
+    };
+  </script>
+
+  <style>
+    html, body { height: 100%; }
+    body { font-family: 'Inter', sans-serif; background: #050B18; }
+    #bg-canvas { position: fixed; inset: 0; z-index: 0; }
+    /* delays for staggered entrance */
+    .d1 { animation-delay: .05s } .d2 { animation-delay: .15s } .d3 { animation-delay: .25s }
+    .d4 { animation-delay: .35s } .d5 { animation-delay: .45s } .d6 { animation-delay: .55s }
+    .d7 { animation-delay: .65s }
+    /* 3D tilt card */
+    .scene { perspective: 1400px; }
+    .tilt { transform-style: preserve-3d; transition: transform .15s ease-out; will-change: transform; }
+    .glass { background: rgba(13,22,38,.62); backdrop-filter: blur(22px); -webkit-backdrop-filter: blur(22px); }
+    input::placeholder { color: #64748b; }
+    /* hide number/text input outlines, keep custom ring */
+    input:focus { outline: none; }
+  </style>
+</head>
+
+<body class="text-white antialiased overflow-x-hidden">
+  <!-- 3D animated background (globe + particle field) -->
+  <canvas id="bg-canvas"></canvas>
+
+  <!-- soft color halos behind everything -->
+  <div class="pointer-events-none fixed inset-0 z-0">
+    <div class="absolute -left-32 top-1/4 h-[480px] w-[480px] rounded-full bg-[#3713ec]/25 blur-[140px]"></div>
+    <div class="absolute right-0 bottom-0 h-[420px] w-[420px] rounded-full bg-emerald-500/15 blur-[150px]"></div>
+  </div>
+
+  <!-- top bar -->
+  <header class="relative z-10 flex items-center justify-between px-6 lg:px-14 py-6">
+    <img src="https://mytime2cloud.com/logo22.png" alt="MyTime2Cloud" class="h-9 w-auto object-contain brightness-110" />
+    <div class="flex items-center gap-2 text-xs font-semibold text-slate-400">
+      <span class="hidden sm:inline">EN</span>
+      <span class="h-4 w-px bg-white/10"></span>
+      <span class="hidden sm:inline text-slate-500">عربي</span>
+    </div>
+  </header>
+
+  <!-- main -->
+  <main class="relative z-10 mx-auto flex min-h-[calc(100vh-160px)] max-w-7xl flex-col lg:flex-row items-center justify-center gap-10 lg:gap-16 px-6 lg:px-14">
+
+    <!-- left: branding over the 3D globe -->
+    <section class="hidden lg:flex flex-1 max-w-xl flex-col justify-center">
+      <div class="animate-fadeUp d1 inline-flex w-fit items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-emerald-400">
+        <span class="h-2 w-2 animate-pulse rounded-full bg-emerald-400"></span>
+        Enterprise Intelligence
+      </div>
+      <h1 class="animate-fadeUp d2 mt-8 text-5xl xl:text-7xl font-extrabold leading-[1.05]">
+        Your workforce,<br/>fully <span class="text-emerald-400">in sync</span><br/>across the cloud.
+      </h1>
+      <p class="animate-fadeUp d3 mt-7 max-w-md text-lg leading-relaxed text-slate-300">
+        Attendance, shifts, leave and payroll — orchestrated in real time from a single intelligent platform.
+      </p>
+      <div class="animate-fadeUp d4 mt-10 flex items-center gap-8 text-slate-400">
+        <div><div class="text-3xl font-extrabold text-white">99.9%</div><div class="text-xs uppercase tracking-widest">Uptime</div></div>
+        <div class="h-10 w-px bg-white/10"></div>
+        <div><div class="text-3xl font-extrabold text-white">24/7</div><div class="text-xs uppercase tracking-widest">Live sync</div></div>
+        <div class="h-10 w-px bg-white/10"></div>
+        <div><div class="text-3xl font-extrabold text-white">10k+</div><div class="text-xs uppercase tracking-widest">Teams</div></div>
+      </div>
+    </section>
+
+    <!-- right: login card with 3D mouse-tilt -->
+    <section class="scene w-full max-w-[480px]">
+      <div id="card" class="tilt glass animate-fadeUp d3 rounded-3xl border border-white/10 p-9 sm:p-11 shadow-2xl shadow-black/40">
+
+        <div class="lg:hidden mb-7">
+          <img src="https://mytime2cloud.com/logo22.png" alt="Logo" class="h-8 w-auto" />
+        </div>
+
+        <h2 class="text-2xl font-bold">Welcome back</h2>
+        <p class="mt-1 text-sm text-slate-400">Sign in to your workspace to continue.</p>
+
+        <form class="mt-8 flex flex-col gap-5" onsubmit="fakeSubmit(event)">
+          <!-- role selector -->
+          <div>
+            <label class="mb-2 block text-[10px] font-bold uppercase tracking-[0.15em] text-slate-500">Access level</label>
+            <div class="grid grid-cols-3 gap-1 rounded-xl border border-white/5 bg-slate-800/50 p-1" id="roles">
+              <button type="button" data-role="company" class="role-btn flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"/><rect x="14" y="3" width="7" height="5"/><rect x="14" y="12" width="7" height="9"/><rect x="3" y="16" width="7" height="5"/></svg>
+                Admin
+              </button>
+              <button type="button" data-role="manager" class="role-btn flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Manager
+              </button>
+              <button type="button" data-role="employee" class="role-btn flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all">
+                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+                Staff
+              </button>
+            </div>
+          </div>
+
+          <!-- email -->
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-300">Email</label>
+            <div class="group relative">
+              <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-brand-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/></svg>
+              <input type="text" value="demo@gmail.com" class="h-11 w-full rounded-xl border border-white/10 bg-slate-800/40 pl-10 pr-4 text-sm transition-all focus:border-brand/50 focus:ring-2 focus:ring-brand/30" placeholder="you@company.com" />
+            </div>
+          </div>
+
+          <!-- password -->
+          <div>
+            <label class="mb-1.5 block text-sm font-semibold text-slate-300">Password</label>
+            <div class="group relative">
+              <svg class="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 transition-colors group-focus-within:text-brand-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <input id="pwd" type="password" value="demo" class="h-11 w-full rounded-xl border border-white/10 bg-slate-800/40 pl-10 pr-11 text-sm transition-all focus:border-brand/50 focus:ring-2 focus:ring-brand/30" placeholder="••••••••" />
+              <button type="button" onclick="togglePwd(this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300">
+                <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- remember / forgot -->
+          <div class="flex items-center justify-between">
+            <label class="flex cursor-pointer items-center gap-2 group">
+              <input type="checkbox" checked class="h-4 w-4 rounded border-slate-600 bg-slate-800 text-brand focus:ring-brand/20" />
+              <span class="select-none text-xs font-medium text-slate-400 group-hover:text-slate-300">Remember me</span>
+            </label>
+            <a href="#" class="text-xs font-semibold text-brand-light hover:text-white">Forgot password?</a>
+          </div>
+
+          <!-- submit -->
+          <button type="submit" class="group mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-brand text-sm font-bold shadow-lg shadow-brand/30 transition-all hover:bg-brand-dark hover:shadow-brand/50 active:scale-[0.98]">
+            <span>Sign in</span>
+            <svg class="h-4 w-4 transition-transform group-hover:translate-x-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- footer -->
+  <footer class="relative z-10 px-6 lg:px-14 py-6">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+      <span class="text-[10px] font-semibold uppercase tracking-widest text-slate-500">© 2026 MyTime2Cloud — Akil Group</span>
+      <div class="flex gap-6 text-[10px] font-semibold uppercase tracking-widest text-slate-500">
+        <a href="#" class="hover:text-white">Privacy</a>
+        <a href="#" class="hover:text-white">Terms</a>
+        <a href="#" class="hover:text-white">Help</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    /* ---------- form helpers (sample only) ---------- */
+    function togglePwd(btn){ const i=document.getElementById('pwd'); i.type = i.type==='password'?'text':'password'; }
+    function fakeSubmit(e){ e.preventDefault(); const b=e.target.querySelector('button[type=submit]'); b.querySelector('span').textContent='Signing in…'; setTimeout(()=>b.querySelector('span').textContent='Sign in', 1400); }
+    // role selector active state
+    const roleBtns=[...document.querySelectorAll('.role-btn')];
+    function setRole(el){
+      roleBtns.forEach(b=>{ b.classList.remove('bg-brand','text-white','shadow-lg','shadow-brand/20'); b.classList.add('text-slate-400'); });
+      el.classList.add('bg-brand','text-white','shadow-lg','shadow-brand/20'); el.classList.remove('text-slate-400');
+    }
+    roleBtns.forEach(b=>b.addEventListener('click',()=>setRole(b)));
+    setRole(roleBtns[0]);
+
+    /* ---------- card 3D mouse tilt ---------- */
+    const card=document.getElementById('card');
+    const scene=card.parentElement;
+    scene.addEventListener('mousemove',(e)=>{
+      const r=scene.getBoundingClientRect();
+      const px=(e.clientX-r.left)/r.width-0.5;
+      const py=(e.clientY-r.top)/r.height-0.5;
+      card.style.transform=`rotateY(${px*8}deg) rotateX(${-py*8}deg) translateZ(0)`;
+    });
+    scene.addEventListener('mouseleave',()=>{ card.style.transform='rotateY(0) rotateX(0)'; });
+
+    /* ---------- Three.js animated globe + particle field ---------- */
+    (function(){
+      const canvas=document.getElementById('bg-canvas');
+      const renderer=new THREE.WebGLRenderer({canvas,antialias:true,alpha:true});
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+      renderer.setSize(window.innerWidth,window.innerHeight);
+
+      const scene=new THREE.Scene();
+      const camera=new THREE.PerspectiveCamera(60,window.innerWidth/window.innerHeight,0.1,2000);
+      camera.position.z=420;
+
+      // soft round sprite for glowing points
+      function dot(){
+        const c=document.createElement('canvas'); c.width=c.height=64;
+        const g=c.getContext('2d'); const grd=g.createRadialGradient(32,32,0,32,32,32);
+        grd.addColorStop(0,'rgba(255,255,255,1)'); grd.addColorStop(.25,'rgba(255,255,255,.9)');
+        grd.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=grd; g.fillRect(0,0,64,64);
+        return new THREE.CanvasTexture(c);
+      }
+      const sprite=dot();
+
+      const group=new THREE.Group(); scene.add(group);
+
+      // --- globe surface points (fibonacci sphere) with emerald↔indigo gradient ---
+      const R=150, N=1100;
+      const pos=new Float32Array(N*3), col=new Float32Array(N*3);
+      const cA=new THREE.Color('#34d399'), cB=new THREE.Color('#6366f1');
+      for(let i=0;i<N;i++){
+        const phi=Math.acos(1-2*(i+0.5)/N);
+        const theta=Math.PI*(1+Math.sqrt(5))*i;
+        const x=R*Math.sin(phi)*Math.cos(theta), y=R*Math.cos(phi), z=R*Math.sin(phi)*Math.sin(theta);
+        pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z;
+        const c=cA.clone().lerp(cB,(y+R)/(2*R));
+        col[i*3]=c.r; col[i*3+1]=c.g; col[i*3+2]=c.b;
+      }
+      const gGeo=new THREE.BufferGeometry();
+      gGeo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+      gGeo.setAttribute('color',new THREE.BufferAttribute(col,3));
+      const gMat=new THREE.PointsMaterial({size:5,map:sprite,vertexColors:true,transparent:true,depthWrite:false,blending:THREE.AdditiveBlending});
+      group.add(new THREE.Points(gGeo,gMat));
+
+      // --- wireframe globe shell ---
+      const wire=new THREE.LineSegments(
+        new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(R,3)),
+        new THREE.LineBasicMaterial({color:0x3713ec,transparent:true,opacity:0.12})
+      );
+      group.add(wire);
+
+      // --- counter-rotating inner core ---
+      const core=new THREE.LineSegments(
+        new THREE.WireframeGeometry(new THREE.IcosahedronGeometry(R*0.55,1)),
+        new THREE.LineBasicMaterial({color:0x34d399,transparent:true,opacity:0.18})
+      );
+      group.add(core);
+
+      // --- ambient particle field ---
+      const M=700, fpos=new Float32Array(M*3);
+      for(let i=0;i<M;i++){ fpos[i*3]=(Math.random()-0.5)*1600; fpos[i*3+1]=(Math.random()-0.5)*1200; fpos[i*3+2]=(Math.random()-0.5)*900; }
+      const fGeo=new THREE.BufferGeometry(); fGeo.setAttribute('position',new THREE.BufferAttribute(fpos,3));
+      const field=new THREE.Points(fGeo,new THREE.PointsMaterial({size:3,map:sprite,color:0x93c5fd,transparent:true,opacity:0.5,depthWrite:false,blending:THREE.AdditiveBlending}));
+      scene.add(field);
+
+      // shift globe toward the left so the form sits over empty space on the right
+      group.position.x = -90;
+
+      // mouse parallax
+      let mx=0,my=0;
+      window.addEventListener('mousemove',e=>{ mx=(e.clientX/window.innerWidth-0.5); my=(e.clientY/window.innerHeight-0.5); });
+
+      function resize(){
+        camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth,window.innerHeight);
+        group.position.x = window.innerWidth < 1024 ? 0 : -90;
+      }
+      window.addEventListener('resize',resize); resize();
+
+      const clock=new THREE.Clock();
+      (function loop(){
+        requestAnimationFrame(loop);
+        const t=clock.getElapsedTime();
+        group.rotation.y = t*0.12 + mx*0.6;
+        group.rotation.x = Math.sin(t*0.15)*0.08 - my*0.4;
+        core.rotation.y = -t*0.25; core.rotation.x = t*0.18;
+        field.rotation.y = t*0.02;
+        camera.position.x += ( mx*40 - camera.position.x )*0.04;
+        camera.position.y += ( -my*40 - camera.position.y )*0.04;
+        camera.lookAt(0,0,0);
+        renderer.render(scene,camera);
+      })();
+    })();
+  </script>
+</body>
+</html>

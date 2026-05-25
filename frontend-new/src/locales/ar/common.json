@@ -1,12 +1,12 @@
 {
   "login": {
     "welcomeBack": "مرحبًا بعودتك",
-    "signInSubtitle": "سجّل الدخول إلى لوحة المؤسسة",
+    "signInSubtitle": "سجّل الدخول إلى مساحة عملك للمتابعة.",
     "accessLevel": "مستوى الوصول",
     "roleAdmin": "مسؤول",
     "roleManager": "مدير",
     "roleStaff": "موظف",
-    "emailLabel": "اسم المستخدم أو البريد الإلكتروني",
+    "emailLabel": "البريد الإلكتروني",
     "emailPlaceholder": "j.doe@company.com",
     "passwordLabel": "كلمة المرور",
     "passwordPlaceholder": "أدخل كلمة المرور",
@@ -20,14 +20,22 @@
   },
   "branding": {
     "enterpriseIntelligence": "ذكاء المؤسسات",
-    "heroLine1": "مكّن",
-    "heroLine2": "قوّتك العاملة بـ",
-    "heroLine3Highlight": "الجيل القادم",
-    "heroLine4": "من الذكاء.",
-    "heroDescription": "بسّط الحضور، وحسّن الجداول المعقدة، واحصل على رؤى لحظية مع منصتنا الحائزة على الجوائز."
+    "heroLine1": "قوّتك العاملة،",
+    "heroLine2": "بالكامل",
+    "heroLine3Highlight": "متزامنة",
+    "heroLine4": "عبر السحابة.",
+    "heroDescription": "الحضور والورديات والإجازات والرواتب — منسّقة في الوقت الفعلي من منصة ذكية واحدة.",
+    "stats": {
+      "uptimeValue": "99.9%",
+      "uptimeLabel": "وقت التشغيل",
+      "liveSyncValue": "24/7",
+      "liveSyncLabel": "مزامنة مباشرة",
+      "teamsValue": "10k+",
+      "teamsLabel": "الفرق"
+    }
   },
   "footer": {
-    "copyright": "© 2024 MyTime Cloud Systems",
+    "copyright": "© 2026 MyTime2Cloud — Akil Group",
     "privacy": "الخصوصية",
     "terms": "الشروط",
     "help": "المساعدة"

@@ -1,0 +1,322 @@
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Local:        http://localhost:3002
+   - Network:      http://0.0.0.0:3002
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 5.6s
+ ○ Compiling /login ...
+ ✓ Compiled /login in 9s
+ GET /login/ 200 in 9737ms
+ GET /login/ 200 in 173ms
+ ✓ Compiled /favicon.ico in 312ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 679ms
+ ✓ Compiled in 540ms
+ GET /login/ 200 in 397ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 341ms
+ GET /login/ 200 in 149ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 330ms
+ ✓ Compiled in 553ms
+ ✓ Compiled in 550ms
+ GET /login/ 200 in 372ms
+ GET /login/ 200 in 183ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 281ms
+ GET /login/ 200 in 162ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 305ms
+ ✓ Compiled in 608ms
+ GET /login/ 200 in 335ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 275ms
+ GET /login/ 200 in 183ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 258ms
+ GET /login/ 200 in 183ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 273ms
+ GET /login/ 200 in 152ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 276ms
+ GET /login/ 200 in 169ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 286ms
+ GET /login/ 200 in 197ms
+ GET /login/ 200 in 175ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 313ms
+ GET /login/ 200 in 185ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 295ms
+ GET /login/ 200 in 175ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 299ms
+ GET /login/ 200 in 196ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 295ms
+ GET /login/ 200 in 235ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 291ms
+ ✓ Compiled in 423ms
+ ✓ Compiled in 468ms
+ ✓ Compiled in 546ms
+ GET /login/ 200 in 515ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 280ms
+ GET /login/ 200 in 164ms
+ GET /login/ 200 in 149ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 363ms
+ GET /login/ 200 in 167ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 408ms
+ GET /login/ 200 in 136ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 286ms
+ ✓ Compiled in 573ms
+ GET /login/ 200 in 507ms
+ GET /login/ 200 in 160ms
+ GET /login/ 200 in 215ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 424ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 374ms
+ GET /login/ 200 in 187ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 868ms
+ ✓ Compiled in 547ms
+ GET /login/ 200 in 497ms
+ GET /login/ 200 in 241ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 340ms
+ GET /login/ 200 in 133ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 296ms
+ GET /login/ 200 in 138ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 359ms
+ GET /login/ 200 in 140ms
+ GET /login/ 200 in 136ms
+ GET /login/ 200 in 145ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 313ms
+ GET /login/ 200 in 154ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 268ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1629ms
+ GET / 200 in 454ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 313ms
+ GET /login/ 200 in 142ms
+ GET /login/ 200 in 144ms
+ GET /login/ 200 in 171ms
+ ✓ Compiled in 576ms
+ GET /login/ 200 in 591ms
+ GET /login/ 200 in 179ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 369ms
+ GET /login/ 200 in 156ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 336ms
+ GET /login/ 200 in 141ms
+ GET /login/ 200 in 132ms
+ ✓ Compiled in 569ms
+ GET /login/ 200 in 532ms
+ GET /login/ 200 in 171ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 338ms
+ GET /login/ 200 in 139ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 345ms
+ GET /login/ 200 in 162ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 316ms
+ ✓ Compiled in 574ms
+ GET /login/ 200 in 448ms
+ GET /login/ 200 in 126ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 423ms
+ GET /login/ 200 in 131ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 336ms
+ ✓ Compiled in 470ms
+ ✓ Compiled in 406ms
+ ✓ Compiled in 558ms
+ ✓ Compiled in 444ms
+ GET /login/ 200 in 542ms
+ GET /login/ 200 in 160ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 317ms
+ GET /login/ 200 in 147ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 341ms
+ GET /login/ 200 in 160ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 347ms
+ GET /login/ 200 in 137ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 269ms
+ ✓ Compiled in 377ms
+ ✓ Compiled in 399ms
+ ✓ Compiled in 394ms
+ GET /login/ 200 in 4628ms
+ GET /login/ 200 in 143ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 346ms
+ GET /login/ 200 in 154ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 339ms
+ GET /login/ 200 in 289ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 378ms
+ GET /login/ 200 in 151ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 272ms
+ ✓ Compiled in 632ms
+ ✓ Compiled in 461ms
+ GET /login/ 200 in 510ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 285ms
+ GET /login/ 200 in 151ms
+ GET /login/ 200 in 145ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 348ms
+ GET /login/ 200 in 140ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 293ms
+ GET /login/ 200 in 155ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 289ms
+ ✓ Compiled in 597ms
+ GET /login/ 200 in 464ms
+ GET /login/ 200 in 137ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 332ms
+ GET /login/ 200 in 161ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 292ms
+ ✓ Compiled in 423ms
+ ✓ Compiled in 399ms
+ ✓ Compiled in 460ms
+ GET /login/ 200 in 567ms
+ GET /login/ 200 in 201ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 353ms
+ ✓ Compiled in 550ms
+ ✓ Compiled in 548ms
+ ✓ Compiled in 552ms
+ ✓ Compiled in 459ms
+ ✓ Compiled in 398ms
+ ✓ Compiled in 393ms
+ ✓ Compiled in 470ms
+ ✓ Compiled in 566ms
+ ✓ Compiled in 401ms
+ ✓ Compiled in 400ms
+ ✓ Compiled in 432ms
+ ✓ Compiled in 399ms
+ ✓ Compiled in 450ms
+ ✓ Compiled in 549ms
+ GET /login/ 200 in 507ms
+ GET /login/ 200 in 149ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 431ms
+ ✓ Compiled in 405ms
+ ✓ Compiled in 467ms
+ GET /login/ 200 in 475ms
+ GET /login/ 200 in 161ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 328ms
+ ✓ Compiled in 410ms
+ ✓ Compiled in 408ms
+ ✓ Compiled in 362ms
+ GET /login/ 200 in 476ms
+ GET /login/ 200 in 223ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 305ms
+ GET /login/ 200 in 127ms
+ GET /login/ 200 in 126ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 463ms
+ GET /login/ 200 in 141ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 288ms
+ ✓ Compiled in 558ms
+ GET /login/ 200 in 507ms
+ GET /login/ 200 in 162ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 319ms
+ ✓ Compiled in 681ms
+ ✓ Compiled in 489ms
+ ✓ Compiled in 438ms
+ ✓ Compiled in 526ms
+ ✓ Compiled in 556ms
+ ✓ Compiled in 394ms
+ ✓ Compiled in 389ms
+ ✓ Compiled in 384ms
+ ✓ Compiled in 394ms
+ ✓ Compiled in 411ms
+ ✓ Compiled in 508ms
+ ✓ Compiled in 418ms
+ ✓ Compiled in 351ms
+ ✓ Compiled in 394ms
+ ✓ Compiled in 346ms
+ ✓ Compiled in 365ms
+ ✓ Compiled in 367ms
+ ✓ Compiled in 366ms
+ ✓ Compiled in 388ms
+ ✓ Compiled in 496ms
+ ✓ Compiled in 483ms
+ ✓ Compiled in 388ms
+ ✓ Compiled in 436ms
+ ✓ Compiled in 393ms
+ ✓ Compiled in 471ms
+ GET /login/ 200 in 490ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 281ms
+ ✓ Compiled in 418ms
+ ✓ Compiled in 414ms
+ ✓ Compiled in 576ms
+ ✓ Compiled in 596ms
+ ✓ Compiled in 464ms
+ ✓ Compiled in 458ms
+ ✓ Compiled in 507ms
+ GET /login/ 200 in 464ms
+ GET /login/ 200 in 164ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 291ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/context/DarkModeContext.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 373ms
+ GET /login/ 200 in 469ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 294ms
+ GET /login/ 200 in 136ms
+ GET /login/ 200 in 130ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 398ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/context/DarkModeContext.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 411ms
+ GET /login/ 200 in 576ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 293ms
+ GET /login/ 200 in 170ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 278ms
+ GET / 200 in 239ms
+ GET /login/ 200 in 141ms
+ GET /login/ 200 in 138ms
+ GET /login/ 200 in 180ms
+ GET /login/ 200 in 138ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/context/DarkModeContext.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 403ms
+ GET /login/ 200 in 506ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 288ms
+ GET /login/ 200 in 131ms
+ GET /login/ 200 in 172ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 398ms
+ GET /login/ 200 in 154ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 310ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/context/DarkModeContext.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 401ms
+ GET /login/ 200 in 516ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 295ms
+ GET /login/ 200 in 145ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 296ms
+ GET / 200 in 147ms
+ GET /login/ 200 in 137ms
+ ✓ Compiled in 581ms
+ ✓ Compiled in 398ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/context/DarkModeContext.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 596ms
+ GET /login/ 200 in 266ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 319ms
+ GET /login/ 200 in 137ms
+ GET /login/ 200 in 163ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 365ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/context/DarkModeContext.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 391ms
+ GET /login/ 200 in 581ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 280ms
+ ✓ Compiled in 405ms
+ GET /login/ 200 in 438ms
+ GET /login/ 200 in 143ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 329ms
+ GET /login/ 200 in 146ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 282ms
+ GET /login/ 200 in 133ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 326ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\login\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\login\\page\\app-build-manifest.json'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 2s
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.ul20a3hbuuo'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.ul20a3hbuuo'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\login\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\login\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.fc5czsoj2pw'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.fc5czsoj2pw'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.ojudxm5exj'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.ojudxm5exj'
+}
+ ✓ Compiled in 1383ms
+ ✓ Compiled in 2.3s

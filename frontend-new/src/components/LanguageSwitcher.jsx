@@ -41,7 +41,7 @@ export default function LanguageSwitcher({ className = "" }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className={`inline-flex items-center justify-center h-9 w-9 rounded-lg bg-slate-800/50 border border-white/10 text-slate-200 hover:bg-slate-800/80 transition-colors ${className}`}
+        className={`inline-flex items-center justify-center h-9 w-9 rounded-lg bg-white border border-slate-200 text-slate-600 shadow-sm hover:bg-slate-50 transition-colors dark:bg-slate-800/50 dark:border-white/10 dark:text-slate-200 dark:shadow-none dark:hover:bg-slate-800/80 ${className}`}
         aria-label={`Change language (current: ${activeLang.name})`}
         title={activeLang.name}
       >
@@ -51,7 +51,7 @@ export default function LanguageSwitcher({ className = "" }) {
       <DropdownMenuContent
         align="end"
         sideOffset={8}
-        className="z-[200] min-w-[180px] bg-[#0D1626] border border-white/10 text-slate-200 shadow-2xl"
+        className="z-[200] min-w-[180px] bg-white border border-slate-200 text-slate-700 shadow-xl dark:bg-[#0D1626] dark:border-white/10 dark:text-slate-200 dark:shadow-2xl"
       >
         {SUPPORTED_LANGUAGES.map((lang) => {
           const isActive = lang.code === current;
@@ -59,7 +59,7 @@ export default function LanguageSwitcher({ className = "" }) {
             <DropdownMenuItem
               key={lang.code}
               onSelect={() => handleSelect(lang.code)}
-              className="flex items-center gap-2 cursor-pointer focus:bg-white/10 focus:text-white"
+              className="flex items-center gap-2 cursor-pointer focus:bg-slate-100 focus:text-slate-900 dark:focus:bg-white/10 dark:focus:text-white"
             >
               <span className="text-base leading-none">{lang.flag}</span>
               <span className="flex-1">{lang.name}</span>

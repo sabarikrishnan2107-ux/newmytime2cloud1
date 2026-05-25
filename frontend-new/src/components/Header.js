@@ -11,6 +11,7 @@ import LiveAttendanceNotifier from "@/components/LiveAttendanceNotifier";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
 import { Bell, PlayCircle, Sun, Moon, X, Wand2 } from "lucide-react";
 import useSse from "@/hooks/useSse";
+import { NAV_MODULES, allowedModulesForUser } from "@/lib/moduleAccess";
 
 export default function Header() {
   const router = useRouter();
@@ -207,14 +208,14 @@ export default function Header() {
     { name: 'SETTINGS', labelKey: 'header.nav.settings', href: '/setup' },
   ];
 
-  const restrictedNames = ['SETTINGS', 'PAYROLL', 'ACCESS CONTROL'];
-
-  // const filteredLinks =
-  //   user && Array.isArray(user.departments) && user.departments.length > 0
-  //     ? navLinks.filter(link => !restrictedNames.includes(link.name))
-  //     : navLinks;
-
-  const filteredLinks = navLinks;
+  // Filter nav by the user's allowed modules. Non-managers get everything
+  // (allowedModulesForUser returns all-true for them).
+  const allowedModules = allowedModulesForUser(user);
+  const moduleByNav = Object.fromEntries(NAV_MODULES.map((e) => [e.navName, e.module]));
+  const filteredLinks = navLinks.filter((link) => {
+    const mod = moduleByNav[link.name];
+    return mod ? allowedModules[mod] : true;
+  });
 
   return (
     <>

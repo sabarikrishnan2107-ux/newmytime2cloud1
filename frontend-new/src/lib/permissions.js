@@ -13,6 +13,10 @@ export const modules = [
     { id: 'payroll', title: 'Payroll', desc: 'Process salaries, bonuses, and tax deductions.', icon: 'payments', color: 'amber' },
     { id: 'report', title: 'Reports', desc: 'Generate insightful data exports and summaries.', icon: 'assessment', color: 'cyan' },
     { id: 'settings', title: 'Settings', desc: 'Configure system preferences and permissions.', icon: 'admin_panel_settings', color: 'rose' },
+    { id: 'leave', title: 'Leave', desc: 'Leave requests, approvals, and balances.', icon: 'event_available', color: 'violet' },
+    { id: 'live_tracker', title: 'Live Tracker', desc: 'Real-time location tracking and history.', icon: 'my_location', color: 'teal' },
+    { id: 'access_control', title: 'Access Control', desc: 'Doors, devices, and access time slots.', icon: 'meeting_room', color: 'orange' },
+    { id: 'visitors', title: 'Visitors', desc: 'Visitor check-in, logs, and management.', icon: 'badge', color: 'pink' },
 ];
 
 export const active_module = {
@@ -22,6 +26,10 @@ export const active_module = {
     payroll: true,
     report: true,
     settings: true,
+    leave: true,
+    live_tracker: true,
+    access_control: true,
+    visitors: true,
 }
 
 export const card_content = {
@@ -214,6 +222,40 @@ export const card_content = {
                 desc: "Payroll management",
                 icon: "dollar_sign",
             },
+        ],
+    },
+
+    leave: {
+        title: "Leave",
+        desc: "Leave requests, approvals, and balances",
+        sub_modules: [
+            { id: "leave-dashboard", title: "Leave Dashboard", desc: "Leave overview", icon: "event_available" },
+            { id: "leave", title: "Leave Requests", desc: "Requests & approvals", icon: "file_text" },
+        ],
+    },
+
+    live_tracker: {
+        title: "Live Tracker",
+        desc: "Real-time tracking and history",
+        sub_modules: [
+            { id: "live-tracker", title: "Live Tracker", desc: "Live map", icon: "locate_fixed" },
+            { id: "tracker-history", title: "Tracker History", desc: "Location history", icon: "history" },
+        ],
+    },
+
+    access_control: {
+        title: "Access Control",
+        desc: "Doors, devices, and access slots",
+        sub_modules: [
+            { id: "access_control", title: "Access Control", desc: "Doors & devices", icon: "meeting_room" },
+        ],
+    },
+
+    visitors: {
+        title: "Visitors",
+        desc: "Visitor check-in and management",
+        sub_modules: [
+            { id: "visitor", title: "Visitors", desc: "Visitor list & check-in", icon: "badge" },
         ],
     },
 };

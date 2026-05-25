@@ -173,6 +173,13 @@ export const storeRole = async (payload) => {
     return await axios.post(`${API_BASE}/role`, { ...payload, company_id: user?.company_id || 0 });
 };
 
+export const updateRole = async (id, payload) => {
+    const user = await getUser();
+    // Existing apiResource update route on the (remote) backend. Laravel snake-cases
+    // the {role} binding to the Role $Role param, so it resolves correctly.
+    return await axios.put(`${API_BASE}/role/${id}`, { ...payload, company_id: user?.company_id || 0 });
+};
+
 export const removeRole = async (id = 0) => {
     await axios.delete(`${API_BASE}/delete-role/${id}`);
     return true;
@@ -302,6 +309,7 @@ export const updateContact = async (payload) => {
 };
 
 export const updatePassword = async (payload) => {
+    const user = await getUser();
     return await axios.post(`${API_BASE}/company/${user?.company_id}/update/user`, payload);
 };
 

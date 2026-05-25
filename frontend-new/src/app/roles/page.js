@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { getPaginatedRoles, removeEmployee, removeRole } from '@/lib/api';
 
 import Columns from "./columns";
@@ -13,6 +14,7 @@ import Input from '@/components/Theme/Input';
 
 export default function EmployeeDataTable() {
 
+    const router = useRouter();
     const [employees, setEmployees] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -64,14 +66,26 @@ export default function EmployeeDataTable() {
     }
 
     const deleteItem = async (id) => {
-        if (confirm("Are you sure you want to delete this employee?")) {
+        if (confirm("Are you sure you want to delete this role?")) {
             try {
                 await removeRole(id);
                 handleRefresh();
             } catch (error) {
-                console.error("Error deleting employee:", error);
+                console.error("Error deleting role:", error);
+                alert(parseApiError(error));
             }
         }
+    }
+
+    // Stash the selected role and open the form in edit mode. We pass the row
+    // (which already includes modules + permissions JSON) via sessionStorage so
+    // the form can prefill without a separate fetch.
+    const editItem = (id) => {
+        const role = employees.find((r) => r.id === id);
+        if (role && typeof window !== "undefined") {
+            sessionStorage.setItem("editRole", JSON.stringify(role));
+        }
+        router.push(`/roles/create?id=${id}`);
     }
 
     return (
@@ -119,7 +133,7 @@ export default function EmployeeDataTable() {
             </div>
 
             <DataTable
-                columns={Columns(deleteItem)}
+                columns={Columns(deleteItem, editItem)}
                 data={employees}
                 isLoading={isLoading}
                 error={error}

@@ -1,18 +1,18 @@
 {
   "login": {
-    "welcomeBack": "Welcome Back",
-    "signInSubtitle": "Sign in to your enterprise dashboard",
+    "welcomeBack": "Welcome back",
+    "signInSubtitle": "Sign in to your workspace to continue.",
     "accessLevel": "Access Level",
     "roleAdmin": "Admin",
     "roleManager": "Manager",
     "roleStaff": "Staff",
-    "emailLabel": "Username or Email",
+    "emailLabel": "Email",
     "emailPlaceholder": "j.doe@company.com",
     "passwordLabel": "Password",
     "passwordPlaceholder": "Enter your password",
     "rememberMe": "Remember me",
-    "forgotPassword": "Forgot Password?",
-    "signIn": "Sign In",
+    "forgotPassword": "Forgot password?",
+    "signIn": "Sign in",
     "signingIn": "Signing in...",
     "errorRequired": "Email and Password are required.",
     "errorInvalidEmail": "E-mail must be valid.",
@@ -20,14 +20,22 @@
   },
   "branding": {
     "enterpriseIntelligence": "Enterprise Intelligence",
-    "heroLine1": "Empower your",
-    "heroLine2": "workforce with",
-    "heroLine3Highlight": "next-gen",
-    "heroLine4": "intelligence.",
-    "heroDescription": "Streamline attendance, optimize complex scheduling, and gain real-time insights with our award-winning platform."
+    "heroLine1": "Your workforce,",
+    "heroLine2": "fully",
+    "heroLine3Highlight": "in sync",
+    "heroLine4": "across the cloud.",
+    "heroDescription": "Attendance, shifts, leave and payroll — orchestrated in real time from a single intelligent platform.",
+    "stats": {
+      "uptimeValue": "99.9%",
+      "uptimeLabel": "Uptime",
+      "liveSyncValue": "24/7",
+      "liveSyncLabel": "Live sync",
+      "teamsValue": "10k+",
+      "teamsLabel": "Teams"
+    }
   },
   "footer": {
-    "copyright": "© 2024 MyTime Cloud Systems",
+    "copyright": "© 2026 MyTime2Cloud — Akil Group",
     "privacy": "Privacy",
     "terms": "Terms",
     "help": "Help"

@@ -1,12 +1,12 @@
 {
   "login": {
     "welcomeBack": "वापसी पर स्वागत है",
-    "signInSubtitle": "अपने एंटरप्राइज़ डैशबोर्ड में साइन इन करें",
+    "signInSubtitle": "जारी रखने के लिए अपने कार्यस्थान में साइन इन करें।",
     "accessLevel": "एक्सेस स्तर",
     "roleAdmin": "एडमिन",
     "roleManager": "मैनेजर",
     "roleStaff": "स्टाफ",
-    "emailLabel": "उपयोगकर्ता नाम या ईमेल",
+    "emailLabel": "ईमेल",
     "emailPlaceholder": "j.doe@company.com",
     "passwordLabel": "पासवर्ड",
     "passwordPlaceholder": "अपना पासवर्ड दर्ज करें",
@@ -20,14 +20,22 @@
   },
   "branding": {
     "enterpriseIntelligence": "एंटरप्राइज़ इंटेलिजेंस",
-    "heroLine1": "अपने कार्यबल को",
-    "heroLine2": "सशक्त बनाएं",
-    "heroLine3Highlight": "अगली पीढ़ी",
-    "heroLine4": "की बुद्धिमत्ता से।",
-    "heroDescription": "उपस्थिति को सरल बनाएं, जटिल शेड्यूलिंग को अनुकूलित करें, और हमारे पुरस्कार-विजेता प्लेटफ़ॉर्म के साथ रीयल-टाइम अंतर्दृष्टि प्राप्त करें।"
+    "heroLine1": "आपका कार्यबल,",
+    "heroLine2": "पूरी तरह",
+    "heroLine3Highlight": "तालमेल में",
+    "heroLine4": "क्लाउड भर में।",
+    "heroDescription": "उपस्थिति, शिफ्ट, अवकाश और वेतन — एक ही बुद्धिमान प्लेटफ़ॉर्म से वास्तविक समय में व्यवस्थित।",
+    "stats": {
+      "uptimeValue": "99.9%",
+      "uptimeLabel": "अपटाइम",
+      "liveSyncValue": "24/7",
+      "liveSyncLabel": "लाइव सिंक",
+      "teamsValue": "10k+",
+      "teamsLabel": "टीमें"
+    }
   },
   "footer": {
-    "copyright": "© 2024 MyTime Cloud Systems",
+    "copyright": "© 2026 MyTime2Cloud — Akil Group",
     "privacy": "गोपनीयता",
     "terms": "शर्तें",
     "help": "सहायता"

@@ -1,12 +1,12 @@
 {
   "login": {
     "welcomeBack": "Bon retour",
-    "signInSubtitle": "Connectez-vous à votre tableau de bord d'entreprise",
+    "signInSubtitle": "Connectez-vous à votre espace de travail pour continuer.",
     "accessLevel": "Niveau d'accès",
     "roleAdmin": "Administrateur",
     "roleManager": "Responsable",
     "roleStaff": "Employé",
-    "emailLabel": "Nom d'utilisateur ou e-mail",
+    "emailLabel": "E-mail",
     "emailPlaceholder": "j.doe@company.com",
     "passwordLabel": "Mot de passe",
     "passwordPlaceholder": "Entrez votre mot de passe",
@@ -20,14 +20,22 @@
   },
   "branding": {
     "enterpriseIntelligence": "Intelligence d'entreprise",
-    "heroLine1": "Donnez du pouvoir",
-    "heroLine2": "à vos équipes avec",
-    "heroLine3Highlight": "une nouvelle génération",
-    "heroLine4": "d'intelligence.",
-    "heroDescription": "Simplifiez la gestion des présences, optimisez la planification complexe et obtenez des informations en temps réel grâce à notre plateforme primée."
+    "heroLine1": "Vos effectifs,",
+    "heroLine2": "parfaitement",
+    "heroLine3Highlight": "synchronisés",
+    "heroLine4": "dans le cloud.",
+    "heroDescription": "Présences, plannings, congés et paie — orchestrés en temps réel depuis une seule plateforme intelligente.",
+    "stats": {
+      "uptimeValue": "99.9%",
+      "uptimeLabel": "Disponibilité",
+      "liveSyncValue": "24/7",
+      "liveSyncLabel": "Sync. en direct",
+      "teamsValue": "10k+",
+      "teamsLabel": "Équipes"
+    }
   },
   "footer": {
-    "copyright": "© 2024 MyTime Cloud Systems",
+    "copyright": "© 2026 MyTime2Cloud — Akil Group",
     "privacy": "Confidentialité",
     "terms": "Conditions",
     "help": "Aide"

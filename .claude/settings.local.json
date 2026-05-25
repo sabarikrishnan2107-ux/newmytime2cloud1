@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(curl -s http://localhost:8000/test82.php)",
-      "Bash(D:/php/php.exe artisan tinker '--execute=:*)"
+      "Bash(D:/php/php.exe artisan tinker '--execute=:*)",
+      "Bash(php artisan *)",
+      "Bash(findstr \"^\\\\$2y\")",
+      "Bash(./php/php.exe -r '$j=json_decode\\(file_get_contents\\(\"composer.json\"\\),true\\); if\\(json_last_error\\(\\)\\){echo \"INVALID JSON: \".json_last_error_msg\\(\\);exit\\(1\\);} echo \"VALID JSON\\\\n\"; echo \"autoload.files: \".json_encode\\($j[\"autoload\"][\"files\"]??null\\).\"\\\\n\"; echo \"autoload-dev.files: \".json_encode\\($j[\"autoload-dev\"][\"files\"]??\"\\(none\\)\"\\).\"\\\\n\";')"
     ]
   }
 }

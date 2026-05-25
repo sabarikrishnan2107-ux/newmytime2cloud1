@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import LeftMenu from "@/components/leftMenu";
 import Header from "@/components/Header";
 import MainContentWrapper from "@/components/MainContentWrapper";
+import AccessGuard from "@/components/AccessGuard";
 import dynamic from "next/dynamic";
 
 const VoiceButton = dynamic(() => import("@/components/Voice/VoiceButton"), { ssr: false });
@@ -29,7 +30,9 @@ export default function LayoutShell({ children }) {
       <Header />
       <div className="flex flex-1 min-h-0">
         <LeftMenu />
-        <MainContentWrapper>{children}</MainContentWrapper>
+        <MainContentWrapper>
+          <AccessGuard>{children}</AccessGuard>
+        </MainContentWrapper>
       </div>
       <VoiceButton />
     </>

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
     PERMISSION_TYPES,
@@ -13,7 +13,7 @@ import {
 import ModuleAccess from '@/components/RoleAndPermission/ModuleAccess';
 import BasicDetails from '@/components/RoleAndPermission/BasicDetails';
 import { Checkbox } from '@/components/ui/checkbox';
-import { storeRole } from '@/lib/api';
+import { storeRole, updateRole } from '@/lib/api';
 import { parseApiError } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -32,6 +32,32 @@ export default function AttendanceTable() {
 
     const [globalError, setGlobalError] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [editId, setEditId] = useState(null);
+    const isEditing = !!editId;
+
+    // Edit mode: read ?id from the URL (window.location avoids the Next
+    // static-export useSearchParams Suspense requirement) and prefill from the
+    // role stashed in sessionStorage by the list page (has modules+permissions).
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+        const id = new URLSearchParams(window.location.search).get('id');
+        if (!id) return;
+        setEditId(id);
+        try {
+            const raw = sessionStorage.getItem('editRole');
+            if (!raw) return;
+            const role = JSON.parse(raw);
+            const allOff = Object.fromEntries(Object.keys(active_module).map((k) => [k, false]));
+            setFormData({
+                name: role.name || '',
+                description: role.description || '',
+                modules: { ...allOff, ...(role.modules || {}) },
+                permissions: role.permissions || {},
+            });
+        } catch (e) {
+            // ignore malformed cache
+        }
+    }, []);
 
     // 2. Helper: Update Name/Description
     const updateField = (key, value) => {
@@ -94,7 +120,9 @@ export default function AttendanceTable() {
 
         try {
 
-            let { data } = await storeRole(formData);
+            let { data } = isEditing
+                ? await updateRole(editId, formData)
+                : await storeRole(formData);
 
             await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -118,7 +146,7 @@ export default function AttendanceTable() {
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
                 <div>
-                    <h1 className="text-3xl font-bold text-slate-600 dark:text-slate-300 tracking-tight mb-2">Create New Role</h1>
+                    <h1 className="text-3xl font-bold text-slate-600 dark:text-slate-300 tracking-tight mb-2">{isEditing ? 'Edit Role' : 'Create New Role'}</h1>
                     <p className="text-slate-500 text-sm">Configure access levels and specific permissions.</p>
 
                     {globalError && (
@@ -134,7 +162,7 @@ export default function AttendanceTable() {
                         <button className="px-5 py-2.5 border border-border rounded-lg text-slate-600 font-semibold">Cancel</button>
                     </Link>
                     <button onClick={onSubmit} className="px-6 py-2.5 bg-indigo-600 text-white font-semibold rounded-lg shadow-lg hover:bg-indigo-700 transition-all">
-                        {loading ? 'Saving...' : 'Save Role'}
+                        {loading ? 'Saving...' : (isEditing ? 'Update Role' : 'Save Role')}
                     </button>
                 </div>
             </div>
