@@ -107,7 +107,14 @@ const EditEmployeeRecord = ({ selectedEmployee }) => {
                     rfid_card_password={payload.rfid_card_password}
                     leave_group_id={payload.leave_group_id}
                     reporting_manager_id={payload.reporting_manager_id}
-                    status={payload.status} />
+                    status={payload.status}
+
+                    is_active={payload.is_active}
+                    inactive_reason_type={payload.inactive_reason_type}
+                    inactive_reason_note={payload.inactive_reason_note}
+                    inactive_from={payload.inactive_from}
+                    inactive_to={payload.inactive_to}
+                />
             }
         </main>
     );

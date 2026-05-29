@@ -40,6 +40,7 @@ import {
   CalendarRange,
   Server,
   CreditCard,
+  UserCheck,
 } from "lucide-react";
 
 // 1️⃣ Reusable menu groups
@@ -69,14 +70,7 @@ const reportMenu = [
   { href: "/payslips/reports", icon: DollarSign, label: "menu.reports.payroll" },
   { href: "/visitor/reports", icon: BookUser, label: "menu.reports.visitor" },
   { href: "/manual-report", icon: Clipboard, label: "menu.reports.manual" },
-  {
-    label: "menu.tracking",
-    icon: LocateFixed,
-    children: [
-      { href: "/live-tracker",     icon: LocateFixed, label: "menu.liveTracker" },
-      { href: "/tracker-history",  icon: History,     label: "menu.trackerHistory" },
-    ],
-  },
+  { href: "/live-tracker-report", icon: LocateFixed, label: "menu.reports.liveTracker" },
 ];
 
 const trackingMenu = [
@@ -123,6 +117,7 @@ const visitorMenu = [
   { href: "/visitor/reception", icon: BookUser, label: "menu.reception" },
   { href: "/visitor/logs", icon: History, label: "menu.visitorLogs" },
   { href: "/visitor/directory", icon: Users, label: "menu.directory" },
+  { href: "/visitor/hosts", icon: UserCheck, label: "menu.hosts" },
   { href: "/visitor/pre-register", icon: Calendar, label: "menu.preRegister" },
   { href: "/visitor/blacklist", icon: Shield, label: "menu.blacklist" },
   { href: "/visitor/zones", icon: Map, label: "menu.zoneAccess" },
@@ -145,6 +140,7 @@ export const leftNavLinks = {
   "/visitor/check-in": visitorMenu,
   "/visitor/logs": visitorMenu,
   "/visitor/directory": visitorMenu,
+  "/visitor/hosts": visitorMenu,
   "/visitor/pre-register": visitorMenu,
   "/visitor/blacklist": visitorMenu,
   "/visitor/zones": visitorMenu,
@@ -164,6 +160,7 @@ export const leftNavLinks = {
   "/access_control_logs": reportMenu,
   "/access-report": reportMenu,
   "/manual-report": reportMenu,
+  "/live-tracker-report": reportMenu,
   "/visitor/reports": reportMenu,
 
   "/shift": attendanceMenu,

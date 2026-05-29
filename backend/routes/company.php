@@ -152,6 +152,9 @@ Route::post('policy/delete/selected', [policyController::class, 'deleteSelected'
 Route::apiResource('mail_content', MailContentController::class);
 
 // activities
+Route::get('activity/types',   [ActivityController::class, 'types']);
+Route::get('activity/actions', [ActivityController::class, 'actions']);
+Route::get('activity/pdf',     [ActivityController::class, 'exportPdf']);
 Route::apiResource('activity', ActivityController::class);
 Route::get('activitiesByUser/{user_id}', [ActivityController::class, "activitiesByUser"]);
 

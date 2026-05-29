@@ -31,5 +31,8 @@ Route::get('visitor-management/zones', [VisitorManagementController::class, 'zon
 // Host Employees (for dropdowns)
 Route::get('visitor-management/host-employees', [VisitorManagementController::class, 'hostEmployees']);
 
-// Hosts (host_companies, for Visitor Reports filter)
+// Hosts (host_companies — CRUD)
 Route::get('visitor-management/hosts', [VisitorManagementController::class, 'hosts']);
+Route::post('visitor-management/hosts', [VisitorManagementController::class, 'storeHost']);
+Route::put('visitor-management/hosts/{id}', [VisitorManagementController::class, 'updateHost']);
+Route::delete('visitor-management/hosts/{id}', [VisitorManagementController::class, 'deleteHost']);

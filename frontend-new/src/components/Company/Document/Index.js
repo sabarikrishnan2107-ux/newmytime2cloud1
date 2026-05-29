@@ -1,9 +1,38 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Plus, FileType, Image as ImageIcon, Trash2,
+  Plus, FileType, Image as ImageIcon, Trash2, Eye, Printer,
 } from 'lucide-react';
 import DocumentUploadModal from './DocumentModal';
 import { deleteDocument, getDocuments } from '@/lib/api';
+
+const buildFileUrl = (attachment) => {
+  if (!attachment) return "";
+  const baseUrl = process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") || "http://localhost:8000";
+  return `${baseUrl}/documents/0/${attachment}`;
+};
+
+const onView = (doc) => {
+  const url = buildFileUrl(doc.attachment);
+  if (url) window.open(url, "_blank", "noopener,noreferrer");
+};
+
+const onPrint = (doc) => {
+  const url = buildFileUrl(doc.attachment);
+  if (!url) return;
+  const win = window.open("", "_blank");
+  if (!win) return;
+  const isImage = /\.(jpe?g|png|gif|webp|bmp|svg)$/i.test(doc.attachment);
+  const title = (doc.title || "Document").replace(/[<>"]/g, "");
+  if (isImage) {
+    win.document.write(
+      `<html><head><title>${title}</title><style>body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#fff}img{max-width:100%;max-height:100vh;object-fit:contain}@media print{body{display:block}img{max-width:100%;max-height:none}}</style></head><body><img src="${url}" onload="setTimeout(function(){window.focus();window.print();},100)" /></body></html>`
+    );
+    win.document.close();
+  } else {
+    win.location.href = url;
+    win.addEventListener("load", () => { try { win.focus(); win.print(); } catch (_) {} });
+  }
+};
 
 const EmployeeDocuments = ({ employee_id = 0 }) => {
 
@@ -78,9 +107,17 @@ const EmployeeDocuments = ({ employee_id = 0 }) => {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button onClick={() => onDelete(doc.id)} className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition">
-                        <Trash2 size={18} />
-                      </button>
+                      <div className="inline-flex items-center gap-3">
+                        <button onClick={() => onView(doc)} title="View" className="text-gray-400 hover:text-indigo-500 dark:hover:text-indigo-400 transition">
+                          <Eye size={18} />
+                        </button>
+                        <button onClick={() => onPrint(doc)} title="Print" className="text-gray-400 hover:text-emerald-500 dark:hover:text-emerald-400 transition">
+                          <Printer size={18} />
+                        </button>
+                        <button onClick={() => onDelete(doc.id)} title="Delete" className="text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

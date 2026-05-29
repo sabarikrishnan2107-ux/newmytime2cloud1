@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Live Tracker Report — PDF Preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  @page { size: A4 landscape; margin: 0 0 22mm 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 8.5pt;
+    color: #334155;
+    line-height: 1.4;
+    background: #f1f5f9;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  .page {
+    background: #fff;
+    padding: 24px 32px 18px 32px;
+    position: relative;
+  }
+
+  /* ============== HEADER ============== */
+  .hdr { width: 100%; border-collapse: collapse; }
+  .hdr td { border: none; padding: 0; vertical-align: middle; }
+
+  .logo-card {
+    display: inline-block; width: 64px; height: 64px;
+    border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px;
+    text-align: center; vertical-align: middle; margin-right: 14px;
+  }
+  .logo-card .ico {
+    width: 100%; height: 100%; background: #f8fafc; border-radius: 5px;
+    color: #4f46e5; font-weight: 600; font-size: 7pt;
+    display: inline-block; line-height: 12px; padding-top: 12px;
+  }
+  .logo-card .ico .leaf {
+    display: block; width: 16px; height: 16px; margin: 0 auto 4px auto;
+    border-radius: 50% 0; background: #16a34a; transform: rotate(-45deg);
+  }
+  .co-name { font-size: 16pt; font-weight: 600; color: #0f172a; letter-spacing: 0.5px; }
+  .co-tag  { font-size: 7.5pt; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+  .co-branch { font-size: 8.5pt; color: #4f46e5; font-weight: 600; margin-top: 6px; }
+
+  .meta { font-size: 8pt; line-height: 1.6; text-align: right; }
+  .meta .lbl { color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; font-size: 7pt; margin-right: 6px; }
+  .meta .val { color: #0f172a; font-weight: 600; }
+  .meta .val-accent { color: #4f46e5; font-weight: 600; }
+
+  .hr-soft { border: none; border-top: 1px solid #e2e8f0; margin: 14px 0 0 0; }
+
+  /* ============== BANNER ============== */
+  .banner {
+    background: #f5f3ff;
+    border: 1px solid #ede9fe;
+    border-radius: 6px;
+    padding: 18px 24px;
+    margin: 18px 0 22px 0;
+    text-align: center;
+  }
+  .banner .title { font-size: 15pt; font-weight: 600; color: #312e81; letter-spacing: 1.2px; }
+  .banner .sub { font-size: 9pt; color: #64748b; margin-top: 6px; }
+  .banner .sub .accent { color: #4f46e5; font-weight: 600; }
+
+  /* ============== SUMMARY ============== */
+  .summary { width: 100%; border-collapse: separate; border-spacing: 6px 0; margin: 0 -6px 22px -6px; }
+  .summary td {
+    border: 1px solid #e2e8f0; border-radius: 6px;
+    padding: 8px 12px; background: #fff; vertical-align: middle;
+  }
+  .sum-inner { width: 100%; border: none; border-collapse: collapse; }
+  .sum-inner td { border: none; padding: 0; vertical-align: middle; background: none; }
+  .sum-lbl {
+    font-size: 7pt; font-weight: 600; letter-spacing: 0.8px;
+    text-transform: uppercase; text-align: left;
+  }
+  .sum-val { font-size: 15pt; font-weight: 600; color: #0f172a; text-align: right; }
+  .sum-val .unit { font-size: 8pt; color: #94a3b8; font-weight: 600; margin-left: 2px; }
+  .c-tracked  { color: #4f46e5; }
+  .c-live     { color: #ef4444; }
+  .c-distance { color: #16a34a; }
+  .c-active   { color: #0ea5e9; }
+  .c-stops    { color: #f59e0b; }
+  .c-avg      { color: #8b5cf6; }
+  .c-max      { color: #d97706; }
+
+  /* ============== TABLE ============== */
+  .data { width: 100%; border-collapse: collapse; }
+  .data thead th {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;
+    padding: 10px 10px;
+    font-size: 7.5pt; font-weight: 600;
+    color: #64748b; letter-spacing: 0.6px; text-transform: uppercase;
+    text-align: center;
+  }
+  .data thead th:first-child { text-align: left; padding-left: 12px; }
+
+  .data tbody td {
+    padding: 6px 10px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 8.5pt;
+  }
+  .data thead { display: table-header-group; }
+  .data tbody tr { page-break-inside: avoid; break-inside: avoid; }
+
+  /* Force long address strings onto a single line with ellipsis so rows stay short */
+  .t-sub-grey, .t-sub, .t-miss {
+    display: block !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 200px !important;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .data tbody td:first-child { text-align: left; padding-left: 12px; }
+
+  /* Employee cell */
+  .emp { border: none; border-collapse: collapse; }
+  .emp td { border: none; padding: 0; vertical-align: middle; background: none; }
+  .emp-photo {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: #e2e8f0; text-align: center; line-height: 32px;
+    color: #94a3b8; font-weight: 600; font-size: 11pt;
+    margin-right: 10px; overflow: hidden;
+  }
+  .emp-name { font-size: 9pt; font-weight: 600; color: #0f172a; line-height: 1.25; }
+  .emp-sub  { font-size: 7.5pt; color: #0f172a; line-height: 1.25; margin-top: 3px; }
+  .emp-sub b { color: #4f46e5; font-weight: 600; }
+
+  /* Shift / Branch combined cell */
+  .shift-main { font-weight: 600; color: #4f46e5; font-size: 8.5pt; }
+  .shift-sub  { font-size: 7.5pt; color: #0f172a; margin-top: 3px; }
+
+  /* Time cells */
+  .t-val { font-weight: 600; color: #0f172a; font-size: 9pt; }
+  .t-val-live { font-weight: 600; color: #f59e0b; font-size: 8pt; }
+  .t-sub { font-size: 7.5pt; color: #4f46e5; font-weight: 600; margin-top: 3px; max-width: 160px; display: inline-block; line-height: 1.3; }
+  .t-sub-grey { font-size: 7.5pt; color: #475569; margin-top: 3px; max-width: 160px; display: inline-block; line-height: 1.3; }
+  .t-miss { font-size: 7.5pt; color: #94a3b8; font-style: italic; }
+
+  .dash { color: #cbd5e1; font-size: 9pt; }
+
+  /* Numbers */
+  .num-strong { font-size: 9pt; font-weight: 600; color: #0f172a; }
+  .num-unit { font-size: 7pt; color: #0f172a; font-weight: 600; }
+
+  /* Status text (matches reference: plain coloured caps text, no pill) */
+  .st { font-size: 8.5pt; font-weight: 600; letter-spacing: 0.4px; }
+  .st-done    { color: #16a34a; }
+  .st-live    { color: #ef4444; }
+  .st-partial { color: #f59e0b; }
+  .st-star { color: #ef4444; margin-left: 4px; }
+
+  /* TOTALS */
+  .totals td {
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+    font-weight: 600; font-size: 8.5pt;
+    padding: 12px 10px;
+  }
+
+  /* ============== FOOTER ============== */
+  .footer {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 10px;
+    width: 100%; border-collapse: collapse;
+  }
+  .footer td { border: none; padding: 0; font-size: 7.5pt; color: #64748b; }
+  .footer .key b { color: #0f172a; }
+  .legend-done    { color: #16a34a; font-weight: 600; }
+  .legend-live    { color: #ef4444; font-weight: 600; }
+  .legend-partial { color: #f59e0b; font-weight: 600; }
+
+  /* Footer pinned to bottom of every page (works for Dompdf / wkhtmltopdf) */
+  .pdf-footer {
+    position: fixed; left: 32px; bottom: 14px;
+    width: calc(100% - 64px);
+  }
+
+  /* Browser preview helper */
+  @media screen {
+    body { background: #cbd5e1; padding: 20px; }
+    .page {
+      width: 1200px; margin: 0 auto 24px auto;
+      box-shadow: 0 4px 24px rgba(0,0,0,.15);
+      min-height: 820px;
+      position: relative;
+      padding-bottom: 60px; /* reserve space for fixed footer */
+    }
+    .pdf-footer { position: absolute; }
+    .page-break-note {
+      width: 1200px; margin: 0 auto 24px auto;
+      font-size: 8pt; color: #94a3b8; text-align: center;
+      padding: 6px 0; letter-spacing: 1px; text-transform: uppercase;
+    }
+  }
+
+  /* For real PDF generation */
+  @media print {
+    @page { size: A4 landscape; margin: 0 0 70px 0; }
+    body { background: #fff !important; padding: 0 !important; }
+    .page {
+      width: auto !important; min-height: 0 !important;
+      box-shadow: none !important; margin: 0 !important;
+      page-break-after: always;
+    }
+    .page:last-of-type { page-break-after: auto; }
+    .page-break-note, .print-btn { display: none !important; }
+  }
+
+  /* Floating download / print button */
+  .print-btn {
+    position: fixed; top: 20px; right: 20px;
+    background: #4f46e5; color: #fff;
+    border: none; border-radius: 8px;
+    padding: 10px 18px; font-size: 9pt; font-weight: 600;
+    cursor: pointer; box-shadow: 0 4px 14px rgba(79,70,229,.35);
+    z-index: 9999; font-family: inherit;
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+  .print-btn:hover { background: #4338ca; }
+  .print-btn svg { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ===== HEADER ===== -->
+  <table class="hdr">
+    <tr>
+      <td style="width: 60%;">
+        <table style="border: none;"><tr>
+          <td style="border: none; padding: 0;">
+            <div class="logo-card" id="logo-card">
+              <div class="ico">
+                <span class="leaf"></span>
+                AKIL
+              </div>
+            </div>
+          </td>
+          <td style="border: none; padding: 0; vertical-align: middle;">
+            <div class="co-name" id="co-name">AKIL GROUP</div>
+            <div class="co-tag">WORKFORCE TRACKING SYSTEM</div>
+            <div class="co-branch" id="co-branch">All Branches</div>
+          </td>
+        </tr></table>
+      </td>
+      <td style="width: 40%; text-align: right;" class="meta">
+        <div><span class="lbl">Period</span><span class="val" id="period-val">19-May-2026</span></div>
+        <div><span class="lbl">Branch</span><span class="val-accent" id="branch-val">All Branches</span></div>
+        <div><span class="lbl">Generated</span><span class="val" id="generated-val">29-May-2026 12:40</span></div>
+      </td>
+    </tr>
+  </table>
+  <hr class="hr-soft" />
+
+  <!-- ===== BANNER ===== -->
+  <div class="banner">
+    <div class="title">LIVE TRACKER REPORT</div>
+    <div class="sub" id="banner-sub">19-May-2026 &nbsp; <span class="accent">●</span> &nbsp; Tuesday &nbsp; <span class="accent">●</span> &nbsp; Mobile App Tracking</div>
+  </div>
+
+  <!-- ===== SUMMARY ===== -->
+  <table class="summary">
+    <tr>
+      <td><table class="sum-inner"><tr><td class="sum-lbl c-tracked">Tracked</td><td class="sum-val" id="sum-tracked">05</td></tr></table></td>
+      <td><table class="sum-inner"><tr><td class="sum-lbl c-live">Live</td><td class="sum-val" id="sum-live">01</td></tr></table></td>
+      <td><table class="sum-inner"><tr><td class="sum-lbl c-distance">Distance</td><td class="sum-val" id="sum-distance">206.6<span class="unit">km</span></td></tr></table></td>
+      <td><table class="sum-inner"><tr><td class="sum-lbl c-active">Active</td><td class="sum-val" id="sum-active">26<span class="unit">h 40m</span></td></tr></table></td>
+      <td><table class="sum-inner"><tr><td class="sum-lbl c-stops">Stops</td><td class="sum-val" id="sum-stops">23</td></tr></table></td>
+      <td><table class="sum-inner"><tr><td class="sum-lbl c-avg">Avg/Emp</td><td class="sum-val" id="sum-avg">41.3<span class="unit">km</span></td></tr></table></td>
+      <td><table class="sum-inner"><tr><td class="sum-lbl c-max">Max km/h</td><td class="sum-val" id="sum-max">98</td></tr></table></td>
+    </tr>
+  </table>
+
+  <!-- ===== DATA TABLE ===== -->
+  <table class="data">
+    <thead>
+      <tr>
+        <th style="width: 18%;">Employee</th>
+        <th style="width: 11%;">Branch / Dept</th>
+        <th style="width: 16%;">Start</th>
+        <th style="width: 16%;">End</th>
+        <th style="width: 8%;">Duration</th>
+        <th style="width: 8%;">Distance</th>
+        <th style="width: 5%;">Stops</th>
+        <th style="width: 8%;">Avg / Max</th>
+        <th style="width: 10%;">Status</th>
+      </tr>
+    </thead>
+    <tbody id="rows-body">
+
+      <!-- ROW 1 -->
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">A</div></td>
+            <td>
+              <div class="emp-name">Ariff Akil</div>
+              <div class="emp-sub">Front office <b>| 1231</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">KODAI</div>
+          <div class="shift-sub">Front office</div>
+        </td>
+        <td>
+          <div class="t-val">13:56</div>
+          <div class="t-sub-grey">Al Nahda St, Bur Dubai</div>
+        </td>
+        <td>
+          <div class="t-val">17:12</div>
+          <div class="t-sub-grey">Sheikh Zayed Rd, JLT</div>
+        </td>
+        <td><span class="num-strong">3h 16m</span></td>
+        <td><span class="num-strong">42.8</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">5</span></td>
+        <td><span class="num-strong">28</span> / <span class="num-strong">74</span></td>
+        <td><span class="st st-done">COMPLETED</span></td>
+      </tr>
+
+      <!-- ROW 2 -->
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">R</div></td>
+            <td>
+              <div class="emp-name">Rahul Menon</div>
+              <div class="emp-sub">Field sales <b>| 00231</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">DUBAI HQ</div>
+          <div class="shift-sub">Field sales</div>
+        </td>
+        <td>
+          <div class="t-val">08:02</div>
+          <div class="t-sub-grey">Office HQ — Business Bay</div>
+        </td>
+        <td>
+          <div class="t-val">18:47</div>
+          <div class="t-sub-grey">Mirdif City Center, P2</div>
+        </td>
+        <td><span class="num-strong">10h 45m</span></td>
+        <td><span class="num-strong">128.4</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">12</span></td>
+        <td><span class="num-strong">19</span> / <span class="num-strong">98</span></td>
+        <td><span class="st st-done">COMPLETED <span class="st-star">★</span></span></td>
+      </tr>
+
+      <!-- ROW 3 - LIVE -->
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">S</div></td>
+            <td>
+              <div class="emp-name">Sara Kumar</div>
+              <div class="emp-sub">Logistics <b>| 00108</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">DUBAI HQ</div>
+          <div class="shift-sub">Logistics</div>
+        </td>
+        <td>
+          <div class="t-val">09:14</div>
+          <div class="t-sub-grey">Jebel Ali FZ — Warehouse 4B</div>
+        </td>
+        <td>
+          <div class="t-val-live">still active</div>
+          <div class="t-sub-grey">Near Al Quoz Industrial 3</div>
+        </td>
+        <td><span class="num-strong">2h 35m</span></td>
+        <td><span class="num-strong">31.2</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">3</span></td>
+        <td><span class="num-strong">22</span> / <span class="num-strong">68</span></td>
+        <td><span class="st st-live">LIVE</span></td>
+      </tr>
+
+      <!-- ROW 4 - missing GPS -->
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">F</div></td>
+            <td>
+              <div class="emp-name">Faisal Tariq</div>
+              <div class="emp-sub">Front office <b>| 00045</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">KODAI</div>
+          <div class="shift-sub">Front office</div>
+        </td>
+        <td>
+          <div class="t-val">08:30</div>
+          <div class="t-miss">Location unavailable</div>
+        </td>
+        <td>
+          <div class="t-val">17:00</div>
+          <div class="t-sub-grey">Office HQ — Business Bay</div>
+        </td>
+        <td><span class="num-strong">8h 30m</span></td>
+        <td><span class="dash">—</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">2</span></td>
+        <td><span class="dash">—</span></td>
+        <td><span class="st st-partial">PARTIAL GPS</span></td>
+      </tr>
+
+      <!-- ROW 5 -->
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">N</div></td>
+            <td>
+              <div class="emp-name">Nadia Patel</div>
+              <div class="emp-sub">Field sales <b>| 00312</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">DUBAI HQ</div>
+          <div class="shift-sub">Field sales</div>
+        </td>
+        <td>
+          <div class="t-val">14:08</div>
+          <div class="t-sub-grey">Dubai Mall Parking, P3</div>
+        </td>
+        <td>
+          <div class="t-val">15:42</div>
+          <div class="t-sub-grey">Burj Park, Downtown</div>
+        </td>
+        <td><span class="num-strong">1h 34m</span></td>
+        <td><span class="num-strong">4.2</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">1</span></td>
+        <td><span class="num-strong">11</span> / <span class="num-strong">26</span></td>
+        <td><span class="st st-done">COMPLETED</span></td>
+      </tr>
+
+      <!-- Additional sample rows -->
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">M</div></td>
+            <td>
+              <div class="emp-name">Mohamed Ilyas</div>
+              <div class="emp-sub">Front office <b>| 00022</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">TANJORE</div>
+          <div class="shift-sub">Front office</div>
+        </td>
+        <td>
+          <div class="t-val">08:51</div>
+          <div class="t-sub-grey">Office HQ — TNJ Branch</div>
+        </td>
+        <td>
+          <div class="t-val">23:58</div>
+          <div class="t-sub-grey">Tanjore Big Temple Rd</div>
+        </td>
+        <td><span class="num-strong">15h 07m</span></td>
+        <td><span class="num-strong">63.1</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">6</span></td>
+        <td><span class="num-strong">17</span> / <span class="num-strong">82</span></td>
+        <td><span class="st st-done">COMPLETED</span></td>
+      </tr>
+
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">K</div></td>
+            <td>
+              <div class="emp-name">Kathir Vel</div>
+              <div class="emp-sub">Housekeeping <b>| 3006</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">TANJORE</div>
+          <div class="shift-sub">Housekeeping</div>
+        </td>
+        <td>
+          <div class="t-val">07:02</div>
+          <div class="t-sub-grey">Staff Quarters Block A</div>
+        </td>
+        <td>
+          <div class="t-val">16:48</div>
+          <div class="t-sub-grey">Staff Quarters Block A</div>
+        </td>
+        <td><span class="num-strong">9h 46m</span></td>
+        <td><span class="num-strong">8.4</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">4</span></td>
+        <td><span class="num-strong">9</span> / <span class="num-strong">22</span></td>
+        <td><span class="st st-done">COMPLETED</span></td>
+      </tr>
+
+      <tr>
+        <td>
+          <table class="emp"><tr>
+            <td style="width: 42px;"><div class="emp-photo">P</div></td>
+            <td>
+              <div class="emp-name">Priya Dharshini</div>
+              <div class="emp-sub">FO Manager <b>| 24</b></div>
+            </td>
+          </tr></table>
+        </td>
+        <td>
+          <div class="shift-main">KODAI</div>
+          <div class="shift-sub">Front office</div>
+        </td>
+        <td>
+          <div class="t-val">09:11</div>
+          <div class="t-sub-grey">Office HQ — Kodai</div>
+        </td>
+        <td>
+          <div class="t-val">19:46</div>
+          <div class="t-sub-grey">Kodai Lake Rd</div>
+        </td>
+        <td><span class="num-strong">10h 35m</span></td>
+        <td><span class="num-strong">22.9</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">3</span></td>
+        <td><span class="num-strong">14</span> / <span class="num-strong">48</span></td>
+        <td><span class="st st-done">COMPLETED</span></td>
+      </tr>
+
+      <!-- TOTALS -->
+      <tr class="totals">
+        <td colspan="4" style="text-align: right; color: #64748b; letter-spacing: 0.5px; text-transform: uppercase;">Total ( 8 employees )</td>
+        <td><span class="num-strong">62h 18m</span></td>
+        <td><span class="num-strong">301.0</span><span class="num-unit"> km</span></td>
+        <td><span class="num-strong" style="color:#f59e0b">36</span></td>
+        <td><span class="dash">—</span></td>
+        <td><span class="dash">—</span></td>
+      </tr>
+
+    </tbody>
+  </table>
+
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var qs = new URLSearchParams(window.location.search);
+  var companyName = qs.get("company_name") || "";
+  var branchName  = qs.get("branch_name")  || "All Branches";
+  var fromDate    = qs.get("from_date")    || "";
+  var toDate      = qs.get("to_date")      || fromDate;
+  var companyLogo = qs.get("company_logo") || "";
+
+  function fmtDate(s) {
+    if (!s) return "";
+    var d = new Date(s + "T00:00:00");
+    if (isNaN(d.getTime())) return s;
+    var mon = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+    return d.getDate().toString().padStart(2, "0") + "-" + mon[d.getMonth()] + "-" + d.getFullYear();
+  }
+  function dayName(s) {
+    var d = new Date(s + "T00:00:00");
+    if (isNaN(d.getTime())) return "";
+    return ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"][d.getDay()];
+  }
+  function setText(id, v) {
+    var el = document.getElementById(id);
+    if (el && v != null && v !== "") el.textContent = v;
+  }
+
+  if (companyName) setText("co-name", companyName.toUpperCase());
+  setText("co-branch", branchName);
+  setText("branch-val", branchName);
+
+  function installLogo(src) {
+    if (!src) return;
+    var logoCard = document.getElementById("logo-card");
+    if (!logoCard) return;
+    logoCard.innerHTML =
+      '<img src="' + src +
+      '" style="width: 100%; height: 100%; object-fit: contain; display: block; border-radius: 5px;"' +
+      ' onerror="this.outerHTML = \'<div class=&quot;ico&quot;><span class=&quot;leaf&quot;></span>AKIL</div>\'" />';
+  }
+
+  // Swap the AKIL placeholder for the real company logo when provided directly via URL.
+  if (companyLogo) installLogo(companyLogo);
+
+  // Fall back to the same source the other PDFs use: /report/daily_json returns
+  // company.logo as a ready-to-use URL. Only fetch if logo wasn't passed in URL.
+  var apiBase = qs.get("api_base") || "";
+  var companyId = qs.get("company_id") || "";
+  if (!companyLogo && apiBase && companyId) {
+    var logoFetchUrl = apiBase.replace(/\/$/, "") + "/report/daily_json" +
+      "?company_id=" + encodeURIComponent(companyId) +
+      "&from_date=" + encodeURIComponent(fromDate || new Date().toISOString().slice(0, 10));
+    fetch(logoFetchUrl, { headers: { Accept: "application/json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (data && data.company && data.company.logo) installLogo(data.company.logo);
+      })
+      .catch(function () { /* keep placeholder */ });
+  }
+
+  var periodStr;
+  if (fromDate && toDate && fromDate !== toDate) {
+    periodStr = fmtDate(fromDate) + " - " + fmtDate(toDate);
+  } else if (fromDate) {
+    periodStr = fmtDate(fromDate);
+  }
+  if (periodStr) setText("period-val", periodStr);
+
+  var bannerSubEl = document.getElementById("banner-sub");
+  if (bannerSubEl && fromDate) {
+    var sameDay = !toDate || toDate === fromDate;
+    var datePart = sameDay ? fmtDate(fromDate) : (fmtDate(fromDate) + " - " + fmtDate(toDate));
+    var dayPart  = sameDay ? dayName(fromDate) : "";
+    bannerSubEl.innerHTML = datePart +
+      ' &nbsp; <span class="accent">●</span> &nbsp; ' +
+      (dayPart ? dayPart + ' &nbsp; <span class="accent">●</span> &nbsp; ' : '') +
+      'Mobile App Tracking';
+  }
+
+  var now = new Date();
+  var generatedStr = fmtDate(now.toISOString().slice(0, 10)) + " " +
+    now.getHours().toString().padStart(2, "0") + ":" +
+    now.getMinutes().toString().padStart(2, "0");
+  setText("generated-val", generatedStr);
+
+  // ===== Real data injection =====
+  // React encodes per-row stats as base64 JSON in the `data` URL param.
+  // If present, replace the sample tbody and update the summary boxes.
+  var dataB64 = qs.get("data");
+  if (dataB64) {
+    try {
+      var payload = JSON.parse(decodeURIComponent(escape(atob(dataB64))));
+      renderReport(payload);
+    } catch (e) {
+      console.error("Failed to decode data:", e);
+    }
+  }
+
+  function escHtml(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function renderReport(payload) {
+    var rows = payload && payload.rows ? payload.rows : [];
+    var totals = payload && payload.totals ? payload.totals : {};
+
+    // ---- Summary boxes ----
+    setText("sum-tracked", String(totals.tracked || rows.length).padStart(2, "0"));
+    setText("sum-live", String(totals.live || 0).padStart(2, "0"));
+    var distEl = document.getElementById("sum-distance");
+    if (distEl) distEl.innerHTML = (totals.distance != null ? totals.distance : 0).toFixed(1) + '<span class="unit">km</span>';
+    var activeEl = document.getElementById("sum-active");
+    if (activeEl) activeEl.innerHTML = (totals.active_hours || 0) + '<span class="unit">h ' + String(totals.active_minutes || 0).padStart(2, "0") + 'm</span>';
+    setText("sum-stops", String(totals.stops || 0));
+    var avgEl = document.getElementById("sum-avg");
+    if (avgEl) avgEl.innerHTML = (totals.avg_per_emp != null ? totals.avg_per_emp : 0).toFixed(1) + '<span class="unit">km</span>';
+    setText("sum-max", String(totals.max_speed || 0));
+
+    // ---- Rows ----
+    var tbody = document.getElementById("rows-body");
+    if (!tbody) return;
+    if (rows.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="9" style="padding: 24px; text-align: center; color: #94a3b8;">No mobile clock-ins found for the selected filters.</td></tr>';
+      return;
+    }
+
+    var html = "";
+    rows.forEach(function (r) {
+      var initial = escHtml(((r.full_name || "?")[0] || "?").toUpperCase());
+      var idShort = escHtml(r.employee_id || "");
+      var photoHtml = r.profile_picture
+        ? '<img src="' + escHtml(r.profile_picture) + '" onerror="this.parentNode.innerHTML=\'' + initial + '\'" style="width:100%;height:100%;border-radius:50%;object-fit:cover;display:block;" />'
+        : initial;
+
+      var startHtml = r.in_time
+        ? '<div class="t-val">' + escHtml(r.in_time) + '</div>' +
+          (r.in_location ? '<div class="t-sub-grey">' + escHtml(r.in_location) + '</div>' : '<div class="t-miss">Location unavailable</div>')
+        : '<span class="dash">—</span>';
+
+      var endHtml;
+      if (r.status === "LIVE") {
+        endHtml = '<div class="t-val-live">still active</div>' +
+          (r.out_location ? '<div class="t-sub-grey">' + escHtml(r.out_location) + '</div>' : '');
+      } else if (r.out_time) {
+        endHtml = '<div class="t-val">' + escHtml(r.out_time) + '</div>' +
+          (r.out_location ? '<div class="t-sub-grey">' + escHtml(r.out_location) + '</div>' : '<div class="t-miss">Location unavailable</div>');
+      } else {
+        endHtml = '<span class="dash">—</span>';
+      }
+
+      var distHtml = (r.distance_km != null)
+        ? '<span class="num-strong">' + r.distance_km.toFixed(1) + '</span><span class="num-unit"> km</span>'
+        : '<span class="dash">—</span>';
+
+      var speedHtml = (r.avg_speed != null && r.max_speed != null)
+        ? '<span class="num-strong">' + r.avg_speed + '</span> / <span class="num-strong">' + r.max_speed + '</span>'
+        : '<span class="dash">—</span>';
+
+      var statusClass = r.status === "LIVE" ? "st-live" : (r.status === "PARTIAL GPS" ? "st-partial" : "st-done");
+      var starHtml = (r.distance_km != null && r.distance_km > 100) ? ' <span class="st-star">★</span>' : '';
+
+      html +=
+        '<tr>' +
+          '<td>' +
+            '<table class="emp"><tr>' +
+              '<td style="width: 42px;"><div class="emp-photo" style="overflow:hidden;padding:0;">' + photoHtml + '</div></td>' +
+              '<td>' +
+                '<div class="emp-name">' + escHtml(r.full_name) + '</div>' +
+                '<div class="emp-sub">' + escHtml(r.dept_name) + ' <b>| ' + idShort + '</b></div>' +
+              '</td>' +
+            '</tr></table>' +
+          '</td>' +
+          '<td>' +
+            '<div class="shift-main">' + escHtml(r.branch_name) + '</div>' +
+            '<div class="shift-sub">' + escHtml(r.dept_name) + '</div>' +
+          '</td>' +
+          '<td>' + startHtml + '</td>' +
+          '<td>' + endHtml + '</td>' +
+          '<td><span class="num-strong">' + escHtml(r.duration || "—") + '</span></td>' +
+          '<td>' + distHtml + '</td>' +
+          '<td><span class="num-strong" style="color:#f59e0b">' + (r.stops || 0) + '</span></td>' +
+          '<td>' + speedHtml + '</td>' +
+          '<td><span class="st ' + statusClass + '">' + escHtml(r.status) + starHtml + '</span></td>' +
+        '</tr>';
+    });
+
+    tbody.innerHTML = html;
+  }
+})();
+</script>
+
+</body>
+</html>

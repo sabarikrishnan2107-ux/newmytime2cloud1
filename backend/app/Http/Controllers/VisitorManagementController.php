@@ -258,9 +258,14 @@ class VisitorManagementController extends Controller
     public function hosts(Request $request)
     {
         return HostCompany::where('company_id', $request->company_id)
-            ->with('employee:id,first_name,last_name,employee_id')
+            ->with([
+                'employee:id,first_name,last_name,employee_id,department_id,branch_id',
+                'employee.department:id,name',
+                'branch:id,name',
+                'zone:id,name',
+            ])
             ->orderBy('id', 'desc')
-            ->get(['id', 'company_id', 'employee_id']);
+            ->get(['id', 'company_id', 'employee_id', 'branch_id', 'zone_id', 'notes']);
     }
 
     // ── Directory (all visitors) ──
@@ -401,5 +406,79 @@ class VisitorManagementController extends Controller
             ->with('department:id,name')
             ->orderBy('first_name')
             ->get();
+    }
+
+    public function storeHost(Request $request)
+    {
+        $validated = $request->validate([
+            'company_id'  => 'required|integer|exists:companies,id',
+            'employee_id' => 'required|integer|exists:employees,id',
+            'branch_id'   => 'nullable|integer|exists:company_branches,id',
+            'zone_id'     => 'nullable|integer|exists:zones,id',
+            'notes'       => 'nullable|string|max:1000',
+        ]);
+
+        $exists = HostCompany::where('company_id', $validated['company_id'])
+            ->where('employee_id', $validated['employee_id'])
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'This employee is already a host.',
+            ], 422);
+        }
+
+        $host = HostCompany::create($validated);
+
+        return $host->load([
+            'employee:id,first_name,last_name,employee_id,department_id,branch_id',
+            'employee.department:id,name',
+            'branch:id,name',
+            'zone:id,name',
+        ]);
+    }
+
+    public function updateHost(Request $request, $id)
+    {
+        $host = HostCompany::findOrFail($id);
+
+        $validated = $request->validate([
+            'employee_id' => 'required|integer|exists:employees,id',
+            'branch_id'   => 'nullable|integer|exists:company_branches,id',
+            'zone_id'     => 'nullable|integer|exists:zones,id',
+            'notes'       => 'nullable|string|max:1000',
+        ]);
+
+        $dupe = HostCompany::where('company_id', $host->company_id)
+            ->where('employee_id', $validated['employee_id'])
+            ->where('id', '!=', $host->id)
+            ->exists();
+
+        if ($dupe) {
+            return response()->json([
+                'message' => 'Another host record already exists for this employee.',
+            ], 422);
+        }
+
+        $host->update($validated);
+
+        return $host->fresh()->load([
+            'employee:id,first_name,last_name,employee_id,department_id,branch_id',
+            'employee.department:id,name',
+            'branch:id,name',
+            'zone:id,name',
+        ]);
+    }
+
+    public function deleteHost($id)
+    {
+        $host = HostCompany::find($id);
+        if (!$host) {
+            return response()->json(['message' => 'Host not found.'], 404);
+        }
+
+        $host->delete();
+
+        return response()->json(['message' => 'Host removed.']);
     }
 }

@@ -195,6 +195,7 @@
     "reception": "Reception",
     "visitorLogs": "Visitor Logs",
     "directory": "Directory",
+    "hosts": "Hosts",
     "preRegister": "Pre-Register",
     "blacklist": "Blacklist",
     "zoneAccess": "Zone Access",
@@ -204,7 +205,8 @@
     "reports.accessControl": "Access Control",
     "reports.payroll": "Payroll Report",
     "reports.visitor": "Visitor Report",
-    "reports.manual": "Manual Report"
+    "reports.manual": "Manual Report",
+    "reports.liveTracker": "Live Tracking Report"
   },
   "header": {
     "nav": {

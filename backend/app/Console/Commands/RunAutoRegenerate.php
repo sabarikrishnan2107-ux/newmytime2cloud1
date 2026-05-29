@@ -125,9 +125,12 @@ class RunAutoRegenerate extends Command
             ]);
 
             // Step 2: Find employees who have attendance logs on this date
+            // Rejected logs (e.g. non-active employees) are excluded so their punches
+            // do not get promoted to attendance records.
             $userIdsWithLogs = AttendanceLog::where('company_id', $companyId)
                 ->where('LogTime', '>=', $dateString)
                 ->where('LogTime', '<', Carbon::parse($dateString)->addDay()->toDateString())
+                ->whereNull('rejected_reason')
                 ->distinct()
                 ->pluck('UserID')
                 ->toArray();

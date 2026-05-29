@@ -8,8 +8,9 @@ import DropDown from '@/components/ui/DropDown';
 import { generateSecurePassword, notify, parseApiError } from '@/lib/utils';
 import DatePicker from '@/components/ui/DatePicker';
 import ImageUploader from '@/components/ImageUploader';
-import { getBranches, getDepartments, getDesignations, storeEmployee, updateEmployee } from '@/lib/api';
+import { getBranches, getDepartments, getDesignations, storeEmployee, updateEmployee, updateAccessSettings } from '@/lib/api';
 import { useRouter } from 'next/navigation';
+import EmploymentStatusModal from '../EmploymentStatusModal';
 
 const Profile = ({ action = "Add", payload }) => {
 
@@ -50,6 +51,17 @@ const Profile = ({ action = "Add", payload }) => {
 
     const [loading, setLoading] = useState(false);
 
+    // Employee Active/Non-Active status (managed via dedicated modal + endpoint)
+    const [statusInfo, setStatusInfo] = useState({
+        is_active: true,
+        inactive_reason_type: null,
+        inactive_reason_note: null,
+        inactive_from: null,
+        inactive_to: null,
+    });
+    const [statusModalOpen, setStatusModalOpen] = useState(false);
+    const [statusSaving, setStatusSaving] = useState(false);
+
 
     useEffect(() => {
         if (!payload) return;
@@ -60,7 +72,40 @@ const Profile = ({ action = "Add", payload }) => {
             rfid_card_number: "",
             password: "",
         });
+        setStatusInfo({
+            is_active: payload.is_active !== false,
+            inactive_reason_type: payload.inactive_reason_type || null,
+            inactive_reason_note: payload.inactive_reason_note || null,
+            inactive_from: payload.inactive_from || null,
+            inactive_to: payload.inactive_to || null,
+        });
     }, [payload])
+
+    const activateEmployee = async () => {
+        if (statusInfo.is_active) return;
+        setStatusSaving(true);
+        try {
+            await updateAccessSettings({
+                is_active: true,
+                inactive_reason_type: null,
+                inactive_reason_note: null,
+                inactive_from: null,
+                inactive_to: null,
+            }, payload?.id);
+            setStatusInfo({
+                is_active: true,
+                inactive_reason_type: null,
+                inactive_reason_note: null,
+                inactive_from: null,
+                inactive_to: null,
+            });
+            notify("Saved", "Employee marked as Active.", "success");
+        } catch (error) {
+            notify("Error", parseApiError(error), "error");
+        } finally {
+            setStatusSaving(false);
+        }
+    };
 
     const fetchBranches = async () => {
         try {
@@ -265,6 +310,38 @@ const Profile = ({ action = "Add", payload }) => {
                             </div>
 
                             <div className="lg:col-span-4">
+                                <Label>Employee Status</Label>
+                                <div className="inline-flex p-1 rounded-lg bg-slate-100 dark:bg-slate-800 w-full">
+                                    <button
+                                        type="button"
+                                        disabled={statusSaving || action !== "Edit" || !payload?.id}
+                                        onClick={activateEmployee}
+                                        className={`flex-1 px-4 py-2 text-sm font-bold rounded-md transition disabled:opacity-50 ${statusInfo.is_active ? "bg-primary text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
+                                    >
+                                        Active
+                                    </button>
+                                    <button
+                                        type="button"
+                                        disabled={statusSaving || action !== "Edit" || !payload?.id}
+                                        onClick={() => setStatusModalOpen(true)}
+                                        className={`flex-1 px-4 py-2 text-sm font-bold rounded-md transition disabled:opacity-50 ${!statusInfo.is_active ? "bg-red-600 text-white shadow-sm" : "text-slate-600 dark:text-slate-300"}`}
+                                    >
+                                        Non-Active
+                                    </button>
+                                </div>
+                                {!statusInfo.is_active && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-2">
+                                        {statusInfo.inactive_reason_type ? statusInfo.inactive_reason_type.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()) : "Non-Active"}
+                                        {statusInfo.inactive_from && ` · from ${statusInfo.inactive_from}`}
+                                        {statusInfo.inactive_to && ` to ${statusInfo.inactive_to}`}
+                                    </p>
+                                )}
+                                {action !== "Edit" && (
+                                    <p className="text-xs text-slate-400 mt-2">Available after saving the employee.</p>
+                                )}
+                            </div>
+
+                            <div className="lg:col-span-4">
                                 <Label>Marital Status</Label>
                                 <DropDown width="w-full"
                                     value={form.marital_status}
@@ -453,6 +530,14 @@ const Profile = ({ action = "Add", payload }) => {
                     </ul>
                 </div>
             </div>
+
+            <EmploymentStatusModal
+                open={statusModalOpen}
+                onClose={() => setStatusModalOpen(false)}
+                onSaved={(next) => setStatusInfo(next)}
+                employeeId={payload?.id}
+                initial={statusInfo}
+            />
         </div>
     );
 };

@@ -21,6 +21,7 @@ app.use("/templates", express.static(path.resolve(__dirname, "..", "summary-repo
 app.use("/attendance-report", express.static(path.resolve(__dirname, "..", "summary-report", "attendance-report"), NO_CACHE_STATIC));
 app.use("/access-control-report", express.static(path.resolve(__dirname, "..", "summary-report", "access-control-report"), NO_CACHE_STATIC));
 app.use("/absent-report", express.static(path.resolve(__dirname, "..", "summary-report", "absent-report"), NO_CACHE_STATIC));
+app.use("/live-tracker-report", express.static(path.resolve(__dirname, "..", "summary-report", "live-tracker-report"), NO_CACHE_STATIC));
 
 // -----------------------------------------------------------------------------
 // Shared browser instance.
@@ -170,7 +171,7 @@ app.post("/pdf", async (req, res) => {
     await page.setCacheEnabled(false);
     await page.setExtraHTTPHeaders({ "Cache-Control": "no-cache, no-store, must-revalidate", "Pragma": "no-cache" });
 
-    const isLandscapeView = landscape === true || url.includes("attendance-report") || url.includes("access-control-report") || url.includes("absent-report");
+    const isLandscapeView = landscape === true || url.includes("attendance-report") || url.includes("access-control-report") || url.includes("absent-report") || url.includes("live-tracker-report");
     await page.setViewport({ width: isLandscapeView ? 1400 : 1280, height: 900 });
 
     page.on("pageerror", (err) => console.log("PAGE ERROR:", err.message));
@@ -212,17 +213,44 @@ app.post("/pdf", async (req, res) => {
     const isAbsentDaily = url.includes("absent-report/daily");
     const isAbsentMonthly = url.includes("absent-report/monthly");
     const isAbsentReport = isAbsentDaily || isAbsentMonthly;
-    // For daily-report and absent-report, use the @page margins from the HTML (they reserve room for footer).
+    const isLiveTrackerReport = url.includes("live-tracker-report");
+    // For daily-report, absent-report, and live-tracker-report use the @page margins from the HTML (they reserve room for footer).
     // For everything else, keep the legacy 5mm margins.
     const pdfOptions = {
       format: format || "A4",
       landscape: isLandscapeView,
       printBackground: true,
-      preferCSSPageSize: isDailyReport || isAbsentReport,
-      margin: (isDailyReport || isAbsentReport)
+      preferCSSPageSize: isDailyReport || isAbsentReport || isLiveTrackerReport,
+      margin: (isDailyReport || isAbsentReport || isLiveTrackerReport)
         ? undefined
         : { top: "5mm", bottom: "5mm", left: "5mm", right: "5mm" },
     };
+    if (isLiveTrackerReport) {
+      pdfOptions.displayHeaderFooter = true;
+      pdfOptions.headerTemplate = '<div></div>';
+      pdfOptions.footerTemplate = `
+        <div style="font-size: 8pt; color: #64748b; width: 100%; padding: 0 10mm; font-family: 'Inter', Helvetica, Arial, sans-serif;">
+          <div style="border-top: 1px solid #e2e8f0; padding-top: 6px; width: 100%;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="text-align: left; width: 40%;">
+                  <span style="color:#16a34a">&#9679;</span> Completed, &nbsp;
+                  <span style="color:#ef4444">&#9679;</span> Live, &nbsp;
+                  <span style="color:#f59e0b">&#9679;</span> Partial GPS, &nbsp;
+                  <span style="color:#ef4444">&#9733;</span> Over 100 km
+                </td>
+                <td style="text-align: center; width: 30%;">
+                  Powered by: <strong style="color:#4f46e5">MyTime2Cloud</strong>
+                </td>
+                <td style="text-align: right; width: 30%;">
+                  Page <span class="pageNumber"></span> of <span class="totalPages"></span>
+                </td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      `;
+    }
     if (isDailyReport) {
       pdfOptions.displayHeaderFooter = true;
       pdfOptions.headerTemplate = '<div></div>';

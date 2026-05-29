@@ -677,19 +677,66 @@ class EmployeeControllerNew extends Controller
     public function updateAccessSettings(Request $request, $id)
     {
         try {
-            // 2. Validate incoming data
-            $validatedData = $request->validate([
-                'rfid_card_number'   => 'nullable|string|max:10',
-                'rfid_card_password' => 'nullable|string|max:50',
+            $validated = $request->validate([
+                'rfid_card_number'     => 'nullable|string|max:10',
+                'rfid_card_password'   => 'nullable|string|max:50',
+                'is_active'            => 'sometimes|boolean',
+                'inactive_reason_type' => 'nullable|in:suspended,terminated,resigned,long_leave,training,transfer_out,other',
+                'inactive_reason_note' => 'nullable|string|max:1000',
+                'inactive_from'        => 'nullable|date',
+                'inactive_to'          => 'nullable|date|after_or_equal:inactive_from',
             ]);
 
-            // 4. Update the record
-            $employee = Employee::where('id', $id)->update($validatedData);
+            $hasStatusUpdate = $request->has('is_active');
 
-            // 5. Return success response
+            if ($hasStatusUpdate && $validated['is_active'] === false) {
+                $request->validate([
+                    'inactive_reason_type' => 'required|in:suspended,terminated,resigned,long_leave,training,transfer_out,other',
+                    'inactive_from'        => 'required|date',
+                ]);
+
+                if (($validated['inactive_reason_type'] ?? null) === 'other') {
+                    $request->validate([
+                        'inactive_reason_note' => 'required|string|max:1000',
+                    ]);
+                }
+            }
+
+            $employee = Employee::findOrFail($id);
+            $wasActive = (bool) $employee->is_active;
+
+            if (array_key_exists('rfid_card_number', $validated)) {
+                $employee->rfid_card_number = $validated['rfid_card_number'];
+            }
+            if (array_key_exists('rfid_card_password', $validated)) {
+                $employee->rfid_card_password = $validated['rfid_card_password'];
+            }
+
+            if ($hasStatusUpdate) {
+                $employee->is_active = $validated['is_active'];
+
+                if ($validated['is_active']) {
+                    $employee->inactive_reason_type = null;
+                    $employee->inactive_reason_note = null;
+                    $employee->inactive_from        = null;
+                    $employee->inactive_to          = null;
+                } else {
+                    $employee->inactive_reason_type = $validated['inactive_reason_type'] ?? null;
+                    $employee->inactive_reason_note = $validated['inactive_reason_note'] ?? null;
+                    $employee->inactive_from        = $validated['inactive_from']        ?? null;
+                    $employee->inactive_to          = $validated['inactive_to']          ?? null;
+                }
+            }
+
+            $employee->save();
+
+            if ($hasStatusUpdate && $wasActive !== (bool) $employee->is_active) {
+                \App\Jobs\PushEmployeeActiveStatusToDevices::dispatch($employee->id, (bool) $employee->is_active);
+            }
+
             return response()->json([
                 'message'  => 'Employee updated successfully!',
-                'employee' => $employee,
+                'employee' => $employee->fresh(),
             ], 200);
         } catch (ValidationException $e) {
             $indexedErrors = collect($e->errors())->flatten()->all();

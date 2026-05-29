@@ -310,6 +310,26 @@
                             $statusColor = '#f34100ed';
                         }
 
+                        // Override: render "Non-Active" for employees who are inactive on this date.
+                        $isInactiveOnDate = false;
+                        $inactiveReasonLabel = '';
+                        $inactiveReasonNote = '';
+                        if ($employee->employee && method_exists($employee->employee, 'isInactiveOn')) {
+                            try {
+                                $rowDate = \Carbon\Carbon::parse($employee->date);
+                                if ($employee->employee->isInactiveOn($rowDate)) {
+                                    $isInactiveOnDate = true;
+                                    $statusName = 'Non-Active';
+                                    $statusColor = '#b45309'; // amber-700
+                                    $inactiveReasonLabel = $employee->employee->inactiveReasonLabel();
+                                    $inactiveReasonNote = $employee->employee->inactive_reason_note ?? '';
+                                }
+                            } catch (\Throwable $e) {
+                                // If the inactivity columns are missing (e.g. migration not yet run),
+                                // silently fall back to the normal status rendering.
+                            }
+                        }
+
                         $pic = getcwd() . '/no-profile-image.jpg';
 
                         if ($employee->employee->profile_picture) {
@@ -410,6 +430,9 @@
 
                                 <div class="secondary-value" style="font-size:6px">
                                     {{ $statusName }}
+                                    @if ($isInactiveOnDate && $inactiveReasonLabel)
+                                        <div style="font-size:5px;color:#92400e">{{ $inactiveReasonLabel }}@if ($inactiveReasonNote) — {{ $inactiveReasonNote }} @endif</div>
+                                    @endif
                                     @if ($employee['shift'] && $statusName == 'P')
                                         @php
                                             $shiftWorkingHours = $employee['shift']['working_hours'];

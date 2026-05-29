@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Visitor Hosts — List + Modal Prototype</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: { extend: { colors: { primary: "#7f19e6" }, fontFamily: { sans: ["Inter","system-ui","sans-serif"] } } },
+    };
+  </script>
+  <style> body { font-family: Inter, system-ui, sans-serif; } </style>
+</head>
+<body class="bg-slate-950 text-slate-100 p-10 space-y-12">
+
+  <h1 class="text-xl font-bold mb-2">Visitor Management — Hosts (prototype)</h1>
+  <p class="text-sm text-slate-400 mb-8">New sidebar entry "Hosts" between Directory and Pre-Register. Admin curates employees as designated hosts. Display data reads live from the linked employee.</p>
+
+  <!-- ========================== LIST VIEW (POPULATED) ========================== -->
+  <section class="bg-slate-900/60 border border-slate-700 rounded-2xl p-8 max-w-[1200px]">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-2xl font-bold text-white">Hosts</h2>
+        <p class="text-sm text-slate-400">Designated employees who receive visitors.</p>
+      </div>
+      <button class="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-purple-700 text-white text-sm font-bold rounded-lg shadow-sm">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Add Host
+      </button>
+    </div>
+
+    <!-- Search -->
+    <div class="relative max-w-md mb-6">
+      <svg class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input placeholder="Search by name or employee ID" class="w-full pl-9 pr-4 py-2.5 text-sm bg-slate-950 border border-slate-700 rounded-xl placeholder-slate-500 text-slate-200" />
+    </div>
+
+    <!-- Cards grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+      <!-- Card 1 -->
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/50 transition">
+        <div class="flex items-start gap-3">
+          <div class="w-11 h-11 rounded-xl bg-indigo-900/30 text-primary font-bold flex items-center justify-center">N</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-white truncate">Nijarudeen Nijarudeen</p>
+            <p class="text-xs text-slate-400 truncate">ID 3090 · Housekeeping</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 text-[11px]">
+          <span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">TANJORE</span>
+          <span class="px-2 py-1 rounded-full bg-emerald-900/30 text-emerald-400">Lobby</span>
+        </div>
+        <p class="text-xs text-slate-500 line-clamp-2">Primary point of contact for housekeeping vendors.</p>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800 rounded-lg">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            Edit
+          </button>
+          <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900/20 rounded-lg">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+            Delete
+          </button>
+        </div>
+      </div>
+
+      <!-- Card 2 -->
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/50 transition">
+        <div class="flex items-start gap-3">
+          <div class="w-11 h-11 rounded-xl bg-indigo-900/30 text-primary font-bold flex items-center justify-center">A</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-white truncate">Ansari Manager</p>
+            <p class="text-xs text-slate-400 truncate">ID 0001 · Operations</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 text-[11px]">
+          <span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">HQ Building A</span>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800 rounded-lg">Edit</button>
+          <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900/20 rounded-lg">Delete</button>
+        </div>
+      </div>
+
+      <!-- Card 3 -->
+      <div class="bg-slate-900 border border-slate-700 rounded-2xl p-5 flex flex-col gap-3 hover:border-primary/50 transition">
+        <div class="flex items-start gap-3">
+          <div class="w-11 h-11 rounded-xl bg-indigo-900/30 text-primary font-bold flex items-center justify-center">R</div>
+          <div class="flex-1 min-w-0">
+            <p class="font-bold text-white truncate">Ranjitha Ranjitha</p>
+            <p class="text-xs text-slate-400 truncate">ID 3458 · Housekeeping</p>
+          </div>
+        </div>
+        <div class="flex flex-wrap gap-2 text-[11px]">
+          <span class="px-2 py-1 rounded-full bg-slate-800 text-slate-300">TANJORE</span>
+          <span class="px-2 py-1 rounded-full bg-emerald-900/30 text-emerald-400">Workshop</span>
+        </div>
+        <div class="flex justify-end gap-2 pt-2 border-t border-slate-800">
+          <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-300 hover:bg-slate-800 rounded-lg">Edit</button>
+          <button class="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-900/20 rounded-lg">Delete</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================== EMPTY STATE ========================== -->
+  <section class="bg-slate-900/60 border border-slate-700 rounded-2xl p-8 max-w-[1200px]">
+    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Empty state variant</h3>
+    <div class="rounded-2xl border border-dashed border-slate-700 p-10 text-center">
+      <div class="inline-flex w-12 h-12 rounded-full bg-indigo-900/30 text-primary items-center justify-center mb-3">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="17 11 19 13 23 9"/></svg>
+      </div>
+      <p class="text-sm text-slate-400 mb-4">No hosts yet — add the first one.</p>
+      <button class="inline-flex items-center gap-2 px-4 py-2 bg-primary hover:bg-purple-700 text-white text-sm font-bold rounded-lg">+ Add Host</button>
+    </div>
+  </section>
+
+  <!-- ========================== MODAL ========================== -->
+  <section class="max-w-[1200px]">
+    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 mb-4">Add / Edit modal</h3>
+    <div class="relative w-full max-w-[560px] bg-slate-900 rounded-xl shadow-2xl border border-slate-800 overflow-hidden">
+      <div class="flex items-center justify-between px-6 py-5 border-b border-slate-800 bg-slate-800">
+        <h3 class="text-white text-lg font-bold">Add Host</h3>
+        <button class="w-8 h-8 rounded-full text-slate-400 hover:bg-slate-700">×</button>
+      </div>
+      <div class="p-6 space-y-5 bg-slate-950/30">
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Employee</label>
+          <div class="relative">
+            <select class="w-full appearance-none px-4 py-3 rounded-lg bg-slate-950 border border-slate-700 text-slate-200">
+              <option>Select an employee</option>
+              <option>Nijarudeen Nijarudeen (3090)</option>
+              <option>Ranjitha Ranjitha (3458)</option>
+              <option>Arul Pandi (38)</option>
+            </select>
+            <svg class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Branch</label>
+            <select class="w-full appearance-none px-4 py-3 rounded-lg bg-slate-950 border border-slate-700 text-slate-200">
+              <option>Optional</option>
+              <option>TANJORE</option>
+              <option>HQ Building A</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-slate-300 mb-2">Zone</label>
+            <select class="w-full appearance-none px-4 py-3 rounded-lg bg-slate-950 border border-slate-700 text-slate-200">
+              <option>Optional</option>
+              <option>Lobby</option>
+              <option>Workshop</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-300 mb-2">Notes</label>
+          <textarea rows="3" placeholder="Optional context" class="w-full px-3 py-2.5 rounded-lg bg-slate-950 border border-slate-700 text-slate-200 resize-none"></textarea>
+        </div>
+      </div>
+      <div class="flex items-center justify-end gap-3 px-6 py-4 border-t border-slate-800 bg-slate-800">
+        <button class="px-5 py-2.5 bg-slate-700 rounded-lg text-slate-300 font-bold text-sm">Cancel</button>
+        <button class="px-5 py-2.5 rounded-lg bg-primary hover:bg-purple-700 text-white font-bold text-sm">Add Host</button>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>

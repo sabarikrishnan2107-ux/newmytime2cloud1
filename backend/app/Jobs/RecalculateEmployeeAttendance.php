@@ -98,11 +98,12 @@ class RecalculateEmployeeAttendance implements ShouldQueue
             return;
         }
 
-        // Reset all log_type for this employee on this date
+        // Reset all log_type for this employee on this date (skip rejected logs)
         AttendanceLog::where('UserID', $userID)
             ->where('company_id', $this->companyId)
             ->where('LogTime', '>=', $this->date)
             ->where('LogTime', '<', date('Y-m-d', strtotime($this->date . ' +2 days')))
+            ->whereNull('rejected_reason')
             ->update(['log_type' => null]);
 
         // Mark the IN log
@@ -111,6 +112,7 @@ class RecalculateEmployeeAttendance implements ShouldQueue
                 ->where('company_id', $this->companyId)
                 ->where('LogTime', '>=', $this->date)
                 ->where('LogTime', '<', date('Y-m-d', strtotime($this->date . ' +2 days')))
+                ->whereNull('rejected_reason')
                 ->orderBy('LogTime', 'asc')
                 ->first();
 
@@ -133,6 +135,7 @@ class RecalculateEmployeeAttendance implements ShouldQueue
                 ->where('company_id', $this->companyId)
                 ->where('LogTime', '>=', $this->date)
                 ->where('LogTime', '<', date('Y-m-d', strtotime($this->date . ' +2 days')))
+                ->whereNull('rejected_reason')
                 ->orderBy('LogTime', 'desc')
                 ->first();
 

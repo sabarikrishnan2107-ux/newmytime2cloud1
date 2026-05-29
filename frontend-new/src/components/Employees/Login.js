@@ -18,15 +18,17 @@ const Login = ({ employee_id, email }) => {
     };
 
     const [form, setForm] = useState({
-        email: email || "",
+        email: "",
         password: "",
         password_confirmation: "",
     });
 
-    // Sync email when props update (payload.user loads async or employee switched)
+    // Reset the field whenever the employee selection changes — admin must
+    // explicitly type the employee's login email rather than seeing a
+    // pre-filled value (which was coming through as the admin's email).
     useEffect(() => {
-        setForm((prev) => ({ ...prev, email: email || "" }));
-    }, [email]);
+        setForm((prev) => ({ ...prev, email: "" }));
+    }, [employee_id]);
 
 
     // 2. Update state when user actually types

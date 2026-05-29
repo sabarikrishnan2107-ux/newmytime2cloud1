@@ -206,6 +206,46 @@ export const getVisitorPreRegistrations = async (params = {}) => {
     return data;
 };
 
+export const getHosts = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/visitor-management/hosts`, {
+        params: await buildQueryParams(params),
+    });
+    return data;
+};
+
+export const getHostEmployees = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/visitor-management/host-employees`, {
+        params: await buildQueryParams(params),
+    });
+    return data;
+};
+
+export const getVisitorZones = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/visitor-management/zones`, {
+        params: await buildQueryParams(params),
+    });
+    return data;
+};
+
+export const createHost = async (payload) => {
+    const user = await getUser();
+    const { data } = await axios.post(`${API_BASE}/visitor-management/hosts`, {
+        ...payload,
+        company_id: payload.company_id || user?.company_id || 0,
+    });
+    return data;
+};
+
+export const updateHost = async (id, payload) => {
+    const { data } = await axios.put(`${API_BASE}/visitor-management/hosts/${id}`, payload);
+    return data;
+};
+
+export const deleteHost = async (id) => {
+    const { data } = await axios.delete(`${API_BASE}/visitor-management/hosts/${id}`);
+    return data;
+};
+
 export const updateVisitorPreRegistration = async (id, body = {}) => {
     const { data } = await axios.put(`${API_BASE}/visitor-management/pre-registrations/${id}`, {
         ...(await buildQueryParams({})),
@@ -637,6 +677,28 @@ export const deletePayrollFormula = async (id) => {
 export const getActivity = async (params = {}) => {
     const { data } = await axios.get(`${API_BASE}/activity`, {
         params: await buildQueryParams(params),
+    });
+    return data;
+};
+
+export const getActivityTypes = async () => {
+    const { data } = await axios.get(`${API_BASE}/activity/types`, {
+        params: await buildQueryParams(),
+    });
+    return data;
+};
+
+export const getActivityActions = async () => {
+    const { data } = await axios.get(`${API_BASE}/activity/actions`, {
+        params: await buildQueryParams(),
+    });
+    return data;
+};
+
+export const getActivityPdf = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/activity/pdf`, {
+        params: await buildQueryParams(params),
+        responseType: "blob",
     });
     return data;
 };

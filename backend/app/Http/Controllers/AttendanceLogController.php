@@ -270,6 +270,21 @@ class AttendanceLogController extends Controller
 
         $inTypeValues = ['in', 'auto', 'entry']; // Define this once outside the loop
 
+        // Currently-inactive employees: punches from these system_user_ids are stored
+        // with rejected_reason = 'employee_inactive' and never promoted to attendance.
+        $today = date('Y-m-d');
+        $inactiveLookup = Employee::query()
+            ->where('is_active', false)
+            ->where(function ($q) use ($today) {
+                $q->whereNull('inactive_from')->orWhere('inactive_from', '<=', $today);
+            })
+            ->where(function ($q) use ($today) {
+                $q->whereNull('inactive_to')->orWhere('inactive_to', '>=', $today);
+            })
+            ->pluck('system_user_id')
+            ->flip()
+            ->all();
+
         $records = [];
 
         foreach ($result["data"] as $row) {
@@ -296,8 +311,11 @@ class AttendanceLogController extends Controller
                 $logType = (str_contains(strtolower($deviceId), 'in')) ? 'In' : 'Out';
             }
 
+            $userId = $columns[0] ?? null;
+            $rejectedReason = isset($inactiveLookup[$userId]) ? 'employee_inactive' : null;
+
             $records[] = [
-                "UserID"              => $columns[0] ?? null,
+                "UserID"              => $userId,
                 "DeviceID"            => $columns[1] ?? null,
                 "LogTime"             => $logTime,
                 "SerialNumber"        => $columns[3] ?? null,
@@ -307,7 +325,8 @@ class AttendanceLogController extends Controller
                 "log_date_time"       => $logTime,
                 "index_serial_number" => $columns[3] ?? null,
                 "log_date"            => $logDate,
-                "log_type" => $logType
+                "log_type"            => $logType,
+                "rejected_reason"     => $rejectedReason,
             ];
         }
 

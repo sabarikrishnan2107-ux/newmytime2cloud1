@@ -274,6 +274,24 @@
         } elseif ($employee->status == '---') {
         $statusColor = '#f34100ed';
         }
+
+        // Override: render "Non-Active" for employees who are inactive on this date.
+        $isInactiveOnDate = false;
+        $inactiveReasonLabel = '';
+        $inactiveReasonNote = '';
+        if ($employee->employee && method_exists($employee->employee, 'isInactiveOn')) {
+            try {
+                $rowDate = \Carbon\Carbon::parse($employee->date);
+                if ($employee->employee->isInactiveOn($rowDate)) {
+                    $isInactiveOnDate = true;
+                    $statusColor = '#b45309';
+                    $inactiveReasonLabel = $employee->employee->inactiveReasonLabel();
+                    $inactiveReasonNote = $employee->employee->inactive_reason_note ?? '';
+                }
+            } catch (\Throwable $e) {
+                // Migration not yet applied — fall back to normal rendering.
+            }
+        }
         @endphp
 
 
@@ -411,7 +429,15 @@
 
                 <td style="text-align:  center;"> {{ $employee->total_hrs ?? '---' }} </td>
                 <td style="text-align:  center;"> {{ $employee->ot ?? '---' }} </td>
-                <td style="text-align:  center; color:{{ $statusColor }}"> {{ str_replace("O","W",$employee->status) ?? '---' }}
+                <td style="text-align:  center; color:{{ $statusColor }}">
+                    @if ($isInactiveOnDate)
+                        Non-Active
+                        @if ($inactiveReasonLabel)
+                            <div style="font-size:5px;color:#92400e">{{ $inactiveReasonLabel }}@if ($inactiveReasonNote) — {{ $inactiveReasonNote }} @endif</div>
+                        @endif
+                    @else
+                        {{ str_replace("O","W",$employee->status) ?? '---' }}
+                    @endif
 
 
 

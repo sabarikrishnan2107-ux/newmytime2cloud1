@@ -1,0 +1,393 @@
+
+> mytime2cloud@0.1.0 dev
+> next dev --turbopack -p 3001 -H 0.0.0.0
+
+   ▲ Next.js 15.5.4 (Turbopack)
+   - Local:        http://localhost:3001
+   - Network:      http://0.0.0.0:3001
+   - Environments: .env.local
+
+ ✓ Starting...
+ ✓ Ready in 1000ms
+ ○ Compiling / ...
+ ✓ Compiled / in 4.3s
+ GET / 200 in 4927ms
+ GET / 200 in 204ms
+ ○ Compiling /login ...
+ ✓ Compiled /login in 1611ms
+ GET /login/ 200 in 1678ms
+ GET /login/ 200 in 193ms
+ GET /login/ 200 in 118ms
+ ○ Compiling /favicon.ico ...
+ ✓ Compiled /favicon.ico in 624ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 986ms
+ GET / 200 in 146ms
+ ○ Compiling /_not-found/page ...
+ ✓ Compiled /_not-found/page in 620ms
+ GET /undefined/ 404 in 788ms
+ ○ Compiling /setup ...
+ ✓ Compiled /setup in 1414ms
+ GET /setup/ 200 in 1503ms
+ GET /setup/ 200 in 128ms
+ ○ Compiling /company ...
+ ✓ Compiled /company in 519ms
+ GET /company/ 200 in 589ms
+ ✓ Compiled /branch in 440ms
+ GET /branch/ 200 in 512ms
+ ✓ Compiled /department-tabs in 402ms
+ GET /department-tabs/ 200 in 499ms
+ ✓ Compiled /login/manager-login in 376ms
+ GET /login/manager-login/ 200 in 448ms
+ ✓ Compiled /device in 436ms
+ GET /device/ 200 in 516ms
+ ✓ Compiled /automation in 397ms
+ GET /automation/ 200 in 462ms
+ ✓ Compiled /roles in 388ms
+ GET /roles/ 200 in 458ms
+ ○ Compiling /live-camera ...
+ ✓ Compiled /live-camera in 518ms
+ GET /live-camera/ 200 in 599ms
+ ○ Compiling /geo-fencing ...
+ ✓ Compiled /geo-fencing in 808ms
+ GET /geo-fencing/ 200 in 886ms
+ ✓ Compiled /holiday in 475ms
+ GET /holiday/ 200 in 580ms
+ ✓ Compiled /announcements in 443ms
+ GET /announcements/ 200 in 512ms
+ ✓ Compiled /activity in 396ms
+ GET /activity/ 200 in 468ms
+ ○ Compiling /payslips ...
+ ✓ Compiled /payslips in 1624ms
+ GET /payslips/ 200 in 1693ms
+ GET /payslips/ 200 in 261ms
+ GET /setup/ 200 in 136ms
+ ✓ Compiled /settings/emirate-id in 500ms
+ GET /settings/emirate-id/ 200 in 568ms
+ GET /setup/ 200 in 107ms
+ GET /setup/ 200 in 78ms
+ GET /payslips/ 200 in 90ms
+ GET /setup/ 200 in 122ms
+ ✓ Compiled in 489ms
+ GET /roles/ 200 in 390ms
+ GET /setup/ 200 in 90ms
+ ○ Compiling /report ...
+ ✓ Compiled /report in 708ms
+ GET /report/ 200 in 776ms
+ ✓ Compiled in 558ms
+ GET /report/ 200 in 11584ms
+ ✓ Compiled /report in 123ms
+ GET /report/ 200 in 613ms
+ GET /report/ 200 in 21099ms
+ GET /report/ 200 in 20827ms
+ ✓ Compiled in 0ms
+ GET /report/ 200 in 91ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 3131ms
+ ✓ Compiled in 5.1s
+ ○ Compiling /support ...
+ GET /report/ 200 in 31641ms
+ ✓ Compiled /support in 26.5s
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 410ms
+ GET /support/ 200 in 181ms
+ ✓ Compiled / in 219ms
+ GET / 200 in 2010ms
+ GET /support/ 200 in 81ms
+ ✓ Compiled /setup in 154ms
+ GET /setup/ 200 in 339ms
+ GET /report/ 200 in 79ms
+ GET /support/ 200 in 138ms
+ GET / 200 in 104ms
+ GET /undefined/ 404 in 859ms
+ GET /support/ 200 in 124ms
+ ✓ Compiled in 1089ms
+ GET /support/ 200 in 423ms
+ ✓ Compiled in 415ms
+ GET /report/ 200 in 137ms
+ GET /support/ 200 in 445ms
+ ⚠ Fast Refresh had to perform a full reload when ./src/hooks/useSse.js changed. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+ ✓ Compiled in 747ms
+ GET /report/ 200 in 2767ms
+ GET /report/ 200 in 184ms
+   Reload env: .env.local
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 709ms
+ ○ Compiling /access-report ...
+ ✓ Compiled /access-report in 1302ms
+ GET /access-report/ 200 in 1417ms
+ GET /access-report/ 200 in 79ms
+ ○ Compiling /payslips/reports ...
+ ✓ Compiled /payslips/reports in 794ms
+ GET /payslips/reports/ 200 in 866ms
+ GET /report/ 200 in 89ms
+ ○ Compiling /manual-report ...
+ ✓ Compiled /manual-report in 618ms
+ GET /manual-report/ 200 in 687ms
+ ○ Compiling /visitor/reports ...
+ ✓ Compiled /visitor/reports in 501ms
+ GET /visitor/reports/ 200 in 569ms
+ GET /setup/ 200 in 141ms
+ GET /report/ 200 in 85ms
+ GET /manual-report/ 200 in 136ms
+ ○ Compiling /live-tracker ...
+ ✓ Compiled /live-tracker in 843ms
+ GET /live-tracker/ 200 in 912ms
+ GET /setup/ 200 in 112ms
+ GET /setup/ 200 in 78ms
+ GET /report/ 200 in 91ms
+ ○ Compiling /visitor ...
+ GET /visitor/ 200 in 1538ms
+ ✓ Compiled /visitor in 2.4s
+ GET /access_control/ 200 in 1061ms
+ GET /access_control/ 200 in 95ms
+ ○ Compiling /access_control_logs ...
+ ✓ Compiled /access_control_logs in 602ms
+ GET /access_control_logs/ 200 in 676ms
+ GET /live-tracker/ 200 in 109ms
+ ○ Compiling /leave-dashboard ...
+ ✓ Compiled /leave-dashboard in 1347ms
+ GET /leave-dashboard/ 200 in 1412ms
+ GET / 200 in 787ms
+ ○ Compiling /employees ...
+ ✓ Compiled /employees in 1009ms
+ GET /employees/ 200 in 1092ms
+ ○ Compiling /employees/employee_photo_upload ...
+ GET /employees/employee_photo_upload/ 200 in 1657ms
+ ✓ Compiled /employees/employee_photo_upload in 2.1s
+ GET /logs/ 200 in 685ms
+ GET /employees/ 200 in 122ms
+ GET / 200 in 104ms
+ ✓ Compiled in 398ms
+ ✓ Compiled in 454ms
+ GET /report/ 200 in 195ms
+ GET /payslips/reports/ 200 in 93ms
+ GET /visitor/reports/ 200 in 92ms
+ GET /report/ 200 in 109ms
+ GET /payslips/reports/ 200 in 645ms
+ GET /visitor/reports/ 200 in 226ms
+ GET /visitor/reports/ 200 in 240ms
+ GET /report/ 200 in 80ms
+ GET /report/ 200 in 133ms
+ GET /report/?type=absent 200 in 127ms
+ GET /report/?type=late-early 200 in 114ms
+ GET /report/?type=leave 200 in 106ms
+ GET /report/?type=mobile-log 200 in 83ms
+ GET /report/?type=summary-daily 200 in 122ms
+ GET /report/ 200 in 77ms
+ GET /setup/ 200 in 130ms
+ GET /support/ 200 in 128ms
+ GET /report/ 200 in 90ms
+ GET /visitor/reports/ 200 in 106ms
+ GET /manual-report/ 200 in 94ms
+ GET /report/ 200 in 105ms
+ GET /access-report/ 200 in 104ms
+ GET /payslips/reports/ 200 in 83ms
+ GET /visitor/reports/ 200 in 90ms
+ GET /manual-report/ 200 in 101ms
+ GET /live-tracker/ 200 in 108ms
+ GET /report/ 200 in 76ms
+ GET /access_control/ 200 in 198ms
+ GET /employees/ 200 in 123ms
+ GET /employees/employee_photo_upload/ 200 in 91ms
+ ○ Compiling /shift ...
+ ✓ Compiled /shift in 540ms
+ GET /shift/ 200 in 606ms
+ ○ Compiling /schedule ...
+ ✓ Compiled /schedule in 626ms
+ GET /schedule/ 200 in 700ms
+ ○ Compiling /attendance/change_request ...
+ ✓ Compiled /attendance/change_request in 600ms
+ GET /attendance/change_request/ 200 in 675ms
+ GET /report/ 200 in 101ms
+ GET /shift/ 200 in 108ms
+ GET /attendance/change_request/ 200 in 83ms
+ GET /shift/ 200 in 79ms
+ GET / 200 in 82ms
+ GET /employees/ 200 in 127ms
+ GET /employees/employee_photo_upload/ 200 in 109ms
+ ○ Compiling /leaves ...
+ ✓ Compiled /leaves in 623ms
+ GET /leaves/ 200 in 694ms
+ ✓ Compiled in 370ms
+ GET /attendance/change_request/ 200 in 432ms
+ GET /employees/ 200 in 110ms
+ GET /shift/ 200 in 107ms
+ GET /attendance/change_request/ 200 in 137ms
+ GET /employees/ 200 in 104ms
+ GET /employees/ 200 in 200ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 284ms
+ GET /employees/ 200 in 194ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 303ms
+ GET /employees/ 200 in 174ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 275ms
+ GET / 200 in 95ms
+ GET /login/ 200 in 1323ms
+ GET /login/ 200 in 132ms
+ GET /login/ 200 in 195ms
+ GET /login/ 200 in 211ms
+ GET /favicon.ico?favicon.b89991fd.ico 200 in 299ms
+ GET / 200 in 4464ms
+ GET / 200 in 153ms
+ GET /employees/ 200 in 93ms
+ GET /shift/ 200 in 81ms
+ GET /schedule/ 200 in 104ms
+ GET /leave-dashboard/ 200 in 90ms
+ GET /shift/ 200 in 90ms
+ GET /live-tracker/ 200 in 90ms
+ GET /access_control/ 200 in 99ms
+ GET /leave-dashboard/ 200 in 109ms
+ GET /shift/ 200 in 113ms
+ GET /leave-dashboard/ 200 in 95ms
+ GET /shift/ 200 in 94ms
+ GET /employees/ 200 in 81ms
+ GET / 200 in 88ms
+ GET /employees/ 200 in 93ms
+ GET /shift/ 200 in 123ms
+ GET /leave-dashboard/ 200 in 84ms
+ GET /live-tracker/ 200 in 93ms
+ GET /access_control/ 200 in 112ms
+ ✓ Compiled /payslips in 86ms
+ GET /payslips/ 200 in 306ms
+ GET /payslips/ 200 in 100ms
+ GET /visitor/ 200 in 79ms
+ GET /support/ 200 in 82ms
+ ✓ Compiled in 518ms
+ GET /shift/ 200 in 503ms
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\shift\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\shift\\page\\app-build-manifest.json'
+}
+ ○ Compiling /_error ...
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\support\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\support\\page\\app-build-manifest.json'
+}
+ ✓ Compiled /_error in 14.4s
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.mmi1mlq2rm'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.mmi1mlq2rm'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.hskuvyv76j4'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.hskuvyv76j4'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\support\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\support\\page\\app-build-manifest.json'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\shift\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\shift\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.4xvomcwv7w'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.4xvomcwv7w'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.mi8hxfcfvpm'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.mi8hxfcfvpm'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.wiqznft3k5'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.wiqznft3k5'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.rdm56apptw'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.rdm56apptw'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\favicon.ico\[__metadata_id__]\route\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\favicon.ico\\[__metadata_id__]\\route\\app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\support\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\support\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.b2icasb8pxq'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.b2icasb8pxq'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\support\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\support\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.s07mbu2kjaa'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.s07mbu2kjaa'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.vjzfe4xcrpe'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.vjzfe4xcrpe'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\favicon.ico\[__metadata_id__]\route\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\favicon.ico\\[__metadata_id__]\\route\\app-paths-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\support\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\support\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.yl5g8e454oq'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.yl5g8e454oq'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\support\page\app-build-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\support\\page\\app-build-manifest.json'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.7vflwsjdfen'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.7vflwsjdfen'
+}
+[Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\static\development\_buildManifest.js.tmp.xjrdifgdosk'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\static\\development\\_buildManifest.js.tmp.xjrdifgdosk'
+}
+ ⨯ [Error: ENOENT: no such file or directory, open 'D:\newmytime2cloud\frontend-new\.next\server\app\favicon.ico\[__metadata_id__]\route\app-paths-manifest.json'] {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: 'D:\\newmytime2cloud\\frontend-new\\.next\\server\\app\\favicon.ico\\[__metadata_id__]\\route\\app-paths-manifest.json'
+}
+ ✓ Compiled in 9.1s

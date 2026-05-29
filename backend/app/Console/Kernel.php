@@ -62,6 +62,11 @@ class Kernel extends ConsoleKernel
             ->everyMinute()->runInBackground();
 
         $schedule
+            ->command('employees:auto-reactivate')
+            ->dailyAt('00:30')
+            ->runInBackground();
+
+        $schedule
             ->command('task:sync_attendance_logs')
             ->everyFifteenMinutes()->runInBackground();
 

@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { FileText, AlertTriangle, ExternalLink } from "lucide-react";
+import { FileText, AlertTriangle, ExternalLink, Trash2 } from "lucide-react";
 import DocumentUploadModal from "./DocumentModal";
-import { getDocuments } from "@/lib/api";
+import { deleteDocument, getDocuments } from "@/lib/api";
 
 const parseDate = (raw) => {
   if (!raw || raw === "N/A" || raw === "---") return null;
@@ -43,6 +43,15 @@ const EmployeeDocuments = ({ employee_id }) => {
 
   const fetchDocuments = async (id) => {
     setDocuments((await getDocuments(id)) || []);
+  };
+
+  const handleDelete = async (doc) => {
+    if (!doc?.id) return;
+    if (!window.confirm(`Delete "${doc.title || "this document"}"?`)) return;
+    try {
+      await deleteDocument(doc.id);
+      fetchDocuments(employee_id);
+    } catch (_) {}
   };
 
   useEffect(() => {
@@ -116,18 +125,28 @@ const EmployeeDocuments = ({ employee_id }) => {
                       </span>
                     </td>
                     <td className="py-4 pl-4 text-right">
-                      {doc.access_url ? (
-                        <a
-                          href={doc.access_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors"
+                      <div className="inline-flex items-center gap-2">
+                        {doc.access_url ? (
+                          <a
+                            href={doc.access_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-300 dark:border-white/10 bg-white/5 hover:bg-white/10 text-xs font-bold text-slate-700 dark:text-slate-200 transition-colors"
+                          >
+                            <ExternalLink size={14} /> View
+                          </a>
+                        ) : (
+                          <span className="text-xs text-slate-500">—</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(doc)}
+                          title="Delete"
+                          className="inline-flex items-center justify-center w-8 h-8 rounded-lg border border-slate-300 dark:border-white/10 bg-white/5 hover:bg-red-500/10 hover:border-red-500/30 text-slate-500 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                         >
-                          <ExternalLink size={14} /> View
-                        </a>
-                      ) : (
-                        <span className="text-xs text-slate-500">—</span>
-                      )}
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 );

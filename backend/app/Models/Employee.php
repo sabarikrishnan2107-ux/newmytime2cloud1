@@ -33,6 +33,10 @@ class Employee extends Model
         'permanent_address'  => 'array',
         'primary_contact'    => 'array',
         'secondary_contact'  => 'array',
+
+        'is_active'          => 'boolean',
+        'inactive_from'      => 'date:Y-m-d',
+        'inactive_to'        => 'date:Y-m-d',
     ];
 
     protected $appends = ['show_joining_date', 'profile_picture_raw', 'edit_joining_date', 'name_with_user_id', 'full_name', 'profile_picture_base64'];
@@ -925,5 +929,36 @@ class Employee extends Model
     public function scopeExcludeRelations($query)
     {
         return $query->withOut(["schedule", "department", "designation", "sub_department", "user", "branch"]);
+    }
+
+    public function isInactiveOn(\Carbon\Carbon $date): bool
+    {
+        if ($this->is_active) {
+            return false;
+        }
+        if ($this->inactive_from && $date->lt(\Carbon\Carbon::parse($this->inactive_from))) {
+            return false;
+        }
+        if ($this->inactive_to && $date->gt(\Carbon\Carbon::parse($this->inactive_to))) {
+            return false;
+        }
+        return true;
+    }
+
+    public function inactiveReasonLabel(): string
+    {
+        if ($this->is_active) {
+            return '';
+        }
+        return match ($this->inactive_reason_type) {
+            'suspended'    => 'Suspended',
+            'terminated'   => 'Terminated',
+            'resigned'     => 'Resigned',
+            'long_leave'   => 'Long Leave',
+            'training'     => 'Training',
+            'transfer_out' => 'Transfer Out',
+            'other'        => 'Other',
+            default        => 'Non-Active',
+        };
     }
 }

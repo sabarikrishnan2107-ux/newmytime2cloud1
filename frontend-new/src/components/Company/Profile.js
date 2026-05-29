@@ -252,7 +252,7 @@ export default function CompanyProfile({ profile, contact, isLoading: parentLoad
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <Field label="Company Name" span>
-                                <Input name="companyName" value={form.companyName} onChange={handleChange} bold />
+                                <Input name="companyName" value={form.companyName} bold readOnly />
                             </Field>
 
                             <Field label="Company Email" span>
@@ -260,7 +260,7 @@ export default function CompanyProfile({ profile, contact, isLoading: parentLoad
                             </Field>
 
                             <Field label="Legal Name">
-                                <Input name="legalName" value={form.legalName} onChange={handleChange} />
+                                <Input name="legalName" value={form.legalName} readOnly />
                             </Field>
 
                             <Field label="Registration No.">
@@ -324,13 +324,13 @@ export default function CompanyProfile({ profile, contact, isLoading: parentLoad
                                 className="grayscale-[20%] group-hover:grayscale-0 transition-all duration-500"
                                 height="100%"
                                 loading="lazy"
-                                src="https://www.google.com/maps?q=25.2650,55.2889&hl=en&z=15&output=embed"
+                                src={`https://www.google.com/maps?q=${encodeURIComponent(form.address || "")}&hl=en&z=15&output=embed`}
                                 style={{ border: "0", width: "100%" }}
                             ></iframe>
                         </div>
 
                         <Field label="Full Address" className="mt-4">
-                            <Textarea name="address" value={form.address} onChange={handleChange} />
+                            <Textarea name="address" value={form.address} readOnly />
                         </Field>
 
                         <Divider title="Primary Manager Contact" icon="person" />
@@ -342,7 +342,7 @@ export default function CompanyProfile({ profile, contact, isLoading: parentLoad
                                 whatsapp: form.primaryWhatsapp,
                             }}
                             prefix="primary"
-                            onChange={handleChange}
+                            readOnly
                         />
 
                     </section>
@@ -525,13 +525,14 @@ function Select({ options, name, value, onChange }) {
     );
 }
 
-function Textarea({ value, name, onChange }) {
+function Textarea({ value, name, onChange, readOnly = false }) {
     return (
         <textarea
             rows={2}
             name={name}
             value={value || ""}
             onChange={onChange}
+            readOnly={readOnly}
             className="w-full px-4 py-3 rounded-lg border bg-white/70 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 focus:ring-2 focus:ring-indigo-500/20 resize-none"
         />
     );
@@ -546,14 +547,14 @@ function Divider({ title, icon }) {
     );
 }
 
-function ContactGrid({ values = {}, prefix = "", onChange }) {
+function ContactGrid({ values = {}, prefix = "", onChange, readOnly = false }) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input name={`${prefix}Name`} onChange={onChange} placeholder="Contact Name" value={values.name} />
-            <Input name={`${prefix}Designation`} onChange={onChange} placeholder="Designation" value={values.designation} />
-            <Input name={`${prefix}Phone`} onChange={onChange} placeholder="Phone" value={values.phone} />
+            <Input name={`${prefix}Name`} onChange={onChange} placeholder="Contact Name" value={values.name} readOnly={readOnly} />
+            <Input name={`${prefix}Designation`} onChange={onChange} placeholder="Designation" value={values.designation} readOnly={readOnly} />
+            <Input name={`${prefix}Phone`} onChange={onChange} placeholder="Phone" value={values.phone} readOnly={readOnly} />
             {prefix === "primary" && (
-                <Input name="primaryWhatsapp" onChange={onChange} placeholder="Whatsapp" value={values.whatsapp} />
+                <Input name="primaryWhatsapp" onChange={onChange} placeholder="Whatsapp" value={values.whatsapp} readOnly={readOnly} />
             )}
         </div>
     );
