@@ -546,7 +546,13 @@ class DeviceCameraModel2Controller extends Controller
 
             $this->sxdmSn = $device->device_id;
             $url = $device->camera_sdk_url ?? gethostbyname(gethostname()) . ':8888';
-            $this->camera_sdk_url = "$url";
+            if (!preg_match('#^https?://#', $url)) {
+                $url = 'http://' . $url;
+            }
+            $this->camera_sdk_url = rtrim($url, '/');
+            $this->adminUsername = $device->admin_username ?: null;
+            $this->adminPassword = $device->admin_password ?: null;
+            $this->session_id_local = '';
 
 
             $response = $this->getCURL('/api/devices/status');

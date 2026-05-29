@@ -97,7 +97,11 @@ const DeviceSettings = ({ device, device_id, open, setOpen, onSuccess = () => { 
             if (isCamvii) {
                 const result = await getDeviceCamviiSettingsFromSDK({ device_id: idToQuery });
                 const data = result?.SDKresponseData?.data;
-                const populated = data && (data.model_spec || data.voice_volume !== "" || data.local_time);
+                const populated =
+                    data &&
+                    typeof data === "object" &&
+                    !Array.isArray(data) &&
+                    Object.keys(data).length > 0;
 
                 if (result?.status && populated) {
                     setIsSuccess(true);

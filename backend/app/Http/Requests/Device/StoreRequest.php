@@ -59,6 +59,9 @@ class StoreRequest extends FormRequest
             'camera_rtsp_path' => ['nullable', 'string', 'max:255'],
             'camera_username' => ['nullable', 'string', 'max:255'],
             'camera_password' => ['nullable', 'string', 'max:255'],
+            'admin_username' => ['nullable', 'string', 'max:255'],
+            'admin_password' => ['nullable', 'string', 'max:255'],
+            'camera_sdk_url' => ['nullable', 'string', 'max:255'],
             'door_pin' => ['required', 'digits:4'],
             'device_photo' => ['nullable', 'string'],
         ];
