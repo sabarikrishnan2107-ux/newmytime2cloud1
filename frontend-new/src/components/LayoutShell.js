@@ -18,6 +18,8 @@ export default function LayoutShell({ children }) {
   // Sub-routes like /login/manager-login are admin CRUD pages and need the header/sidebar.
   const isLoginRoute = path === "/login";
   const isHostCheckinRoute = path.startsWith("/visitor/host-checkin");
+  // Support page keeps the header but renders full-width (no left menu).
+  const isSupportRoute = path === "/support";
 
   // Staff, login, and public visitor host-checkin pages render their own layout
   if (isStaffRoute || isLoginRoute || isHostCheckinRoute) {
@@ -29,7 +31,7 @@ export default function LayoutShell({ children }) {
     <>
       <Header />
       <div className="flex flex-1 min-h-0">
-        <LeftMenu />
+        {!isSupportRoute && <LeftMenu />}
         <MainContentWrapper>
           <AccessGuard>{children}</AccessGuard>
         </MainContentWrapper>

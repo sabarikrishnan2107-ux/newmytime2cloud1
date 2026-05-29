@@ -78,34 +78,46 @@ class NotificationsController extends Controller
         // Log the incoming request to see what's happening
         FacadesLog::info("Incoming Payload:", $request->all());
 
-        $userId = $request->input('data.user_id');
-        $timestamp = $request->input('data.timestamp');
-
-        $exists = UserLocation::where('user_id', $userId)
-            ->where('recorded_at', $timestamp)
-            ->exists();
-
-        if (!$exists) {
-            // FIX: Change 'type' to 'map'
-            if (!$request->boolean('debug') && $request->type == 'map') {
-
-                $created = UserLocation::create([
-                    'company_id'  => $request->clientId,
-                    'user_id'     => $request->input('data.user_id'),
-                    'user_name'   => $request->input('data.name'),
-                    'avatar'      => $request->input('data.avatar'),
-                    'lat'         => $request->input('data.lat'),
-                    'lon'         => $request->input('data.lon'),
-                    'recorded_at' => $request->input('data.timestamp'),
-                ]);
-
-                FacadesLog::info("Location Saved Successfully", $created->toArray());
-
-                return response()->json(['status' => 'success'], 201);
-            }
-
-            FacadesLog::warning("Request type mismatch: " . $request->type);
+        // Only the live-tracker "map" push carries a location to persist.
+        if ($request->boolean('debug') || $request->type !== 'map') {
+            FacadesLog::warning("store-notifications ignored, type: " . $request->type);
             return response()->json(['status' => 'ignored'], 200);
         }
+
+        // The live-tracker "map" payload (see AttendanceLogObserver / RealTimeLocation) uses
+        // these keys: data.UserID, data.latitude, data.longitude, data.datetime, data.full_name,
+        // data.company_id. Fall back to the older key names in case any caller still sends them.
+        $userId    = $request->input('data.UserID', $request->input('data.user_id'));
+        $lat       = $request->input('data.latitude', $request->input('data.lat'));
+        $lon       = $request->input('data.longitude', $request->input('data.lon'));
+        $timestamp = $request->input('data.datetime', $request->input('data.timestamp'));
+        $name      = $request->input('data.full_name', $request->input('data.name'));
+        $companyId = $request->input('data.company_id', $request->clientId);
+
+        // company_id/user_id/lat/lon/recorded_at are NOT NULL. If any are missing, skip cleanly
+        // with a 200 instead of letting the insert throw a 500 (this was the Background Sync 500).
+        if ($userId === null || $lat === null || $lon === null || $timestamp === null) {
+            FacadesLog::warning("store-notifications skipped: missing location fields", compact('userId', 'lat', 'lon', 'timestamp'));
+            return response()->json(['status' => 'ignored', 'reason' => 'missing_fields'], 200);
+        }
+
+        // De-dupe on (user_id, recorded_at).
+        if (UserLocation::where('user_id', $userId)->where('recorded_at', $timestamp)->exists()) {
+            return response()->json(['status' => 'duplicate'], 200);
+        }
+
+        $created = UserLocation::create([
+            'company_id'  => $companyId,
+            'user_id'     => $userId,
+            'user_name'   => $name,
+            'avatar'      => $request->input('data.avatar'),
+            'lat'         => $lat,
+            'lon'         => $lon,
+            'recorded_at' => $timestamp,
+        ]);
+
+        FacadesLog::info("Location Saved Successfully", $created->toArray());
+
+        return response()->json(['status' => 'success'], 201);
     }
 }

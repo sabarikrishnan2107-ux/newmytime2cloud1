@@ -225,15 +225,37 @@
       "wizardOn": "Wizard mode: ON (only Setup is accessible) — click to disable",
       "wizardOff": "Wizard mode: OFF — click to enable Setup-only mode",
       "lightMode": "Switch to Light Mode",
-      "darkMode": "Switch to Dark Mode"
+      "darkMode": "Switch to Dark Mode",
+      "support": "Support & Contact"
     },
     "notifications": {
       "title": "Notifications",
       "clearAll": "Clear all",
       "empty": "No notifications yet"
     },
+    "support": {
+      "title": "Support & Contact",
+      "available": "Online now",
+      "email": "Email",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp",
+      "chat": "Chat",
+      "emailUs": "Email us",
+      "call": "Call",
+      "helpCenter": "Visit Help Center",
+      "copy": "Copy",
+      "copied": "Copied"
+    },
     "logout": "Logout",
     "logoutHint": "Click to logout"
+  },
+  "supportPage": {
+    "title": "Support & Help",
+    "subtitle": "Reach our team directly, or ask the assistant a quick question.",
+    "assistant": "MyTime Assistant",
+    "assistantStatus": "Online · usually replies instantly",
+    "inputPlaceholder": "Type your question…",
+    "send": "Send"
   },
   "common": {
     "save": "Save",

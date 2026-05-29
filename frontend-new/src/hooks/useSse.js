@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 // const DEFAULT_SSE_STREAM_URL = "http://139.59.69.241:5778/stream";
-const DEFAULT_SSE_STREAM_URL = "https://push.mytime2cloud.com/stream";
+const DEFAULT_SSE_STREAM_URL = "https://v2push.mytime2cloud.com/stream";
 
 const useSse = ({
   clientId,

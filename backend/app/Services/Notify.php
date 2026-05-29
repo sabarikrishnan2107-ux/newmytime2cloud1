@@ -10,7 +10,7 @@ class Notify
     public static function push($clientId, $type, $message, $data = [])
     {
         // $url = "http://139.59.69.241:5778/notify"; // Node.js SSE server
-        $url = "https://push.mytime2cloud.com/notify"; // Node.js SSE server
+        $url = "https://v2push.mytime2cloud.com/notify"; // Node.js SSE server
 
         Http::withoutVerifying()->post($url, [
             'clientId' => $clientId,

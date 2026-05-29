@@ -58,8 +58,12 @@ export default function LeftMenu() {
   if (pathname === "/login") return null;
   if (pathname?.startsWith("/visitor/host-checkin")) return null;
 
-  const primaryPath = '/' + pathname.split('/')[1];
-  const links = leftNavLinks[primaryPath] || leftNavLinks['/'];
+  // Resolve the sidebar by exact path first (so multi-segment routes like
+  // /settings/emirate-id vs /settings/leave can map to different menus), then
+  // fall back to the first path segment, then the dashboard default.
+  const path = pathname.replace(/\/$/, "") || "/";
+  const primaryPath = '/' + path.split('/')[1];
+  const links = leftNavLinks[path] || leftNavLinks[primaryPath] || leftNavLinks['/'];
 
   // For nested groups: auto-expand the group whose child matches the current
   // pathname + ?type= so the active sub-link is visible when the user lands

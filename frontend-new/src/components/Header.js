@@ -9,6 +9,7 @@ import { API_BASE_URL, getUser } from "@/config/index";
 import { useDarkMode } from "@/context/DarkModeContext";
 import LiveAttendanceNotifier from "@/components/LiveAttendanceNotifier";
 import LanguageSwitcher from "@/components/LanguageSwitcher";
+import SupportContact from "@/components/SupportContact";
 import { Bell, PlayCircle, Sun, Moon, X, Wand2 } from "lucide-react";
 import useSse from "@/hooks/useSse";
 import { NAV_MODULES, allowedModulesForUser } from "@/lib/moduleAccess";
@@ -250,6 +251,9 @@ export default function Header() {
 
         <div className="flex items-center space-x-4">
           <div className="flex items-center gap-4">
+            {/* Support & Contact */}
+            <SupportContact />
+
             {/* Notification Bell + Dropdown */}
             <div className="relative" ref={dropdownRef}>
               <button

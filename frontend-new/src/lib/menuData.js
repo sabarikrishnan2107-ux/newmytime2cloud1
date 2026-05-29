@@ -47,7 +47,6 @@ const attendanceMenu = [
   { href: "/shift", icon: Clock, label: "menu.shift" },
   { href: "/schedule", icon: CalendarDays, label: "menu.schedule" },
   { href: "/attendance/change_request", icon: File, label: "menu.changeRequest" },
-  { href: "/leave-dashboard", icon: Calendar, label: "menu.leaveDashboard" },
   // { href: "/access_control_logs", icon: Lock, label: "Access Control Logs" },
 ];
 
@@ -99,7 +98,6 @@ const companyMenu = [
   { href: "/holiday", icon: CalendarDays, label: "menu.holidays" },
   { href: "/announcements", icon: Megaphone, label: "menu.announcements" },
   { href: "/activity", icon: ActivitySquare, label: "menu.activity" },
-  { href: "/payslips", icon: DollarSign, label: "menu.payroll" },
   { href: "/settings/emirate-id", icon: CreditCard, label: "menu.emirateIdSetup" },
 ];
 
@@ -116,7 +114,6 @@ const payrollMenu = [
 const employeesMenu = [
   { href: "/employees", icon: Users, label: "menu.employeeList" },
   { href: "/employees/employee_photo_upload", icon: Upload, label: "menu.employeeUpload" },
-  { href: "/leaves", icon: FileText, label: "menu.leavesRequests" },
   { href: "/document-expiry", icon: FileText, label: "menu.documentExpiry" },
   { href: "/logs", icon: History, label: "menu.deviceLogs" },
 ];
@@ -167,12 +164,11 @@ export const leftNavLinks = {
   "/access_control_logs": reportMenu,
   "/access-report": reportMenu,
   "/manual-report": reportMenu,
-  "/payslips": reportMenu,
-  "/visitor/logs": reportMenu,
   "/visitor/reports": reportMenu,
 
   "/shift": attendanceMenu,
   "/schedule": attendanceMenu,
+  "/attendance": attendanceMenu,
   "/change_request": attendanceMenu,
   "/leave-dashboard": leaveMenu,
   "/leave-dashboard/calendar": leaveMenu,
@@ -185,9 +181,15 @@ export const leftNavLinks = {
   "/setup": companyMenu,
   "/company": companyMenu,
   "/branch": companyMenu,
-  "/login/manager-login": companyMenu,
+  "/login": companyMenu,
   "/department-tabs": companyMenu,
   "/device": companyMenu,
+  "/automation": companyMenu,
+  "/roles": companyMenu,
+  "/holiday": companyMenu,
+  "/announcements": companyMenu,
+  "/activity": companyMenu,
+  "/settings/emirate-id": companyMenu,
   "/live-camera": companyMenu,
   "/live-camera/stream": companyMenu,
   "/live-camera/register": companyMenu,
@@ -196,7 +198,8 @@ export const leftNavLinks = {
   "/payslips/salary-structures": payrollMenu,
   "/payslips/adjustments": payrollMenu,
   "/payslips/loans": payrollMenu,
-  "/payslips/reports": payrollMenu,
+  // The Payroll Report lives under the Reports section, so it keeps the report menu.
+  "/payslips/reports": reportMenu,
   "/payslips/settings": payrollMenu,
   "/geo-fencing": companyMenu,
   "/setup/geofencing": companyMenu,

@@ -225,15 +225,37 @@
       "wizardOn": "Mode assistant : ACTIVÉ (seul Configuration est accessible) — cliquez pour désactiver",
       "wizardOff": "Mode assistant : DÉSACTIVÉ — cliquez pour activer le mode Configuration uniquement",
       "lightMode": "Passer au mode clair",
-      "darkMode": "Passer au mode sombre"
+      "darkMode": "Passer au mode sombre",
+      "support": "Support et contact"
     },
     "notifications": {
       "title": "Notifications",
       "clearAll": "Tout effacer",
       "empty": "Aucune notification pour l'instant"
     },
+    "support": {
+      "title": "Support et contact",
+      "available": "En ligne",
+      "email": "E-mail",
+      "phone": "Téléphone",
+      "whatsapp": "WhatsApp",
+      "chat": "Discuter",
+      "emailUs": "Nous écrire",
+      "call": "Appeler",
+      "helpCenter": "Centre d'aide",
+      "copy": "Copier",
+      "copied": "Copié"
+    },
     "logout": "Déconnexion",
     "logoutHint": "Cliquez pour vous déconnecter"
+  },
+  "supportPage": {
+    "title": "Support et aide",
+    "subtitle": "Contactez notre équipe directement, ou posez une question à l'assistant.",
+    "assistant": "Assistant MyTime",
+    "assistantStatus": "En ligne · répond généralement tout de suite",
+    "inputPlaceholder": "Saisissez votre question…",
+    "send": "Envoyer"
   },
   "common": {
     "save": "Enregistrer",
