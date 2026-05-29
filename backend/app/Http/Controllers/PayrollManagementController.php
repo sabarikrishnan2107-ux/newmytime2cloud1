@@ -159,27 +159,79 @@ class PayrollManagementController extends Controller
     // ── Adjustments ──
     public function adjustments(Request $request)
     {
-        return PayrollAdjustment::where('company_id', $request->company_id)
+        $page = PayrollAdjustment::where('company_id', $request->company_id)
             ->with('employee:id,first_name,last_name,employee_id,department_id')
             ->with('employee.department:id,name')
             ->when($request->payroll_month, fn($q) => $q->where('payroll_month', $request->payroll_month))
             ->orderBy('id', 'desc')
             ->paginate($request->per_page ?? 20);
+
+        $page->getCollection()->transform(function ($row) {
+            $row->attachment_url = $row->attachment
+                ? \Storage::disk('public')->url($row->attachment)
+                : null;
+            return $row;
+        });
+
+        return $page;
     }
 
     public function storeAdjustment(Request $request)
     {
+        $request->validate([
+            'company_id'    => 'required',
+            'employee_id'   => 'required',
+            'type'          => 'required|string',
+            'amount'        => 'required|numeric|min:0',
+            'payroll_month' => 'required|string',
+            'remarks'       => 'nullable|string|max:1000',
+            'attachment'    => 'nullable|file|max:5120', // 5 MB
+        ]);
+
         $data = $request->only([
             'company_id', 'employee_id', 'type', 'amount', 'payroll_month', 'remarks',
         ]);
         $data['branch_id'] = $request->branch_id ?? Employee::find($data['employee_id'])?->branch_id;
-        $adj = PayrollAdjustment::create($data);
+
+        $storedPath = null;
+        if ($request->hasFile('attachment')) {
+            $storedPath = $request->file('attachment')->store('payroll/adjustments', 'public');
+            $data['attachment'] = $storedPath;
+        }
+
+        try {
+            $adj = PayrollAdjustment::create($data);
+        } catch (\Throwable $e) {
+            if ($storedPath) {
+                \Storage::disk('public')->delete($storedPath);
+            }
+            throw $e;
+        }
+
+        $adj->attachment_url = $adj->attachment
+            ? \Storage::disk('public')->url($adj->attachment)
+            : null;
+
         return response()->json(['status' => true, 'data' => $adj]);
     }
 
     public function deleteAdjustment(Request $request, $id)
     {
-        PayrollAdjustment::where('company_id', $request->company_id)->findOrFail($id)->delete();
+        $adj = PayrollAdjustment::where('company_id', $request->company_id)->findOrFail($id);
+
+        if ($adj->attachment) {
+            try {
+                \Storage::disk('public')->delete($adj->attachment);
+            } catch (\Throwable $e) {
+                \Log::warning('PayrollAdjustment file delete failed', [
+                    'id'         => $adj->id,
+                    'attachment' => $adj->attachment,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
+        }
+
+        $adj->delete();
         return response()->json(['status' => true, 'message' => 'Deleted']);
     }
 
@@ -799,6 +851,32 @@ class PayrollManagementController extends Controller
 
         if ($records->isEmpty()) {
             return response('<h1>No payslip records found</h1>', 404)->header('Content-Type', 'text/html');
+        }
+
+        // Compute per-type attachment flags from the live payroll_adjustments table.
+        // We do not persist these on the payroll_records row (no DB change), so we
+        // look them up here when rendering the payslip PDF.
+        $adjFlags = PayrollAdjustment::query()
+            ->where('company_id', $companyId)
+            ->whereIn('employee_id', $records->pluck('employee_id')->unique())
+            ->whereIn('payroll_month', $records->pluck('payroll_month')->unique())
+            ->whereNotNull('attachment')
+            ->get(['employee_id', 'payroll_month', 'type']);
+
+        $flagMap = [];
+        foreach ($adjFlags as $row) {
+            $key = $row->employee_id . '|' . $row->payroll_month;
+            $flagMap[$key][$row->type] = true;
+        }
+
+        foreach ($records as $r) {
+            $key = $r->employee_id . '|' . $r->payroll_month;
+            $r->bonus_has_attachment           = $flagMap[$key]['bonus']           ?? false;
+            $r->incentive_has_attachment       = $flagMap[$key]['incentive']       ?? false;
+            $r->arrears_has_attachment         = $flagMap[$key]['arrears']         ?? false;
+            $r->reimbursement_has_attachment   = $flagMap[$key]['reimbursement']   ?? false;
+            $r->fine_has_attachment            = $flagMap[$key]['fine']            ?? false;
+            $r->other_deduction_has_attachment = $flagMap[$key]['other_deduction'] ?? false;
         }
 
         $currency = PayrollConfig::where('company_id', $companyId)->value('currency') ?? 'AED';

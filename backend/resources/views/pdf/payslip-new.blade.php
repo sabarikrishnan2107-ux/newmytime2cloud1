@@ -240,10 +240,10 @@
           @if($record->medical_allowance > 0)<tr><td>Medical Allowance</td><td>{{ number_format($record->medical_allowance, 2) }}</td></tr>@endif
           @if($record->other_allowance > 0)<tr><td>Other Allowance</td><td>{{ number_format($record->other_allowance, 2) }}</td></tr>@endif
           @if($record->ot_amount > 0)<tr><td>Overtime ({{ $record->ot_hours }} hrs)</td><td>{{ number_format($record->ot_amount, 2) }}</td></tr>@endif
-          @if($record->bonus > 0)<tr><td>Bonus</td><td>{{ number_format($record->bonus, 2) }}</td></tr>@endif
-          @if($record->incentive > 0)<tr><td>Incentive</td><td>{{ number_format($record->incentive, 2) }}</td></tr>@endif
-          @if($record->arrears > 0)<tr><td>Arrears</td><td>{{ number_format($record->arrears, 2) }}</td></tr>@endif
-          @if($record->reimbursement > 0)<tr><td>Reimbursement</td><td>{{ number_format($record->reimbursement, 2) }}</td></tr>@endif
+          @if($record->bonus > 0)<tr><td>Bonus{!! !empty($record->bonus_has_attachment) ? ' &#128206;' : '' !!}</td><td>{{ number_format($record->bonus, 2) }}</td></tr>@endif
+          @if($record->incentive > 0)<tr><td>Incentive{!! !empty($record->incentive_has_attachment) ? ' &#128206;' : '' !!}</td><td>{{ number_format($record->incentive, 2) }}</td></tr>@endif
+          @if($record->arrears > 0)<tr><td>Arrears{!! !empty($record->arrears_has_attachment) ? ' &#128206;' : '' !!}</td><td>{{ number_format($record->arrears, 2) }}</td></tr>@endif
+          @if($record->reimbursement > 0)<tr><td>Reimbursement{!! !empty($record->reimbursement_has_attachment) ? ' &#128206;' : '' !!}</td><td>{{ number_format($record->reimbursement, 2) }}</td></tr>@endif
           <tr class="total"><td>Gross Earned</td><td>{{ number_format($record->gross_earned, 2) }}</td></tr>
         </tbody>
       </table>
@@ -266,8 +266,8 @@
           <tr class="{{ $record->late_deduction == 0 ? 'zero' : '' }}"><td>Late Deduction ({{ $record->late_days }} days)</td><td>{{ number_format($record->late_deduction, 2) }}</td></tr>
           <tr class="{{ $record->loan_deduction == 0 ? 'zero' : '' }}"><td>Loan Deduction</td><td>{{ number_format($record->loan_deduction, 2) }}</td></tr>
           <tr class="{{ $record->advance_deduction == 0 ? 'zero' : '' }}"><td>Advance Deduction</td><td>{{ number_format($record->advance_deduction, 2) }}</td></tr>
-          @if($record->fine_amount > 0)<tr><td>Fine</td><td>{{ number_format($record->fine_amount, 2) }}</td></tr>@endif
-          @if($record->other_deduction > 0)<tr><td>Other Deduction</td><td>{{ number_format($record->other_deduction, 2) }}</td></tr>@endif
+          @if($record->fine_amount > 0)<tr><td>Fine{!! !empty($record->fine_has_attachment) ? ' &#128206;' : '' !!}</td><td>{{ number_format($record->fine_amount, 2) }}</td></tr>@endif
+          @if($record->other_deduction > 0)<tr><td>Other Deduction{!! !empty($record->other_deduction_has_attachment) ? ' &#128206;' : '' !!}</td><td>{{ number_format($record->other_deduction, 2) }}</td></tr>@endif
           <tr class="total"><td>Total Deductions</td><td>{{ number_format($record->total_deduction, 2) }}</td></tr>
         </tbody>
       </table>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
-import { Search, Plus, Trash2, X } from "lucide-react";
+import { Search, Plus, Trash2, X, Paperclip } from "lucide-react";
 import MonthPicker from "@/components/ui/MonthPicker";
 
 const typeColors = {
@@ -15,7 +15,7 @@ const typeColors = {
   other_deduction: "bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400",
 };
 
-const emptyAdjForm = { employee_id: "", type: "bonus", amount: "", payroll_month: "", remarks: "" };
+const emptyAdjForm = { employee_id: "", type: "bonus", amount: "", payroll_month: "", remarks: "", attachment: null };
 
 export default function Adjustments() {
   const [search, setSearch] = useState("");
@@ -42,6 +42,7 @@ export default function Adjustments() {
         createdAt: a.created_at ? new Date(a.created_at).toLocaleDateString() : "---",
         remarks: a.remarks || "---",
         amount: parseFloat(a.amount) || 0,
+        attachmentUrl: a.attachment_url || null,
       }));
       setAdjustments(items);
     } catch (e) {}
@@ -118,6 +119,7 @@ export default function Adjustments() {
                 <th className="px-3 py-3">Type</th>
                 <th className="px-3 py-3">Amount</th>
                 <th className="px-3 py-3">Remarks</th>
+                <th className="px-3 py-3">Attach</th>
                 <th className="px-3 py-3">Created By</th>
                 <th className="px-3 py-3">Date</th>
                 <th className="px-3 py-3">Actions</th>
@@ -138,6 +140,16 @@ export default function Adjustments() {
                   </td>
                   <td className="px-3 py-3 font-semibold text-gray-800 dark:text-gray-100">{a.amount.toLocaleString()}</td>
                   <td className="px-3 py-3 max-w-[200px] truncate text-gray-500">{a.remarks}</td>
+                  <td className="px-3 py-3">
+                    {a.attachmentUrl ? (
+                      <a href={a.attachmentUrl} target="_blank" rel="noopener noreferrer"
+                        className="inline-flex items-center text-primary hover:text-blue-600">
+                        <Paperclip className="h-3.5 w-3.5" />
+                      </a>
+                    ) : (
+                      <span className="text-gray-400">—</span>
+                    )}
+                  </td>
                   <td className="px-3 py-3">{a.createdBy}</td>
                   <td className="px-3 py-3 text-[11px]">{a.createdAt}</td>
                   <td className="px-3 py-3">
@@ -148,7 +160,7 @@ export default function Adjustments() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan="8" className="px-4 py-8 text-center text-gray-400 text-xs">No adjustments found</td></tr>
+                <tr><td colSpan="9" className="px-4 py-8 text-center text-gray-400 text-xs">No adjustments found</td></tr>
               )}
             </tbody>
           </table>
@@ -235,6 +247,30 @@ export default function Adjustments() {
                 <textarea placeholder="Reason..." rows={3} value={adjForm.remarks} onChange={e => setAdjForm({ ...adjForm, remarks: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 resize-none"></textarea>
               </div>
+              <div className="space-y-1.5">
+                <label className="text-xs font-medium text-gray-500">Attachment (optional, ≤ 5 MB)</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null;
+                      if (f && f.size > 5 * 1024 * 1024) {
+                        alert("File too large. Maximum 5 MB.");
+                        e.target.value = "";
+                        return;
+                      }
+                      setAdjForm({ ...adjForm, attachment: f });
+                    }}
+                    className="flex-1 text-xs text-gray-700 dark:text-gray-300 file:mr-2 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-white hover:file:bg-blue-600"
+                  />
+                  {adjForm.attachment && (
+                    <button type="button" onClick={() => setAdjForm({ ...adjForm, attachment: null })}
+                      className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400" aria-label="Clear file">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="flex justify-end gap-2 mt-5">
@@ -247,7 +283,19 @@ export default function Adjustments() {
                 setSaving(true);
                 try {
                   const params = await buildQueryParams({});
-                  await api.post("/payroll-management/adjustments", { ...params, ...adjForm });
+                  const { attachment, ...rest } = adjForm;
+                  if (attachment) {
+                    const fd = new FormData();
+                    Object.entries({ ...params, ...rest }).forEach(([k, v]) => {
+                      if (v !== null && v !== undefined && v !== "") fd.append(k, v);
+                    });
+                    fd.append("attachment", attachment);
+                    await api.post("/payroll-management/adjustments", fd, {
+                      headers: { "Content-Type": "multipart/form-data" },
+                    });
+                  } else {
+                    await api.post("/payroll-management/adjustments", { ...params, ...rest });
+                  }
                   setDialogOpen(false);
                   setAdjForm(emptyAdjForm);
                   fetchAdjustments();
