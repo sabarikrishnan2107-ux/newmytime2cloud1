@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { loadGoogleMaps } from "./googleMapsLoader";
 import { X, Play, Pause, RotateCcw } from "lucide-react";
 import DatePicker from "@/components/ui/DatePicker";
@@ -76,6 +77,7 @@ function computeSpeedKmh(from, to) {
 }
 
 export default function HistoryReplay({ employee, companyId, apiKey, onClose, date, layout = "modal", fromTime, toTime }) {
+  const { t } = useTranslation();
   const [trail, setTrail] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -150,7 +152,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
         setLoading(false);
       })
       .catch((err) => {
-        setError(err.message || "Failed to load history");
+        setError(err.message || t("liveTracker.history.loadFailed"));
         setLoading(false);
       });
   }, [companyId, employee.id, today]);
@@ -225,7 +227,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
           new maps.Marker({
             position: slice[0],
             map,
-            title: "Session start • " + formatTime(slice[0].datetime),
+            title: t("liveTracker.history.sessionStart") + " • " + formatTime(slice[0].datetime),
             icon: {
               path: maps.SymbolPath.CIRCLE,
               scale: 7,
@@ -242,7 +244,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
           new maps.Marker({
             position: lastPt,
             map,
-            title: "Session end • " + formatTime(lastPt.datetime),
+            title: t("liveTracker.history.sessionEnd") + " • " + formatTime(lastPt.datetime),
             icon: {
               path: maps.SymbolPath.CIRCLE,
               scale: 7,
@@ -260,7 +262,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
       new maps.Marker({
         position: { lat: first.lat, lng: first.lng },
         map,
-        title: "Start • " + formatTime(first.datetime),
+        title: t("liveTracker.history.start") + " • " + formatTime(first.datetime),
         icon: {
           path: maps.SymbolPath.CIRCLE,
           scale: 8,
@@ -278,7 +280,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
         new maps.Marker({
           position: { lat: last.lat, lng: last.lng },
           map,
-          title: "End • " + formatTime(last.datetime),
+          title: t("liveTracker.history.end") + " • " + formatTime(last.datetime),
           icon: {
             path: maps.SymbolPath.CIRCLE,
             scale: 8,
@@ -306,7 +308,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
       trail.forEach((p) => bounds.extend({ lat: p.lat, lng: p.lng }));
       map.fitBounds(bounds);
     }).catch((err) => {
-      setError("Failed to load Google Maps: " + err.message);
+      setError(t("liveTracker.history.loadMapFailed") + ": " + err.message);
     });
 
     return () => {
@@ -458,25 +460,25 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
               <img src={employee.avatar} alt={employee.name} className="w-10 h-10 rounded-full object-cover border-2 border-primary" />
             ) : null}
             <div>
-              <div className="text-slate-800 dark:text-white font-semibold text-[15px]">{employee.name || "Employee"}</div>
-              <div className="text-slate-500 dark:text-slate-400 text-xs">Movement history</div>
+              <div className="text-slate-800 dark:text-white font-semibold text-[15px]">{employee.name || t("liveTracker.history.employeeFallback")}</div>
+              <div className="text-slate-500 dark:text-slate-400 text-xs">{t("liveTracker.history.movementHistory")}</div>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5">
             <div className="flex items-center gap-2">
-              <span className="text-slate-500 dark:text-slate-400 text-xs">Date</span>
+              <span className="text-slate-500 dark:text-slate-400 text-xs">{t("liveTracker.history.date")}</span>
               <div className="w-[170px]">
                 <DatePicker
                   value={selectedDate}
                   onChange={(d) => setSelectedDate(d)}
-                  placeholder="Pick a date"
+                  placeholder={t("liveTracker.history.pickDate")}
                 />
               </div>
             </div>
             <button
               onClick={onClose}
-              title={isPage ? "Back" : "Close"}
+              title={isPage ? t("liveTracker.history.back") : t("liveTracker.history.close")}
               className="flex items-center justify-center p-2 rounded-lg bg-gray-100 hover:bg-gray-200 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 transition"
             >
               <X size={18} />
@@ -487,7 +489,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
         <div className="flex-1 relative bg-slate-100 dark:bg-[#0a0c10]">
           {loading && (
             <div className="absolute inset-0 flex items-center justify-center text-slate-500 dark:text-slate-400">
-              Loading history…
+              {t("liveTracker.history.loading")}
             </div>
           )}
           {!loading && error && (
@@ -497,7 +499,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
           )}
           {!loading && !error && trail.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center text-slate-500 dark:text-slate-400">
-              No movement recorded on {today}.
+              {t("liveTracker.history.noMovement", { date: today })}
             </div>
           )}
           <div ref={mapContainerRef} className="w-full h-full" />
@@ -508,20 +510,20 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
             <div className="flex items-center gap-3 mb-2.5">
               <button
                 onClick={() => setPlaying((p) => !p)}
-                title={playing ? "Pause" : "Play"}
+                title={playing ? t("liveTracker.history.pause") : t("liveTracker.history.play")}
                 className="flex items-center justify-center w-10 h-10 rounded-full bg-primary hover:bg-primary/90 text-white transition"
               >
                 {playing ? <Pause size={18} /> : <Play size={18} />}
               </button>
               <button
                 onClick={handleReset}
-                title="Reset"
+                title={t("liveTracker.history.reset")}
                 className="flex items-center justify-center w-9 h-9 rounded-full bg-gray-200 hover:bg-gray-300 dark:bg-slate-700/60 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-200 transition"
               >
                 <RotateCcw size={16} />
               </button>
               <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
-                <span>Speed</span>
+                <span>{t("liveTracker.history.speed")}</span>
                 <select
                   value={speed}
                   onChange={(e) => setSpeed(Number(e.target.value))}
@@ -541,7 +543,7 @@ export default function HistoryReplay({ employee, companyId, apiKey, onClose, da
                       ? "bg-red-500/10 border-red-500/40 text-red-600 dark:text-red-300"
                       : "bg-emerald-500/10 border-emerald-500/40 text-emerald-600 dark:text-emerald-300"
                   }`}
-                  title={currentSpeed >= 8 ? "Driving" : "Walking / stationary"}
+                  title={currentSpeed >= 8 ? t("liveTracker.history.driving") : t("liveTracker.history.walking")}
                 >
                   {currentSpeed.toFixed(1)} km/h
                 </span>

@@ -5,6 +5,9 @@ import { useTranslation } from "react-i18next";
 import { Bot, Send, ChevronLeft, Home } from "lucide-react";
 import { faqGreeting, faqEntries, faqSections } from "@/config/supportFaq";
 import { matchFaq } from "@/lib/matchSupportFaq";
+import { aiInterpret } from "@/lib/voice/aiInterpret";
+
+const MAX_HISTORY = 8;
 
 // Scripted FAQ assistant (text only, no backend / no LLM). Browse by category
 // or type a question — both resolve to the editable entries in
@@ -21,6 +24,7 @@ export default function FaqChat() {
   //   { level: "suggest", entries: [...] } → "did you mean" chips
   const [nav, setNav] = useState({ level: "home" });
   const scrollRef = useRef(null);
+  const conversationRef = useRef([]); // [{role, content}] for AI follow-up context
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -53,26 +57,43 @@ export default function FaqChat() {
   };
 
   // Handle a typed question.
-  const send = (text) => {
+  const send = async (text) => {
     const q = (text ?? input).trim();
     if (!q || typing) return;
     pushUser(q);
     setInput("");
     setTyping(true);
-    setTimeout(() => {
-      setTyping(false);
-      const result = matchFaq(q);
-      if (result.type === "answer") {
+
+    // 1) Fast path: confident match against the curated FAQ entries (free, instant).
+    const result = matchFaq(q);
+    if (result.type === "answer") {
+      setTimeout(() => {
+        setTyping(false);
         pushBot(result.entry.answer);
         setNav({ level: "answered", sectionId: result.entry.section });
-      } else if (result.type === "suggest") {
-        pushBot("Did you mean one of these?");
-        setNav({ level: "suggest", entries: result.entries });
-      } else {
-        pushBot(result.text);
-        setNav({ level: "home" });
-      }
-    }, 450);
+      }, 350);
+      return;
+    }
+
+    // 2) AI fallback: professional, full step-by-step answer in the user's language.
+    const ai = await aiInterpret(q, "", conversationRef.current, "chat");
+    setTyping(false);
+
+    if (ai?.speech) {
+      pushBot(ai.speech);
+      setNav({ level: "home" });
+      conversationRef.current = [
+        ...conversationRef.current,
+        { role: "user", content: q },
+        { role: "assistant", content: ai.speech },
+      ].slice(-MAX_HISTORY);
+    } else if (result.type === "suggest") {
+      pushBot("Did you mean one of these?");
+      setNav({ level: "suggest", entries: result.entries });
+    } else {
+      pushBot(result.text);
+      setNav({ level: "home" });
+    }
   };
 
   const goHome = () => {

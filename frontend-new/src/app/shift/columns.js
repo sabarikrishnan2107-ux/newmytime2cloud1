@@ -9,11 +9,11 @@ import {
 
 const safe = (v, fallback = "—") => (v === null || v === undefined || v === "" ? fallback : v);
 
-export default function (handleRowClick, onEdit, onDelete) {
+export default function (handleRowClick, onEdit, onDelete, t = (k) => k) {
   return [
     {
       key: "name",
-      header: "Shift Name",
+      header: t("shift.columns.name"),
       render: (shift) => (
         <p onClick={() => handleRowClick(shift)} className="text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">
           {safe(shift?.name)}
@@ -22,7 +22,7 @@ export default function (handleRowClick, onEdit, onDelete) {
     },
     {
       key: "shift_type",
-      header: "Type",
+      header: t("shift.columns.type"),
       render: (shift) => (
         <p onClick={() => handleRowClick(shift)} className="text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">
           {safe(shift?.shift_type?.name)}
@@ -31,7 +31,7 @@ export default function (handleRowClick, onEdit, onDelete) {
     },
     {
       key: "duty",
-      header: "On / Off Duty",
+      header: t("shift.columns.onOffDuty"),
       render: (shift) => (
         <p onClick={() => handleRowClick(shift)} className="text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">
           {safe(shift?.on_duty_time)}{shift?.off_duty_time ? " - " : ""}{safe(shift?.off_duty_time, "")}
@@ -47,7 +47,7 @@ export default function (handleRowClick, onEdit, onDelete) {
     },
     {
       key: "working_hours",
-      header: "Total Hrs",
+      header: t("shift.columns.totalHrs"),
       render: (shift) => (
         <p onClick={() => handleRowClick(shift)} className="text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">
           {safe(shift?.working_hours, "")}
@@ -56,7 +56,7 @@ export default function (handleRowClick, onEdit, onDelete) {
     },
     {
       key: "break_duration",
-      header: "Auto-Deduct Break",
+      header: t("shift.columns.autoDeductBreak"),
       render: (shift) => (
         <p onClick={() => handleRowClick(shift)} className="text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">
           {safe(shift?.break_duration, "")}
@@ -79,16 +79,16 @@ export default function (handleRowClick, onEdit, onDelete) {
     // },
     {
       key: "auto",
-      header: "Auto Shift",
+      header: t("shift.columns.autoShift"),
       render: (shift) => (
         <p onClick={() => handleRowClick(shift)} className="text-sm text-slate-600 dark:text-slate-300 hidden xl:table-cell">
-          {shift?.isAutoShift ? "Yes" : "No"}
+          {shift?.isAutoShift ? t("shift.yes") : t("shift.no")}
         </p>
       ),
     },
     {
       key: "actions",
-      header: "Actions",
+      header: t("shift.columns.actions"),
       render: (employee) => (
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -115,7 +115,7 @@ export default function (handleRowClick, onEdit, onDelete) {
               className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
             >
               <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" />
-              <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
+              <span className="text-slate-700 dark:text-slate-200 font-medium">{t("shift.edit")}</span>
             </DropdownMenuItem>
 
             <DropdownMenuItem
@@ -126,7 +126,7 @@ export default function (handleRowClick, onEdit, onDelete) {
               className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
             >
               <Trash className="w-4 h-4 text-red-600 dark:text-red-400" />
-              <span className="text-red-600 dark:text-red-400 font-medium">Delete</span>
+              <span className="text-red-600 dark:text-red-400 font-medium">{t("shift.delete")}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

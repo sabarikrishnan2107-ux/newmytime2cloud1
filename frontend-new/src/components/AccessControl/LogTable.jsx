@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { ArrowUpDown, ChevronLeft, ChevronRight, Download, FileText, LogIn, LogOut, ScanFace, KeyRound, Fingerprint, CreditCard, Smartphone, QrCode, Loader2, Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -121,6 +122,7 @@ function trimToHHMM(t) {
 }
 
 export function LogTable({ logs = [], isLoading = false, onRowClick, filters = null, branches = [], devices = [], employees = [] }) {
+  const { t } = useTranslation();
   const [page, setPage] = useState(0);
   const [sortDesc, setSortDesc] = useState(true);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
@@ -166,7 +168,7 @@ export function LogTable({ logs = [], isLoading = false, onRowClick, filters = n
       await downloadReport(url, fileName, (p) => setPdfProgress(p));
     } catch (err) {
       console.error("Download PDF failed", err);
-      alert(`Failed to download PDF: ${err?.message || "Unknown error"}`);
+      alert(t("accessControl.table.downloadFailed", { error: err?.message || "Unknown error" }));
     } finally {
       // Brief delay so the user actually sees 100% before the button resets.
       setTimeout(() => {
@@ -201,21 +203,21 @@ export function LogTable({ logs = [], isLoading = false, onRowClick, filters = n
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-5 py-4">
         <div>
           <div className="flex items-center gap-2">
-            <h3 className="text-base font-semibold text-foreground">Access Log History</h3>
+            <h3 className="text-base font-semibold text-foreground">{t("accessControl.table.title")}</h3>
             <span className="inline-flex items-center gap-1 rounded-full bg-success/10 px-2 py-0.5 text-[10px] font-semibold text-success">
-              <span className="h-1.5 w-1.5 rounded-full bg-success pulse-dot" /> LIVE
+              <span className="h-1.5 w-1.5 rounded-full bg-success pulse-dot" /> {t("accessControl.table.live")}
             </span>
           </div>
           <p className="text-xs text-muted-foreground">
-            {sorted.length.toLocaleString()} record{sorted.length !== 1 && "s"}
+            {t("accessControl.table.records", { count: sorted.length })}
             {(timeFrom || timeTo) && (
               <span className="ml-1 text-cyan-500">
-                · time-filtered{" "}
+                · {t("accessControl.table.timeFiltered")}{" "}
                 {timeFrom && timeTo ? `${timeFrom}–${timeTo}` :
-                 timeFrom ? `from ${timeFrom}` : `until ${timeTo}`}
+                 timeFrom ? t("accessControl.table.from", { time: timeFrom }) : t("accessControl.table.until", { time: timeTo })}
               </span>
             )}
-            {!(timeFrom || timeTo) && " · auto-refreshing"}
+            {!(timeFrom || timeTo) && ` · ${t("accessControl.table.autoRefreshing")}`}
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
@@ -228,7 +230,7 @@ export function LogTable({ logs = [], isLoading = false, onRowClick, filters = n
           />
 
           <Button variant="outline" size="sm" onClick={() => exportCsv(sorted)}>
-            <Download className="mr-1.5 h-4 w-4" /> Export CSV
+            <Download className="mr-1.5 h-4 w-4" /> {t("accessControl.table.exportCsv")}
           </Button>
           <Button
             size="sm"
@@ -241,7 +243,7 @@ export function LogTable({ logs = [], isLoading = false, onRowClick, filters = n
             ) : (
               <FileText className="mr-1.5 h-4 w-4" />
             )}
-            {isDownloadingPdf ? "Generating…" : "Download PDF"}
+            {isDownloadingPdf ? t("accessControl.table.generating") : t("accessControl.table.downloadPdf")}
           </Button>
         </div>
       </div>
@@ -252,23 +254,23 @@ export function LogTable({ logs = [], isLoading = false, onRowClick, filters = n
             <tr className="bg-muted/50 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground">
               <th className="px-5 py-3">
                 <button onClick={() => setSortDesc((s) => !s)} className="inline-flex items-center gap-1 hover:text-foreground">
-                  Date Time <ArrowUpDown className="h-3 w-3" />
+                  {t("accessControl.table.colDateTime")} <ArrowUpDown className="h-3 w-3" />
                 </button>
               </th>
-              <th className="px-3 py-3">Employee</th>
-              <th className="px-3 py-3">ID</th>
-              <th className="px-3 py-3">Device</th>
-              <th className="px-3 py-3">Branch</th>
-              <th className="px-3 py-3">Mode</th>
-              <th className="px-5 py-3">Type</th>
+              <th className="px-3 py-3">{t("accessControl.table.colEmployee")}</th>
+              <th className="px-3 py-3">{t("accessControl.table.colId")}</th>
+              <th className="px-3 py-3">{t("accessControl.table.colDevice")}</th>
+              <th className="px-3 py-3">{t("accessControl.table.colBranch")}</th>
+              <th className="px-3 py-3">{t("accessControl.table.colMode")}</th>
+              <th className="px-5 py-3">{t("accessControl.table.colType")}</th>
             </tr>
           </thead>
           <tbody>
             {isLoading && (
-              <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">Loading…</td></tr>
+              <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">{t("accessControl.table.loading")}</td></tr>
             )}
             {!isLoading && slice.length === 0 && (
-              <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">No logs match your filters.</td></tr>
+              <tr><td colSpan={7} className="px-5 py-12 text-center text-sm text-muted-foreground">{t("accessControl.table.noLogs")}</td></tr>
             )}
             {!isLoading && slice.map((l, i) => {
               const employee = l?.employee || {};
@@ -316,7 +318,7 @@ export function LogTable({ logs = [], isLoading = false, onRowClick, filters = n
                       !out ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"
                     )}>
                       {!out ? <LogIn className="h-3 w-3" /> : <LogOut className="h-3 w-3" />}
-                      {!out ? "IN" : "OUT"}
+                      {!out ? t("accessControl.table.in") : t("accessControl.table.out")}
                     </span>
                   </td>
                 </tr>
@@ -327,7 +329,7 @@ export function LogTable({ logs = [], isLoading = false, onRowClick, filters = n
       </div>
 
       <div className="flex items-center justify-between border-t border-border px-5 py-3 text-xs text-muted-foreground">
-        <span>Page {safePage + 1} of {totalPages}</span>
+        <span>{t("accessControl.table.pageOf", { page: safePage + 1, total: totalPages })}</span>
         <div className="flex items-center gap-1.5">
           <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
             <ChevronLeft className="h-4 w-4" />

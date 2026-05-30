@@ -1,6 +1,7 @@
 "use client";
 
 import { Wifi, WifiOff, Server, MapPin, RefreshCw, DoorOpen, DoorClosed } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -11,6 +12,7 @@ export function DeviceHealthPanel({
   onCloseDoor,
   onRefresh,
 }) {
+  const { t } = useTranslation();
   const total = devices.length;
   const online = devices.filter((d) => d.status_id == 1).length;
   const uptime = total > 0 ? Math.round((online / total) * 100) : 0;
@@ -25,17 +27,17 @@ export function DeviceHealthPanel({
               <Server className="h-4.5 w-4.5 text-primary" strokeWidth={2.2} />
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-foreground">Device Health</h3>
-              <p className="text-[11px] text-muted-foreground">{online}/{total} online</p>
+              <h3 className="text-sm font-semibold text-foreground">{t("accessControl.devicePanel.title")}</h3>
+              <p className="text-[11px] text-muted-foreground">{t("accessControl.devicePanel.onlineCount", { online, total })}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
             <div className="text-right">
               <p className="text-lg font-semibold text-foreground tabular-nums">{uptime}%</p>
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Uptime</p>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{t("accessControl.devicePanel.uptime")}</p>
             </div>
             {onRefresh && (
-              <Button variant="outline" size="sm" onClick={onRefresh} title="Refresh device health">
+              <Button variant="outline" size="sm" onClick={onRefresh} title={t("accessControl.devicePanel.refresh")}>
                 <RefreshCw className="h-3.5 w-3.5" />
               </Button>
             )}
@@ -49,7 +51,7 @@ export function DeviceHealthPanel({
       {/* Devices */}
       {devices.length === 0 ? (
         <div className="px-5 py-12 text-center text-sm text-muted-foreground">
-          No devices registered.
+          {t("accessControl.devicePanel.noDevices")}
         </div>
       ) : (
         <div className="space-y-3 p-4">
@@ -80,7 +82,7 @@ export function DeviceHealthPanel({
                       "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-medium",
                       isOnline ? "bg-success/15 text-success" : "bg-destructive/15 text-destructive"
                     )}>
-                      <Icon className="h-3 w-3" /> {isOnline ? "Online" : "Offline"}
+                      <Icon className="h-3 w-3" /> {isOnline ? t("accessControl.devicePanel.online") : t("accessControl.devicePanel.offline")}
                     </span>
                     <Icon className={cn("h-5 w-5", isOnline ? "text-success" : "text-destructive")} />
                   </div>
@@ -95,7 +97,7 @@ export function DeviceHealthPanel({
                 {/* Door status pill (only when door is open) */}
                 {isOpen && (
                   <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-destructive/15 px-2.5 py-0.5 text-[11px] font-medium text-destructive">
-                    <DoorOpen className="h-3 w-3" /> Door Open
+                    <DoorOpen className="h-3 w-3" /> {t("accessControl.devicePanel.doorOpen")}
                   </p>
                 )}
 
@@ -105,16 +107,16 @@ export function DeviceHealthPanel({
                     onClick={() => onCloseDoor && onCloseDoor(d)}
                     className="mt-4 h-11 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-destructive bg-destructive/15 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/25"
                   >
-                    <DoorClosed className="h-4 w-4" /> Close Door
+                    <DoorClosed className="h-4 w-4" /> {t("accessControl.devicePanel.closeDoor")}
                   </button>
                 ) : (
                   <button
                     onClick={() => onOpenDoor && onOpenDoor(d)}
                     disabled={!isOnline}
-                    title={isOnline ? "Send open door command" : "Device offline"}
+                    title={isOnline ? t("accessControl.devicePanel.sendOpenCommand") : t("accessControl.devicePanel.deviceOffline")}
                     className="mt-4 h-11 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <DoorOpen className="h-4 w-4" /> Open Door
+                    <DoorOpen className="h-4 w-4" /> {t("accessControl.devicePanel.openDoor")}
                   </button>
                 )}
               </div>

@@ -198,9 +198,15 @@ const VisitorHub = () => {
         email: "",
         gender: "Male",
         visitor_company_name: "Walk-in",
-        id_type: form.id_type || "National ID",
+        // register() reads $data['host_company_id'] directly — send null so the
+        // key exists (avoids "Undefined array key"); no host mapping for walk-ins.
+        host_company_id: null,
+        // `visitors.id_type` is a bigint column with no lookup table, so a text
+        // label throws a 22P02 cast error — keep it null, label goes in `note`.
+        id_type: null,
         id_number: form.id_number || "",
         purpose_id: 1,
+        note: form.id_type || "",
         date: today,
         visit_from: today,
         visit_to: today,

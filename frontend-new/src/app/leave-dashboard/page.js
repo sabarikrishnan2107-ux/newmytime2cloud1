@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import * as Popover from "@radix-ui/react-popover";
 import * as Dialog from "@radix-ui/react-dialog";
+import { useTranslation } from "react-i18next";
 import { getLeavesRequest, approveLeave, rejectLeave } from "@/lib/endpoint/leaves";
 import { getBranches, getDepartments, getDepartmentsByBranchIds } from "@/lib/api";
 import { getUser } from "@/config/index";
@@ -155,10 +156,11 @@ function DeltaChip({ delta, format = "percent" }) {
 }
 
 function StatusPill({ status }) {
+  const { t } = useTranslation();
   const cfg = {
-    0: { label: "Pending", color: "amber" },
-    1: { label: "Approved", color: "emerald" },
-    2: { label: "Rejected", color: "rose" },
+    0: { label: t("leave.status.pending"), color: "amber" },
+    1: { label: t("leave.status.approved"), color: "emerald" },
+    2: { label: t("leave.status.rejected"), color: "rose" },
   }[status] || { label: "—", color: "slate" };
   return (
     <span className={`inline-flex items-center gap-1.5 rounded-full bg-${cfg.color}-500/10 text-${cfg.color}-400 border border-${cfg.color}-500/20 px-2.5 py-0.5 text-[11px] font-medium`}>
@@ -180,25 +182,26 @@ function TypeChip({ name }) {
 // ---------- Section components ----------
 
 function MoreFilterPopover({ status, onStatusChange }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
         <button className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/60 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
           <Filter className="w-4 h-4" />
-          More
+          {t("leave.more")}
         </button>
       </Popover.Trigger>
       <Popover.Portal>
         <Popover.Content sideOffset={8} align="end" className="z-50 w-56 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-3 shadow-xl">
-          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase">Status</p>
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-2 uppercase">{t("leave.status.label")}</p>
           <DropDown
-            placeholder="All Status"
+            placeholder={t("leave.allStatus")}
             items={[
-              { id: -1, name: "All Status" },
-              { id: 0, name: "Pending" },
-              { id: 1, name: "Approved" },
-              { id: 2, name: "Rejected" },
+              { id: -1, name: t("leave.allStatus") },
+              { id: 0, name: t("leave.status.pending") },
+              { id: 1, name: t("leave.status.approved") },
+              { id: 2, name: t("leave.status.rejected") },
             ]}
             value={status}
             onChange={(val) => onStatusChange(val === -1 ? null : val)}
@@ -218,28 +221,29 @@ function HeaderBand({
   selectedStatus, setSelectedStatus,
   onExport,
 }) {
+  const { t } = useTranslation();
   return (
     <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-transparent p-6 relative">
       <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 relative">
         <div>
           <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-3 py-1 text-xs text-slate-700 dark:text-slate-200">
             <span className="h-1.5 w-1.5 rounded-full bg-sky-500 dark:bg-sky-400" />
-            Welcome back, {firstName}
+            {t("leave.welcomeBack", { name: firstName })}
           </span>
-          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">Leave Dashboard</h1>
-          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">Real-time view of approvals, attendance and team availability across all branches.</p>
+          <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">{t("leave.dashboardTitle")}</h1>
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">{t("leave.dashboardSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <div className="w-44">
-            <MultiDropDown placeholder="All Branches" items={branches} value={selectedBranchIds} onChange={setSelectedBranchIds} badgesCount={1} portalled={false} />
+            <MultiDropDown placeholder={t("leave.allBranches")} items={branches} value={selectedBranchIds} onChange={setSelectedBranchIds} badgesCount={1} portalled={false} />
           </div>
           <div className="w-48">
-            <MultiDropDown placeholder="All Departments" items={departments} value={selectedDepartmentIds} onChange={setSelectedDepartmentIds} badgesCount={1} portalled={false} />
+            <MultiDropDown placeholder={t("leave.allDepartments")} items={departments} value={selectedDepartmentIds} onChange={setSelectedDepartmentIds} badgesCount={1} portalled={false} />
           </div>
           <MoreFilterPopover status={selectedStatus} onStatusChange={setSelectedStatus} />
           <button onClick={onExport} className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/90 px-3 py-2 text-sm font-medium text-white hover:bg-sky-500">
             <Download className="w-4 h-4" />
-            Export
+            {t("leave.export")}
           </button>
         </div>
       </div>
@@ -248,6 +252,7 @@ function HeaderBand({
 }
 
 function KpiCard({ title, value, subtitle, icon: Icon, accent, delta, deltaFormat, loading, onClick }) {
+  const { t } = useTranslation();
   return (
     <button
       type="button"
@@ -266,13 +271,14 @@ function KpiCard({ title, value, subtitle, icon: Icon, accent, delta, deltaForma
       </div>
       <div className="flex items-center gap-1.5">
         {loading ? <Skeleton className="h-4 w-14" /> : <DeltaChip delta={delta} format={deltaFormat} />}
-        <span className="text-xs text-slate-500 dark:text-slate-100">vs last month</span>
+        <span className="text-xs text-slate-500 dark:text-slate-100">{t("leave.vsLastMonth")}</span>
       </div>
     </button>
   );
 }
 
 function DrillDownModal({ open, onClose, title, accent, rows }) {
+  const { t } = useTranslation();
   return (
     <Dialog.Root open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
       <Dialog.Portal>
@@ -292,12 +298,18 @@ function DrillDownModal({ open, onClose, title, accent, rows }) {
           </div>
           <div className="max-h-[60vh] overflow-y-auto">
             {rows.length === 0 ? (
-              <p className="text-center py-10 text-sm text-slate-500">No records.</p>
+              <p className="text-center py-10 text-sm text-slate-500">{t("leave.noRecords")}</p>
             ) : (
               <table className="w-full text-sm">
                 <thead className="sticky top-0 bg-white dark:bg-slate-900 z-10">
                   <tr className="border-b border-slate-200 dark:border-white/10">
-                    {["Employee", "Leave Type", "Duration", "Days", "Status"].map((h) => (
+                    {[
+                      t("leave.columns.employee"),
+                      t("leave.columns.leaveType"),
+                      t("leave.columns.duration"),
+                      t("leave.columns.days"),
+                      t("leave.columns.status"),
+                    ].map((h) => (
                       <th key={h} className="text-left font-medium text-slate-500 dark:text-slate-400 px-4 py-2.5 text-xs uppercase">{h}</th>
                     ))}
                   </tr>
@@ -338,12 +350,13 @@ function DrillDownModal({ open, onClose, title, accent, rows }) {
 }
 
 function TrendAreaChart({ data, year, onYearChange, years }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-5">
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Monthly Leave Trends</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Approved vs pending requests · last 12 months</p>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t("leave.trend.title")}</h3>
+          <p className="text-xs text-slate-500 mt-0.5">{t("leave.trend.subtitle")}</p>
         </div>
         <select
           value={year}
@@ -378,16 +391,17 @@ function TrendAreaChart({ data, year, onYearChange, years }) {
 }
 
 function UpcomingLeaves({ items }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl p-5 h-full flex flex-col">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Upcoming Leaves</h3>
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t("leave.upcoming.title")}</h3>
         <button className="inline-flex items-center gap-1 text-xs text-sky-400 hover:text-sky-300">
-          View all <ChevronRight className="w-3.5 h-3.5" />
+          {t("leave.upcoming.viewAll")} <ChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
       {items.length === 0 ? (
-        <p className="text-sm text-slate-500 text-center py-8">No upcoming leaves.</p>
+        <p className="text-sm text-slate-500 text-center py-8">{t("leave.upcoming.empty")}</p>
       ) : (
         <div className="space-y-3 text-slate-700 dark:text-slate-300">
           {items.map((l) => {
@@ -395,7 +409,7 @@ function UpcomingLeaves({ items }) {
             const from = l.from_date || l.start_date;
             const to = l.to_date || l.end_date;
             const sameDay = from === to;
-            const typeName = l.leave_type?.name || l.leave_group_type?.leave_type?.name || "Leave";
+            const typeName = l.leave_type?.name || l.leave_group_type?.leave_type?.name || t("leave.leaveFallback");
             const color = colorForType(typeName, 0);
             const days = l.total_days || l.days || 1;
             return (
@@ -407,7 +421,7 @@ function UpcomingLeaves({ items }) {
                 </div>
                 <div className="text-right shrink-0">
                   <span className="text-xs font-medium" style={{ color }}>{typeName}</span>
-                  <p className="text-xs text-slate-500">{days} {days === 1 ? "day" : "days"}</p>
+                  <p className="text-xs text-slate-500">{days} {days === 1 ? t("leave.upcoming.day") : t("leave.upcoming.days")}</p>
                 </div>
               </div>
             );
@@ -419,6 +433,7 @@ function UpcomingLeaves({ items }) {
 }
 
 function RowMenu({ row, onAction }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const showApprove = row.status !== 1;
   const showReject = row.status !== 2;
@@ -432,10 +447,10 @@ function RowMenu({ row, onAction }) {
       <Popover.Portal>
         <Popover.Content sideOffset={4} align="end" className="z-50 w-40 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 p-1 shadow-xl text-sm">
           {showApprove && (
-            <button onClick={() => { onAction("approve", row); setOpen(false); }} className="w-full text-left rounded px-2 py-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/5">Approve</button>
+            <button onClick={() => { onAction("approve", row); setOpen(false); }} className="w-full text-left rounded px-2 py-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-slate-100 dark:hover:bg-white/5">{t("leave.actions.approve")}</button>
           )}
           {showReject && (
-            <button onClick={() => { onAction("reject", row); setOpen(false); }} className="w-full text-left rounded px-2 py-1.5 text-rose-600 dark:text-rose-400 hover:bg-slate-100 dark:hover:bg-white/5">Reject</button>
+            <button onClick={() => { onAction("reject", row); setOpen(false); }} className="w-full text-left rounded px-2 py-1.5 text-rose-600 dark:text-rose-400 hover:bg-slate-100 dark:hover:bg-white/5">{t("leave.actions.reject")}</button>
           )}
         </Popover.Content>
       </Popover.Portal>
@@ -444,31 +459,40 @@ function RowMenu({ row, onAction }) {
 }
 
 function ActivityTable({ rows, loading, onAction }) {
+  const { t } = useTranslation();
   return (
     <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl">
       <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-white/10">
         <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">Recent Leave Activity</h3>
-          <p className="text-xs text-slate-500 mt-0.5">Latest requests across the organization</p>
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">{t("leave.activity.title")}</h3>
+          <p className="text-xs text-slate-500 mt-0.5">{t("leave.activity.subtitle")}</p>
         </div>
         <button className="rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-900 px-3 py-1.5 text-xs text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
-          View All
+          {t("leave.activity.viewAll")}
         </button>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-slate-200 dark:border-white/10">
-              {["Employee", "Leave Type", "Duration", "Days", "Status", "Applied", ""].map((h) => (
-                <th key={h} className="text-left font-medium text-slate-500 dark:text-slate-400 px-5 py-3 text-xs uppercase">{h}</th>
+              {[
+                { key: "employee", label: t("leave.columns.employee") },
+                { key: "leaveType", label: t("leave.columns.leaveType") },
+                { key: "duration", label: t("leave.columns.duration") },
+                { key: "days", label: t("leave.columns.days") },
+                { key: "status", label: t("leave.columns.status") },
+                { key: "applied", label: t("leave.columns.applied") },
+                { key: "actions", label: "" },
+              ].map((h) => (
+                <th key={h.key} className="text-left font-medium text-slate-500 dark:text-slate-400 px-5 py-3 text-xs uppercase">{h.label}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="text-center py-10 text-slate-500">Loading...</td></tr>
+              <tr><td colSpan={7} className="text-center py-10 text-slate-500">{t("leave.activity.loading")}</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={7} className="text-center py-10 text-slate-500">No leave requests found.</td></tr>
+              <tr><td colSpan={7} className="text-center py-10 text-slate-500">{t("leave.activity.empty")}</td></tr>
             ) : rows.slice(0, 8).map((r) => {
               const name = `${r.employee?.first_name || ""} ${r.employee?.last_name || ""}`.trim() || "—";
               const role = r.employee?.designation?.name || "";
@@ -505,6 +529,7 @@ function ActivityTable({ rows, loading, onAction }) {
 // ---------- Page ----------
 
 export default function LeaveDashboard() {
+  const { t } = useTranslation();
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [branches, setBranches] = useState([]);
@@ -619,16 +644,16 @@ export default function LeaveDashboard() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <KpiCard title="Total Requests" value={kpis.total.toLocaleString()} subtitle="This quarter" icon={FileText} accent="#38bdf8" delta={kpis.deltas.total} deltaFormat="percent" loading={loading}
-          onClick={() => setDrillDown({ title: "Total Requests", accent: "#38bdf8", rows: leaves })} />
-        <KpiCard title="Pending Approvals" value={kpis.pending} subtitle="Awaiting your review" icon={Clock} accent="#f97316" delta={kpis.deltas.pending} deltaFormat="count" loading={loading}
-          onClick={() => setDrillDown({ title: "Pending Approvals", accent: "#f97316", rows: leaves.filter((l) => l.status === 0) })} />
-        <KpiCard title="Approved" value={kpis.approved.toLocaleString()} subtitle="Last 30 days" icon={CheckCircle2} accent="#10b981" delta={kpis.deltas.approved} deltaFormat="percent" loading={loading}
-          onClick={() => setDrillDown({ title: "Approved", accent: "#10b981", rows: leaves.filter((l) => l.status === 1) })} />
-        <KpiCard title="Total Rejected" value={kpis.rejected.toLocaleString()} subtitle="This quarter" icon={XCircle} accent="#f43f5e" delta={kpis.deltas.rejected} deltaFormat="percent" loading={loading}
-          onClick={() => setDrillDown({ title: "Total Rejected", accent: "#f43f5e", rows: leaves.filter((l) => l.status === 2) })} />
-        <KpiCard title="On Leave Today" value={kpis.onLeaveToday} subtitle={`Across ${kpis.onLeaveDeptCount} departments`} icon={Users} accent="#8b5cf6" delta={kpis.deltas.onLeaveToday} deltaFormat="count" loading={loading}
-          onClick={() => setDrillDown({ title: "On Leave Today", accent: "#8b5cf6", rows: leaves.filter((l) => {
+        <KpiCard title={t("leave.kpi.totalRequests")} value={kpis.total.toLocaleString()} subtitle={t("leave.kpi.totalRequestsSub")} icon={FileText} accent="#38bdf8" delta={kpis.deltas.total} deltaFormat="percent" loading={loading}
+          onClick={() => setDrillDown({ title: t("leave.kpi.totalRequests"), accent: "#38bdf8", rows: leaves })} />
+        <KpiCard title={t("leave.kpi.pendingApprovals")} value={kpis.pending} subtitle={t("leave.kpi.pendingApprovalsSub")} icon={Clock} accent="#f97316" delta={kpis.deltas.pending} deltaFormat="count" loading={loading}
+          onClick={() => setDrillDown({ title: t("leave.kpi.pendingApprovals"), accent: "#f97316", rows: leaves.filter((l) => l.status === 0) })} />
+        <KpiCard title={t("leave.kpi.approved")} value={kpis.approved.toLocaleString()} subtitle={t("leave.kpi.approvedSub")} icon={CheckCircle2} accent="#10b981" delta={kpis.deltas.approved} deltaFormat="percent" loading={loading}
+          onClick={() => setDrillDown({ title: t("leave.kpi.approved"), accent: "#10b981", rows: leaves.filter((l) => l.status === 1) })} />
+        <KpiCard title={t("leave.kpi.totalRejected")} value={kpis.rejected.toLocaleString()} subtitle={t("leave.kpi.totalRejectedSub")} icon={XCircle} accent="#f43f5e" delta={kpis.deltas.rejected} deltaFormat="percent" loading={loading}
+          onClick={() => setDrillDown({ title: t("leave.kpi.totalRejected"), accent: "#f43f5e", rows: leaves.filter((l) => l.status === 2) })} />
+        <KpiCard title={t("leave.kpi.onLeaveToday")} value={kpis.onLeaveToday} subtitle={t("leave.kpi.onLeaveTodaySub", { count: kpis.onLeaveDeptCount })} icon={Users} accent="#8b5cf6" delta={kpis.deltas.onLeaveToday} deltaFormat="count" loading={loading}
+          onClick={() => setDrillDown({ title: t("leave.kpi.onLeaveToday"), accent: "#8b5cf6", rows: leaves.filter((l) => {
             if (l.status !== 1) return false;
             const from = parseDate(l.from_date || l.start_date);
             const to = parseDate(l.to_date || l.end_date);

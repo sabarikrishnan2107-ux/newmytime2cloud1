@@ -29,7 +29,11 @@
       "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT * FROM device_status WHERE id = 2;\")",
       "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND \\(table_name ILIKE '%status%' OR table_name ILIKE '%device%'\\) ORDER BY table_name;\")",
       "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT * FROM device_statuses WHERE id IN \\(1,2,3,4,5\\);\")",
-      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, device_id, status_id, created_at FROM device_sensor_logs WHERE device_id = 332 ORDER BY id DESC LIMIT 5;\")"
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, device_id, status_id, created_at FROM device_sensor_logs WHERE device_id = 332 ORDER BY id DESC LIMIT 5;\")",
+      "Bash(cd /d/newmytime2cloud/frontend-new/src/locales)",
+      "Bash(echo '=== __TRACKED_VAR__ ===')",
+      "Bash(tail -c 400 __TRACKED_VAR__/common.json)",
+      "Bash(echo)"
     ]
   }
 }

@@ -1,4 +1,6 @@
-export function createAvatarOverlay({ maps, employee, pos, map, openPanel, openHistory, bwMode, moving }) {
+export function createAvatarOverlay({ maps, employee, pos, map, openPanel, openHistory, bwMode, moving, labels = {} }) {
+  const lastKnownLocationLabel = labels.lastKnownLocation || "Last known location";
+  const historyLabel = labels.history || "History";
   class AvatarOverlay extends maps.OverlayView {
     constructor() {
       super();
@@ -110,7 +112,7 @@ export function createAvatarOverlay({ maps, employee, pos, map, openPanel, openH
       const subEl = document.createElement("div");
       subEl.style.color = "#94a3b8";
       subEl.style.fontSize = "11px";
-      subEl.textContent = this.employee.location || "Last known location";
+      subEl.textContent = this.employee.location || lastKnownLocationLabel;
 
       textBlk.appendChild(nameEl);
       textBlk.appendChild(subEl);
@@ -137,7 +139,7 @@ export function createAvatarOverlay({ maps, employee, pos, map, openPanel, openH
 
       // "View History" button
       const historyBtn = document.createElement("button");
-      historyBtn.textContent = "History";
+      historyBtn.textContent = historyLabel;
       historyBtn.style.marginLeft = "10px";
       historyBtn.style.background = "#3b82f6";
       historyBtn.style.color = "white";

@@ -2,25 +2,18 @@
 
 import { useState, useRef, useCallback } from "react";
 
-const LANG_MAP = {
-  "en-US": "en-US",
-  "ta-IN": "ta-IN",
-  "ar-SA": "ar-SA",
-  "fr-FR": "fr-FR",
-};
-
 export default function useTextToSpeech() {
   const [speaking, setSpeaking] = useState(false);
   const utteranceRef = useRef(null);
 
   const speak = useCallback((text, lang = "en-US") => {
-    if (!window.speechSynthesis) return;
+    if (!window.speechSynthesis || !text) return;
 
     // Cancel any ongoing speech
     window.speechSynthesis.cancel();
 
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = LANG_MAP[lang] || "en-US";
+    utterance.lang = lang || "en-US";
     utterance.rate = 1;
     utterance.pitch = 1;
     utterance.volume = 1;

@@ -101,6 +101,44 @@ export const faqEntries = [
       "3. Confirm the matches, then click Upload.",
   },
   {
+    id: "sync-employee-device",
+    section: "employees",
+    question: "How do I transfer or upload employees to a device?",
+    keywords: [
+      "transfer", "transfer employee", "transfer to device", "transfer employee to device",
+      "transfer details", "transfer the details",
+      "upload employee", "upload employee to device", "upload to device", "upload for device",
+      "send employee", "send to device", "send to the device", "send employee to device",
+      "push employee", "push to device", "push to the device",
+      "sync employee", "sync to device", "sync employees to device", "sync employee to device",
+      "enroll employee", "enroll on device", "register employee on device", "register on device",
+      "employee to device", "add employee to device", "assign employee to device",
+      "details to the device", "details to device",
+    ],
+    answer:
+      "To transfer (sync) employees to a device:\n" +
+      "1. Open EMPLOYEES → Employee Upload.\n" +
+      "2. Choose the branch (and device model, if shown) to load its devices.\n" +
+      "3. Tick the employees you want to send, then tick the target device(s).\n" +
+      "4. Click Submit. Each selected employee is pushed to each device, and a Sync Progress window shows the result per device.\n\n" +
+      "Tip: the employee's face photo is sent too — upload it first on the same page or in the employee's profile. To check which devices someone is already on, open EMPLOYEES → Employee List → Actions menu → Devices.",
+  },
+  {
+    id: "enrolled-devices",
+    section: "employees",
+    question: "How do I see or remove the devices an employee is on?",
+    keywords: [
+      "enrolled devices", "employee devices", "remove from device", "which devices",
+      "delete from device", "device enrollment", "unenroll", "remove employee from device",
+    ],
+    answer:
+      "To see (or remove) the devices an employee is enrolled on:\n" +
+      "1. Open EMPLOYEES → Employee List.\n" +
+      "2. Open the person's Actions menu and choose Devices.\n" +
+      "3. The list shows each device and whether the employee's data, face, RFID, and PIN are present.\n" +
+      "4. Use the delete icon (or tick several and click Delete Selected) to remove them from a device.",
+  },
+  {
     id: "document-expiry",
     section: "employees",
     question: "How do I track document expiry?",
@@ -530,7 +568,7 @@ export const faqEntries = [
     id: "add-device",
     section: "settings",
     question: "How do I add a device?",
-    keywords: ["add device", "new device", "register device", "device setup", "device"],
+    keywords: ["add device", "new device", "register device", "device setup", "connect device"],
     answer:
       "To add a device:\n" +
       "1. Open SETTINGS from the top menu, then click Device.\n" +

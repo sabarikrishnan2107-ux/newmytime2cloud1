@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { LogIn, LogOut, Users, Server, Activity, Siren, User, UserPlus, Lock } from "lucide-react";
 import { KpiCard } from "@/components/AccessControl/KpiCard";
 import { FilterBar } from "@/components/AccessControl/FilterBar";
@@ -97,16 +98,17 @@ function classifyLogs(logs) {
 }
 
 function Breakdown({ employees, visitors }) {
+  const { t } = useTranslation();
   return (
     <>
       <span className="inline-flex items-center gap-1.5 font-sans">
         <User className="h-3.5 w-3.5" />
-        <span>Employees</span>
+        <span>{t("accessControl.breakdown.employees")}</span>
         <span className="font-semibold">{employees}</span>
       </span>
       <span className="inline-flex items-center gap-1.5 font-sans">
         <UserPlus className="h-3.5 w-3.5" />
-        <span>Visitors</span>
+        <span>{t("accessControl.breakdown.visitors")}</span>
         <span className="font-semibold">{visitors}</span>
       </span>
     </>
@@ -114,6 +116,7 @@ function Breakdown({ employees, visitors }) {
 }
 
 export default function AccessControlPage() {
+  const { t } = useTranslation();
   const [filters, setFilters] = useState({
     branchIds: [],
     deviceIds: [],
@@ -217,11 +220,11 @@ export default function AccessControlPage() {
       setEmpLogs(Array.isArray(empRes?.data) ? empRes.data : []);
       setVisitorLogs(Array.isArray(visRes?.data) ? visRes.data : []);
     } catch (e) {
-      notify("Error", parseApiError(e), "error");
+      notify(t("accessControl.notify.errorTitle"), parseApiError(e), "error");
     } finally {
       setIsLoading(false);
     }
-  }, [filters]);
+  }, [filters, t]);
 
   useEffect(() => { fetchAll(); }, []); // initial
 
@@ -324,11 +327,11 @@ export default function AccessControlPage() {
       all.sort((a, b) => tsOf(b) - tsOf(a));
       setEmpLogsList(all);
     } catch (e) {
-      notify("Error", parseApiError(e), "error");
+      notify(t("accessControl.notify.errorTitle"), parseApiError(e), "error");
     } finally {
       setEmpLogsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   // ── Emergency Exit: PIN verified → open all doors ─────────────────────
   const handleOpenAllDoors = async () => {
@@ -340,9 +343,11 @@ export default function AccessControlPage() {
       } catch { failed++; }
     }));
     setPinOpen(false);
+    let msg = t("accessControl.notify.doorsOpened", { count: success });
+    if (failed) msg += " " + t("accessControl.notify.doorsFailed", { count: failed });
     notify(
-      "Emergency Exit",
-      `${success} door${success !== 1 ? "s" : ""} opened${failed ? `, ${failed} failed` : ""}.`,
+      t("accessControl.notify.emergencyExitTitle"),
+      msg,
       failed ? "warning" : "success"
     );
   };
@@ -355,15 +360,15 @@ export default function AccessControlPage() {
       const r = await getDevices({ per_page: 500 });
       const list = Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : [];
       setAllDevices(list);
-      notify("Device Health", "Health check complete", "success");
+      notify(t("accessControl.notify.deviceHealthTitle"), t("accessControl.notify.healthComplete"), "success");
     } catch (e) {
-      notify("Health Check Failed", parseApiError(e), "error");
+      notify(t("accessControl.notify.healthFailedTitle"), parseApiError(e), "error");
     }
   };
 
   return (
     <div className="px-6 py-6">
-      <h1 className="text-2xl font-extrabold text-foreground mb-6">Access Control</h1>
+      <h1 className="text-2xl font-extrabold text-foreground mb-6">{t("accessControl.title")}</h1>
 
       <FilterBar
         filters={filters}
@@ -381,7 +386,7 @@ export default function AccessControlPage() {
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <KpiCard
-          label="TOTAL ENTRIES"
+          label={t("accessControl.kpi.totalEntries")}
           value={stats.totalIns.toLocaleString()}
           icon={LogIn}
           accent="green"
@@ -390,7 +395,7 @@ export default function AccessControlPage() {
           footer={<Breakdown employees={stats.empIns} visitors={stats.visIns} />}
         />
         <KpiCard
-          label="TOTAL EXITS"
+          label={t("accessControl.kpi.totalExits")}
           value={stats.totalOuts.toLocaleString()}
           icon={LogOut}
           accent="red"
@@ -399,7 +404,7 @@ export default function AccessControlPage() {
           footer={<Breakdown employees={stats.empOuts} visitors={stats.visOuts} />}
         />
         <KpiCard
-          label="PEOPLE INSIDE"
+          label={t("accessControl.kpi.peopleInside")}
           value={stats.totalInside.toLocaleString()}
           icon={Users}
           accent="purple"
@@ -408,30 +413,30 @@ export default function AccessControlPage() {
           footer={<Breakdown employees={stats.empInside} visitors={stats.visInside} />}
         />
         <KpiCard
-          label="VISITORS"
+          label={t("accessControl.kpi.visitors")}
           value={(stats.visIns + stats.visInside).toLocaleString()}
-          hint={`${stats.visInside} currently on-site`}
+          hint={t("accessControl.kpi.onSite", { count: stats.visInside })}
           icon={UserPlus}
           accent="blue"
         />
         <KpiCard
-          label="ACTIVE DEVICES"
+          label={t("accessControl.kpi.activeDevices")}
           value={`${stats.onlineDevices}/${stats.totalDevices}`}
-          hint="Online terminals"
+          hint={t("accessControl.kpi.onlineTerminals")}
           icon={Server}
           accent="indigo"
         />
         <KpiCard
-          label="DEVICE HEALTH"
-          value={stats.offlineDevices > 0 ? "Attention" : "Healthy"}
-          hint={`${stats.offlineDevices} offline`}
+          label={t("accessControl.kpi.deviceHealth")}
+          value={stats.offlineDevices > 0 ? t("accessControl.kpi.attention") : t("accessControl.kpi.healthy")}
+          hint={t("accessControl.kpi.offlineCount", { count: stats.offlineDevices })}
           icon={Activity}
           accent="green"
           largeText
         />
         <KpiCard
-          label="EMERGENCY EXIT"
-          value="Unlock All Doors"
+          label={t("accessControl.kpi.emergencyExit")}
+          value={t("accessControl.kpi.unlockAllDoors")}
           icon={Siren}
           accent="red"
           emergency
@@ -439,14 +444,14 @@ export default function AccessControlPage() {
           footer={
             <span className="inline-flex items-center gap-2" style={{ color: "#ffb0b0" }}>
               <span className="h-2 w-2 rounded-full" style={{ background: "#ef4444", boxShadow: "0 0 0 4px rgba(239,68,68,.18)" }} />
-              <span>Stand-by</span>
+              <span>{t("accessControl.kpi.standby")}</span>
             </span>
           }
           cta={
             <button
               onClick={() => {
                 if (!allDevices.length) {
-                  notify("No Devices", "No registered devices to unlock.", "info");
+                  notify(t("accessControl.notify.noDevicesTitle"), t("accessControl.notify.noDevicesMsg"), "info");
                   return;
                 }
                 setPinOpen(true);
@@ -458,7 +463,7 @@ export default function AccessControlPage() {
                 boxShadow: "0 6px 14px -8px rgba(239,68,68,.7)",
               }}
             >
-              <Lock className="h-3.5 w-3.5" /> Unlock Now
+              <Lock className="h-3.5 w-3.5" /> {t("accessControl.kpi.unlockNow")}
             </button>
           }
         />
@@ -485,17 +490,17 @@ export default function AccessControlPage() {
             try {
               const r = await closeDoor({ device_id: d.device_id });
               if (r?.status) {
-                notify("Success", r?.message || "Door closed", "success");
+                notify(t("accessControl.notify.successTitle"), r?.message || t("accessControl.notify.doorClosed"), "success");
                 setOpenedDoors((prev) => {
                   const next = { ...prev };
                   delete next[d.device_id];
                   return next;
                 });
               } else {
-                notify("Failed", "Door close command failed", "error");
+                notify(t("accessControl.notify.failedTitle"), t("accessControl.notify.doorCloseFailed"), "error");
               }
             } catch (e) {
-              notify("Error", parseApiError(e), "error");
+              notify(t("accessControl.notify.errorTitle"), parseApiError(e), "error");
             }
           }}
           onRefresh={refreshDeviceHealth}
@@ -525,13 +530,13 @@ export default function AccessControlPage() {
           try {
             const r = await openDoor({ device_id: activeDeviceId, otp: pin });
             if (r?.status) {
-              notify("Success", r?.message || "Door opened", "success");
+              notify(t("accessControl.notify.successTitle"), r?.message || t("accessControl.notify.doorOpened"), "success");
               setOpenedDoors((prev) => ({ ...prev, [activeDeviceId]: true }));
             } else {
-              notify("Failed", "Door open command failed", "error");
+              notify(t("accessControl.notify.failedTitle"), t("accessControl.notify.doorOpenFailed"), "error");
             }
           } catch (e) {
-            notify("Error", parseApiError(e), "error");
+            notify(t("accessControl.notify.errorTitle"), parseApiError(e), "error");
           } finally {
             setDevicePinModal(false);
           }

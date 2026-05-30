@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { LockOpen, X } from "lucide-react";
 import { notify } from "@/lib/utils";
 
@@ -8,6 +9,7 @@ const PIN_LENGTH = 4;
 const EMERGENCY_PIN = "0000";
 
 export default function EmergencyPinDialog({ open, onCancel, onUnlock, deviceCount = 0 }) {
+  const { t } = useTranslation();
   const [pin, setPin] = useState([]);
   const [submitting, setSubmitting] = useState(false);
 
@@ -24,7 +26,7 @@ export default function EmergencyPinDialog({ open, onCancel, onUnlock, deviceCou
   const handleSubmit = async () => {
     if (pin.length !== PIN_LENGTH) return;
     if (pin.join("") !== EMERGENCY_PIN) {
-      notify("Invalid PIN", "Wrong emergency code. Try again.", "error");
+      notify(t("accessControl.pin.invalidPinTitle"), t("accessControl.pin.invalidPinMsg"), "error");
       setPin([]);
       return;
     }
@@ -40,9 +42,9 @@ export default function EmergencyPinDialog({ open, onCancel, onUnlock, deviceCou
         {/* Header */}
         <div className="px-6 py-5 border-b border-border flex justify-between items-center">
           <div>
-            <h2 className="text-lg font-bold text-foreground">Enter PIN to Unlock</h2>
+            <h2 className="text-lg font-bold text-foreground">{t("accessControl.pin.enterPin")}</h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Will unlock {deviceCount} device{deviceCount !== 1 ? "s" : ""}
+              {t("accessControl.pin.willUnlock", { count: deviceCount })}
             </p>
           </div>
           <button
@@ -87,7 +89,7 @@ export default function EmergencyPinDialog({ open, onCancel, onUnlock, deviceCou
               disabled={submitting}
               className="h-14 flex items-center justify-center text-sm font-medium text-primary hover:text-primary/80 transition-colors active:scale-95 disabled:opacity-50"
             >
-              Backspace
+              {t("accessControl.pin.backspace")}
             </button>
             <button
               onClick={() => handleNumber("0")}
@@ -101,7 +103,7 @@ export default function EmergencyPinDialog({ open, onCancel, onUnlock, deviceCou
               disabled={submitting}
               className="h-14 flex items-center justify-center text-sm font-bold tracking-wider text-primary hover:text-primary/80 transition-colors active:scale-95 disabled:opacity-50"
             >
-              CLEAR
+              {t("accessControl.pin.clear")}
             </button>
           </div>
 
@@ -112,7 +114,7 @@ export default function EmergencyPinDialog({ open, onCancel, onUnlock, deviceCou
             className="w-full bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-primary-foreground font-bold py-3.5 rounded-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
             <LockOpen size={18} />
-            {submitting ? "OPENING…" : "UNLOCK DOOR"}
+            {submitting ? t("accessControl.pin.opening") : t("accessControl.pin.unlockDoor")}
           </button>
         </div>
       </div>

@@ -284,5 +284,262 @@
     "status": "Status",
     "active": "Active",
     "inactive": "Inactive"
+  },
+  "shift": {
+    "pageTitle": "Shifts",
+    "searchPlaceholder": "Search....",
+    "refreshTitle": "Refresh Data",
+    "newButton": "New",
+    "confirmDelete": "Are you sure you want to delete this shift?",
+    "yes": "Yes",
+    "no": "No",
+    "edit": "Edit",
+    "delete": "Delete",
+    "columns": {
+      "name": "Shift Name",
+      "type": "Type",
+      "onOffDuty": "On / Off Duty",
+      "totalHrs": "Total Hrs",
+      "autoDeductBreak": "Auto-Deduct Break",
+      "autoShift": "Auto Shift",
+      "actions": "Actions"
+    }
+  },
+  "leave": {
+    "welcomeBack": "Welcome back, {{name}}",
+    "dashboardTitle": "Leave Dashboard",
+    "dashboardSubtitle": "Real-time view of approvals, attendance and team availability across all branches.",
+    "allBranches": "All Branches",
+    "allDepartments": "All Departments",
+    "allStatus": "All Status",
+    "more": "More",
+    "export": "Export",
+    "vsLastMonth": "vs last month",
+    "noRecords": "No records.",
+    "leaveFallback": "Leave",
+    "status": {
+      "label": "Status",
+      "pending": "Pending",
+      "approved": "Approved",
+      "rejected": "Rejected"
+    },
+    "kpi": {
+      "totalRequests": "Total Requests",
+      "totalRequestsSub": "This quarter",
+      "pendingApprovals": "Pending Approvals",
+      "pendingApprovalsSub": "Awaiting your review",
+      "approved": "Approved",
+      "approvedSub": "Last 30 days",
+      "totalRejected": "Total Rejected",
+      "totalRejectedSub": "This quarter",
+      "onLeaveToday": "On Leave Today",
+      "onLeaveTodaySub": "Across {{count}} departments"
+    },
+    "columns": {
+      "employee": "Employee",
+      "leaveType": "Leave Type",
+      "duration": "Duration",
+      "days": "Days",
+      "status": "Status",
+      "applied": "Applied"
+    },
+    "trend": {
+      "title": "Monthly Leave Trends",
+      "subtitle": "Approved vs pending requests · last 12 months"
+    },
+    "upcoming": {
+      "title": "Upcoming Leaves",
+      "viewAll": "View all",
+      "empty": "No upcoming leaves.",
+      "day": "day",
+      "days": "days"
+    },
+    "activity": {
+      "title": "Recent Leave Activity",
+      "subtitle": "Latest requests across the organization",
+      "viewAll": "View All",
+      "loading": "Loading...",
+      "empty": "No leave requests found."
+    },
+    "actions": {
+      "approve": "Approve",
+      "reject": "Reject"
+    }
+  },
+  "liveTracker": {
+    "loadingMap": "Loading map...",
+    "apiKeyMissing": "Google Maps API key missing",
+    "loadMapFailed": "Failed to load Google Maps",
+    "toggleBw": "Toggle B/W mode",
+    "feed": {
+      "recentCheckins": "Recent Check-ins",
+      "liveFeed": "LIVE FEED",
+      "viewAllEvents": "View All Events"
+    },
+    "overlay": {
+      "lastKnownLocation": "Last known location",
+      "history": "History"
+    },
+    "history": {
+      "employeeFallback": "Employee",
+      "movementHistory": "Movement history",
+      "date": "Date",
+      "pickDate": "Pick a date",
+      "back": "Back",
+      "close": "Close",
+      "loading": "Loading history…",
+      "loadFailed": "Failed to load history",
+      "loadMapFailed": "Failed to load Google Maps",
+      "noMovement": "No movement recorded on {{date}}.",
+      "play": "Play",
+      "pause": "Pause",
+      "reset": "Reset",
+      "speed": "Speed",
+      "driving": "Driving",
+      "walking": "Walking / stationary",
+      "sessionStart": "Session start",
+      "sessionEnd": "Session end",
+      "start": "Start",
+      "end": "End"
+    }
+  },
+  "accessControl": {
+    "title": "Access Control",
+    "breakdown": {
+      "employees": "Employees",
+      "visitors": "Visitors"
+    },
+    "kpi": {
+      "totalEntries": "TOTAL ENTRIES",
+      "totalExits": "TOTAL EXITS",
+      "peopleInside": "PEOPLE INSIDE",
+      "visitors": "VISITORS",
+      "activeDevices": "ACTIVE DEVICES",
+      "deviceHealth": "DEVICE HEALTH",
+      "emergencyExit": "EMERGENCY EXIT",
+      "attention": "Attention",
+      "healthy": "Healthy",
+      "onlineTerminals": "Online terminals",
+      "offlineCount": "{{count}} offline",
+      "onSite": "{{count}} currently on-site",
+      "unlockAllDoors": "Unlock All Doors",
+      "standby": "Stand-by",
+      "unlockNow": "Unlock Now"
+    },
+    "filters": {
+      "allBranches": "All Branches",
+      "allDevices": "All Devices",
+      "allUserTypes": "All User Types",
+      "employee": "Employee",
+      "visitor": "Visitor",
+      "allEmployees": "All Employees",
+      "submit": "Submit",
+      "reset": "Reset"
+    },
+    "table": {
+      "title": "Access Log History",
+      "live": "LIVE",
+      "records": "{{count}} records",
+      "timeFiltered": "time-filtered",
+      "from": "from {{time}}",
+      "until": "until {{time}}",
+      "autoRefreshing": "auto-refreshing",
+      "exportCsv": "Export CSV",
+      "generating": "Generating…",
+      "downloadPdf": "Download PDF",
+      "downloadFailed": "Failed to download PDF: {{error}}",
+      "colDateTime": "Date Time",
+      "colEmployee": "Employee",
+      "colId": "ID",
+      "colDevice": "Device",
+      "colBranch": "Branch",
+      "colMode": "Mode",
+      "colType": "Type",
+      "loading": "Loading…",
+      "noLogs": "No logs match your filters.",
+      "in": "IN",
+      "out": "OUT",
+      "pageOf": "Page {{page}} of {{total}}"
+    },
+    "devicePanel": {
+      "title": "Device Health",
+      "onlineCount": "{{online}}/{{total}} online",
+      "uptime": "Uptime",
+      "refresh": "Refresh device health",
+      "noDevices": "No devices registered.",
+      "online": "Online",
+      "offline": "Offline",
+      "doorOpen": "Door Open",
+      "closeDoor": "Close Door",
+      "openDoor": "Open Door",
+      "sendOpenCommand": "Send open door command",
+      "deviceOffline": "Device offline"
+    },
+    "pin": {
+      "enterPin": "Enter PIN to Unlock",
+      "willUnlock": "Will unlock {{count}} devices",
+      "deviceLabel": "Device: {{id}}",
+      "backspace": "Backspace",
+      "clear": "CLEAR",
+      "opening": "OPENING…",
+      "unlockDoor": "UNLOCK DOOR",
+      "invalidPinTitle": "Invalid PIN",
+      "invalidPinMsg": "Wrong emergency code. Try again.",
+      "invalidPinSimple": "Invalid Pin"
+    },
+    "empLogs": {
+      "presents": "Presents",
+      "absence": "Absence",
+      "incomplete": "Incomplete",
+      "manualEntry": "Manual Entry",
+      "leaves": "Leaves",
+      "holidays": "Holidays",
+      "employeeFallback": "Employee",
+      "close": "Close",
+      "shift": "Shift",
+      "shiftTime": "Shift Time",
+      "colNum": "#",
+      "colDateTime": "Date Time",
+      "colInOut": "In/Out",
+      "colDevice": "Device",
+      "loading": "Loading…",
+      "noLogs": "No logs in last 10 days.",
+      "in": "In",
+      "out": "Out"
+    },
+    "timeRange": {
+      "from": "From {{time}}",
+      "until": "Until {{time}}",
+      "filterByTime": "Filter by time",
+      "clearTimeFilter": "Clear time filter",
+      "title": "Time Range",
+      "format24": "24-hour",
+      "quickPresets": "Quick presets",
+      "morning": "Morning",
+      "afternoon": "Afternoon",
+      "evening": "Evening",
+      "allDay": "All day",
+      "fromLabel": "FROM",
+      "toLabel": "TO",
+      "clear": "Clear",
+      "apply": "Apply"
+    },
+    "notify": {
+      "errorTitle": "Error",
+      "successTitle": "Success",
+      "failedTitle": "Failed",
+      "noDevicesTitle": "No Devices",
+      "noDevicesMsg": "No registered devices to unlock.",
+      "emergencyExitTitle": "Emergency Exit",
+      "doorsOpened": "{{count}} doors opened.",
+      "doorsFailed": "{{count}} failed.",
+      "deviceHealthTitle": "Device Health",
+      "healthComplete": "Health check complete",
+      "healthFailedTitle": "Health Check Failed",
+      "doorClosed": "Door closed",
+      "doorOpened": "Door opened",
+      "doorCloseFailed": "Door close command failed",
+      "doorOpenFailed": "Door open command failed"
+    }
   }
 }

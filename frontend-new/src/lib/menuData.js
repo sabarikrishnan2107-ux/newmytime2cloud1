@@ -161,7 +161,8 @@ export const leftNavLinks = {
   "/access-report": reportMenu,
   "/manual-report": reportMenu,
   "/live-tracker-report": reportMenu,
-  "/visitor/reports": reportMenu,
+  // NOTE: "/visitor/reports" intentionally maps to visitorMenu (above) so the
+  // Visitor Report page keeps the Visitor sidebar. Do not re-add it here.
 
   "/shift": attendanceMenu,
   "/schedule": attendanceMenu,

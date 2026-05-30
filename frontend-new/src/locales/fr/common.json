@@ -282,5 +282,262 @@
     "status": "Statut",
     "active": "Actif",
     "inactive": "Inactif"
+  },
+  "shift": {
+    "pageTitle": "Quarts",
+    "searchPlaceholder": "Rechercher....",
+    "refreshTitle": "Actualiser les données",
+    "newButton": "Nouveau",
+    "confirmDelete": "Êtes-vous sûr de vouloir supprimer ce quart ?",
+    "yes": "Oui",
+    "no": "Non",
+    "edit": "Modifier",
+    "delete": "Supprimer",
+    "columns": {
+      "name": "Nom du quart",
+      "type": "Type",
+      "onOffDuty": "Début / Fin de service",
+      "totalHrs": "Heures totales",
+      "autoDeductBreak": "Pause déduite auto.",
+      "autoShift": "Quart automatique",
+      "actions": "Actions"
+    }
+  },
+  "leave": {
+    "welcomeBack": "Bon retour, {{name}}",
+    "dashboardTitle": "Tableau de bord des congés",
+    "dashboardSubtitle": "Vue en temps réel des approbations, de la présence et de la disponibilité des équipes sur toutes les agences.",
+    "allBranches": "Toutes les agences",
+    "allDepartments": "Tous les services",
+    "allStatus": "Tous les statuts",
+    "more": "Plus",
+    "export": "Exporter",
+    "vsLastMonth": "vs mois dernier",
+    "noRecords": "Aucun enregistrement.",
+    "leaveFallback": "Congé",
+    "status": {
+      "label": "Statut",
+      "pending": "En attente",
+      "approved": "Approuvé",
+      "rejected": "Rejeté"
+    },
+    "kpi": {
+      "totalRequests": "Total des demandes",
+      "totalRequestsSub": "Ce trimestre",
+      "pendingApprovals": "Approbations en attente",
+      "pendingApprovalsSub": "En attente de votre examen",
+      "approved": "Approuvé",
+      "approvedSub": "30 derniers jours",
+      "totalRejected": "Total rejeté",
+      "totalRejectedSub": "Ce trimestre",
+      "onLeaveToday": "En congé aujourd'hui",
+      "onLeaveTodaySub": "Sur {{count}} services"
+    },
+    "columns": {
+      "employee": "Employé",
+      "leaveType": "Type de congé",
+      "duration": "Durée",
+      "days": "Jours",
+      "status": "Statut",
+      "applied": "Demandé le"
+    },
+    "trend": {
+      "title": "Tendances mensuelles des congés",
+      "subtitle": "Demandes approuvées vs en attente · 12 derniers mois"
+    },
+    "upcoming": {
+      "title": "Congés à venir",
+      "viewAll": "Voir tout",
+      "empty": "Aucun congé à venir.",
+      "day": "jour",
+      "days": "jours"
+    },
+    "activity": {
+      "title": "Activité récente des congés",
+      "subtitle": "Dernières demandes dans l'organisation",
+      "viewAll": "Voir tout",
+      "loading": "Chargement...",
+      "empty": "Aucune demande de congé trouvée."
+    },
+    "actions": {
+      "approve": "Approuver",
+      "reject": "Rejeter"
+    }
+  },
+  "liveTracker": {
+    "loadingMap": "Chargement de la carte...",
+    "apiKeyMissing": "Clé API Google Maps manquante",
+    "loadMapFailed": "Échec du chargement de Google Maps",
+    "toggleBw": "Basculer en mode N/B",
+    "feed": {
+      "recentCheckins": "Pointages récents",
+      "liveFeed": "FLUX EN DIRECT",
+      "viewAllEvents": "Voir tous les événements"
+    },
+    "overlay": {
+      "lastKnownLocation": "Dernière position connue",
+      "history": "Historique"
+    },
+    "history": {
+      "employeeFallback": "Employé",
+      "movementHistory": "Historique des déplacements",
+      "date": "Date",
+      "pickDate": "Choisir une date",
+      "back": "Retour",
+      "close": "Fermer",
+      "loading": "Chargement de l'historique…",
+      "loadFailed": "Échec du chargement de l'historique",
+      "loadMapFailed": "Échec du chargement de Google Maps",
+      "noMovement": "Aucun déplacement enregistré le {{date}}.",
+      "play": "Lecture",
+      "pause": "Pause",
+      "reset": "Réinitialiser",
+      "speed": "Vitesse",
+      "driving": "En voiture",
+      "walking": "À pied / immobile",
+      "sessionStart": "Début de session",
+      "sessionEnd": "Fin de session",
+      "start": "Départ",
+      "end": "Arrivée"
+    }
+  },
+  "accessControl": {
+    "title": "Contrôle d'accès",
+    "breakdown": {
+      "employees": "Employés",
+      "visitors": "Visiteurs"
+    },
+    "kpi": {
+      "totalEntries": "TOTAL ENTRÉES",
+      "totalExits": "TOTAL SORTIES",
+      "peopleInside": "PERSONNES À L'INTÉRIEUR",
+      "visitors": "VISITEURS",
+      "activeDevices": "APPAREILS ACTIFS",
+      "deviceHealth": "ÉTAT DES APPAREILS",
+      "emergencyExit": "SORTIE DE SECOURS",
+      "attention": "Attention",
+      "healthy": "Sain",
+      "onlineTerminals": "Terminaux en ligne",
+      "offlineCount": "{{count}} hors ligne",
+      "onSite": "{{count}} actuellement sur site",
+      "unlockAllDoors": "Déverrouiller toutes les portes",
+      "standby": "En attente",
+      "unlockNow": "Déverrouiller"
+    },
+    "filters": {
+      "allBranches": "Toutes les agences",
+      "allDevices": "Tous les appareils",
+      "allUserTypes": "Tous les types d'utilisateurs",
+      "employee": "Employé",
+      "visitor": "Visiteur",
+      "allEmployees": "Tous les employés",
+      "submit": "Soumettre",
+      "reset": "Réinitialiser"
+    },
+    "table": {
+      "title": "Historique des accès",
+      "live": "EN DIRECT",
+      "records": "{{count}} enregistrements",
+      "timeFiltered": "filtré par heure",
+      "from": "à partir de {{time}}",
+      "until": "jusqu'à {{time}}",
+      "autoRefreshing": "actualisation auto.",
+      "exportCsv": "Exporter CSV",
+      "generating": "Génération…",
+      "downloadPdf": "Télécharger PDF",
+      "downloadFailed": "Échec du téléchargement du PDF : {{error}}",
+      "colDateTime": "Date et heure",
+      "colEmployee": "Employé",
+      "colId": "ID",
+      "colDevice": "Appareil",
+      "colBranch": "Agence",
+      "colMode": "Mode",
+      "colType": "Type",
+      "loading": "Chargement…",
+      "noLogs": "Aucun journal ne correspond à vos filtres.",
+      "in": "ENTRÉE",
+      "out": "SORTIE",
+      "pageOf": "Page {{page}} sur {{total}}"
+    },
+    "devicePanel": {
+      "title": "État des appareils",
+      "onlineCount": "{{online}}/{{total}} en ligne",
+      "uptime": "Disponibilité",
+      "refresh": "Actualiser l'état des appareils",
+      "noDevices": "Aucun appareil enregistré.",
+      "online": "En ligne",
+      "offline": "Hors ligne",
+      "doorOpen": "Porte ouverte",
+      "closeDoor": "Fermer la porte",
+      "openDoor": "Ouvrir la porte",
+      "sendOpenCommand": "Envoyer la commande d'ouverture",
+      "deviceOffline": "Appareil hors ligne"
+    },
+    "pin": {
+      "enterPin": "Saisir le code PIN pour déverrouiller",
+      "willUnlock": "Déverrouillera {{count}} appareils",
+      "deviceLabel": "Appareil : {{id}}",
+      "backspace": "Retour",
+      "clear": "EFFACER",
+      "opening": "OUVERTURE…",
+      "unlockDoor": "DÉVERROUILLER",
+      "invalidPinTitle": "Code PIN invalide",
+      "invalidPinMsg": "Code d'urgence incorrect. Réessayez.",
+      "invalidPinSimple": "Code PIN invalide"
+    },
+    "empLogs": {
+      "presents": "Présences",
+      "absence": "Absences",
+      "incomplete": "Incomplet",
+      "manualEntry": "Saisie manuelle",
+      "leaves": "Congés",
+      "holidays": "Jours fériés",
+      "employeeFallback": "Employé",
+      "close": "Fermer",
+      "shift": "Quart",
+      "shiftTime": "Horaire du quart",
+      "colNum": "#",
+      "colDateTime": "Date et heure",
+      "colInOut": "Entrée/Sortie",
+      "colDevice": "Appareil",
+      "loading": "Chargement…",
+      "noLogs": "Aucun journal au cours des 10 derniers jours.",
+      "in": "Entrée",
+      "out": "Sortie"
+    },
+    "timeRange": {
+      "from": "À partir de {{time}}",
+      "until": "Jusqu'à {{time}}",
+      "filterByTime": "Filtrer par heure",
+      "clearTimeFilter": "Effacer le filtre horaire",
+      "title": "Plage horaire",
+      "format24": "24 heures",
+      "quickPresets": "Préréglages rapides",
+      "morning": "Matin",
+      "afternoon": "Après-midi",
+      "evening": "Soir",
+      "allDay": "Toute la journée",
+      "fromLabel": "DE",
+      "toLabel": "À",
+      "clear": "Effacer",
+      "apply": "Appliquer"
+    },
+    "notify": {
+      "errorTitle": "Erreur",
+      "successTitle": "Succès",
+      "failedTitle": "Échec",
+      "noDevicesTitle": "Aucun appareil",
+      "noDevicesMsg": "Aucun appareil enregistré à déverrouiller.",
+      "emergencyExitTitle": "Sortie de secours",
+      "doorsOpened": "{{count}} portes ouvertes.",
+      "doorsFailed": "{{count}} échec(s).",
+      "deviceHealthTitle": "État des appareils",
+      "healthComplete": "Vérification de l'état terminée",
+      "healthFailedTitle": "Échec de la vérification",
+      "doorClosed": "Porte fermée",
+      "doorOpened": "Porte ouverte",
+      "doorCloseFailed": "Échec de la commande de fermeture",
+      "doorOpenFailed": "Échec de la commande d'ouverture"
+    }
   }
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 
 function explicitIsOut(l) {
@@ -49,6 +50,7 @@ function StatRow({ label, value }) {
 }
 
 export default function EmployeeLogsDialog({ open, onClose, employee, logs = [], loading = false }) {
+  const { t } = useTranslation();
   const classifiedLogs = useMemo(() => classifyLogs(logs), [logs]);
 
   if (!open) return null;
@@ -86,7 +88,7 @@ export default function EmployeeLogsDialog({ open, onClose, employee, logs = [],
   byDate.forEach((v) => { if (v.hasIn !== v.hasOut) incomplete += 1; });
   const manualEntry = classifiedLogs.filter((l) => String(l?.DeviceID || l?.device_id || "").toLowerCase() === "manual").length;
 
-  const name = employee?.full_name || "Employee";
+  const name = employee?.full_name || t("accessControl.empLogs.employeeFallback");
   const profile = employee?.profile_picture && employee.profile_picture !== "undefined"
     ? employee.profile_picture
     : "/avatar-placeholder.png";
@@ -102,7 +104,7 @@ export default function EmployeeLogsDialog({ open, onClose, employee, logs = [],
       >
         <button
           onClick={onClose}
-          title="Close"
+          title={t("accessControl.empLogs.close")}
           className="group absolute top-3 right-3 z-20 h-8 w-8 rounded-full flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-200 shadow-md hover:bg-rose-500 hover:text-white active:bg-rose-600 hover:scale-110 active:scale-95 transition-all duration-200"
         >
           <X size={16} className="transition-transform duration-200 group-hover:rotate-90" />
@@ -130,12 +132,12 @@ export default function EmployeeLogsDialog({ open, onClose, employee, logs = [],
             <div className="text-[10px] text-slate-400 dark:text-slate-500">{employee?.department?.name || "---"}</div>
 
             <div className="w-full text-xs space-y-2 text-slate-700 dark:text-slate-200 mt-3 text-left">
-              <StatRow label="Presents" value={presents} />
-              <StatRow label="Absence" value={absence} />
-              <StatRow label="Incomplete" value={incomplete} />
-              <StatRow label="Manual Entry" value={manualEntry} />
-              <StatRow label="Leaves" value={0} />
-              <StatRow label="Holidays" value={0} />
+              <StatRow label={t("accessControl.empLogs.presents")} value={presents} />
+              <StatRow label={t("accessControl.empLogs.absence")} value={absence} />
+              <StatRow label={t("accessControl.empLogs.incomplete")} value={incomplete} />
+              <StatRow label={t("accessControl.empLogs.manualEntry")} value={manualEntry} />
+              <StatRow label={t("accessControl.empLogs.leaves")} value={0} />
+              <StatRow label={t("accessControl.empLogs.holidays")} value={0} />
             </div>
           </div>
 
@@ -143,29 +145,29 @@ export default function EmployeeLogsDialog({ open, onClose, employee, logs = [],
           <div className="flex flex-col gap-3 min-w-0">
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-3 text-center">
-                <div className="text-sm text-slate-700 dark:text-white">Shift</div>
+                <div className="text-sm text-slate-700 dark:text-white">{t("accessControl.empLogs.shift")}</div>
                 <div className="text-base font-medium text-slate-800 dark:text-white truncate mt-1">{shiftName}</div>
               </div>
               <div className="rounded-md border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3 py-3 text-center">
-                <div className="text-sm text-slate-700 dark:text-white">Shift Time</div>
+                <div className="text-sm text-slate-700 dark:text-white">{t("accessControl.empLogs.shiftTime")}</div>
                 <div className="text-base font-medium text-slate-800 dark:text-white tabular-nums mt-1">{shiftTime}</div>
               </div>
             </div>
 
             <div className="text-[12px]">
               <div className="grid grid-cols-[28px_1fr_60px_70px] gap-x-3 text-slate-500 dark:text-slate-400 font-semibold text-[11px] pb-1 border-b border-slate-100 dark:border-slate-800">
-                <div>#</div>
-                <div>Date Time</div>
-                <div>In/Out</div>
-                <div>Device</div>
+                <div>{t("accessControl.empLogs.colNum")}</div>
+                <div>{t("accessControl.empLogs.colDateTime")}</div>
+                <div>{t("accessControl.empLogs.colInOut")}</div>
+                <div>{t("accessControl.empLogs.colDevice")}</div>
               </div>
               {loading ? (
-                <div className="py-3 text-center text-slate-500 dark:text-slate-400">Loading…</div>
+                <div className="py-3 text-center text-slate-500 dark:text-slate-400">{t("accessControl.empLogs.loading")}</div>
               ) : classifiedLogs.length === 0 ? (
-                <div className="py-3 text-center text-slate-500 dark:text-slate-400">No logs in last 10 days.</div>
+                <div className="py-3 text-center text-slate-500 dark:text-slate-400">{t("accessControl.empLogs.noLogs")}</div>
               ) : classifiedLogs.slice(0, 10).map((log, i) => {
                 const out = isOut(log);
-                const label = out ? "Out" : "In";
+                const label = out ? t("accessControl.empLogs.out") : t("accessControl.empLogs.in");
                 const color = out ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400";
                 return (
                   <div key={log.id || i} className="grid grid-cols-[28px_1fr_60px_70px] gap-x-3 py-1 text-slate-700 dark:text-slate-200 leading-tight">

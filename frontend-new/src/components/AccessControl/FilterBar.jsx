@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCcw, RefreshCw } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import DropDown from "@/components/ui/DropDown";
 import DateRangeSelect from "@/components/ui/DateRange";
@@ -15,6 +16,7 @@ export function FilterBar({
   employees,
   isLoading,
 }) {
+  const { t } = useTranslation();
   const set = (patch) => onChange({ ...filters, ...patch });
 
   return (
@@ -22,8 +24,8 @@ export function FilterBar({
       <div className="flex-1 min-w-[180px]">
         <DropDown
           multi
-          placeholder={"All Branches"}
-          items={[{ id: null, name: "All Branches" }, ...branches]}
+          placeholder={t("accessControl.filters.allBranches")}
+          items={[{ id: null, name: t("accessControl.filters.allBranches") }, ...branches]}
           value={filters.branchIds}
           onChange={(v) => set({ branchIds: v, deviceIds: [], employeeIds: [] })}
         />
@@ -32,8 +34,8 @@ export function FilterBar({
       <div className="flex-1 min-w-[180px]">
         <DropDown
           multi
-          placeholder={"All Devices"}
-          items={[{ id: null, name: "All Devices" }, ...devices]}
+          placeholder={t("accessControl.filters.allDevices")}
+          items={[{ id: null, name: t("accessControl.filters.allDevices") }, ...devices]}
           value={filters.deviceIds}
           onChange={(v) => set({ deviceIds: v })}
         />
@@ -41,11 +43,11 @@ export function FilterBar({
 
       <div className="flex-1 min-w-[180px]">
         <DropDown
-          placeholder={"All User Types"}
+          placeholder={t("accessControl.filters.allUserTypes")}
           items={[
-            { id: null, name: "All User Types" },
-            { id: "Employee", name: "Employee" },
-            { id: "Visitor", name: "Visitor" },
+            { id: null, name: t("accessControl.filters.allUserTypes") },
+            { id: "Employee", name: t("accessControl.filters.employee") },
+            { id: "Visitor", name: t("accessControl.filters.visitor") },
           ]}
           value={filters.userType}
           onChange={(v) => set({ userType: v })}
@@ -55,8 +57,8 @@ export function FilterBar({
       <div className="flex-1 min-w-[180px]">
         <DropDown
           multi
-          placeholder={"All Employees"}
-          items={[{ id: null, name: "All Employees" }, ...employees]}
+          placeholder={t("accessControl.filters.allEmployees")}
+          items={[{ id: null, name: t("accessControl.filters.allEmployees") }, ...employees]}
           value={filters.employeeIds}
           onChange={(v) => set({ employeeIds: v })}
         />
@@ -69,11 +71,11 @@ export function FilterBar({
 
       <Button onClick={onSubmit} disabled={isLoading} className="bg-gradient-primary text-primary-foreground hover:opacity-95">
         <RefreshCw className={`mr-1.5 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
-        Submit
+        {t("accessControl.filters.submit")}
       </Button>
 
       <Button variant="outline" onClick={onReset}>
-        <RotateCcw className="mr-1.5 h-4 w-4" /> Reset
+        <RotateCcw className="mr-1.5 h-4 w-4" /> {t("accessControl.filters.reset")}
       </Button>
     </div>
   );

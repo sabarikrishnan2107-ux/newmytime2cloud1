@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Search, Plus, MoreVertical, QrCode, Fingerprint, ChevronLeft, ChevronRight, Loader2, RefreshCw, Download, Upload, Pencil, Edit, Trash } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useTranslation } from 'react-i18next';
 import Link from 'next/link';
 
 import Columns from "./columns";
@@ -15,6 +16,8 @@ import IconButton from '@/components/Theme/IconButton';
 import { parseApiError } from '@/lib/utils';
 
 export default function ShiftPage() {
+
+    const { t } = useTranslation();
 
     const [records, setRecords] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -70,7 +73,7 @@ export default function ShiftPage() {
     }
 
     const onDelete = async (id) => {
-        if (confirm("Are you sure you want to delete this shift?")) {
+        if (confirm(t('shift.confirmDelete'))) {
             try {
                 await removeShift(id);
                 fetchShifts(currentPage, perPage);
@@ -94,12 +97,12 @@ export default function ShiftPage() {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6  sm:space-y-0">
                 <h1 className="text-2xl font-extrabold text-gray-600 dark:text-gray-300 flex items-center">
                     {/* <User className="w-7 h-7 mr-3 text-indigo-600" /> */}
-                    Shifts
+                    {t('shift.pageTitle')}
                 </h1>
                 <div className="flex flex-wrap items-center space-x-3 space-y-2 sm:space-y-0">
                     <div className="relative">
                         <Input
-                            placeholder="Search...."
+                            placeholder={t('shift.searchPlaceholder')}
                             icon="search"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
@@ -111,21 +114,21 @@ export default function ShiftPage() {
                         icon={RefreshCw}
                         onClick={handleRefresh}
                         isLoading={isLoading}
-                        title="Refresh Data"
+                        title={t('shift.refreshTitle')}
                     />
 
 
                     <Link href="/shift/create">
                         <button className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap">
                             <Plus className="w-4 h-4" />
-                            <span>New</span>
+                            <span>{t('shift.newButton')}</span>
                         </button>
                     </Link>
                 </div>
             </div>
 
             <DataTable
-                columns={Columns(handleRowClick, onEdit, onDelete)}
+                columns={Columns(handleRowClick, onEdit, onDelete, t)}
                 data={records}
                 isLoading={isLoading}
                 error={error}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import LiveTrackerBottomFeed from "./LiveTrackerBottomFeed";
 import distanceMeters from "@/hooks/useDistance";
 import { darkMapStyle } from "./mapData";
@@ -14,6 +15,7 @@ const BASE_MAP_CENTER = { lat: 25.2812992, lng: 55.4128809 };
 
 
 export default function LiveTeamStatus() {
+  const { t } = useTranslation();
   let companyId = null;
   try {
     const user = getUser();
@@ -283,7 +285,7 @@ export default function LiveTeamStatus() {
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "";
     if (!apiKey) {
       console.warn("Map: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY not set");
-      setMapError("Google Maps API key missing");
+      setMapError(t("liveTracker.apiKeyMissing"));
       return;
     }
 
@@ -305,7 +307,7 @@ export default function LiveTeamStatus() {
         mountMap();
       })
       .catch((err) => {
-        const message = err?.message || "Failed to load Google Maps";
+        const message = err?.message || t("liveTracker.loadMapFailed");
         setMapError(message);
         console.error("Failed to load Google Maps", err);
       });
@@ -376,6 +378,10 @@ export default function LiveTeamStatus() {
           openHistory: (e) => setHistoryEmployee(e),
           bwMode,
           moving: movingMap[emp.id],
+          labels: {
+            lastKnownLocation: t("liveTracker.overlay.lastKnownLocation"),
+            history: t("liveTracker.overlay.history"),
+          },
         });
         markersRef.current[employeeKey] = overlay;
       }
@@ -475,7 +481,7 @@ export default function LiveTeamStatus() {
           <div className="absolute inset-0 map-gradient-overlay pointer-events-none" />
           {!mapReady && !mapError && (
             <div className="absolute top-4 left-4 z-20 rounded-md bg-black/70 px-3 py-1 text-xs text-slate-200">
-              Loading map...
+              {t("liveTracker.loadingMap")}
             </div>
           )}
           {mapError && (
@@ -508,7 +514,7 @@ export default function LiveTeamStatus() {
           </button>
           <button
             onClick={() => setBwMode((s) => !s)}
-            title="Toggle B/W mode"
+            title={t("liveTracker.toggleBw")}
             className={`flex w-12 h-12 items-center justify-center rounded-xl shadow-lg transition-all ${bwMode ? 'bg-white text-black' : 'bg-slate-900 text-slate-300'}`}>
             <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
               <path d="M12 3v18a9 9 0 100-18z" />

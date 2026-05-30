@@ -1,11 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { LockOpen, X, ShieldCheck, Moon, Sun } from 'lucide-react';
 import { checkPin } from '@/lib/api';
 import { notify, parseApiError } from '@/lib/utils';
 
 const PinEntryModal = ({ device_id, pinModal, setPinModal, onSuccess }) => {
+    const { t } = useTranslation();
     const [pin, setPin] = useState([]);
     const pinLength = 4;
 
@@ -33,12 +35,12 @@ const PinEntryModal = ({ device_id, pinModal, setPinModal, onSuccess }) => {
                     onSuccess(pin.join(''))
                     return;
                 } else {
-                    notify("Error", "Invalid Pin", "error");
+                    notify(t("accessControl.notify.errorTitle"), t("accessControl.pin.invalidPinSimple"), "error");
                 }
 
             } catch (error) {
                 console.log(error);
-                notify("Error", parseApiError(error), "error");
+                notify(t("accessControl.notify.errorTitle"), parseApiError(error), "error");
             } finally {
                 setPin([]);
             }
@@ -58,8 +60,8 @@ const PinEntryModal = ({ device_id, pinModal, setPinModal, onSuccess }) => {
                         {/* Header */}
                         <div className="px-6 py-5 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center">
                             <div>
-                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Enter PIN to Unlock</h2>
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Device: {device_id}</p>
+                                <h2 className="text-xl font-bold text-gray-900 dark:text-white">{t("accessControl.pin.enterPin")}</h2>
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{t("accessControl.pin.deviceLabel", { id: device_id })}</p>
                             </div>
                             <button onClick={() => setPinModal(false)} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-400 dark:text-gray-500 transition-colors">
                                 <X size={20} />
@@ -98,7 +100,7 @@ const PinEntryModal = ({ device_id, pinModal, setPinModal, onSuccess }) => {
                                     onClick={handleBackspace}
                                     className="h-16 flex items-center justify-center text-blue-500 hover:text-blue-600 transition-colors active:scale-95"
                                 >
-                                    Backspace
+                                    {t("accessControl.pin.backspace")}
                                 </button>
                                 <button
                                     onClick={() => handleNumberClick('0')}
@@ -110,7 +112,7 @@ const PinEntryModal = ({ device_id, pinModal, setPinModal, onSuccess }) => {
                                     onClick={handleClear}
                                     className="h-16 flex items-center justify-center text-blue-500 hover:text-blue-600 transition-colors text-sm font-bold tracking-wider active:scale-95"
                                 >
-                                    CLEAR
+                                    {t("accessControl.pin.clear")}
                                 </button>
                             </div>
 
@@ -121,7 +123,7 @@ const PinEntryModal = ({ device_id, pinModal, setPinModal, onSuccess }) => {
                                 className="w-full bg-primary disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 rounded-xl  active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                             >
                                 <LockOpen size={20} />
-                                UNLOCK DOOR
+                                {t("accessControl.pin.unlockDoor")}
                             </button>
                         </div>
                     </div>

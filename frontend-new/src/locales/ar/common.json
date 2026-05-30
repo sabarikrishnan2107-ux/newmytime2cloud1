@@ -282,5 +282,262 @@
     "status": "الحالة",
     "active": "نشط",
     "inactive": "غير نشط"
+  },
+  "shift": {
+    "pageTitle": "الورديات",
+    "searchPlaceholder": "بحث....",
+    "refreshTitle": "تحديث البيانات",
+    "newButton": "جديد",
+    "confirmDelete": "هل أنت متأكد أنك تريد حذف هذه الوردية؟",
+    "yes": "نعم",
+    "no": "لا",
+    "edit": "تعديل",
+    "delete": "حذف",
+    "columns": {
+      "name": "اسم الوردية",
+      "type": "النوع",
+      "onOffDuty": "بداية / نهاية الدوام",
+      "totalHrs": "إجمالي الساعات",
+      "autoDeductBreak": "خصم الاستراحة تلقائيًا",
+      "autoShift": "وردية تلقائية",
+      "actions": "إجراءات"
+    }
+  },
+  "leave": {
+    "welcomeBack": "مرحبًا بعودتك، {{name}}",
+    "dashboardTitle": "لوحة الإجازات",
+    "dashboardSubtitle": "عرض فوري للموافقات والحضور وتوافر الفريق عبر جميع الفروع.",
+    "allBranches": "كل الفروع",
+    "allDepartments": "كل الأقسام",
+    "allStatus": "كل الحالات",
+    "more": "المزيد",
+    "export": "تصدير",
+    "vsLastMonth": "مقارنة بالشهر الماضي",
+    "noRecords": "لا توجد سجلات.",
+    "leaveFallback": "إجازة",
+    "status": {
+      "label": "الحالة",
+      "pending": "قيد الانتظار",
+      "approved": "تمت الموافقة",
+      "rejected": "مرفوضة"
+    },
+    "kpi": {
+      "totalRequests": "إجمالي الطلبات",
+      "totalRequestsSub": "هذا الربع",
+      "pendingApprovals": "موافقات معلّقة",
+      "pendingApprovalsSub": "بانتظار مراجعتك",
+      "approved": "تمت الموافقة",
+      "approvedSub": "آخر 30 يومًا",
+      "totalRejected": "إجمالي المرفوضة",
+      "totalRejectedSub": "هذا الربع",
+      "onLeaveToday": "في إجازة اليوم",
+      "onLeaveTodaySub": "عبر {{count}} قسمًا"
+    },
+    "columns": {
+      "employee": "الموظف",
+      "leaveType": "نوع الإجازة",
+      "duration": "المدة",
+      "days": "الأيام",
+      "status": "الحالة",
+      "applied": "تاريخ التقديم"
+    },
+    "trend": {
+      "title": "اتجاهات الإجازات الشهرية",
+      "subtitle": "الطلبات المعتمدة مقابل المعلّقة · آخر 12 شهرًا"
+    },
+    "upcoming": {
+      "title": "الإجازات القادمة",
+      "viewAll": "عرض الكل",
+      "empty": "لا توجد إجازات قادمة.",
+      "day": "يوم",
+      "days": "أيام"
+    },
+    "activity": {
+      "title": "نشاط الإجازات الأخير",
+      "subtitle": "أحدث الطلبات عبر المؤسسة",
+      "viewAll": "عرض الكل",
+      "loading": "جارٍ التحميل...",
+      "empty": "لم يتم العثور على طلبات إجازة."
+    },
+    "actions": {
+      "approve": "موافقة",
+      "reject": "رفض"
+    }
+  },
+  "liveTracker": {
+    "loadingMap": "جارٍ تحميل الخريطة...",
+    "apiKeyMissing": "مفتاح Google Maps API مفقود",
+    "loadMapFailed": "فشل تحميل خرائط Google",
+    "toggleBw": "تبديل الوضع الأبيض والأسود",
+    "feed": {
+      "recentCheckins": "تسجيلات الحضور الأخيرة",
+      "liveFeed": "بث مباشر",
+      "viewAllEvents": "عرض كل الأحداث"
+    },
+    "overlay": {
+      "lastKnownLocation": "آخر موقع معروف",
+      "history": "السجل"
+    },
+    "history": {
+      "employeeFallback": "موظف",
+      "movementHistory": "سجل الحركة",
+      "date": "التاريخ",
+      "pickDate": "اختر تاريخًا",
+      "back": "رجوع",
+      "close": "إغلاق",
+      "loading": "جارٍ تحميل السجل…",
+      "loadFailed": "فشل تحميل السجل",
+      "loadMapFailed": "فشل تحميل خرائط Google",
+      "noMovement": "لا توجد حركة مسجلة في {{date}}.",
+      "play": "تشغيل",
+      "pause": "إيقاف مؤقت",
+      "reset": "إعادة تعيين",
+      "speed": "السرعة",
+      "driving": "قيادة",
+      "walking": "مشي / ثابت",
+      "sessionStart": "بداية الجلسة",
+      "sessionEnd": "نهاية الجلسة",
+      "start": "البداية",
+      "end": "النهاية"
+    }
+  },
+  "accessControl": {
+    "title": "التحكم في الوصول",
+    "breakdown": {
+      "employees": "الموظفون",
+      "visitors": "الزوار"
+    },
+    "kpi": {
+      "totalEntries": "إجمالي الدخول",
+      "totalExits": "إجمالي الخروج",
+      "peopleInside": "الأشخاص بالداخل",
+      "visitors": "الزوار",
+      "activeDevices": "الأجهزة النشطة",
+      "deviceHealth": "حالة الأجهزة",
+      "emergencyExit": "مخرج الطوارئ",
+      "attention": "تنبيه",
+      "healthy": "سليم",
+      "onlineTerminals": "الأجهزة المتصلة",
+      "offlineCount": "{{count}} غير متصل",
+      "onSite": "{{count}} متواجد حاليًا",
+      "unlockAllDoors": "فتح كل الأبواب",
+      "standby": "وضع الاستعداد",
+      "unlockNow": "افتح الآن"
+    },
+    "filters": {
+      "allBranches": "كل الفروع",
+      "allDevices": "كل الأجهزة",
+      "allUserTypes": "كل أنواع المستخدمين",
+      "employee": "موظف",
+      "visitor": "زائر",
+      "allEmployees": "كل الموظفين",
+      "submit": "إرسال",
+      "reset": "إعادة تعيين"
+    },
+    "table": {
+      "title": "سجل الوصول",
+      "live": "مباشر",
+      "records": "{{count}} سجل",
+      "timeFiltered": "مُصفّى حسب الوقت",
+      "from": "من {{time}}",
+      "until": "حتى {{time}}",
+      "autoRefreshing": "تحديث تلقائي",
+      "exportCsv": "تصدير CSV",
+      "generating": "جارٍ الإنشاء…",
+      "downloadPdf": "تنزيل PDF",
+      "downloadFailed": "فشل تنزيل PDF: {{error}}",
+      "colDateTime": "التاريخ والوقت",
+      "colEmployee": "الموظف",
+      "colId": "المعرّف",
+      "colDevice": "الجهاز",
+      "colBranch": "الفرع",
+      "colMode": "الوضع",
+      "colType": "النوع",
+      "loading": "جارٍ التحميل…",
+      "noLogs": "لا توجد سجلات تطابق عوامل التصفية.",
+      "in": "دخول",
+      "out": "خروج",
+      "pageOf": "صفحة {{page}} من {{total}}"
+    },
+    "devicePanel": {
+      "title": "حالة الأجهزة",
+      "onlineCount": "{{online}}/{{total}} متصل",
+      "uptime": "وقت التشغيل",
+      "refresh": "تحديث حالة الأجهزة",
+      "noDevices": "لا توجد أجهزة مسجلة.",
+      "online": "متصل",
+      "offline": "غير متصل",
+      "doorOpen": "الباب مفتوح",
+      "closeDoor": "إغلاق الباب",
+      "openDoor": "فتح الباب",
+      "sendOpenCommand": "إرسال أمر فتح الباب",
+      "deviceOffline": "الجهاز غير متصل"
+    },
+    "pin": {
+      "enterPin": "أدخل رمز PIN للفتح",
+      "willUnlock": "سيفتح {{count}} جهازًا",
+      "deviceLabel": "الجهاز: {{id}}",
+      "backspace": "حذف",
+      "clear": "مسح",
+      "opening": "جارٍ الفتح…",
+      "unlockDoor": "فتح الباب",
+      "invalidPinTitle": "رمز PIN غير صالح",
+      "invalidPinMsg": "رمز الطوارئ خاطئ. حاول مرة أخرى.",
+      "invalidPinSimple": "رمز PIN غير صالح"
+    },
+    "empLogs": {
+      "presents": "الحضور",
+      "absence": "الغياب",
+      "incomplete": "غير مكتمل",
+      "manualEntry": "إدخال يدوي",
+      "leaves": "الإجازات",
+      "holidays": "العطلات",
+      "employeeFallback": "موظف",
+      "close": "إغلاق",
+      "shift": "الوردية",
+      "shiftTime": "وقت الوردية",
+      "colNum": "#",
+      "colDateTime": "التاريخ والوقت",
+      "colInOut": "دخول/خروج",
+      "colDevice": "الجهاز",
+      "loading": "جارٍ التحميل…",
+      "noLogs": "لا توجد سجلات في آخر 10 أيام.",
+      "in": "دخول",
+      "out": "خروج"
+    },
+    "timeRange": {
+      "from": "من {{time}}",
+      "until": "حتى {{time}}",
+      "filterByTime": "تصفية حسب الوقت",
+      "clearTimeFilter": "مسح تصفية الوقت",
+      "title": "النطاق الزمني",
+      "format24": "24 ساعة",
+      "quickPresets": "إعدادات سريعة",
+      "morning": "صباحًا",
+      "afternoon": "بعد الظهر",
+      "evening": "مساءً",
+      "allDay": "طوال اليوم",
+      "fromLabel": "من",
+      "toLabel": "إلى",
+      "clear": "مسح",
+      "apply": "تطبيق"
+    },
+    "notify": {
+      "errorTitle": "خطأ",
+      "successTitle": "نجاح",
+      "failedTitle": "فشل",
+      "noDevicesTitle": "لا توجد أجهزة",
+      "noDevicesMsg": "لا توجد أجهزة مسجلة لفتحها.",
+      "emergencyExitTitle": "مخرج الطوارئ",
+      "doorsOpened": "تم فتح {{count}} باب.",
+      "doorsFailed": "فشل {{count}}.",
+      "deviceHealthTitle": "حالة الأجهزة",
+      "healthComplete": "اكتمل فحص الحالة",
+      "healthFailedTitle": "فشل فحص الحالة",
+      "doorClosed": "تم إغلاق الباب",
+      "doorOpened": "تم فتح الباب",
+      "doorCloseFailed": "فشل أمر إغلاق الباب",
+      "doorOpenFailed": "فشل أمر فتح الباب"
+    }
   }
 }

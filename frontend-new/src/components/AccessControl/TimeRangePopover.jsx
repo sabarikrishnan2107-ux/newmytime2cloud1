@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Clock, X, ChevronUp, ChevronDown } from "lucide-react";
 
@@ -14,6 +15,7 @@ import { Clock, X, ChevronUp, ChevronDown } from "lucide-react";
  *   - onClear()         : called when the user clears the filter
  */
 export default function TimeRangePopover({ timeFrom = "", timeTo = "", onChange, onClear }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const isActive = !!(timeFrom || timeTo);
 
@@ -43,9 +45,9 @@ export default function TimeRangePopover({ timeFrom = "", timeTo = "", onChange,
 
   let label;
   if (timeFrom && timeTo)      label = `${timeFrom} – ${timeTo}`;
-  else if (timeFrom)            label = `From ${timeFrom}`;
-  else if (timeTo)              label = `Until ${timeTo}`;
-  else                          label = "Filter by time";
+  else if (timeFrom)            label = t("accessControl.timeRange.from", { time: timeFrom });
+  else if (timeTo)              label = t("accessControl.timeRange.until", { time: timeTo });
+  else                          label = t("accessControl.timeRange.filterByTime");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -68,7 +70,7 @@ export default function TimeRangePopover({ timeFrom = "", timeTo = "", onChange,
               onClick={(e) => { e.stopPropagation(); handleClear(); }}
               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); handleClear(); } }}
               className="flex items-center justify-center w-4 h-4 rounded text-cyan-500 hover:bg-cyan-500/10"
-              aria-label="Clear time filter"
+              aria-label={t("accessControl.timeRange.clearTimeFilter")}
             >
               <X className="h-3 w-3" />
             </span>
@@ -85,28 +87,28 @@ export default function TimeRangePopover({ timeFrom = "", timeTo = "", onChange,
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Clock className="h-3.5 w-3.5 text-cyan-500" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-foreground">Time Range</span>
+              <span className="text-xs font-semibold uppercase tracking-wider text-foreground">{t("accessControl.timeRange.title")}</span>
             </div>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">24-hour</span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-wider">{t("accessControl.timeRange.format24")}</span>
           </div>
         </div>
 
         <div className="px-4 py-4">
           <div className="grid grid-cols-2 gap-3">
-            <ClockPicker label="FROM" value={draftFrom} onChange={setDraftFrom} />
-            <ClockPicker label="TO"   value={draftTo}   onChange={setDraftTo} />
+            <ClockPicker label={t("accessControl.timeRange.fromLabel")} value={draftFrom} onChange={setDraftFrom} />
+            <ClockPicker label={t("accessControl.timeRange.toLabel")}   value={draftTo}   onChange={setDraftTo} />
           </div>
 
           {/* Quick presets */}
           <div className="mt-4">
             <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1.5">
-              Quick presets
+              {t("accessControl.timeRange.quickPresets")}
             </div>
             <div className="grid grid-cols-2 gap-1.5">
-              <PresetChip label="Morning" hint="06:00–12:00" onClick={() => applyPreset(6, 0, 12, 0)} />
-              <PresetChip label="Afternoon" hint="12:00–18:00" onClick={() => applyPreset(12, 0, 18, 0)} />
-              <PresetChip label="Evening" hint="18:00–23:00" onClick={() => applyPreset(18, 0, 23, 0)} />
-              <PresetChip label="All day" hint="00:00–23:59" onClick={() => applyPreset(0, 0, 23, 59)} />
+              <PresetChip label={t("accessControl.timeRange.morning")} hint="06:00–12:00" onClick={() => applyPreset(6, 0, 12, 0)} />
+              <PresetChip label={t("accessControl.timeRange.afternoon")} hint="12:00–18:00" onClick={() => applyPreset(12, 0, 18, 0)} />
+              <PresetChip label={t("accessControl.timeRange.evening")} hint="18:00–23:00" onClick={() => applyPreset(18, 0, 23, 0)} />
+              <PresetChip label={t("accessControl.timeRange.allDay")} hint="00:00–23:59" onClick={() => applyPreset(0, 0, 23, 59)} />
             </div>
           </div>
         </div>
@@ -117,14 +119,14 @@ export default function TimeRangePopover({ timeFrom = "", timeTo = "", onChange,
             onClick={handleClear}
             className="px-3 py-1.5 rounded-md text-xs font-medium text-muted-foreground hover:bg-muted transition"
           >
-            Clear
+            {t("accessControl.timeRange.clear")}
           </button>
           <button
             type="button"
             onClick={handleApply}
             className="px-4 py-1.5 rounded-md text-xs font-semibold text-white bg-cyan-600 hover:bg-cyan-500 transition shadow-sm"
           >
-            Apply
+            {t("accessControl.timeRange.apply")}
           </button>
         </div>
       </PopoverContent>

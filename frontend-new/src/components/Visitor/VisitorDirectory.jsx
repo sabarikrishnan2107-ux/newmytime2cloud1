@@ -12,6 +12,20 @@ const typeColors = {
   VIP: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400",
 };
 
+// Renders the visitor photo, falling back to initials if there's no image
+// (or the stored file is empty / fails to load — e.g. registered without a photo).
+function VisitorAvatar({ src, name, className = "w-10 h-10" }) {
+  const [err, setErr] = useState(false);
+  const initials = (name || "?").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  return (
+    <div className={`${className} rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center overflow-hidden text-sm font-bold text-gray-500 dark:text-gray-400 shrink-0`}>
+      {src && !err
+        ? <img src={src} alt={name} className="w-full h-full object-cover" onError={() => setErr(true)} />
+        : initials}
+    </div>
+  );
+}
+
 export default function VisitorDirectory() {
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -19,7 +33,22 @@ export default function VisitorDirectory() {
   const [visitors, setVisitors] = useState([]);
   const [addDialog, setAddDialog] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
   const [vForm, setVForm] = useState({ first_name: "", last_name: "", phone_number: "", email: "", visitor_company_name: "", id_type: "", id_number: "" });
+
+  const handleDelete = async (visitor) => {
+    if (!window.confirm(`Delete visitor "${visitor.name}"? This permanently removes the record.`)) return;
+    setDeletingId(visitor.id);
+    try {
+      await api.delete(`/visitor/${visitor.id}`);
+      setSelectedVisitor((s) => (s && s.id === visitor.id ? null : s));
+      setVisitors((prev) => prev.filter((v) => v.id !== visitor.id));
+    } catch (e) {
+      alert(e?.response?.data?.message || "Failed to delete visitor");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => { fetchVisitors(); }, []);
 
@@ -59,8 +88,10 @@ export default function VisitorDirectory() {
         email: vForm.email || "",
         gender: "Male",
         visitor_company_name: vForm.visitor_company_name || "---",
-        id_type: vForm.id_type || "National ID",
+        // id_type is a bigint column with no lookup table — sending text 500s.
+        id_type: null,
         id_number: vForm.id_number || "",
+        note: vForm.id_type || "",
         purpose_id: 1,
         host_company_id: null,
         date: today,
@@ -114,9 +145,7 @@ export default function VisitorDirectory() {
           <div key={v.id} className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4 hover:shadow-md transition cursor-pointer" onClick={() => setSelectedVisitor(v)}>
             <div className="flex items-start justify-between mb-3">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-sm font-bold text-gray-500 dark:text-gray-400">
-                  {v.name.split(" ").map(n => n[0]).join("")}
-                </div>
+                <VisitorAvatar src={v.photo} name={v.name} />
                 <div>
                   <div className="text-sm font-medium text-gray-800 dark:text-gray-100">{v.name}</div>
                   <div className="text-[10px] text-gray-400">{v.company}</div>
@@ -134,6 +163,19 @@ export default function VisitorDirectory() {
               <span className="text-[10px] text-gray-400">Last visit: {v.lastVisit}</span>
               <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${v.status === "active" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"}`}>{v.status}</span>
             </div>
+            <div className="flex items-center gap-2 mt-3">
+              <button
+                onClick={(e) => { e.stopPropagation(); setSelectedVisitor(v); }}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition">
+                <Eye className="h-3.5 w-3.5" /> View
+              </button>
+              <button
+                disabled={deletingId === v.id}
+                onClick={(e) => { e.stopPropagation(); handleDelete(v); }}
+                className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-300 dark:border-red-500/30 px-2 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition disabled:opacity-50">
+                <Trash2 className="h-3.5 w-3.5" /> {deletingId === v.id ? "Deleting…" : "Delete"}
+              </button>
+            </div>
           </div>
         ))}
         {filtered.length === 0 && <div className="col-span-full text-center py-8 text-gray-400 text-xs">No visitors found</div>}
@@ -144,10 +186,16 @@ export default function VisitorDirectory() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedVisitor(null)}></div>
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 border-l border-gray-200 dark:border-white/10 shadow-2xl overflow-y-auto">
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 px-5 py-4 flex items-center justify-between">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{selectedVisitor.name}</h3>
+              <div className="flex items-center gap-3">
+                <VisitorAvatar src={selectedVisitor.photo} name={selectedVisitor.name} className="w-9 h-9" />
+                <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{selectedVisitor.name}</h3>
+              </div>
               <button onClick={() => setSelectedVisitor(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-5 space-y-4">
+              {selectedVisitor.photo && (
+                <VisitorAvatar src={selectedVisitor.photo} name={selectedVisitor.name} className="w-24 h-24 mx-auto" />
+              )}
               {[["Company", selectedVisitor.company], ["Email", selectedVisitor.email], ["Phone", selectedVisitor.phone],
                 ["ID Type", selectedVisitor.idType], ["ID Number", selectedVisitor.idNumber], ["Type", selectedVisitor.type],
                 ["Total Visits", selectedVisitor.totalVisits], ["Last Visit", selectedVisitor.lastVisit], ["Status", selectedVisitor.status]].map(([label, value]) => (
@@ -155,6 +203,12 @@ export default function VisitorDirectory() {
                   <span className="text-gray-500">{label}</span><span className="text-gray-800 dark:text-gray-200 font-medium">{value}</span>
                 </div>
               ))}
+              <button
+                disabled={deletingId === selectedVisitor.id}
+                onClick={() => handleDelete(selectedVisitor)}
+                className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-300 dark:border-red-500/30 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition disabled:opacity-50">
+                <Trash2 className="h-3.5 w-3.5" /> {deletingId === selectedVisitor.id ? "Deleting…" : "Delete Visitor"}
+              </button>
             </div>
           </div>
         </div>

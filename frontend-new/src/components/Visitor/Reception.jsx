@@ -4,7 +4,7 @@ import {
   AlertCircle, Users, Printer, X, Camera, Upload, FileText, Fingerprint,
   CreditCard, Loader2, CheckCircle2, LayoutGrid, List, Mail, Building2,
   MapPin, Calendar, Briefcase, Car, LogOut, ShieldCheck, Radio, Nfc,
-  ScanLine, Wifi, ChevronRight,
+  ScanLine, Wifi, ChevronRight, Eye, Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,10 +29,15 @@ import {
   getDepartments,
 } from "@/lib/api";
 import PinEntryModal from "@/components/Device/UnlockDoor";
+import { api, buildQueryParams } from "@/lib/api-client";
 import { parseApiError } from "@/lib/utils";
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
+}
+
+function nowHHMM() {
+  return new Date().toTimeString().slice(0, 5);
 }
 
 function fmtTime(t) {
@@ -46,6 +51,19 @@ function fmtTime(t) {
 }
 
 const TILE_CLASS = "bg-card dark:bg-[#0e1730] border border-border/50 rounded-xl p-4 shadow-card";
+
+// Visitor photo with initials fallback (handles missing / empty / broken images).
+function InsideAvatar({ src, name, className = "w-9 h-9" }) {
+  const [err, setErr] = useState(false);
+  const initials = (name || "?").split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase();
+  return (
+    <div className={`${className} rounded-full bg-success/10 flex items-center justify-center overflow-hidden text-xs font-semibold text-success shrink-0`}>
+      {src && !err
+        ? <img src={src} alt={name} className="w-full h-full object-cover" onError={() => setErr(true)} />
+        : initials}
+    </div>
+  );
+}
 
 const expectedVisitors = [
   { id: "v1", name: "David Park", company: "Samsung Electronics", host: "Jennifer Lee", time: "10:30 AM", type: "Business", photo: false, email: "d.park@samsung.com", phone: "+971 50 444 1122", purpose: "Quarterly partnership review", department: "Engineering", duration: "2h", vehicle: "DXB-A-44291", preCheck: true, qr: "QR-VST-8F3A21B7", rfid: "RFID-04:A2:9B:7C:11:8E", nfc: "NFC-UID-E7C40A22" },
@@ -79,9 +97,11 @@ export default function Reception() {
 
   const [expectedList, setExpectedList] = useState([]);
   const [insideList, setInsideListState] = useState([]);
+  const [walkinInside, setWalkinInside] = useState([]);
   const [autoCheckedIn, setAutoCheckedIn] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [reloadTick, setReloadTick] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -136,10 +156,66 @@ export default function Reception() {
         console.warn("visitor attendance", e);
       }
     })();
+    (async () => {
+      try {
+        const params = await buildQueryParams({});
+        const { data } = await api.get("/visitor", { params: { ...params, per_page: 100 } });
+        if (cancelled) return;
+        const rows = Array.isArray(data?.data) ? data.data : [];
+        setWalkinInside(
+          rows
+            .filter((v) => Number(v.status_id) === 6 && String(v.date || "").slice(0, 10) === today)
+            .map((v) => ({
+              id: v.id,
+              visitorId: v.id, // real Visitor PK — gates View/Delete
+              photo: v.logo,
+              name: [v.first_name, v.last_name].filter(Boolean).join(" ").replace(/\s*\.$/, "") || "Visitor",
+              company: v.visitor_company_name || "—",
+              host: v.host?.name || "—",
+              checkedIn: fmtTime(v.time_in),
+              zone: v.zone?.name || "—",
+              badge: v.system_user_id ? `#${v.system_user_id}` : `#V-${v.id}`,
+              email: v.email || "",
+              phone: v.phone_number || "",
+              purpose: v.purpose?.name || v.note || "—",
+              department: "",
+              expectedOut: fmtTime(v.time_out),
+              visitorType: "Business",
+              auto: false,
+            }))
+        );
+      } catch (e) {
+        console.warn("walk-in visitors", e);
+      }
+    })();
     return () => { cancelled = true; };
   }, [reloadTick]);
 
   const reload = () => setReloadTick((t) => t + 1);
+
+  // Open the walk-in dialog, stamping "Allowed From" with the real check-in time.
+  const openWalkin = () => {
+    setForm((prev) => ({ ...prev, visitFromTime: nowHHMM() }));
+    setWalkinOpen(true);
+  };
+
+  const [viewVisitor, setViewVisitor] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+
+  const handleDeleteInside = async (v) => {
+    if (!v?.visitorId) return;
+    if (!window.confirm(`Delete visitor "${v.name}"? This permanently removes the record.`)) return;
+    setDeletingId(v.visitorId);
+    try {
+      await api.delete(`/visitor/${v.visitorId}`);
+      setViewVisitor((s) => (s && s.visitorId === v.visitorId ? null : s));
+      reload();
+    } catch (e) {
+      toast.error("Delete failed", { description: e?.response?.data?.message || e?.message || "Could not delete visitor" });
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const tokenSamples = {
     qr: ["QR-VST-8F3A21B7", "QR-VST-2D77F441", "QR-VST-9C0E5512", "QR-VST-553BA980", "QR-UNKNOWN-0001"],
@@ -201,6 +277,7 @@ export default function Reception() {
       email: v.email, phone: v.phone, purpose: v.purpose, department: v.department,
       expectedOut: v.time, visitorType: v.type, auto: true,
     })),
+    ...walkinInside,
     ...insideList,
   ];
 
@@ -430,6 +507,7 @@ export default function Reception() {
     vehiclePlate: "", notes: "", idType: "", idNumber: "",
     ndaAccepted: false, safetyAccepted: false, privacyAccepted: false,
     nationality: "", gender: "", dateOfBirth: "", expiryDate: "",
+    visitFromTime: nowHHMM(), visitToTime: "18:00",
     documents: [],
     cardNumber: "",
   });
@@ -592,6 +670,7 @@ export default function Reception() {
       vehiclePlate: "", notes: "", idType: "", idNumber: "",
       ndaAccepted: false, safetyAccepted: false, privacyAccepted: false,
       nationality: "", gender: "", dateOfBirth: "", expiryDate: "",
+      visitFromTime: nowHHMM(), visitToTime: "18:00",
       documents: [], cardNumber: "",
     });
     setStep(1);
@@ -642,16 +721,64 @@ export default function Reception() {
     }
   };
 
-  const handleSubmit = () => {
-    toast.success("Visitor registered successfully!", {
-      description: `${form.firstName} ${form.lastName} from ${form.company} has been checked in.`,
-    });
-    setWalkinOpen(false);
-    resetForm();
+  const handleSubmit = async () => {
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const params = await buildQueryParams({});
+      const today = todayStr();
+      const payload = {
+        ...params,
+        first_name: form.firstName.trim(),
+        last_name: form.lastName.trim() || ".",
+        phone_number: form.phone || "0000000000",
+        email: form.email || "",
+        gender: form.gender === "Female" ? "Female" : "Male",
+        visitor_company_name: form.company || "Walk-in",
+        // Backend's register() reads $data['host_company_id'] directly, so the
+        // key must be present or it throws "Undefined array key". We have no
+        // host-company mapping for a walk-in, so send null (branch_id ends null).
+        host_company_id: null,
+        // NOTE: `visitors.id_type` is a bigint column in the DB with no lookup
+        // table, so a text label ("Passport") throws a 22P02 cast error. Keep it
+        // null and preserve the human-readable label in `note` instead.
+        id_type: null,
+        id_number: form.idNumber || "",
+        purpose_id: 1,
+        note: [form.idType, form.purpose].filter(Boolean).join(" · "),
+        date: today,
+        visit_from: today,
+        visit_to: today,
+        time_in: form.visitFromTime,
+        time_out: form.visitToTime,
+        status_id: 6, // checked in / on-site
+        logo: capturedPhoto || null,
+      };
+
+      const { data } = await api.post("/visitor-register", payload);
+      if (data && data.status === false) {
+        toast.error("Check-in failed", { description: data.message || "Unknown error" });
+        return;
+      }
+
+      toast.success("Visitor registered successfully!", {
+        description: `${form.firstName} ${form.lastName} from ${form.company || "Walk-in"} has been checked in.`,
+      });
+      setWalkinOpen(false);
+      resetForm();
+      reload();
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message || "Check-in failed";
+      toast.error("Check-in failed", { description: msg });
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const canProceedStep1 = form.firstName && form.lastName && form.company && form.visitorType;
-  const canProceedStep2 = form.host && form.purpose;
+  const canProceedStep2 =
+    form.host && form.purpose &&
+    form.visitFromTime && form.visitToTime && form.visitToTime > form.visitFromTime;
   const canSubmit = form.ndaAccepted && form.privacyAccepted;
 
   return (
@@ -662,7 +789,7 @@ export default function Reception() {
           <p className="text-muted-foreground text-sm">Main Lobby — HQ Building A</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={() => setWalkinOpen(true)}>
+          <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={openWalkin}>
             <UserPlus className="w-4 h-4 mr-2" /> New Walk-in
           </Button>
           <Button variant="outline" onClick={() => openScanner("qr")}>
@@ -680,7 +807,7 @@ export default function Reception() {
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: UserPlus, label: "Register Visitor", color: "bg-teal-500/10 text-teal-600", action: () => setWalkinOpen(true) },
+          { icon: UserPlus, label: "Register Visitor", color: "bg-teal-500/10 text-teal-600", action: openWalkin },
           { icon: ScanLine, label: "Scan Token", color: "bg-blue-500/10 text-blue-600", action: () => openScanner("qr") },
           { icon: Phone, label: "Call Host", color: "bg-warning/10 text-warning", action: () => setCallHostOpen(true) },
           { icon: DoorOpen, label: "Open Gate", color: "bg-success/10 text-success", action: handleOpenGateClick },
@@ -823,9 +950,7 @@ export default function Reception() {
                   <div key={v.id || v.name} className="rounded-lg border border-border/50 p-3 hover:border-success/40 hover:shadow-md transition-all">
                     <div className="flex items-start justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-9 h-9 rounded-full bg-success/10 flex items-center justify-center text-xs font-semibold text-success shrink-0">
-                          {v.name.split(" ").map(n => n[0]).join("")}
-                        </div>
+                        <InsideAvatar src={v.photo} name={v.name} />
                         <div className="min-w-0">
                           <div className="font-medium text-foreground text-sm truncate">{v.name}</div>
                           <div className="text-xs text-muted-foreground truncate">{v.company}</div>
@@ -843,6 +968,10 @@ export default function Reception() {
                       <div className="flex items-center gap-1.5 truncate"><FileText className="w-3 h-3 shrink-0" /><span className="truncate">{v.purpose}</span></div>
                     </div>
                     <div className="flex items-center justify-end gap-2 mt-3">
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" title="View details" onClick={() => setViewVisitor(v)}><Eye className="w-3 h-3" /></Button>
+                      {v.visitorId && (
+                        <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" title="Delete visitor" disabled={deletingId === v.visitorId} onClick={() => handleDeleteInside(v)}><Trash2 className="w-3 h-3" /></Button>
+                      )}
                       <Button size="sm" variant="ghost" className="h-7 text-xs" title="Call host"><Phone className="w-3 h-3" /></Button>
                       <Button size="sm" variant="outline" className="h-7 text-xs"><LogOut className="w-3 h-3 mr-1" />Check Out</Button>
                     </div>
@@ -876,7 +1005,15 @@ export default function Reception() {
                         <td className="p-2"><div className="text-foreground">{v.zone}</div><div className="text-muted-foreground">{v.host}</div></td>
                         <td className="p-2"><div className="text-foreground">{v.checkedIn}</div><div className="text-muted-foreground">→ {v.expectedOut}</div></td>
                         <td className="p-2 font-mono text-muted-foreground">{v.badge}</td>
-                        <td className="p-2 px-3 text-right"><Button size="sm" variant="outline" className="h-7 text-xs">Check Out</Button></td>
+                        <td className="p-2 px-3 text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" title="View details" onClick={() => setViewVisitor(v)}><Eye className="w-3 h-3" /></Button>
+                            {v.visitorId && (
+                              <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" title="Delete visitor" disabled={deletingId === v.visitorId} onClick={() => handleDeleteInside(v)}><Trash2 className="w-3 h-3" /></Button>
+                            )}
+                            <Button size="sm" variant="outline" className="h-7 text-xs">Check Out</Button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1170,6 +1307,29 @@ export default function Reception() {
                   </Select>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">Allowed From *</label>
+                  <Input
+                    type="time"
+                    className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
+                    value={form.visitFromTime}
+                    onChange={(e) => updateForm("visitFromTime", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-xs text-muted-foreground">Allowed To *</label>
+                  <Input
+                    type="time"
+                    className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
+                    value={form.visitToTime}
+                    onChange={(e) => updateForm("visitToTime", e.target.value)}
+                  />
+                  {form.visitFromTime && form.visitToTime && form.visitToTime <= form.visitFromTime && (
+                    <p className="text-[11px] text-destructive">End time must be after start time</p>
+                  )}
+                </div>
+              </div>
               <div className="space-y-1.5">
                 <label className="text-xs text-muted-foreground">Purpose of Visit *</label>
                 <Select value={form.purpose} onValueChange={(v) => updateForm("purpose", v)}>
@@ -1282,6 +1442,7 @@ export default function Reception() {
                   <div><span className="text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{form.visitorType}</span></div>
                   <div><span className="text-muted-foreground">Host:</span> <span className="text-foreground font-medium">{form.host}</span></div>
                   <div><span className="text-muted-foreground">Purpose:</span> <span className="text-foreground font-medium">{form.purpose}</span></div>
+                  <div><span className="text-muted-foreground">Allowed:</span> <span className="text-foreground font-medium">{form.visitFromTime} – {form.visitToTime} (today)</span></div>
                   <div><span className="text-muted-foreground">Department:</span> <span className="text-foreground font-medium">{form.department || "—"}</span></div>
                   {form.idType && <div><span className="text-muted-foreground">ID:</span> <span className="text-foreground font-medium">{form.idType} · {form.idNumber}</span></div>}
                   {form.nationality && <div><span className="text-muted-foreground">Nationality:</span> <span className="text-foreground font-medium">{form.nationality}</span></div>}
@@ -1372,13 +1533,56 @@ export default function Reception() {
             ) : (
               <Button
                 className="bg-teal-600 text-white hover:bg-teal-700"
-                disabled={!canSubmit}
+                disabled={!canSubmit || submitting}
                 onClick={handleSubmit}
               >
-                <UserCheck className="w-4 h-4 mr-2" /> Check In Visitor
+                {submitting
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking In…</>
+                  : <><UserCheck className="w-4 h-4 mr-2" /> Check In Visitor</>}
               </Button>
             )}
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Visitor Details */}
+      <Dialog open={!!viewVisitor} onOpenChange={(open) => { if (!open) setViewVisitor(null); }}>
+        <DialogContent className="sm:max-w-md p-6">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-foreground">Visitor Details</DialogTitle>
+          </DialogHeader>
+          {viewVisitor && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <InsideAvatar src={viewVisitor.photo} name={viewVisitor.name} className="w-14 h-14" />
+                <div>
+                  <p className="font-semibold text-foreground">{viewVisitor.name}</p>
+                  <p className="text-xs text-muted-foreground">{viewVisitor.company}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                <div><span className="text-muted-foreground">Host:</span> <span className="text-foreground font-medium">{viewVisitor.host}</span></div>
+                <div><span className="text-muted-foreground">Zone:</span> <span className="text-foreground font-medium">{viewVisitor.zone}</span></div>
+                <div><span className="text-muted-foreground">In:</span> <span className="text-foreground font-medium">{viewVisitor.checkedIn}</span></div>
+                <div><span className="text-muted-foreground">Out:</span> <span className="text-foreground font-medium">{viewVisitor.expectedOut}</span></div>
+                <div><span className="text-muted-foreground">Badge:</span> <span className="text-foreground font-medium font-mono">{viewVisitor.badge}</span></div>
+                <div><span className="text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{viewVisitor.visitorType}</span></div>
+                {viewVisitor.email && <div className="col-span-2"><span className="text-muted-foreground">Email:</span> <span className="text-foreground font-medium">{viewVisitor.email}</span></div>}
+                {viewVisitor.phone && <div className="col-span-2"><span className="text-muted-foreground">Phone:</span> <span className="text-foreground font-medium">{viewVisitor.phone}</span></div>}
+                <div className="col-span-2"><span className="text-muted-foreground">Purpose:</span> <span className="text-foreground font-medium">{viewVisitor.purpose}</span></div>
+              </div>
+              {viewVisitor.visitorId && (
+                <Button
+                  variant="outline"
+                  className="w-full border-destructive/40 text-destructive hover:bg-destructive/10"
+                  disabled={deletingId === viewVisitor.visitorId}
+                  onClick={() => handleDeleteInside(viewVisitor)}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> {deletingId === viewVisitor.visitorId ? "Deleting…" : "Delete Visitor"}
+                </Button>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
