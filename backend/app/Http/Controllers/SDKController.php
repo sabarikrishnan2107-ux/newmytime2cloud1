@@ -677,11 +677,13 @@ class SDKController extends Controller
 
 
 
-                        //$responseArray = $response != '' ? json_decode($response) : '';
                         if ($response != '') {
-                            $response = json_decode($response);
-                            // $response = $response->errors[0]?->error_code == 33 ? 'Duplicate Image' : 'Try Again.';
-                            $response = $response->errors[0]->detail;
+                            $decoded = json_decode($response);
+                            if (isset($decoded->errors) && !empty($decoded->errors)) {
+                                $response = $decoded->errors[0]->detail ?? 'Error';
+                            } else {
+                                $response = 200;
+                            }
                         } else {
                             $response = 200;
                         }
@@ -690,8 +692,8 @@ class SDKController extends Controller
                             "name" => $persons['name'],
                             "userCode" => $persons['userCode'],
                             "device_id" => $value['device_id'],
-                            'status' => $response == '' ? '200' : $response,
-                            'sdk_response' => ["message" => $response == '' ? '200' : $response],
+                            'status' => ($response === '' || $response === null) ? 200 : $response,
+                            'sdk_response' => ["message" => ($response === '' || $response === null) ? 200 : $response],
                         ];
 
 

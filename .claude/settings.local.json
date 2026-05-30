@@ -5,7 +5,31 @@
       "Bash(D:/php/php.exe artisan tinker '--execute=:*)",
       "Bash(php artisan *)",
       "Bash(findstr \"^\\\\$2y\")",
-      "Bash(./php/php.exe -r '$j=json_decode\\(file_get_contents\\(\"composer.json\"\\),true\\); if\\(json_last_error\\(\\)\\){echo \"INVALID JSON: \".json_last_error_msg\\(\\);exit\\(1\\);} echo \"VALID JSON\\\\n\"; echo \"autoload.files: \".json_encode\\($j[\"autoload\"][\"files\"]??null\\).\"\\\\n\"; echo \"autoload-dev.files: \".json_encode\\($j[\"autoload-dev\"][\"files\"]??\"\\(none\\)\"\\).\"\\\\n\";')"
+      "Bash(./php/php.exe -r '$j=json_decode\\(file_get_contents\\(\"composer.json\"\\),true\\); if\\(json_last_error\\(\\)\\){echo \"INVALID JSON: \".json_last_error_msg\\(\\);exit\\(1\\);} echo \"VALID JSON\\\\n\"; echo \"autoload.files: \".json_encode\\($j[\"autoload\"][\"files\"]??null\\).\"\\\\n\"; echo \"autoload-dev.files: \".json_encode\\($j[\"autoload-dev\"][\"files\"]??\"\\(none\\)\"\\).\"\\\\n\";')",
+      "Bash(npm run *)",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/recognition\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/profile\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/voice\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/voicebroadcast\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/broadcast\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/door\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/customtips?type=staff\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/customtips?type=blacklist\")",
+      "Bash(curl -s --max-time 6 -H \"sxdmToken: 7VOarATI4IfbqFWLF38VdWoAbHUYlpAY\" -H \"sxdmSn: M014200892110000997\" \"http://139.59.69.241:8888/api/devices/customtips?type=stranger\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, name, serial_number, company_id, branch_id, status_id, created_at FROM devices WHERE serial_number = 'FC-8300T20094123';\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, name, serial_number, company_id, branch_id, status_id, created_at FROM devices WHERE serial_number ILIKE '%8300T20094123%' OR serial_number ILIKE '%FC-8300%';\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, name, serial_number, company_id, branch_id FROM devices WHERE serial_number ILIKE '%20094123%' OR serial_number ILIKE '%8300%';\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, name, serial_number, length\\(serial_number\\) AS len, company_id, branch_id, status_id, deleted_at, created_at, updated_at FROM devices WHERE serial_number ILIKE '%FC%' OR name ILIKE '%FC%' ORDER BY id DESC LIMIT 20;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, name, serial_number, length\\(serial_number\\) AS len, company_id, branch_id, status_id, created_at, updated_at FROM devices WHERE serial_number ILIKE '%FC%' OR name ILIKE '%FC%' OR serial_number ILIKE '%8300%' OR serial_number ILIKE '%20094123%' ORDER BY id DESC LIMIT 20;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT * FROM companies WHERE id = 82;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, name FROM company_branches WHERE id = 175;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT column_name FROM information_schema.columns WHERE table_name='devices' ORDER BY ordinal_position;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, name, serial_number, ip, port, model_number, device_type, synced, sync_date_time, last_live_datetime, device_category_name, mode FROM devices WHERE id = 332;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT * FROM device_status WHERE id = 2;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT table_name FROM information_schema.tables WHERE table_schema='public' AND \\(table_name ILIKE '%status%' OR table_name ILIKE '%device%'\\) ORDER BY table_name;\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT * FROM device_statuses WHERE id IN \\(1,2,3,4,5\\);\")",
+      "Bash(PGPASSWORD='test123' psql -h 139.59.69.241 -p 5432 -U francis -d mytime2cloud-v2 -c \"SELECT id, device_id, status_id, created_at FROM device_sensor_logs WHERE device_id = 332 ORDER BY id DESC LIMIT 5;\")"
     ]
   }
 }

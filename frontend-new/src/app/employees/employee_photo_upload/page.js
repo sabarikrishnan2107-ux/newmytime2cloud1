@@ -61,7 +61,7 @@ const SyncStatusModal = ({ results, total, currentCount, isOpen, onClose, isLoad
                   <td className="p-3">
                     {(() => {
                       const isSuccess = res.status == 200;
-                      const isDuplicate = typeof res.status === 'string' && /duplicate/i.test(res.status);
+                      const isDuplicate = typeof res.status === 'string' && /duplicate|already|is exist|exists/i.test(res.status);
                       const cls = isSuccess
                         ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                         : isDuplicate

@@ -54,25 +54,28 @@ class DeviceCameraModel2Controller extends Controller
     }
     public function deletePersonFromDevice($system_user_id)
     {
-        $data = [];
-        $json = '{
-            "cmd": "person_list_query",
-            
-            "limit": 10,
-            "offset": 0,
-            "sort": "asc",
-            "query_string": "' . $system_user_id . '"
-          }';
-        $response = $this->postCURL('/api/persons/query', $json);
+        $json = json_encode([
+            'cmd'          => 'person_list_query',
+            'limit'        => 10,
+            'offset'       => 0,
+            'sort'         => 'asc',
+            'query_string' => (string) $system_user_id,
+        ]);
+        $response = $this->postCURL('/api/persons/query', $json, $this->sxdmSn);
 
-        foreach ($response['data'] as $key => $personList) {
-
-
-
-            $person = $this->deleteCURL('/api/persons/item/' . $personList['id']);
+        if (!isset($response['data']) || !is_array($response['data']) || count($response['data']) === 0) {
+            return ['status' => 'not_found'];
         }
 
-        return $person;
+        $deleted = [];
+        foreach ($response['data'] as $personList) {
+            if (!isset($personList['id'])) {
+                continue;
+            }
+            $deleted[] = $this->deleteCURL('/api/persons/item/' . $personList['id']);
+        }
+
+        return ['status' => 'ok', 'deleted' => $deleted];
     }
 
     public function getPersonDetails($system_user_id)
@@ -317,7 +320,13 @@ class DeviceCameraModel2Controller extends Controller
                 }
             }
         }
-        //          
+
+        // Honour the caller's enabled flag when provided; default true so existing
+        // photo-uploads switch from the legacy hardcoded `false` to a usable state.
+        $enabledFlag = 'true';
+        if ($persons && array_key_exists('enabled', $persons)) {
+            $enabledFlag = filter_var($persons['enabled'], FILTER_VALIDATE_BOOLEAN) ? 'true' : 'false';
+        }
 
         try {
             if ($this->sxdmSn == '')
@@ -366,7 +375,7 @@ class DeviceCameraModel2Controller extends Controller
                         "password": "' . $password . '",
                         "phone_num": "",
                         "is_admin": false,
-                        "enabled": false,
+                        "enabled": ' . $enabledFlag . ',
                         "group_list": [
                           "1"
                         ],
@@ -391,7 +400,7 @@ class DeviceCameraModel2Controller extends Controller
                         "password": "' . $password . '",
                         "phone_num": "",
                         "is_admin": false,
-                        "enabled": false,
+                        "enabled": ' . $enabledFlag . ',
                         "group_list": [
                           "1"
                         ],
@@ -429,7 +438,7 @@ class DeviceCameraModel2Controller extends Controller
                         "password": "' . $password . '",
                         "phone_num": "",
                         "is_admin": false,
-                        "enabled": false,
+                        "enabled": ' . $enabledFlag . ',
                         "group_list": [
                           "1"
                         ],
@@ -494,6 +503,96 @@ class DeviceCameraModel2Controller extends Controller
             return "Expection failed" . $th;
         }
     }
+
+    // Toggle the SDK-side `enabled` flag for an already-enrolled person without
+    // re-uploading their face image. Returns ['status' => '...', 'response' => ...]
+    // so callers (job, controller) can decide how to log/report each device.
+    public function updatePersonEnabledStatus($systemUserId, $enabled)
+    {
+        if ($this->sxdmSn == '') {
+            return ['status' => 'no_serial'];
+        }
+
+        $sessionId = (new SDKController())->getSessionusingDeviceIdData($this->sxdmSn);
+        if (empty($sessionId)) {
+            $sessionId = $this->getActiveSessionId();
+            if (!empty($sessionId)) {
+                (new SDKController())->storeSessionid($this->sxdmSn, $sessionId);
+            }
+        }
+        if (empty($sessionId)) {
+            return ['status' => 'no_session'];
+        }
+
+        // Resolve the device-internal person id from system_user_id (we set both
+        // `id` and `person_code` to the same value on upload, but the SDK indexes
+        // its primary key separately on some firmwares — query is the safe path).
+        $queryJson = json_encode([
+            'limit'        => 10,
+            'offset'       => 0,
+            'sort'         => 'asc',
+            'query_string' => (string) $systemUserId,
+        ]);
+
+        $queryResp = $this->postCURL('/api/persons/query', $queryJson, $this->sxdmSn);
+        $personId = $queryResp['data'][0]['id'] ?? null;
+        if (!$personId) {
+            return ['status' => 'not_found'];
+        }
+
+        // Flip recognition_type alongside enabled so the device plays the appropriate
+        // customtip (staff greeting vs blacklist denial). Without this the device keeps
+        // playing the default staff "Thank you" even when door access is blocked.
+        $updateJson = json_encode([
+            'enabled'          => (bool) $enabled,
+            'recognition_type' => $enabled ? 'staff' : 'blacklist',
+        ]);
+        $putResp = $this->putCURL('/api/persons/item/' . $personId, $updateJson);
+
+        return ['status' => 'ok', 'response' => $putResp];
+    }
+
+    // Idempotent: ensures the device has a usable blacklist customtip so denied
+    // recognitions actually announce something instead of staying silent. Only
+    // writes when the device has no existing text/audio configured, so we don't
+    // overwrite admin customisations.
+    public function ensureBlacklistTipConfigured($defaultText = 'Access Denied')
+    {
+        if ($this->sxdmSn == '') {
+            return ['status' => 'no_serial'];
+        }
+
+        $current = $this->getCURL('/api/devices/customtips?type=blacklist');
+
+        $hasContent = false;
+        if (isset($current['schedule_list']) && is_array($current['schedule_list'])) {
+            foreach ($current['schedule_list'] as $entry) {
+                if (!empty($entry['text']) || !empty($entry['audio_data'])) {
+                    $hasContent = true;
+                    break;
+                }
+            }
+        }
+
+        if ($hasContent && !empty($current['enable'])) {
+            return ['status' => 'already_configured'];
+        }
+
+        $payload = json_encode([
+            'enable'        => true,
+            'person_type'   => 'blacklist',
+            'schedule_list' => [[
+                'start_time' => '00:00',
+                'end_time'   => '00:00',
+                'text'       => $defaultText,
+                'audio_data' => '',
+            ]],
+        ]);
+
+        $resp = $this->putCURL('/api/devices/customtips?type=blacklist', $payload);
+        return ['status' => 'configured', 'response' => $resp];
+    }
+
     public function updateTimeZone($device)
 
     {

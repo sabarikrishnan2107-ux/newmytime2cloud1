@@ -676,8 +676,10 @@ class EmployeeController extends Controller
                 return response()->json(['message' => 'No such record found.'], 404);
             }
 
-            $user_id     = $record->user_id;
-            $employee_id = $record->employee_id;
+            $user_id        = $record->user_id;
+            $employee_id    = $record->employee_id;
+            $company_id     = (int) $record->company_id;
+            $system_user_id = (string) $record->system_user_id;
 
             DB::transaction(function () use ($record, $user_id, $employee_id) {
                 $record->delete();
@@ -686,6 +688,12 @@ class EmployeeController extends Controller
                 FingerPrint::where('employee_id', $record->system_user_id)->delete();
                 Palm::where('employee_id', $record->system_user_id)->delete();
             });
+
+            // Best-effort device cleanup. Dispatched after the transaction commits so
+            // we don't push a delete to devices and then roll back the DB removal.
+            if ($company_id > 0 && $system_user_id !== '') {
+                \App\Jobs\DeleteEmployeeFromDevices::dispatch($company_id, $system_user_id);
+            }
 
             return response()->json(['message' => 'Employee successfully deleted.', 'status' => true], 200);
         } catch (\Throwable $th) {
