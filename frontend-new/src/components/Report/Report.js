@@ -19,6 +19,7 @@ import LoadingProgressDialog from './LoadingProgressDialog';
 import { API_BASE_URL } from '@/config';
 import { getUser } from "@/config/index";
 import ManualAttendanceCorrectionModal from '../Attendance/ManualAttendanceCorrectionModal';
+import MissingLogsModal from './MissingLogsModal';
 
 import {
   Dialog,
@@ -59,6 +60,7 @@ function AttendanceTableInner() {
   const [isPdfDownloading, setIsPdfDownloading] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
+  const [isMissingLogsOpen, setIsMissingLogsOpen] = useState(false);
 
   // Helper to get current month's first and last day (matching Vue behavior)
   const getDefaultDateRange = () => {
@@ -743,6 +745,16 @@ function AttendanceTableInner() {
                     </button>
                   </div>
 
+                  <div className="relative">
+                    <button
+                      onClick={() => setIsMissingLogsOpen(true)}
+                      className="bg-primary hover:bg-blue-600 text-white text-sm font-semibold py-2 px-3 rounded-lg flex items-center gap-1 transition-all shadow-lg shadow-primary/20"
+                    >
+                      <DownloadCloudIcon size={15} />
+                      Missing Logs
+                    </button>
+                  </div>
+
                   <RegenerateReport shift_type_id={shiftTypeId} />
 
                 </div>
@@ -932,6 +944,11 @@ function AttendanceTableInner() {
         initialData={{
           date: from || "",
         }}
+      />
+
+      <MissingLogsModal
+        open={isMissingLogsOpen}
+        onClose={() => setIsMissingLogsOpen(false)}
       />
 
 
