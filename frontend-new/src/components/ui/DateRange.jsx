@@ -197,17 +197,30 @@ export default function DateRangeSelect({
     });
   };
 
-  const handleRangeSelect = (range) => {
-    setDraftDate(range || { from: null, to: null });
-    // Only commit when the user has picked two distinct dates.
-    // First click sets from=clicked,to=clicked which we treat as in-progress.
-    if (
-      range?.from &&
-      range?.to &&
-      range.from.getTime() !== range.to.getTime()
-    ) {
-      commitRange(range);
+  // Drive the two-click range selection ourselves off the clicked day
+  // (react-day-picker v9 passes it as the 2nd onSelect arg). This keeps the
+  // behavior deterministic regardless of any pre-seeded committed range:
+  // first click sets the anchor and keeps the popover open, second click
+  // completes the range and closes it.
+  const handleRangeSelect = (range, selectedDay) => {
+    const clicked = selectedDay || range?.to || range?.from;
+    if (!clicked) return;
+
+    const hasAnchor = draftDate?.from && !draftDate?.to;
+    if (!hasAnchor) {
+      // First click — set the anchor, stay open, wait for the second date.
+      setDraftDate({ from: clicked, to: null });
+      return;
     }
+
+    // Second click — complete the range (ordering the two dates) and close.
+    const anchor = draftDate.from;
+    const finalRange =
+      clicked.getTime() < anchor.getTime()
+        ? { from: clicked, to: anchor }
+        : { from: anchor, to: clicked };
+    setDraftDate(finalRange);
+    commitRange(finalRange);
   };
 
   const handleSingleSelect = (d) => {

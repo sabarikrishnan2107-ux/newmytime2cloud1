@@ -414,13 +414,21 @@ function AttendanceTableInner() {
       //   return;
       // }
 
+      // When the user hasn't picked a real template from the dropdown
+      // (only Template5/TemplateB/Template3 are selectable), default PDF
+      // downloads to Format A ("Monthly Report Format A" = Template5).
+      const DROPDOWN_TEMPLATES = ["Template5", "TemplateB", "Template3"];
+      const effectiveTemplate = DROPDOWN_TEMPLATES.includes(selectedReportTemplate)
+        ? selectedReportTemplate
+        : "Template5";
+
       // 1. Handle Template4 (Format A), Template5 (Format C), TemplateB (Format B), and Template3 (Daily) - Puppeteer PDF
-      if ((selectedReportTemplate === "Template4" || selectedReportTemplate === "Template5" || selectedReportTemplate === "TemplateB" || selectedReportTemplate === "Template3") && actionType !== "EXCEL") {
+      if ((effectiveTemplate === "Template4" || effectiveTemplate === "Template5" || effectiveTemplate === "TemplateB" || effectiveTemplate === "Template3") && actionType !== "EXCEL") {
         const PDF_SERVICE = process.env.NEXT_PUBLIC_PDF_SERVICE_URL || 'http://localhost:3002';
         const user = getUser();
 
         // Daily report uses a single date and passes branch/department filters too
-        const isDaily = selectedReportTemplate === "Template3";
+        const isDaily = effectiveTemplate === "Template3";
         const paramsObj = {
           employee_ids: selectedEmployeeIds.join(","),
           company_id: company_id,
@@ -438,10 +446,10 @@ function AttendanceTableInner() {
 
         const SUMMARY_BASE = process.env.NEXT_PUBLIC_SUMMARY_REPORT_URL || PDF_SERVICE;
         let templatePath;
-        if (selectedReportTemplate === "Template5")      templatePath = "attendance-report/format-c.html";
-        else if (selectedReportTemplate === "TemplateB") templatePath = "attendance-report/format-b.html";
-        else if (selectedReportTemplate === "Template3") templatePath = "daily-report/";
-        else                                             templatePath = "attendance-report/";
+        if (effectiveTemplate === "Template5")      templatePath = "attendance-report/format-c.html";
+        else if (effectiveTemplate === "TemplateB") templatePath = "attendance-report/format-b.html";
+        else if (effectiveTemplate === "Template3") templatePath = "daily-report/";
+        else                                        templatePath = "attendance-report/";
         let templateUrl = `${SUMMARY_BASE}/${templatePath}?${t4Params.toString()}`;
 
         setIsPdfDownloading(true);
