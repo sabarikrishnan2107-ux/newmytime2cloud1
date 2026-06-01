@@ -33,7 +33,23 @@
       "Bash(cd /d/newmytime2cloud/frontend-new/src/locales)",
       "Bash(echo '=== __TRACKED_VAR__ ===')",
       "Bash(tail -c 400 __TRACKED_VAR__/common.json)",
-      "Bash(echo)"
+      "Bash(echo)",
+      "Bash(xargs grep -l \"CREATE TABLE.*devices\\\\|device_type\")",
+      "Read(//d/newmytime2cloud/frontend-new/**)",
+      "Bash(tasklist)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Select-Object Id, @{N='CPU\\(s\\)';E={[math]::Round\\($_.CPU,1\\)}}, @{N='Mem\\(MB\\)';E={[math]::Round\\($_.WorkingSet/1MB\\)}}, StartTime | Sort-Object StartTime | Format-Table -AutoSize)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep -Seconds 2; $remaining = Get-Process node -ErrorAction SilentlyContinue; if \\($remaining\\) { \"STILL RUNNING: $\\($remaining.Id -join ', '\\)\" } else { \"All node processes stopped\" })",
+      "PowerShell($p = Get-Process node -ErrorAction SilentlyContinue; if \\($p\\) { $p | Select-Object Id,@{N='CPU';E={[math]::Round\\($_.CPU,1\\)}},@{N='Mem\\(MB\\)';E={[math]::Round\\($_.WorkingSet/1MB\\)}},StartTime | Format-Table -AutoSize } else { \"NO node processes\" }; \"--- out/ ---\"; if \\(Test-Path \"d:\\\\newmytime2cloud\\\\frontend-new\\\\out\"\\) { \\(Get-ChildItem \"d:\\\\newmytime2cloud\\\\frontend-new\\\\out\"\\).Count } else { \"no out dir\" }; \"--- .next ---\"; if \\(Test-Path \"d:\\\\newmytime2cloud\\\\frontend-new\\\\.next\"\\) { \"has .next, BUILD_ID: \" + \\(Get-Content \"d:\\\\newmytime2cloud\\\\frontend-new\\\\.next\\\\BUILD_ID\" -ErrorAction SilentlyContinue\\) } else { \"no .next\" })",
+      "PowerShell($p = Get-Process node -ErrorAction SilentlyContinue; if \\($p\\) { $p | Select-Object Id,@{N='CPU';E={[math]::Round\\($_.CPU,1\\)}},@{N='Mem\\(MB\\)';E={[math]::Round\\($_.WorkingSet/1MB\\)}} | Format-Table -AutoSize } else { \"NO node\" }; \"out exists: \" + \\(Test-Path 'd:\\\\newmytime2cloud\\\\frontend-new\\\\out'\\); \"next exists: \" + \\(Test-Path 'd:\\\\newmytime2cloud\\\\frontend-new\\\\.next'\\))",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue | Stop-Process -Force; Start-Sleep 2; \"killed: \" + \\(-not \\(Get-Process node -ErrorAction SilentlyContinue\\)\\))",
+      "PowerShell(1..2 | ForEach-Object { $p = Get-Process node -ErrorAction SilentlyContinue | Where-Object { $_.WorkingSet -gt 200MB } | Select-Object -First 1; if \\($p\\) { \"sample $_`: CPU=$\\([math]::Round\\($p.CPU,1\\)\\)s Mem=$\\([math]::Round\\($p.WorkingSet/1MB\\)\\)MB\" } else { \"sample $_`: no heavy node proc\" }; Start-Sleep 20 })",
+      "PowerShell(function TotalNodeCpu { \\(Get-Process node -ErrorAction SilentlyContinue | Measure-Object -Property CPU -Sum\\).Sum }; $a = TotalNodeCpu; Start-Sleep 25; $b = TotalNodeCpu; \"total CPU start=$\\([math]::Round\\($a,1\\)\\)s  end=$\\([math]::Round\\($b,1\\)\\)s  delta=$\\([math]::Round\\($b-$a,1\\)\\)s\"; \"proc count: \" + \\(Get-Process node -ErrorAction SilentlyContinue\\).Count)",
+      "PowerShell(Get-Process node -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)",
+      "PowerShell(\"stopped\")",
+      "PowerShell($out = \"d:\\\\newmytime2cloud\\\\frontend-new\\\\out\"; \"out exists: \" + \\(Test-Path $out\\); \"top-level entries: \" + \\(Get-ChildItem $out -ErrorAction SilentlyContinue\\).Count; \"index.html: \" + \\(Test-Path \"$out\\\\index.html\"\\); \"device page: \" + \\(Test-Path \"$out\\\\device\\\\index.html\"\\); \"out last write: \" + \\(Get-Item $out\\).LastWriteTime; \"newest file in out: \" + \\(Get-ChildItem $out -Recurse -File | Sort-Object LastWriteTime -Desc | Select-Object -First 1\\).LastWriteTime; \"node still running: \" + [bool]\\(Get-Process node -ErrorAction SilentlyContinue\\))",
+      "PowerShell(\"--- ssh available? ---\"; \\(Get-Command ssh -ErrorAction SilentlyContinue\\).Source; \\(Get-Command scp -ErrorAction SilentlyContinue\\).Source; \\(Get-Command rsync -ErrorAction SilentlyContinue\\).Source; \\(Get-Command pscp -ErrorAction SilentlyContinue\\).Source; \\(Get-Command plink -ErrorAction SilentlyContinue\\).Source; \"--- ssh config ---\"; if \\(Test-Path \"$env:USERPROFILE\\\\.ssh\\\\config\"\\) { Get-Content \"$env:USERPROFILE\\\\.ssh\\\\config\" } else { \"no ssh config\" }; \"--- known_hosts hosts ---\"; if \\(Test-Path \"$env:USERPROFILE\\\\.ssh\\\\known_hosts\"\\) { \\(Get-Content \"$env:USERPROFILE\\\\.ssh\\\\known_hosts\" | ForEach-Object { \\($_ -split ' '\\)[0] }\\) -join \"`n\" } else { \"no known_hosts\" }; \"--- keys ---\"; Get-ChildItem \"$env:USERPROFILE\\\\.ssh\\\\\" -ErrorAction SilentlyContinue | Select-Object Name; \"--- is path local? ---\"; Test-Path \"/var/www/v2.mytime2cloud.com\")",
+      "Bash(php -l app/Http/Controllers/VisitorController.php)"
     ]
   }
 }

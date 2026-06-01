@@ -171,7 +171,7 @@ export default function Reception() {
               photo: v.logo,
               name: [v.first_name, v.last_name].filter(Boolean).join(" ").replace(/\s*\.$/, "") || "Visitor",
               company: v.visitor_company_name || "—",
-              host: v.host?.name || "—",
+              host: v.host_name || v.host?.employee?.display_name || v.host?.name || "—",
               checkedIn: fmtTime(v.time_in),
               zone: v.zone?.name || "—",
               badge: v.system_user_id ? `#${v.system_user_id}` : `#V-${v.id}`,
@@ -201,6 +201,13 @@ export default function Reception() {
 
   const [viewVisitor, setViewVisitor] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
+
+  const toggleDevice = (id) => {
+    setForm((prev) => {
+      const cur = prev.deviceIds || [];
+      return { ...prev, deviceIds: cur.includes(id) ? cur.filter((d) => d !== id) : [...cur, id] };
+    });
+  };
 
   const handleDeleteInside = async (v) => {
     if (!v?.visitorId) return;
@@ -431,6 +438,7 @@ export default function Reception() {
   };
 
   const [hostEmployees, setHostEmployees] = useState([]);
+  const [companyDevices, setCompanyDevices] = useState([]);
   const [hostDepartments, setHostDepartments] = useState([]);
 
   useEffect(() => {
@@ -463,6 +471,19 @@ export default function Reception() {
         const list = Array.isArray(r) ? r : Array.isArray(r?.data) ? r.data : [];
         setHostDepartments(list.map((d) => ({ id: d.id, name: d.name })).filter((x) => x.id != null));
       } catch (err) { console.warn("departments", err); }
+    })();
+    (async () => {
+      try {
+        const params = await buildQueryParams({});
+        const { data } = await api.get("/device-list", { params });
+        if (cancelled) return;
+        const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+        setCompanyDevices(
+          list
+            .map((d) => ({ id: d.id, name: d.name || d.device_id, serial: d.device_id, location: d.location || "" }))
+            .filter((x) => x.id != null)
+        );
+      } catch (err) { console.warn("devices", err); }
     })();
     return () => { cancelled = true; };
   }, []);
@@ -508,6 +529,7 @@ export default function Reception() {
     ndaAccepted: false, safetyAccepted: false, privacyAccepted: false,
     nationality: "", gender: "", dateOfBirth: "", expiryDate: "",
     visitFromTime: nowHHMM(), visitToTime: "18:00",
+    deviceIds: [],
     documents: [],
     cardNumber: "",
   });
@@ -671,6 +693,7 @@ export default function Reception() {
       ndaAccepted: false, safetyAccepted: false, privacyAccepted: false,
       nationality: "", gender: "", dateOfBirth: "", expiryDate: "",
       visitFromTime: nowHHMM(), visitToTime: "18:00",
+      deviceIds: [],
       documents: [], cardNumber: "",
     });
     setStep(1);
@@ -727,6 +750,7 @@ export default function Reception() {
     try {
       const params = await buildQueryParams({});
       const today = todayStr();
+      const hostName = hostEmployees.find((e) => String(e.id) === String(form.host))?.name || "";
       const payload = {
         ...params,
         first_name: form.firstName.trim(),
@@ -739,6 +763,7 @@ export default function Reception() {
         // key must be present or it throws "Undefined array key". We have no
         // host-company mapping for a walk-in, so send null (branch_id ends null).
         host_company_id: null,
+        host_name: hostName,
         // NOTE: `visitors.id_type` is a bigint column in the DB with no lookup
         // table, so a text label ("Passport") throws a 22P02 cast error. Keep it
         // null and preserve the human-readable label in `note` instead.
@@ -753,6 +778,7 @@ export default function Reception() {
         time_out: form.visitToTime,
         status_id: 6, // checked in / on-site
         logo: capturedPhoto || null,
+        device_ids: form.deviceIds || [],
       };
 
       const { data } = await api.post("/visitor-register", payload);
@@ -761,8 +787,27 @@ export default function Reception() {
         return;
       }
 
+      const assignment = data?.data?.device_assignment;
+      let deviceMsg = "";
+      if (assignment) {
+        deviceMsg = ` Temp ID ${assignment.system_user_id}.`;
+        const results = assignment.push_results || [];
+        if (results.length) {
+          const ok = results.filter((r) => r.ok).map((r) => r.name);
+          const failed = results.filter((r) => !r.ok);
+          if (ok.length) deviceMsg += ` Uploaded to: ${ok.join(", ")}.`;
+          if (failed.length) {
+            toast.error(`${failed.length} device(s) failed to upload`, {
+              description: failed.map((f) => `${f.name}: ${f.message}`).join("  |  "),
+              duration: 8000,
+            });
+          }
+        } else {
+          deviceMsg += ` Saved for ${assignment.devices?.length || 0} device(s) (push off).`;
+        }
+      }
       toast.success("Visitor registered successfully!", {
-        description: `${form.firstName} ${form.lastName} from ${form.company || "Walk-in"} has been checked in.`,
+        description: `${form.firstName} ${form.lastName} from ${form.company || "Walk-in"} has been checked in.${deviceMsg}`,
       });
       setWalkinOpen(false);
       resetForm();
@@ -1342,6 +1387,35 @@ export default function Reception() {
                 </Select>
               </div>
               <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <label className="text-xs text-muted-foreground">Grant Device Access (optional)</label>
+                  {(form.deviceIds?.length || 0) > 0 && (
+                    <span className="text-[10px] text-teal-600 font-medium">{form.deviceIds.length} selected</span>
+                  )}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Select the device(s) this visitor may use. A temporary ID is created and access auto-expires after the allowed time.
+                </p>
+                <div className="max-h-40 overflow-y-auto rounded-lg border border-border/50 divide-y divide-border/40">
+                  {companyDevices.length === 0 ? (
+                    <div className="px-3 py-3 text-xs text-muted-foreground">No devices found for this company.</div>
+                  ) : (
+                    companyDevices.map((d) => {
+                      const checked = (form.deviceIds || []).includes(d.id);
+                      return (
+                        <label key={d.id} className="flex items-center gap-2.5 px-3 py-2 text-xs cursor-pointer hover:bg-muted/30">
+                          <Checkbox checked={checked} onCheckedChange={() => toggleDevice(d.id)} />
+                          <DoorOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                          <span className="font-medium text-foreground truncate">{d.name}</span>
+                          {d.location && <span className="text-muted-foreground truncate">· {d.location}</span>}
+                          <span className="ml-auto font-mono text-[10px] text-muted-foreground shrink-0">{d.serial}</span>
+                        </label>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+              <div className="space-y-1.5">
                 <label className="text-xs text-muted-foreground">Vehicle License Plate</label>
                 <Input placeholder="e.g. ABC-1234" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.vehiclePlate} onChange={(e) => updateForm("vehiclePlate", e.target.value)} />
               </div>
@@ -1440,9 +1514,12 @@ export default function Reception() {
                   <div><span className="text-muted-foreground">Name:</span> <span className="text-foreground font-medium">{form.firstName} {form.lastName}</span></div>
                   <div><span className="text-muted-foreground">Company:</span> <span className="text-foreground font-medium">{form.company}</span></div>
                   <div><span className="text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{form.visitorType}</span></div>
-                  <div><span className="text-muted-foreground">Host:</span> <span className="text-foreground font-medium">{form.host}</span></div>
+                  <div><span className="text-muted-foreground">Host:</span> <span className="text-foreground font-medium">{hostEmployees.find((e) => String(e.id) === String(form.host))?.name || "—"}</span></div>
                   <div><span className="text-muted-foreground">Purpose:</span> <span className="text-foreground font-medium">{form.purpose}</span></div>
                   <div><span className="text-muted-foreground">Allowed:</span> <span className="text-foreground font-medium">{form.visitFromTime} – {form.visitToTime} (today)</span></div>
+                  {(form.deviceIds?.length || 0) > 0 && (
+                    <div className="col-span-2"><span className="text-muted-foreground">Device access:</span> <span className="text-foreground font-medium">{companyDevices.filter((d) => form.deviceIds.includes(d.id)).map((d) => d.name).join(", ")}</span></div>
+                  )}
                   <div><span className="text-muted-foreground">Department:</span> <span className="text-foreground font-medium">{form.department || "—"}</span></div>
                   {form.idType && <div><span className="text-muted-foreground">ID:</span> <span className="text-foreground font-medium">{form.idType} · {form.idNumber}</span></div>}
                   {form.nationality && <div><span className="text-muted-foreground">Nationality:</span> <span className="text-foreground font-medium">{form.nationality}</span></div>}

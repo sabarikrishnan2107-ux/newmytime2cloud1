@@ -21,6 +21,7 @@ export const DEVICE_TYPES = [
     { id: 'all', name: 'All (AC & Attendance)' },
     { id: 'Attendance', name: 'Attendance' },
     { id: 'Access Control', name: 'Access Control' },
+    { id: 'Visitor Management', name: 'Visitor Management' },
 ];
 
 export const STATUSSES = [

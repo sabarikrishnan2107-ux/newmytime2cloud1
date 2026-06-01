@@ -47,6 +47,9 @@ class Kernel extends ConsoleKernel
 
         $schedule->command('delete_old_records')->monthlyOn(1, '00:00');
 
+        // Remove walk-in visitors from devices once their allowed time window ends.
+        $schedule->command('visitors:expire-device-access')->everyFiveMinutes()->withoutOverlapping();
+
         $schedule
             ->command('sync_datetime_to_device')
             ->dailyAt('02:45')

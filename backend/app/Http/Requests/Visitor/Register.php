@@ -46,12 +46,17 @@ class Register extends FormRequest
         $validations['id_type'] = 'nullable';
         $validations['id_number'] = 'nullable|string|max:255';
         $validations['host_company_id'] = 'nullable';
+        $validations['host_name'] = 'nullable|string|max:255';
         $validations['company_id'] = 'required';
         $validations['status_id'] = 'nullable';
 
         $validations['logo'] = 'nullable';
         $validations['id_copy'] = 'nullable';
         $validations['date'] = 'required|date';
+
+        // Walk-in device assignment (optional): list of Device.id to push the visitor to.
+        $validations['device_ids'] = 'nullable|array';
+        $validations['device_ids.*'] = 'integer';
 
         $validations["time_in"] = "required";
         $validations["time_out"] = "required";

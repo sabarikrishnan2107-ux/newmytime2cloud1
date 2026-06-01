@@ -15,6 +15,7 @@ use App\Models\Employee;
 use App\Models\HostCompany;
 use App\Models\Notification;
 use App\Models\Visitor;
+use App\Models\VisitorDevice;
 use App\Models\Zone;
 use App\Models\ZoneDevices;
 use Carbon\Carbon;
@@ -261,9 +262,18 @@ class VisitorController extends Controller
             // }
 
 
-            if (!Visitor::create($data)) {
+            // device_ids is not a visitors column — it's handled separately below.
+            // Strip it so Eloquent doesn't try to write the array into the table
+            // ("Array to string conversion").
+            unset($data['device_ids']);
+
+            $visitor = Visitor::create($data);
+            if (!$visitor) {
                 return $this->response('Form is not submitted.', null, false);
             }
+
+            // Walk-in device assignment: temp id + visitor_devices rows + (flagged) SDK push.
+            $deviceAssignment = $this->assignWalkinDevices($request, $visitor, $data);
 
             // $preparedJson = $this->prepareJsonForSDK([
             //     "first_name" => "first_name",
@@ -309,6 +319,7 @@ class VisitorController extends Controller
             }
 
             $data['url'] = env("APP_URL") . "/media/visitor/logo/" . $data['logo'];
+            $data['device_assignment'] = $deviceAssignment;
 
             return $this->response('Form has been submitted successfully.', $data, true);
         } catch (\Throwable $th) {
@@ -702,6 +713,185 @@ class VisitorController extends Controller
         } catch (\Throwable $th) {
             throw $th;
         }
+    }
+
+    /**
+     * Assign selected devices to a walk-in visitor: allocate a temporary, company-unique
+     * system_user_id, record one visitor_devices row per device, and (when VISITOR_SDK_PUSH
+     * is enabled) push the visitor to the physical devices. DB-first: rows are always written;
+     * the live SDK call only fires behind the flag.
+     */
+    private function assignWalkinDevices(Request $request, Visitor $visitor, array $data)
+    {
+        $deviceIds = $request->input('device_ids', []);
+        if (!is_array($deviceIds) || count($deviceIds) === 0) {
+            return null;
+        }
+
+        $companyId = (int) $data['company_id'];
+        $tempId = $this->generateTempVisitorUserId($companyId);
+
+        $date = $data['date'];
+        $validFrom = $date . ' ' . substr((string) ($data['time_in'] ?? '00:00'), 0, 5) . ':00';
+        $validTo   = $date . ' ' . substr((string) ($data['time_out'] ?? '23:59'), 0, 5) . ':00';
+
+        $visitor->update([
+            'system_user_id'      => $tempId,
+            'sdk_expiry_datetime' => $validTo,
+        ]);
+
+        $devices = Device::whereIn('id', $deviceIds)
+            ->where('company_id', $companyId)
+            ->get();
+
+        foreach ($devices as $dev) {
+            VisitorDevice::create([
+                'visitor_id'     => $visitor->id,
+                'company_id'     => $companyId,
+                'device_id'      => $dev->device_id,
+                'device_pk'      => $dev->id,
+                'system_user_id' => $tempId,
+                'valid_from'     => $validFrom,
+                'valid_to'       => $validTo,
+                'status'         => 'pending',
+            ]);
+        }
+
+        $pushResults = [];
+        $pushed = false;
+        if (config('visitor.sdk_push') && $devices->count() > 0) {
+            $pushResults = $this->pushWalkinToDevices($visitor, $devices, $tempId, $validTo);
+            $pushed = collect($pushResults)->contains('ok', true);
+        }
+
+        return [
+            'system_user_id' => $tempId,
+            'devices'        => $devices->pluck('device_id')->values(),
+            'pushed'         => $pushed,
+            'push_results'   => $pushResults,
+            'valid_to'       => $validTo,
+        ];
+    }
+
+    /**
+     * Temporary visitor userCode in a reserved, company-prefixed band so it never collides
+     * with real employees and is distinct across tenants:  1{company:5}{sequence:4}.
+     * e.g. company 82, 1st free slot -> 1000820001.
+     */
+    private function generateTempVisitorUserId(int $companyId): int
+    {
+        $prefix = '1' . str_pad((string) $companyId, 5, '0', STR_PAD_LEFT);
+
+        for ($seq = 1; $seq <= 9999; $seq++) {
+            $candidate = (int) ($prefix . str_pad((string) $seq, 4, '0', STR_PAD_LEFT));
+            $taken = Visitor::where('company_id', $companyId)->where('system_user_id', $candidate)->exists()
+                || Employee::where('company_id', $companyId)->where('system_user_id', $candidate)->exists();
+            if (!$taken) {
+                return $candidate;
+            }
+        }
+
+        // Exhausted the daily band (>9999 temp visitors) — fall back to a time-based slot.
+        return (int) ($prefix . str_pad((string) (time() % 10000), 4, '0', STR_PAD_LEFT));
+    }
+
+    /**
+     * Push a walk-in visitor to the given devices. Routes through SDKController::AddPerson
+     * so every device model is handled (OX-900, MYTIME1, CAMERA1 each have their own
+     * upload path) — a direct /Person/AddRange call only reaches standard devices.
+     * Marks each visitor_devices row pushed/failed and returns a per-device result list.
+     */
+    private function pushWalkinToDevices(Visitor $visitor, $devices, int $tempId, string $validTo): array
+    {
+        // The device handlers read the face from media/employee/profile_picture/<profile_picture_raw>.
+        // The visitor photo lives in media/visitor/logo/, so copy it across so all models
+        // (including the face devices) can render the visitor's picture.
+        $rawLogo = $visitor->getRawOriginal('logo');
+        $profilePictureRaw = null;
+        if (!empty($rawLogo)) {
+            try {
+                $src = public_path('media/visitor/logo/' . $rawLogo);
+                if (file_exists($src)) {
+                    $destDir = public_path('media/employee/profile_picture');
+                    if (!is_dir($destDir)) {
+                        @mkdir($destDir, 0775, true);
+                    }
+                    @copy($src, $destDir . '/' . $rawLogo);
+                    $profilePictureRaw = $rawLogo;
+                }
+            } catch (\Throwable $th) {
+            }
+        }
+
+        $person = [
+            'name'      => trim($visitor->first_name . ' ' . $visitor->last_name),
+            'userCode'  => $tempId,
+            'timeGroup' => 1,
+            'expiry'    => $validTo,
+        ];
+        if ($profilePictureRaw) {
+            $person['profile_picture_raw'] = $profilePictureRaw; // OX-900 / MYTIME1 / standard
+            $person['faceImage'] = $visitor->logo;               // CAMERA1 / MYTIME1 guard (full URL)
+        }
+
+        $serials = $devices->pluck('device_id')->values()->all();
+
+        $sdkRequest = new \Illuminate\Http\Request();
+        $sdkRequest->setMethod('POST');
+        $sdkRequest->replace([
+            'company_id' => $visitor->company_id,
+            'snList'     => $serials,
+            'personList' => [$person],
+        ]);
+
+        $results = [];
+        try {
+            // Per-model routing: OX-900, MYTIME1, CAMERA1, and standard devices.
+            $sdkResult = (new SDKController)->AddPerson($sdkRequest);
+
+            // Gather per-device responses from every model bucket.
+            $byDevice = [];
+            foreach (['deviceResponse', 'cameraResponse', 'cameraResponse2'] as $key) {
+                if (!empty($sdkResult[$key]) && is_array($sdkResult[$key])) {
+                    foreach ($sdkResult[$key] as $r) {
+                        if (is_array($r) && isset($r['device_id'])) {
+                            $byDevice[$r['device_id']] = $r;
+                        }
+                    }
+                }
+            }
+
+            foreach ($devices as $dev) {
+                $r = $byDevice[$dev->device_id] ?? null;
+                $status = $r['status'] ?? null;
+                $ok = ($status === 200 || $status === '200');
+                $message = $ok
+                    ? 'Uploaded'
+                    : (is_array($r['sdk_response'] ?? null)
+                        ? json_encode($r['sdk_response'])
+                        : ($r['sdk_response'] ?? ($r === null ? 'No response (offline or face photo required)' : 'Failed')));
+
+                VisitorDevice::where('visitor_id', $visitor->id)
+                    ->where('device_id', $dev->device_id)
+                    ->update(['status' => $ok ? 'pushed' : 'failed', 'pushed_at' => $ok ? now() : null]);
+
+                $results[] = [
+                    'device_id' => $dev->device_id,
+                    'name'      => $dev->name,
+                    'ok'        => $ok,
+                    'message'   => $message,
+                ];
+            }
+        } catch (\Throwable $th) {
+            VisitorDevice::where('visitor_id', $visitor->id)->whereNull('removed_at')
+                ->update(['status' => 'failed']);
+            Log::error('Walk-in SDK push failed: ' . $th->getMessage());
+            foreach ($devices as $dev) {
+                $results[] = ['device_id' => $dev->device_id, 'name' => $dev->name, 'ok' => false, 'message' => 'Push error'];
+            }
+        }
+
+        return $results;
     }
 
     public function prepareJsonForSDK($data, $device_id, $utc_time_zone)
