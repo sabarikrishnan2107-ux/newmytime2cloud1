@@ -15,6 +15,14 @@ import Pagination from "@/lib/Pagination";
 import { api, buildQueryParams } from "@/lib/api-client";
 import { getBranches, getVisitorHosts } from "@/lib/api";
 import { formatDateDubai, parseApiError, notify } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
+
+const COL_KEY = {
+  "Visitor": "visitor", "Host": "host", "Type": "type", "Check In": "checkIn", "Check Out": "checkOut", "Duration": "duration", "Status": "status", "Zone": "zone",
+  "Week": "week", "Total Visitors": "totalVisitors", "Peak Day": "peakDay", "Peak Hour": "peakHour", "Avg Duration": "avgDuration", "Month": "month", "Avg / Day": "avgPerDay", "Overstays": "overstays",
+  "Visitor Type": "visitorType", "Count": "count", "Share": "share", "Visitor Count": "visitorCount", "Total Hours": "totalHours", "Hour": "hour", "Check-ins": "checkins", "Check-outs": "checkouts", "Capacity %": "capacityPct",
+  "Expected Out": "expectedOut", "Actual Out": "actualOut", "Overstay Hrs": "overstayHrs", "Reason": "reason", "Date Added": "dateAdded", "Incidents": "incidents", "Method": "method", "Scheduled": "scheduled", "NDA": "nda", "Safety Induction": "safetyInduction", "ID Verified": "idVerified",
+};
 
 const reportTypes = [
   { id: "daily_log", name: "Daily Visitor Log" },
@@ -79,6 +87,18 @@ const COLUMN_SETS = {
 };
 
 export default function VisitorReports() {
+  const { t } = useTranslation();
+  const colLabel = (c) => (COL_KEY[c] ? t(`visitor.reports.columns.${COL_KEY[c]}`) : c);
+  const statusLabel = (s) => {
+    const key = String(s || "").toLowerCase().replace(/-/g, "");
+    const known = { onsite: 1, completed: 1, overstayed: 1, noshow: 1 };
+    return known[key] ? t(`visitor.common.statuses.${key}`) : s;
+  };
+  const typeLabel = (ty) => {
+    const key = String(ty || "").toLowerCase();
+    const known = { business: 1, contractor: 1, delivery: 1, interview: 1, vip: 1, guest: 1 };
+    return known[key] ? t(`visitor.reports.visitorTypes.${key}`, { defaultValue: ty }) : ty;
+  };
   const defaultDates = getDefaultDateRange();
 
   const [reportType, setReportType] = useState("daily_log");
@@ -173,7 +193,7 @@ export default function VisitorReports() {
 
   const handleDownload = (format) => {
     if (!from || !to) {
-      notify("Warning", "Date range must be selected", "warning");
+      notify(t("visitor.reports.warning"), t("visitor.reports.dateRangeRequired"), "warning");
       return;
     }
     const qs = new URLSearchParams({
@@ -186,7 +206,7 @@ export default function VisitorReports() {
     if (selectedStatuses.length) qs.append("statuses", selectedStatuses.join(","));
     if (selectedHostIds.length) qs.append("host_ids", selectedHostIds.join(","));
     if (selectedBranchIds.length) qs.append("branch_ids", selectedBranchIds.join(","));
-    notify("Info", `${format.toUpperCase()} download for ${reportType} requested`, "info");
+    notify(t("visitor.reports.info"), t("visitor.reports.downloadRequested", { format: format.toUpperCase(), report: reportType }), "info");
   };
 
   const renderCell = (row, col) => {
@@ -202,7 +222,7 @@ export default function VisitorReports() {
       case "Host": return row.host;
       case "Type": return (
         <span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400">
-          {row.type}
+          {typeLabel(row.type)}
         </span>
       );
       case "Check In": return <span className="text-[11px] font-mono">{row.checkIn}</span>;
@@ -210,7 +230,7 @@ export default function VisitorReports() {
       case "Duration": return <span className="font-medium">{row.duration}</span>;
       case "Status": return (
         <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${statusColors[row.status] || ""}`}>
-          {row.status}
+          {statusLabel(row.status)}
         </span>
       );
       case "Zone": return row.zone;
@@ -221,17 +241,17 @@ export default function VisitorReports() {
   return (
     <div className="pt-8 pb-4 px-3 md:pt-10 md:pb-6 md:px-6 lg:pt-12 lg:pb-8 lg:px-10 overflow-x-hidden">
       <h3 className="text-2xl font-extrabold text-gray-600 dark:text-slate-300 flex items-center">
-        Visitor Reports
+        {t("visitor.reports.title")}
       </h3>
       <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
-        Generate and download visitor management reports
+        {t("visitor.reports.subtitle")}
       </p>
 
       <div className="flex flex-wrap items-center gap-2 my-2">
         <div className="flex flex-col min-w-[220px]">
           <DropDown
-            placeholder="Report Type"
-            items={reportTypes}
+            placeholder={t("visitor.reports.reportType")}
+            items={reportTypes.map((r) => ({ id: r.id, name: t(`visitor.reports.types.${r.id}`, { defaultValue: r.name }) }))}
             value={reportType}
             onChange={(val) => setReportType(val)}
           />
@@ -239,8 +259,8 @@ export default function VisitorReports() {
 
         <div className="flex flex-col min-w-[180px]">
           <MultiDropDown
-            placeholder="Visitor Type"
-            items={visitorTypeOptions}
+            placeholder={t("visitor.reports.visitorType")}
+            items={visitorTypeOptions.map((o) => ({ id: o.id, name: t(`visitor.reports.visitorTypes.${o.id.toLowerCase()}`, { defaultValue: o.name }) }))}
             value={selectedVisitorTypes}
             onChange={setSelectedVisitorTypes}
             badgesCount={1}
@@ -249,8 +269,8 @@ export default function VisitorReports() {
 
         <div className="flex flex-col min-w-[180px]">
           <MultiDropDown
-            placeholder="Status"
-            items={statusOptions}
+            placeholder={t("visitor.common.status")}
+            items={statusOptions.map((o) => ({ id: o.id, name: t(`visitor.reports.statusOptions.${o.id.replace(/-/g, "")}`, { defaultValue: o.name }) }))}
             value={selectedStatuses}
             onChange={setSelectedStatuses}
             badgesCount={1}
@@ -259,7 +279,7 @@ export default function VisitorReports() {
 
         <div className="flex flex-col min-w-[180px]">
           <MultiDropDown
-            placeholder="Host"
+            placeholder={t("visitor.common.host")}
             items={hosts}
             value={selectedHostIds}
             onChange={setSelectedHostIds}
@@ -269,7 +289,7 @@ export default function VisitorReports() {
 
         <div className="flex flex-col min-w-[180px]">
           <MultiDropDown
-            placeholder="Branch"
+            placeholder={t("visitor.reports.branch")}
             items={branches}
             value={selectedBranchIds}
             onChange={setSelectedBranchIds}
@@ -291,13 +311,13 @@ export default function VisitorReports() {
           onClick={handleSubmit}
           className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap"
         >
-          <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? "animate-spin" : ""}`} /> Submit
+          <RefreshCw className={`w-4 h-4 mr-1 ${isLoading ? "animate-spin" : ""}`} /> {t("visitor.reports.submit")}
         </button>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap focus:outline-none focus:ring-0">
-              <Download className="w-4 h-4" /> Download
+              <Download className="w-4 h-4" /> {t("visitor.reports.download")}
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1">
@@ -325,21 +345,21 @@ export default function VisitorReports() {
             <thead>
               <tr className="border-b border-gray-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
                 {columns.map(c => (
-                  <th key={c} className="px-3 py-3">{c}</th>
+                  <th key={c} className="px-3 py-3">{colLabel(c)}</th>
                 ))}
-                <th className="px-3 py-3">Actions</th>
+                <th className="px-3 py-3">{t("visitor.common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {isLoading && (
-                <tr><td colSpan={columns.length + 1} className="px-4 py-8 text-center text-gray-400 text-xs">Loading...</td></tr>
+                <tr><td colSpan={columns.length + 1} className="px-4 py-8 text-center text-gray-400 text-xs">{t("visitor.common.loading")}</td></tr>
               )}
               {!isLoading && error && (
                 <tr><td colSpan={columns.length + 1} className="px-4 py-8 text-center text-red-500 text-xs">{error}</td></tr>
               )}
               {!isLoading && !error && records.length === 0 && (
                 <tr><td colSpan={columns.length + 1} className="px-4 py-8 text-center text-gray-400 text-xs">
-                  {hasSubmitted ? "No records found" : "Select filters and click Submit to load the report"}
+                  {hasSubmitted ? t("visitor.reports.noRecords") : t("visitor.reports.selectFilters")}
                 </td></tr>
               )}
               {!isLoading && !error && records.map(row => (

@@ -6,16 +6,18 @@ import { MoreVertical, PenBox, Trash2 } from "lucide-react";
 import Edit from "./Edit";
 import { deletePayrollFormula } from "@/lib/api";
 import { parseApiError } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function OptionsMenu({ item, pageTitle, onSuccess = (e) => { e } }) {
+  const { t } = useTranslation();
   const [openEdit, setOpenEdit] = useState(false);
 
   const onDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this item?");
+    const confirmDelete = window.confirm(t("payroll.tabs.confirmDelete"));
     if (!confirmDelete) return; // exit if user cancels
     try {
       await deletePayrollFormula(id);
-      onSuccess({ title: `${pageTitle} Deleted`, description: `${pageTitle} Deleted successfully` }); actualSetOpen(false);
+      onSuccess({ title: t("payroll.tabs.actions.successDeleted", { title: pageTitle }), description: t("payroll.tabs.actions.successDeletedDesc", { title: pageTitle }) }); actualSetOpen(false);
       setOpenEdit(false); // close menu
     } catch (error) {
       console.log(parseApiError(error));
@@ -40,13 +42,13 @@ function OptionsMenu({ item, pageTitle, onSuccess = (e) => { e } }) {
             onClick={() => setOpenEdit("edit")}
             className="flex items-center gap-2 text-sm w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-600"
           >
-            <PenBox size={14} /> Edit
+            <PenBox size={14} /> {t("payroll.common.edit")}
           </button>
           <button
             onClick={() => onDelete(item.id)}
             className="flex items-center gap-2 text-sm w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-600"
           >
-            <Trash2 size={14} /> Delete
+            <Trash2 size={14} /> {t("payroll.common.delete")}
           </button>
         </div>
       )}
@@ -65,11 +67,11 @@ function OptionsMenu({ item, pageTitle, onSuccess = (e) => { e } }) {
   );
 }
 
-export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
+export default function Columns({ pageTitle, onSuccess = (e) => { e }, t = (k) => k } = {}) {
   return [
     {
       key: "branch",
-      header: "Branch",
+      header: t("payroll.common.branch"),
       render: (item) => (
         <span className="text-gray-800 cursor-pointer" title={item.branch?.branch_name || "—"}>
           {item.branch?.branch_name || "—"}
@@ -78,7 +80,7 @@ export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
     },
     {
       key: "date",
-      header: "Date",
+      header: t("payroll.tabs.generationDate.date"),
       render: (item) => (
         <span className="text-gray-800 cursor-pointer" title={item.date || "—"}>
           {item.date || "—"}
@@ -87,7 +89,7 @@ export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
     },
     {
       key: "options",
-      header: "Options",
+      header: t("payroll.tabs.options"),
       render: (item) => (
         <OptionsMenu pageTitle={pageTitle} item={item} onSuccess={onSuccess} />
       ),

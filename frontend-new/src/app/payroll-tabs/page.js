@@ -9,9 +9,11 @@ import {
 
 import PayrollFormula from "@/components/PayrollTabs/Formula/Page";
 import GenerationDate from "@/components/PayrollTabs/GenerationDate/Page";
+import { useTranslation } from "react-i18next";
 
 
 const DepartmentTabs = () => {
+  const { t } = useTranslation();
   return (
     <Tabs defaultValue="payroll_formula" className="w-full">
       {/* --- Tabs Header aligned Right --- */}
@@ -25,7 +27,7 @@ const DepartmentTabs = () => {
               data-[state=active]:shadow-sm 
               transition-all duration-200"
           >
-            Payroll Generation Date
+            {t("payroll.tabs.generationDate.label")}
           </TabsTrigger>
 
           <TabsTrigger
@@ -36,7 +38,7 @@ const DepartmentTabs = () => {
               data-[state=active]:shadow-sm 
               transition-all duration-200"
           >
-            Payroll Formula
+            {t("payroll.tabs.formula.label")}
           </TabsTrigger>
         </TabsList>
       </div>

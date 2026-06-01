@@ -12,6 +12,7 @@ import {
   AreaChart, Area, PieChart, Pie, Cell, LineChart, Line, Legend,
 } from "recharts";
 import KpiDetailDialog from "@/components/Visitor/KpiDetailDialog";
+import { useTranslation } from "react-i18next";
 
 const accessMethodData = [];
 
@@ -110,6 +111,17 @@ const TRAFFIC_RANGES = {
 };
 
 export default function VisitorDashboard() {
+  const { t } = useTranslation();
+  const statusLabel = (s) => {
+    const key = String(s || "").toLowerCase().replace(/-/g, "");
+    const known = { checkedin: 1, checkedout: 1, pending: 1, approved: 1, preregistered: 1, blacklisted: 1 };
+    return known[key] ? t(`visitor.common.statuses.${key}`) : s;
+  };
+  const typeLabel = (ty) => {
+    const key = String(ty || "").toLowerCase();
+    const known = { business: 1, contractor: 1, delivery: 1, interview: 1, vip: 1 };
+    return known[key] ? t(`visitor.dash.types.${key}`) : ty;
+  };
   const [weeklyChartType, setWeeklyChartType] = useState("bar");
   const [trafficChartType, setTrafficChartType] = useState("area");
   const [trafficRange, setTrafficRange] = useState("24h");
@@ -194,11 +206,11 @@ export default function VisitorDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Visitor Dashboard</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Real-time overview across all sites</p>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t("visitor.dash.title")}</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t("visitor.dash.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 text-[10px] text-emerald-500"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> All systems operational</span>
+          <span className="flex items-center gap-1.5 text-[10px] text-emerald-500"><span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> {t("visitor.dash.systemsOperational")}</span>
         </div>
       </div>
 
@@ -216,7 +228,7 @@ export default function VisitorDashboard() {
                   <span className="text-xs text-gray-500 dark:text-gray-400"> {n.message}</span>
                   <span className="text-[10px] text-gray-400 ml-2">
                     {n.time}
-                    {n.host ? ` | Host: ${n.host}` : ""}
+                    {n.host ? ` | ${t("visitor.common.host")}: ${n.host}` : ""}
                   </span>
                 </div>
               </div>
@@ -231,21 +243,21 @@ export default function VisitorDashboard() {
 
       {/* Primary KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KpiCard icon={Users}          title="Total Visitors Today" value={stats?.total_today ?? 0}        accent="neutral" onClick={() => openKpiDialog("total_today", "Total Visitors Today")} />
-        <KpiCard icon={UserCheck}      title="Currently Inside"     value={stats?.checked_in ?? 0}         accent="green"   onClick={() => openKpiDialog("currently_inside", "Currently Inside")} />
-        <KpiCard icon={Clock}          title="Pending Approvals"    value={stats?.pending_approvals ?? 0}  accent="amber"   onClick={() => openKpiDialog("pending_approvals", "Pending Approvals")} />
-        <KpiCard icon={AlertTriangle}  title="Blacklisted"          value={stats?.blacklisted ?? 0}        accent="red"     onClick={() => openKpiDialog("blacklisted", "Blacklisted Visitors")} />
+        <KpiCard icon={Users}          title={t("visitor.dash.kpi.totalToday")} value={stats?.total_today ?? 0}        accent="neutral" onClick={() => openKpiDialog("total_today", t("visitor.dash.kpi.totalToday"))} />
+        <KpiCard icon={UserCheck}      title={t("visitor.dash.kpi.currentlyInside")}     value={stats?.checked_in ?? 0}         accent="green"   onClick={() => openKpiDialog("currently_inside", t("visitor.dash.kpi.currentlyInside"))} />
+        <KpiCard icon={Clock}          title={t("visitor.dash.kpi.pendingApprovals")}    value={stats?.pending_approvals ?? 0}  accent="amber"   onClick={() => openKpiDialog("pending_approvals", t("visitor.dash.kpi.pendingApprovals"))} />
+        <KpiCard icon={AlertTriangle}  title={t("visitor.dash.kpi.blacklisted")}          value={stats?.blacklisted ?? 0}        accent="red"     onClick={() => openKpiDialog("blacklisted", t("visitor.dash.kpi.blacklistedVisitors"))} />
       </div>
 
       {/* Secondary KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: "Pre-Registered",    value: stats?.pre_registered ?? 0, icon: CalendarCheck, accent: "purple",  kpiKey: "pre_registered" },
-          { label: "Weekly Total",      value: stats?.weekly_count ?? 0,   icon: DoorOpen,      accent: "blue",    kpiKey: "weekly_total" },
-          { label: "Overstayed",        value: stats?.overstayed ?? 0,     icon: UserX,         accent: "amber",   kpiKey: "overstayed" },
-          { label: "Badges Printed",    value: stats?.total_today ?? 0,    icon: BadgeCheck,    accent: "emerald" },
-          { label: "Face Verifications",value: 0,                          icon: Fingerprint,   accent: "blue" },
-          { label: "Avg Wait Time",     value: "---",                      icon: Clock,         accent: "purple" },
+          { label: t("visitor.dash.kpi.preRegistered"),    value: stats?.pre_registered ?? 0, icon: CalendarCheck, accent: "purple",  kpiKey: "pre_registered" },
+          { label: t("visitor.dash.kpi.weeklyTotal"),      value: stats?.weekly_count ?? 0,   icon: DoorOpen,      accent: "blue",    kpiKey: "weekly_total" },
+          { label: t("visitor.dash.kpi.overstayed"),        value: stats?.overstayed ?? 0,     icon: UserX,         accent: "amber",   kpiKey: "overstayed" },
+          { label: t("visitor.dash.kpi.badgesPrinted"),    value: stats?.total_today ?? 0,    icon: BadgeCheck,    accent: "emerald" },
+          { label: t("visitor.dash.kpi.faceVerifications"),value: 0,                          icon: Fingerprint,   accent: "blue" },
+          { label: t("visitor.dash.kpi.avgWaitTime"),     value: "---",                      icon: Clock,         accent: "purple" },
         ].map((kpi) => (
           <KpiCard
             key={kpi.label}
@@ -263,7 +275,7 @@ export default function VisitorDashboard() {
         {/* Traffic Chart */}
         <div className="lg:col-span-6 glass-panel rounded-2xl p-5 relative overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-2 mb-4">
-            <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Visitor Traffic — Today</h3>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">{t("visitor.dash.traffic")}</h3>
             <div className="flex items-center gap-2">
               <select
                 value={trafficRange}
@@ -271,14 +283,14 @@ export default function VisitorDashboard() {
                 className="text-[11px] font-medium rounded-md border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               >
                 {Object.entries(TRAFFIC_RANGES).map(([key, r]) => (
-                  <option key={key} value={key}>{r.label}</option>
+                  <option key={key} value={key}>{t(`visitor.dash.ranges.${key}`)}</option>
                 ))}
               </select>
               <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-                {[["area", "Area"], ["bar", "Bar"], ["line", "Line"]].map(([type, label]) => (
+                {["area", "bar", "line"].map((type) => (
                   <button key={type} onClick={() => setTrafficChartType(type)}
                     className={`px-2.5 py-1 rounded-md text-[11px] font-medium transition-all ${trafficChartType === type ? "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                    {label}
+                    {t(`visitor.common.${type}`)}
                   </button>
                 ))}
               </div>
@@ -290,7 +302,7 @@ export default function VisitorDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
                 <XAxis dataKey="hour" tick={tickStyle} /><YAxis tick={tickStyle} />
                 <Tooltip cursor={false} contentStyle={chartStyle} /><Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                <Bar dataKey="visitors" fill="hsl(173, 58%, 39%)" radius={[4, 4, 0, 0]} name="Visitors" />
+                <Bar dataKey="visitors" fill="hsl(173, 58%, 39%)" radius={[4, 4, 0, 0]} name={t("visitor.dash.visitors")} />
                 <Bar dataKey="expected" fill="hsl(38, 92%, 50%)" radius={[4, 4, 0, 0]} name="Expected" opacity={0.6} />
               </BarChart>
             ) : trafficChartType === "line" ? (
@@ -298,8 +310,8 @@ export default function VisitorDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
                 <XAxis dataKey="hour" tick={tickStyle} /><YAxis tick={tickStyle} />
                 <Tooltip cursor={false} contentStyle={chartStyle} /><Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                <Line type="monotone" dataKey="visitors" stroke="hsl(173, 58%, 39%)" strokeWidth={2.5} dot={{ r: 3 }} name="Visitors" />
-                <Line type="monotone" dataKey="expected" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 3 }} name="Expected" />
+                <Line type="monotone" dataKey="visitors" stroke="hsl(173, 58%, 39%)" strokeWidth={2.5} dot={{ r: 3 }} name={t("visitor.dash.visitors")} />
+                <Line type="monotone" dataKey="expected" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 3 }} name={t("visitor.dash.expected")} />
               </LineChart>
             ) : (
               <AreaChart data={realHourlyData}>
@@ -307,8 +319,8 @@ export default function VisitorDashboard() {
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
                 <XAxis dataKey="hour" tick={tickStyle} /><YAxis tick={tickStyle} />
                 <Tooltip cursor={false} contentStyle={chartStyle} /><Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-                <Area type="monotone" dataKey="visitors" stroke="hsl(173, 58%, 39%)" fillOpacity={1} fill="url(#colorV)" strokeWidth={2} name="Visitors" />
-                <Line type="monotone" dataKey="expected" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 3 }} name="Expected" />
+                <Area type="monotone" dataKey="visitors" stroke="hsl(173, 58%, 39%)" fillOpacity={1} fill="url(#colorV)" strokeWidth={2} name={t("visitor.dash.visitors")} />
+                <Line type="monotone" dataKey="expected" stroke="hsl(38, 92%, 50%)" strokeWidth={2} dot={{ r: 3 }} name={t("visitor.dash.expected")} />
               </AreaChart>
             )}
           </ResponsiveContainer>
@@ -316,9 +328,9 @@ export default function VisitorDashboard() {
 
         {/* Visitor Types */}
         <div className="lg:col-span-3 glass-panel rounded-2xl p-5 relative overflow-hidden">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-4">Visitor Types</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-4">{t("visitor.dash.visitorTypes")}</h3>
           {realTypeData.length === 0 ? (
-            <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">No visitor type data</div>
+            <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">{t("visitor.dash.noTypeData")}</div>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={140}>
@@ -340,9 +352,9 @@ export default function VisitorDashboard() {
 
         {/* Access Methods */}
         <div className="lg:col-span-3 glass-panel rounded-2xl p-5 relative overflow-hidden">
-          <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-4">Access Methods</h3>
+          <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm mb-4">{t("visitor.dash.accessMethods")}</h3>
           {accessMethodData.length === 0 ? (
-            <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">No access method data</div>
+            <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">{t("visitor.dash.noAccessData")}</div>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={140}>
@@ -367,14 +379,14 @@ export default function VisitorDashboard() {
       <div className="glass-panel rounded-2xl p-5 relative overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Weekly Trend</h3>
-            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">This week vs last week</p>
+            <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">{t("visitor.dash.weeklyTrend")}</h3>
+            <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-0.5">{t("visitor.dash.thisVsLast")}</p>
           </div>
           <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-800 rounded-lg p-0.5">
-            {[["bar", BarChart3, "Bar"], ["line", LineChartIcon, "Line"]].map(([type, Icon, label]) => (
+            {[["bar", BarChart3], ["line", LineChartIcon]].map(([type, Icon]) => (
               <button key={type} onClick={() => setWeeklyChartType(type)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${weeklyChartType === type ? "bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}>
-                <Icon className="w-3.5 h-3.5" />{label}
+                <Icon className="w-3.5 h-3.5" />{t(`visitor.common.${type}`)}
               </button>
             ))}
           </div>
@@ -385,16 +397,16 @@ export default function VisitorDashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
               <XAxis dataKey="day" tick={tickStyle} /><YAxis tick={tickStyle} />
               <Tooltip cursor={false} contentStyle={chartStyle} /><Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="thisWeek" fill="hsl(173, 58%, 39%)" radius={[4, 4, 0, 0]} name="This Week" />
-              <Bar dataKey="lastWeek" fill="hsl(220, 13%, 85%)" radius={[4, 4, 0, 0]} name="Last Week" />
+              <Bar dataKey="thisWeek" fill="hsl(173, 58%, 39%)" radius={[4, 4, 0, 0]} name={t("visitor.dash.thisWeek")} />
+              <Bar dataKey="lastWeek" fill="hsl(220, 13%, 85%)" radius={[4, 4, 0, 0]} name={t("visitor.dash.lastWeek")} />
             </BarChart>
           ) : (
             <LineChart data={realWeeklyTrend}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(128,128,128,0.1)" />
               <XAxis dataKey="day" tick={tickStyle} /><YAxis tick={tickStyle} />
               <Tooltip cursor={false} contentStyle={chartStyle} /><Legend iconType="circle" iconSize={8} wrapperStyle={{ fontSize: 11 }} />
-              <Line type="monotone" dataKey="thisWeek" stroke="hsl(173, 58%, 39%)" strokeWidth={2.5} dot={{ r: 4 }} name="This Week" />
-              <Line type="monotone" dataKey="lastWeek" stroke="hsl(220, 13%, 75%)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} name="Last Week" />
+              <Line type="monotone" dataKey="thisWeek" stroke="hsl(173, 58%, 39%)" strokeWidth={2.5} dot={{ r: 4 }} name={t("visitor.dash.thisWeek")} />
+              <Line type="monotone" dataKey="lastWeek" stroke="hsl(220, 13%, 75%)" strokeWidth={2} strokeDasharray="5 5" dot={{ r: 3 }} name={t("visitor.dash.lastWeek")} />
             </LineChart>
           )}
         </ResponsiveContainer>
@@ -406,31 +418,31 @@ export default function VisitorDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Activity className="w-4 h-4 text-primary" />
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">Recent Visitor Activity</h3>
+              <h3 className="font-semibold text-gray-800 dark:text-gray-200 text-sm">{t("visitor.dash.recentActivity")}</h3>
               <span className="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold bg-gray-100 dark:bg-gray-800 text-gray-500">{filteredVisitors.length}</span>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1 min-w-[200px]">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
-              <input placeholder="Search by name, company, host..." value={visitorSearch} onChange={(e) => setVisitorSearch(e.target.value)}
+              <input placeholder={t("visitor.common.searchNameCompanyHost")} value={visitorSearch} onChange={(e) => setVisitorSearch(e.target.value)}
                 className="w-full pl-8 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 py-1.5 text-xs text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
             </div>
             <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
               className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300">
-              <option value="all">All Statuses</option>
-              <option value="checked-in">Checked In</option><option value="checked-out">Checked Out</option>
-              <option value="pending">Pending</option><option value="approved">Approved</option><option value="pre-registered">Pre-registered</option>
+              <option value="all">{t("visitor.dash.allStatuses")}</option>
+              <option value="checked-in">{t("visitor.common.statuses.checkedin")}</option><option value="checked-out">{t("visitor.common.statuses.checkedout")}</option>
+              <option value="pending">{t("visitor.common.statuses.pending")}</option><option value="approved">{t("visitor.common.statuses.approved")}</option><option value="pre-registered">{t("visitor.common.statuses.preregistered")}</option>
             </select>
             <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}
               className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-2 py-1.5 text-xs text-gray-700 dark:text-gray-300">
-              <option value="all">All Types</option>
-              <option value="Business">Business</option><option value="Contractor">Contractor</option>
-              <option value="Delivery">Delivery</option><option value="Interview">Interview</option><option value="VIP">VIP</option>
+              <option value="all">{t("visitor.dash.allTypes")}</option>
+              <option value="Business">{t("visitor.dash.types.business")}</option><option value="Contractor">{t("visitor.dash.types.contractor")}</option>
+              <option value="Delivery">{t("visitor.dash.types.delivery")}</option><option value="Interview">{t("visitor.dash.types.interview")}</option><option value="VIP">{t("visitor.dash.types.vip")}</option>
             </select>
             {(visitorSearch || statusFilter !== "all" || typeFilter !== "all") && (
               <button onClick={() => { setVisitorSearch(""); setStatusFilter("all"); setTypeFilter("all"); }}
-                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"><X className="w-3 h-3" /> Clear</button>
+                className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-600 transition"><X className="w-3 h-3" /> {t("visitor.common.clear")}</button>
             )}
           </div>
         </div>
@@ -438,13 +450,13 @@ export default function VisitorDashboard() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                <th className="px-4 py-3">Visitor</th><th className="px-3 py-3">Host</th><th className="px-3 py-3">Type</th>
-                <th className="px-3 py-3">Method</th><th className="px-3 py-3">Zone</th><th className="px-3 py-3">Status</th><th className="px-3 py-3">Time</th>
+                <th className="px-4 py-3">{t("visitor.common.visitor")}</th><th className="px-3 py-3">{t("visitor.common.host")}</th><th className="px-3 py-3">{t("visitor.common.type")}</th>
+                <th className="px-3 py-3">{t("visitor.dash.method")}</th><th className="px-3 py-3">{t("visitor.dash.zone")}</th><th className="px-3 py-3">{t("visitor.common.status")}</th><th className="px-3 py-3">{t("visitor.common.time")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {filteredVisitors.length === 0 ? (
-                <tr><td colSpan={7} className="p-8 text-center text-xs text-gray-400">No visitors match the current filters</td></tr>
+                <tr><td colSpan={7} className="p-8 text-center text-xs text-gray-400">{t("visitor.dash.noVisitorsMatch")}</td></tr>
               ) : filteredVisitors.map((v) => (
                 <tr key={v.name} className="hover:bg-gray-50 dark:hover:bg-white/5 transition cursor-pointer text-xs text-gray-600 dark:text-gray-300"
                   onClick={() => setSelectedVisitor(v)}>
@@ -460,10 +472,10 @@ export default function VisitorDashboard() {
                     </div>
                   </td>
                   <td className="px-3 py-3">{v.host}</td>
-                  <td className="px-3 py-3"><span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400">{v.type}</span></td>
+                  <td className="px-3 py-3"><span className="text-[10px] px-1.5 py-0.5 rounded-full font-bold bg-purple-100 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400">{typeLabel(v.type)}</span></td>
                   <td className="px-3 py-3 font-mono text-[11px]">{v.method}</td>
                   <td className="px-3 py-3">{v.zone}</td>
-                  <td className="px-3 py-3"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${statusColors[v.status] || ""}`}>{v.status}</span></td>
+                  <td className="px-3 py-3"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${statusColors[v.status] || ""}`}>{statusLabel(v.status)}</span></td>
                   <td className="px-3 py-3">{v.time}</td>
                 </tr>
               ))}
@@ -478,7 +490,7 @@ export default function VisitorDashboard() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setSelectedVisitor(null)}></div>
           <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">Visitor Profile</h3>
+              <h3 className="text-base font-bold text-gray-800 dark:text-gray-100">{t("visitor.dash.visitorProfile")}</h3>
               <button onClick={() => setSelectedVisitor(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-5">
@@ -489,21 +501,21 @@ export default function VisitorDashboard() {
                 <div>
                   <div className="font-semibold text-gray-800 dark:text-gray-100">{selectedVisitor.name}</div>
                   <div className="text-sm text-gray-500">{selectedVisitor.company}</div>
-                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${statusColors[selectedVisitor.status]}`}>{selectedVisitor.status}</span>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${statusColors[selectedVisitor.status]}`}>{statusLabel(selectedVisitor.status)}</span>
                 </div>
               </div>
               <div className="grid grid-cols-1 gap-2.5 bg-gray-50 dark:bg-gray-800/50 rounded-lg p-4">
                 <div className="flex items-center gap-2.5 text-sm"><Mail className="w-3.5 h-3.5 text-gray-400" /><span className="text-gray-700 dark:text-gray-300">{selectedVisitor.email}</span></div>
                 <div className="flex items-center gap-2.5 text-sm"><Phone className="w-3.5 h-3.5 text-gray-400" /><span className="text-gray-700 dark:text-gray-300">{selectedVisitor.phone}</span></div>
-                <div className="flex items-center gap-2.5 text-sm"><Briefcase className="w-3.5 h-3.5 text-gray-400" /><span className="text-gray-700 dark:text-gray-300">{selectedVisitor.type}</span></div>
+                <div className="flex items-center gap-2.5 text-sm"><Briefcase className="w-3.5 h-3.5 text-gray-400" /><span className="text-gray-700 dark:text-gray-300">{typeLabel(selectedVisitor.type)}</span></div>
               </div>
               <div className="space-y-2">
-                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Visit Details</h4>
+                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">{t("visitor.dash.visitDetails")}</h4>
                 <div className="grid grid-cols-2 gap-3">
                   {[
-                    ["Host", selectedVisitor.host], ["Department", selectedVisitor.dept],
-                    ["Check-in", selectedVisitor.time], ["Badge", selectedVisitor.badge],
-                    ["Access Method", selectedVisitor.method], ["Zone", selectedVisitor.zone],
+                    [t("visitor.common.host"), selectedVisitor.host], [t("visitor.dash.department"), selectedVisitor.dept],
+                    [t("visitor.dash.checkinLabel"), selectedVisitor.time], [t("visitor.dash.badge"), selectedVisitor.badge],
+                    [t("visitor.dash.accessMethod"), selectedVisitor.method], [t("visitor.dash.zone"), selectedVisitor.zone],
                   ].map(([label, value]) => (
                     <div key={label}><div className="text-[10px] text-gray-400">{label}</div><div className="text-xs font-medium text-gray-800 dark:text-gray-200">{value}</div></div>
                   ))}
@@ -511,10 +523,10 @@ export default function VisitorDashboard() {
               </div>
               <div className="flex gap-2 pt-1">
                 <button className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 transition">
-                  <Shield className="w-3.5 h-3.5" /> Security Check
+                  <Shield className="w-3.5 h-3.5" /> {t("visitor.dash.securityCheck")}
                 </button>
                 <button className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                  <MapPin className="w-3.5 h-3.5" /> Track Location
+                  <MapPin className="w-3.5 h-3.5" /> {t("visitor.dash.trackLocation")}
                 </button>
               </div>
             </div>

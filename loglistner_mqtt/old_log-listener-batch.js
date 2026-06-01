@@ -1,7 +1,6 @@
 const WebSocket = require("ws");
 const fs = require("fs");
 const path = require("path");
-const axios = require("axios");
 const { Pool } = require("pg");
 require("dotenv").config();
 
@@ -246,26 +245,6 @@ function connectWebSocket() {
     try {
       const jsonData = JSON.parse(data).Data;
       const { UserCode, SN, RecordDate, RecordNumber, RecordCode } = jsonData;
-
-      // ── Fire alarm (RecordCode 19) ──
-      // Must run BEFORE the UserCode early-return below: alarm events carry no
-      // UserCode, so they'd otherwise be dropped. Ported from log-listener.js.
-      // Writes the daily alarm CSV the Laravel backend reads, then triggers
-      // ingestion (/loadalarm_csv → sets devices.alarm_status = 1 → popup).
-      if (RecordCode == 19) {
-        try {
-          const { date } = getFormattedDate();
-          const alarmDir = path.join(__dirname, "..", "backend", "storage", "app", "alarm");
-          fs.mkdirSync(alarmDir, { recursive: true });
-          fs.appendFileSync(path.join(alarmDir, `alarm-logs-${date}.csv`), `${SN},${RecordDate}\n`);
-          console.log("🔥 Alarm:", `${SN},${RecordDate}`);
-          const alarmUrl = `${process.env.BACKEND_URL || "https://backend.mytime2cloud.com/api"}/loadalarm_csv`;
-          axios.get(alarmUrl, { params: { 11111: "1111" }, timeout: 1000 * 30 })
-            .catch((e) => logError("loadalarm_csv trigger failed: " + e.message));
-        } catch (e) {
-          logError("Fire alarm handling failed: " + e.message);
-        }
-      }
 
       if (!UserCode || UserCode <= 0) return;
 

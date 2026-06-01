@@ -577,6 +577,28 @@ export const getDeviceListNew = async (params = {}) => {
     return data;
 };
 
+// Missing logs: device list (excludes Manual/Mobile, prepends "Mobile Devices")
+export const getMissingLogsDeviceList = async () => {
+    const user = await getUser();
+    const { data } = await axios.get(`${API_BASE}/device_list`, {
+        params: { company_id: user?.company_id ?? 0 },
+    });
+    return data;
+};
+
+// Missing logs: fetch & re-pull missing attendance logs from a device for a date
+export const getMissingAttendanceLogs = async ({ device_id, date }) => {
+    const user = await getUser();
+    const { data } = await axios.get(`${API_BASE}/attendance-logs-missing`, {
+        params: {
+            company_id: user?.company_id ?? 0,
+            device_id,
+            date,
+        },
+    });
+    return data;
+};
+
 // Device
 export const getDevices = async (params = {}) => {
     const { data } = await axios.get(`${API_BASE}/device`, {

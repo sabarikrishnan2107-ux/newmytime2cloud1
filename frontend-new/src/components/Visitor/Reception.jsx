@@ -31,6 +31,7 @@ import {
 import PinEntryModal from "@/components/Device/UnlockDoor";
 import { api, buildQueryParams } from "@/lib/api-client";
 import { parseApiError } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -88,6 +89,12 @@ const typeColors = {
 
 
 export default function Reception() {
+  const { t } = useTranslation();
+  const typeLabel = (ty) => {
+    const key = String(ty || "").toLowerCase();
+    const known = { business: 1, contractor: 1, delivery: 1, interview: 1, vip: 1 };
+    return known[key] ? t(`visitor.dash.types.${key}`) : ty;
+  };
   const [walkinOpen, setWalkinOpen] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [scanMode, setScanMode] = useState("qr");
@@ -211,14 +218,14 @@ export default function Reception() {
 
   const handleDeleteInside = async (v) => {
     if (!v?.visitorId) return;
-    if (!window.confirm(`Delete visitor "${v.name}"? This permanently removes the record.`)) return;
+    if (!window.confirm(t("visitor.directory.confirmDelete", { name: v.name }))) return;
     setDeletingId(v.visitorId);
     try {
       await api.delete(`/visitor/${v.visitorId}`);
       setViewVisitor((s) => (s && s.visitorId === v.visitorId ? null : s));
       reload();
     } catch (e) {
-      toast.error("Delete failed", { description: e?.response?.data?.message || e?.message || "Could not delete visitor" });
+      toast.error(t("visitor.reception.toastDeleteFailed"), { description: e?.response?.data?.message || e?.message || t("visitor.reception.toastCouldNotDelete") });
     } finally {
       setDeletingId(null);
     }
@@ -237,8 +244,8 @@ export default function Reception() {
   const performAutoCheckIn = (visitor, mode) => {
     setExpectedList(prev => prev.filter(v => v.id !== visitor.id));
     setAutoCheckedIn(prev => [visitor, ...prev.filter(v => v.id !== visitor.id)]);
-    toast.success(`${visitor.name} checked in automatically`, {
-      description: `${mode.toUpperCase()} verified - host ${visitor.host} notified`,
+    toast.success(t("visitor.reception.toastAutoCheckedIn", { name: visitor.name }), {
+      description: t("visitor.reception.toastVerifiedNotified", { mode: mode.toUpperCase(), host: visitor.host }),
     });
   };
 
@@ -259,8 +266,8 @@ export default function Reception() {
       const matched = matchByToken(token);
       setQrScanning(false);
       if (!matched) {
-        setScanError(`No pre-registered visitor matches token ${token}`);
-        toast.error("Token not recognised", { description: token });
+        setScanError(t("visitor.reception.toastNoMatchToken", { token }));
+        toast.error(t("visitor.reception.toastTokenNotRecognised"), { description: token });
         return;
       }
       setQrResult({ ...matched, token });
@@ -299,10 +306,10 @@ export default function Reception() {
   const handlePreRegCheckIn = async (v) => {
     try {
       await updateVisitorPreRegistration(v.id, { status: "confirmed" });
-      toast.success(`${v.name} marked as confirmed`);
+      toast.success(t("visitor.reception.toastMarkedConfirmed", { name: v.name }));
       reload();
     } catch (e) {
-      toast.error("Could not check in", { description: parseApiError(e) });
+      toast.error(t("visitor.reception.toastCouldNotCheckIn"), { description: parseApiError(e) });
     }
   };
 
@@ -510,7 +517,7 @@ export default function Reception() {
         const list = Array.isArray(r?.data) ? r.data : Array.isArray(r) ? r : [];
         setGateDevices(list);
       } catch (e) {
-        toast.error("Failed to load devices", { description: parseApiError(e) });
+        toast.error(t("visitor.reception.toastFailedLoadDevices"), { description: parseApiError(e) });
       } finally {
         setGateLoading(false);
       }
@@ -703,8 +710,8 @@ export default function Reception() {
 
   const handleScanEmiratesID = async () => {
     if (!eidScriptReady) {
-      toast.error("Emirates ID Toolkit is still loading", {
-        description: "Please wait a moment and try again.",
+      toast.error(t("visitor.reception.toastEidLoading"), {
+        description: t("visitor.reception.toastEidLoadingDesc"),
       });
       return;
     }
@@ -734,11 +741,11 @@ export default function Reception() {
         setCapturedPhoto(`data:${mime};base64,${resp.cardHolderPhoto}`);
       }
       setScanned(true);
-      toast.success("Emirates ID scanned successfully!", {
-        description: "Visitor information has been auto-filled from the ID card.",
+      toast.success(t("visitor.reception.toastEidScanned"), {
+        description: t("visitor.reception.toastEidScannedDesc"),
       });
     } catch (e) {
-      toast.error("EID read failed", { description: e?.message || String(e) });
+      toast.error(t("visitor.reception.toastEidReadFailed"), { description: e?.message || String(e) });
     } finally {
       setScanning(false);
     }
@@ -783,38 +790,38 @@ export default function Reception() {
 
       const { data } = await api.post("/visitor-register", payload);
       if (data && data.status === false) {
-        toast.error("Check-in failed", { description: data.message || "Unknown error" });
+        toast.error(t("visitor.reception.toastCheckinFailed"), { description: data.message || t("visitor.reception.toastUnknownError") });
         return;
       }
 
       const assignment = data?.data?.device_assignment;
       let deviceMsg = "";
       if (assignment) {
-        deviceMsg = ` Temp ID ${assignment.system_user_id}.`;
+        deviceMsg = t("visitor.reception.tempIdMsg", { id: assignment.system_user_id });
         const results = assignment.push_results || [];
         if (results.length) {
           const ok = results.filter((r) => r.ok).map((r) => r.name);
           const failed = results.filter((r) => !r.ok);
-          if (ok.length) deviceMsg += ` Uploaded to: ${ok.join(", ")}.`;
+          if (ok.length) deviceMsg += t("visitor.reception.uploadedToMsg", { list: ok.join(", ") });
           if (failed.length) {
-            toast.error(`${failed.length} device(s) failed to upload`, {
+            toast.error(t("visitor.reception.toastDevicesFailedUpload", { count: failed.length }), {
               description: failed.map((f) => `${f.name}: ${f.message}`).join("  |  "),
               duration: 8000,
             });
           }
         } else {
-          deviceMsg += ` Saved for ${assignment.devices?.length || 0} device(s) (push off).`;
+          deviceMsg += t("visitor.reception.savedForDevicesMsg", { count: assignment.devices?.length || 0 });
         }
       }
-      toast.success("Visitor registered successfully!", {
-        description: `${form.firstName} ${form.lastName} from ${form.company || "Walk-in"} has been checked in.${deviceMsg}`,
+      toast.success(t("visitor.reception.toastRegisteredSuccess"), {
+        description: t("visitor.reception.toastRegisteredDesc", { name: `${form.firstName} ${form.lastName}`, company: form.company || "Walk-in", deviceMsg }),
       });
       setWalkinOpen(false);
       resetForm();
       reload();
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Check-in failed";
-      toast.error("Check-in failed", { description: msg });
+      const msg = e?.response?.data?.message || e?.message || t("visitor.reception.toastCheckinFailed");
+      toast.error(t("visitor.reception.toastCheckinFailed"), { description: msg });
     } finally {
       setSubmitting(false);
     }
@@ -830,15 +837,15 @@ export default function Reception() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Reception Desk</h1>
-          <p className="text-muted-foreground text-sm">Main Lobby — HQ Building A</p>
+          <h1 className="text-2xl font-bold text-foreground">{t("visitor.reception.title")}</h1>
+          <p className="text-muted-foreground text-sm">{t("visitor.reception.subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
           <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={openWalkin}>
-            <UserPlus className="w-4 h-4 mr-2" /> New Walk-in
+            <UserPlus className="w-4 h-4 mr-2" /> {t("visitor.reception.newWalkin")}
           </Button>
           <Button variant="outline" onClick={() => openScanner("qr")}>
-            <QrCode className="w-4 h-4 mr-2" /> Scan QR
+            <QrCode className="w-4 h-4 mr-2" /> {t("visitor.reception.scanQr")}
           </Button>
           <Button variant="outline" onClick={() => openScanner("rfid")}>
             <Radio className="w-4 h-4 mr-2" /> RFID
@@ -852,10 +859,10 @@ export default function Reception() {
       {/* Quick Actions */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {[
-          { icon: UserPlus, label: "Register Visitor", color: "bg-teal-500/10 text-teal-600", action: openWalkin },
-          { icon: ScanLine, label: "Scan Token", color: "bg-blue-500/10 text-blue-600", action: () => openScanner("qr") },
-          { icon: Phone, label: "Call Host", color: "bg-warning/10 text-warning", action: () => setCallHostOpen(true) },
-          { icon: DoorOpen, label: "Open Gate", color: "bg-success/10 text-success", action: handleOpenGateClick },
+          { icon: UserPlus, label: t("visitor.reception.qa.registerVisitor"), color: "bg-teal-500/10 text-teal-600", action: openWalkin },
+          { icon: ScanLine, label: t("visitor.reception.qa.scanToken"), color: "bg-blue-500/10 text-blue-600", action: () => openScanner("qr") },
+          { icon: Phone, label: t("visitor.reception.qa.callHost"), color: "bg-warning/10 text-warning", action: () => setCallHostOpen(true) },
+          { icon: DoorOpen, label: t("visitor.reception.qa.openGate"), color: "bg-success/10 text-success", action: handleOpenGateClick },
         ].map((a) => (
           <button key={a.label} onClick={a.action} className={`${TILE_CLASS} flex flex-col items-center gap-2 cursor-pointer hover:shadow-md transition-all`}>
             <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${a.color}`}>
@@ -872,7 +879,7 @@ export default function Reception() {
         <Input
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search visitor by name, company, or badge number..."
+          placeholder={t("visitor.reception.searchPlaceholder")}
           className="pl-10 h-11 dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
         />
       </div>
@@ -884,24 +891,24 @@ export default function Reception() {
             <div className="p-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <Clock className="w-4 h-4 text-muted-foreground" />
-                <h3 className="font-semibold text-foreground">Expected Today</h3>
+                <h3 className="font-semibold text-foreground">{t("visitor.reception.expectedToday")}</h3>
                 <Badge variant="secondary" className="text-xs">{filteredExpected.length}</Badge>
                 {autoCheckedIn.length > 0 && (
                   <Badge variant="secondary" className="text-xs bg-success/10 text-success border-0">
-                    <CheckCircle2 className="w-3 h-3 mr-1" />{autoCheckedIn.length} auto
+                    <CheckCircle2 className="w-3 h-3 mr-1" />{t("visitor.reception.autoCount", { count: autoCheckedIn.length })}
                   </Badge>
                 )}
               </div>
               <TabsList className="h-8">
-                <TabsTrigger value="grid" className="h-6 px-2 text-xs"><LayoutGrid className="w-3.5 h-3.5 mr-1" />Grid</TabsTrigger>
-                <TabsTrigger value="list" className="h-6 px-2 text-xs"><List className="w-3.5 h-3.5 mr-1" />List</TabsTrigger>
+                <TabsTrigger value="grid" className="h-6 px-2 text-xs"><LayoutGrid className="w-3.5 h-3.5 mr-1" />{t("visitor.reception.grid")}</TabsTrigger>
+                <TabsTrigger value="list" className="h-6 px-2 text-xs"><List className="w-3.5 h-3.5 mr-1" />{t("visitor.reception.list")}</TabsTrigger>
               </TabsList>
             </div>
 
             <TabsContent value="grid" className="m-0">
               <div className="grid sm:grid-cols-2 gap-3 p-4">
                 {filteredExpected.length === 0 && (
-                  <div className="col-span-full text-center text-xs text-muted-foreground py-6">No visitors expected today</div>
+                  <div className="col-span-full text-center text-xs text-muted-foreground py-6">{t("visitor.reception.noExpected")}</div>
                 )}
                 {filteredExpected.map((v) => (
                   <div key={v.id || v.name} className="rounded-lg border border-border/50 p-3 hover:border-teal-500/40 hover:shadow-md transition-all">
@@ -915,21 +922,21 @@ export default function Reception() {
                           <div className="text-xs text-muted-foreground truncate">{v.company}</div>
                         </div>
                       </div>
-                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${typeColors[v.type]}`}>{v.type}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium shrink-0 ${typeColors[v.type]}`}>{typeLabel(v.type)}</span>
                     </div>
                     <div className="space-y-1 text-xs text-muted-foreground border-t border-border/50 pt-2 mt-2">
                       <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{v.time} · {v.duration}</div>
-                      <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />Host: <span className="text-foreground">{v.host}</span></div>
+                      <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />{t("visitor.common.host")}: <span className="text-foreground">{v.host}</span></div>
                       <div className="flex items-center gap-1.5"><Briefcase className="w-3 h-3" />{v.department}</div>
                       <div className="flex items-center gap-1.5 truncate"><FileText className="w-3 h-3 shrink-0" /><span className="truncate">{v.purpose}</span></div>
                     </div>
                     <div className="flex items-center justify-between gap-2 mt-3">
                       {v.preCheck ? (
-                        <span className="flex items-center gap-1 text-[10px] text-success"><ShieldCheck className="w-3 h-3" />Pre-checked</span>
+                        <span className="flex items-center gap-1 text-[10px] text-success"><ShieldCheck className="w-3 h-3" />{t("visitor.reception.preChecked")}</span>
                       ) : (
-                        <span className="flex items-center gap-1 text-[10px] text-warning"><AlertCircle className="w-3 h-3" />Needs check</span>
+                        <span className="flex items-center gap-1 text-[10px] text-warning"><AlertCircle className="w-3 h-3" />{t("visitor.reception.needsCheck")}</span>
                       )}
-                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handlePreRegCheckIn(v)}>Check In</Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handlePreRegCheckIn(v)}>{t("visitor.reception.checkIn")}</Button>
                     </div>
                   </div>
                 ))}
@@ -941,16 +948,16 @@ export default function Reception() {
                 <table className="w-full text-xs">
                   <thead className="bg-muted/40 text-[10px] uppercase text-muted-foreground">
                     <tr>
-                      <th className="text-left p-2 px-3">Visitor</th>
-                      <th className="text-left p-2">Host</th>
-                      <th className="text-left p-2">Time</th>
-                      <th className="text-left p-2">Type</th>
+                      <th className="text-left p-2 px-3">{t("visitor.common.visitor")}</th>
+                      <th className="text-left p-2">{t("visitor.common.host")}</th>
+                      <th className="text-left p-2">{t("visitor.common.time")}</th>
+                      <th className="text-left p-2">{t("visitor.common.type")}</th>
                       <th className="text-right p-2 px-3"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {filteredExpected.length === 0 && (
-                      <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No visitors expected today</td></tr>
+                      <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">{t("visitor.reception.noExpected")}</td></tr>
                     )}
                     {filteredExpected.map((v) => (
                       <tr key={v.id || v.name} className="hover:bg-muted/30 transition-colors">
@@ -960,8 +967,8 @@ export default function Reception() {
                         </td>
                         <td className="p-2"><div className="text-foreground">{v.host}</div><div className="text-muted-foreground">{v.department}</div></td>
                         <td className="p-2"><div className="text-foreground">{v.time}</div><div className="text-muted-foreground">{v.duration}</div></td>
-                        <td className="p-2"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${typeColors[v.type]}`}>{v.type}</span></td>
-                        <td className="p-2 px-3 text-right"><Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handlePreRegCheckIn(v)}>Check In</Button></td>
+                        <td className="p-2"><span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${typeColors[v.type]}`}>{typeLabel(v.type)}</span></td>
+                        <td className="p-2 px-3 text-right"><Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => handlePreRegCheckIn(v)}>{t("visitor.reception.checkIn")}</Button></td>
                       </tr>
                     ))}
                   </tbody>
@@ -977,19 +984,19 @@ export default function Reception() {
             <div className="p-4 border-b border-border flex items-center justify-between gap-3 flex-wrap">
               <div className="flex items-center gap-2">
                 <UserCheck className="w-4 h-4 text-success" />
-                <h3 className="font-semibold text-foreground">Currently Inside</h3>
+                <h3 className="font-semibold text-foreground">{t("visitor.reception.currentlyInside")}</h3>
                 <Badge variant="secondary" className="text-xs">{filteredInside.length}</Badge>
               </div>
               <TabsList className="h-8">
-                <TabsTrigger value="grid" className="h-6 px-2 text-xs"><LayoutGrid className="w-3.5 h-3.5 mr-1" />Grid</TabsTrigger>
-                <TabsTrigger value="list" className="h-6 px-2 text-xs"><List className="w-3.5 h-3.5 mr-1" />List</TabsTrigger>
+                <TabsTrigger value="grid" className="h-6 px-2 text-xs"><LayoutGrid className="w-3.5 h-3.5 mr-1" />{t("visitor.reception.grid")}</TabsTrigger>
+                <TabsTrigger value="list" className="h-6 px-2 text-xs"><List className="w-3.5 h-3.5 mr-1" />{t("visitor.reception.list")}</TabsTrigger>
               </TabsList>
             </div>
 
             <TabsContent value="grid" className="m-0">
               <div className="grid sm:grid-cols-2 gap-3 p-4">
                 {filteredInside.length === 0 && (
-                  <div className="col-span-full text-center text-xs text-muted-foreground py-6">No visitors currently inside</div>
+                  <div className="col-span-full text-center text-xs text-muted-foreground py-6">{t("visitor.reception.noInside")}</div>
                 )}
                 {filteredInside.map((v) => (
                   <div key={v.id || v.name} className="rounded-lg border border-border/50 p-3 hover:border-success/40 hover:shadow-md transition-all">
@@ -1003,22 +1010,22 @@ export default function Reception() {
                       </div>
                       <div className="flex flex-col items-end gap-1 shrink-0">
                         <span className="text-[10px] font-mono text-muted-foreground">{v.badge}</span>
-                        {v.auto && <span className="text-[9px] px-1.5 py-0.5 rounded bg-success/10 text-success font-medium flex items-center gap-1"><ScanLine className="w-2.5 h-2.5" />Auto</span>}
+                        {v.auto && <span className="text-[9px] px-1.5 py-0.5 rounded bg-success/10 text-success font-medium flex items-center gap-1"><ScanLine className="w-2.5 h-2.5" />{t("visitor.reception.auto")}</span>}
                       </div>
                     </div>
                     <div className="space-y-1 text-xs text-muted-foreground border-t border-border/50 pt-2 mt-2">
                       <div className="flex items-center gap-1.5"><MapPin className="w-3 h-3" />{v.zone}</div>
-                      <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />Host: <span className="text-foreground">{v.host}</span></div>
-                      <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" />In: {v.checkedIn} · Out: {v.expectedOut}</div>
+                      <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />{t("visitor.common.host")}: <span className="text-foreground">{v.host}</span></div>
+                      <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{t("visitor.reception.inLabel")}: {v.checkedIn} · {t("visitor.reception.outLabel")}: {v.expectedOut}</div>
                       <div className="flex items-center gap-1.5 truncate"><FileText className="w-3 h-3 shrink-0" /><span className="truncate">{v.purpose}</span></div>
                     </div>
                     <div className="flex items-center justify-end gap-2 mt-3">
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" title="View details" onClick={() => setViewVisitor(v)}><Eye className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" title={t("visitor.reception.viewDetails")} onClick={() => setViewVisitor(v)}><Eye className="w-3 h-3" /></Button>
                       {v.visitorId && (
-                        <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" title="Delete visitor" disabled={deletingId === v.visitorId} onClick={() => handleDeleteInside(v)}><Trash2 className="w-3 h-3" /></Button>
+                        <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" title={t("visitor.reception.deleteVisitorTitle")} disabled={deletingId === v.visitorId} onClick={() => handleDeleteInside(v)}><Trash2 className="w-3 h-3" /></Button>
                       )}
-                      <Button size="sm" variant="ghost" className="h-7 text-xs" title="Call host"><Phone className="w-3 h-3" /></Button>
-                      <Button size="sm" variant="outline" className="h-7 text-xs"><LogOut className="w-3 h-3 mr-1" />Check Out</Button>
+                      <Button size="sm" variant="ghost" className="h-7 text-xs" title={t("visitor.reception.callHostTitle")}><Phone className="w-3 h-3" /></Button>
+                      <Button size="sm" variant="outline" className="h-7 text-xs"><LogOut className="w-3 h-3 mr-1" />{t("visitor.reception.checkOut")}</Button>
                     </div>
                   </div>
                 ))}
@@ -1030,16 +1037,16 @@ export default function Reception() {
                 <table className="w-full text-xs">
                   <thead className="bg-muted/40 text-[10px] uppercase text-muted-foreground">
                     <tr>
-                      <th className="text-left p-2 px-3">Visitor</th>
-                      <th className="text-left p-2">Zone</th>
-                      <th className="text-left p-2">In / Out</th>
-                      <th className="text-left p-2">Badge</th>
+                      <th className="text-left p-2 px-3">{t("visitor.common.visitor")}</th>
+                      <th className="text-left p-2">{t("visitor.dash.zone")}</th>
+                      <th className="text-left p-2">{t("visitor.reception.inOut")}</th>
+                      <th className="text-left p-2">{t("visitor.reception.badge")}</th>
                       <th className="text-right p-2 px-3"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/50">
                     {filteredInside.length === 0 && (
-                      <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">No visitors currently inside</td></tr>
+                      <tr><td colSpan={5} className="p-4 text-center text-muted-foreground">{t("visitor.reception.noInside")}</td></tr>
                     )}
                     {filteredInside.map((v) => (
                       <tr key={v.id || v.name} className="hover:bg-muted/30 transition-colors">
@@ -1052,11 +1059,11 @@ export default function Reception() {
                         <td className="p-2 font-mono text-muted-foreground">{v.badge}</td>
                         <td className="p-2 px-3 text-right">
                           <div className="flex items-center justify-end gap-1">
-                            <Button size="sm" variant="ghost" className="h-7 text-xs" title="View details" onClick={() => setViewVisitor(v)}><Eye className="w-3 h-3" /></Button>
+                            <Button size="sm" variant="ghost" className="h-7 text-xs" title={t("visitor.reception.viewDetails")} onClick={() => setViewVisitor(v)}><Eye className="w-3 h-3" /></Button>
                             {v.visitorId && (
-                              <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" title="Delete visitor" disabled={deletingId === v.visitorId} onClick={() => handleDeleteInside(v)}><Trash2 className="w-3 h-3" /></Button>
+                              <Button size="sm" variant="ghost" className="h-7 text-xs text-destructive hover:text-destructive" title={t("visitor.reception.deleteVisitorTitle")} disabled={deletingId === v.visitorId} onClick={() => handleDeleteInside(v)}><Trash2 className="w-3 h-3" /></Button>
                             )}
-                            <Button size="sm" variant="outline" className="h-7 text-xs">Check Out</Button>
+                            <Button size="sm" variant="outline" className="h-7 text-xs">{t("visitor.reception.checkOut")}</Button>
                           </div>
                         </td>
                       </tr>
@@ -1073,9 +1080,9 @@ export default function Reception() {
       <Dialog open={walkinOpen} onOpenChange={(open) => { setWalkinOpen(open); if (!open) resetForm(); }}>
         <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-foreground">New Walk-in Visitor</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-foreground">{t("visitor.reception.walkinTitle")}</DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm">
-              Register a walk-in visitor — Step {step} of 3
+              {t("visitor.reception.walkinStep", { step })}
             </DialogDescription>
           </DialogHeader>
 
@@ -1087,7 +1094,7 @@ export default function Reception() {
                   step >= s ? "bg-teal-600 text-white" : "bg-muted text-muted-foreground"
                 }`}>{s}</div>
                 <span className={`text-xs font-medium hidden sm:inline ${step >= s ? "text-foreground" : "text-muted-foreground"}`}>
-                  {s === 1 ? "Visitor Info" : s === 2 ? "Visit Details" : "Verify & Confirm"}
+                  {s === 1 ? t("visitor.reception.stepInfo") : s === 2 ? t("visitor.reception.stepDetails") : t("visitor.reception.stepVerify")}
                 </span>
                 {s < 3 && <div className={`flex-1 h-0.5 ${step > s ? "bg-teal-600" : "bg-border"}`} />}
               </div>
@@ -1114,9 +1121,9 @@ export default function Reception() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">Emirates ID Scanner</p>
+                    <p className="text-sm font-semibold text-foreground">{t("visitor.reception.eidScanner")}</p>
                     <p className="text-xs text-muted-foreground">
-                      {scanning ? "Reading card data..." : scanned ? "ID data loaded — review and complete remaining fields" : "Place the Emirates ID on the card reader to auto-fill visitor details"}
+                      {scanning ? t("visitor.reception.readingCard") : scanned ? t("visitor.reception.idLoaded") : t("visitor.reception.placeEid")}
                     </p>
                   </div>
                   <Button
@@ -1127,23 +1134,23 @@ export default function Reception() {
                     onClick={handleScanEmiratesID}
                   >
                     <CreditCard className="w-3.5 h-3.5 mr-1.5" />
-                    {scanning ? "Scanning..." : scanned ? "Re-scan" : "Scan ID"}
+                    {scanning ? t("visitor.reception.scanning") : scanned ? t("visitor.reception.rescan") : t("visitor.reception.scanId")}
                   </Button>
                 </div>
                 {scanned && (
                   <div className="mt-3 pt-3 border-t border-border/50 grid grid-cols-3 gap-2 text-xs">
-                    <div><span className="text-muted-foreground">ID No:</span> <span className="text-foreground font-mono font-medium">{form.idNumber}</span></div>
-                    <div><span className="text-muted-foreground">Nationality:</span> <span className="text-foreground font-medium">{form.nationality}</span></div>
-                    <div><span className="text-muted-foreground">DOB:</span> <span className="text-foreground font-medium">{form.dateOfBirth}</span></div>
-                    <div><span className="text-muted-foreground">Gender:</span> <span className="text-foreground font-medium">{form.gender}</span></div>
-                    <div><span className="text-muted-foreground">Expiry:</span> <span className="text-foreground font-medium">{form.expiryDate}</span></div>
+                    <div><span className="text-muted-foreground">{t("visitor.reception.idNo")}</span> <span className="text-foreground font-mono font-medium">{form.idNumber}</span></div>
+                    <div><span className="text-muted-foreground">{t("visitor.reception.nationality")}</span> <span className="text-foreground font-medium">{form.nationality}</span></div>
+                    <div><span className="text-muted-foreground">{t("visitor.reception.dob")}</span> <span className="text-foreground font-medium">{form.dateOfBirth}</span></div>
+                    <div><span className="text-muted-foreground">{t("visitor.reception.genderColon")}</span> <span className="text-foreground font-medium">{form.gender}</span></div>
+                    <div><span className="text-muted-foreground">{t("visitor.reception.expiry")}</span> <span className="text-foreground font-medium">{form.expiryDate}</span></div>
                   </div>
                 )}
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="flex-1 h-px bg-border" />
-                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">or enter manually</span>
+                <span className="text-[10px] text-muted-foreground uppercase tracking-widest">{t("visitor.reception.orEnterManually")}</span>
                 <div className="flex-1 h-px bg-border" />
               </div>
 
@@ -1157,11 +1164,11 @@ export default function Reception() {
                     title="Take photo with webcam"
                   >
                     {capturedPhoto ? (
-                      <img src={capturedPhoto} alt="Visitor" className={`w-full h-full object-cover ${bgRemoving ? "opacity-60" : ""}`} />
+                      <img src={capturedPhoto} alt={t("visitor.common.visitor")} className={`w-full h-full object-cover ${bgRemoving ? "opacity-60" : ""}`} />
                     ) : (
                       <>
                         <Camera className="w-5 h-5 text-muted-foreground" />
-                        <span className="text-[10px] text-muted-foreground">Photo</span>
+                        <span className="text-[10px] text-muted-foreground">{t("visitor.reception.photo")}</span>
                       </>
                     )}
                   </button>
@@ -1198,16 +1205,16 @@ export default function Reception() {
                   <div className="text-[10px] text-muted-foreground text-center">
                     <span className="inline-flex items-center gap-1.5">
                       <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                      Removing background · AI processing
+                      {t("visitor.reception.removingBg")}
                     </span>
                   </div>
                 )}
                 <div className="flex items-center gap-2">
                   <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={openCamera}>
-                    <Camera className="w-3 h-3 mr-1.5" /> Take Photo
+                    <Camera className="w-3 h-3 mr-1.5" /> {t("visitor.reception.takePhoto")}
                   </Button>
                   <Button type="button" size="sm" variant="outline" className="h-7 text-xs" onClick={() => photoFileInputRef.current?.click()}>
-                    <Upload className="w-3 h-3 mr-1.5" /> Upload
+                    <Upload className="w-3 h-3 mr-1.5" /> {t("visitor.reception.upload")}
                   </Button>
                   <input ref={photoFileInputRef} type="file" accept="image/*" className="hidden" onChange={onPhotoFileChosen} />
                 </div>
@@ -1217,7 +1224,7 @@ export default function Reception() {
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/80 px-4" onClick={closeCamera}>
                   <div className="w-[480px] max-w-full bg-slate-900 rounded-2xl shadow-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
                     <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
-                      <h3 className="text-sm font-bold text-white">Take Photo</h3>
+                      <h3 className="text-sm font-bold text-white">{t("visitor.reception.takePhoto")}</h3>
                       <button onClick={closeCamera} className="w-7 h-7 rounded-full text-white/70 hover:text-white hover:bg-white/10 flex items-center justify-center">
                         <X size={16} />
                       </button>
@@ -1225,7 +1232,7 @@ export default function Reception() {
                     <div className="aspect-square w-full bg-black flex items-center justify-center">
                       {cameraError ? (
                         <div className="text-center text-rose-300 text-sm px-6">
-                          <div className="font-semibold">Camera unavailable</div>
+                          <div className="font-semibold">{t("visitor.reception.cameraUnavailable")}</div>
                           <div className="text-xs text-rose-300/70 mt-1">{cameraError}</div>
                         </div>
                       ) : (
@@ -1233,9 +1240,9 @@ export default function Reception() {
                       )}
                     </div>
                     <div className="flex items-center justify-end gap-2 px-4 py-3 border-t border-white/10">
-                      <Button type="button" variant="outline" size="sm" onClick={closeCamera}>Cancel</Button>
+                      <Button type="button" variant="outline" size="sm" onClick={closeCamera}>{t("visitor.common.cancel")}</Button>
                       <Button type="button" size="sm" className="bg-teal-600 text-white hover:bg-teal-700" disabled={!!cameraError} onClick={captureFromCamera}>
-                        <Camera className="w-3.5 h-3.5 mr-1.5" /> Capture
+                        <Camera className="w-3.5 h-3.5 mr-1.5" /> {t("visitor.reception.capture")}
                       </Button>
                     </div>
                   </div>
@@ -1243,36 +1250,36 @@ export default function Reception() {
               )}
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">First Name *</label>
-                  <Input placeholder="First name" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.firstName} onChange={(e) => updateForm("firstName", e.target.value)} />
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.firstNameReq")}</label>
+                  <Input placeholder={t("visitor.reception.firstNamePlaceholder")} className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.firstName} onChange={(e) => updateForm("firstName", e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Last Name *</label>
-                  <Input placeholder="Last name" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.lastName} onChange={(e) => updateForm("lastName", e.target.value)} />
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.lastNameReq")}</label>
+                  <Input placeholder={t("visitor.reception.lastNamePlaceholder")} className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.lastName} onChange={(e) => updateForm("lastName", e.target.value)} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Email</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.common.email")}</label>
                   <Input type="email" placeholder="visitor@company.com" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.email} onChange={(e) => updateForm("email", e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Phone</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.common.phone")}</label>
                   <Input type="tel" placeholder="+971 50 000 0000" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Company *</label>
-                  <Input placeholder="Company name" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.company} onChange={(e) => updateForm("company", e.target.value)} />
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.companyReq")}</label>
+                  <Input placeholder={t("visitor.reception.companyPlaceholder")} className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.company} onChange={(e) => updateForm("company", e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Visitor Type *</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.visitorTypeReq")}</label>
                   <Select value={form.visitorType} onValueChange={(v) => updateForm("visitorType", v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder={t("visitor.reception.selectType")} /></SelectTrigger>
                     <SelectContent side="bottom" avoidCollisions={false} className="max-h-[200px] overflow-y-auto">
-                      {["Business", "Interview", "Contractor", "Vendor", "Delivery", "VIP", "Maintenance", "Event Attendee"].map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      {["Business", "Interview", "Contractor", "Vendor", "Delivery", "VIP", "Maintenance", "Event Attendee"].map((opt) => (
+                        <SelectItem key={opt} value={opt}>{t(`visitor.reception.types.${opt}`)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1280,7 +1287,7 @@ export default function Reception() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Date of Birth</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.dobLabel")}</label>
                   <Input
                     type="date"
                     className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
@@ -1289,12 +1296,12 @@ export default function Reception() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Gender</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.genderLabel")}</label>
                   <Select value={form.gender} onValueChange={(v) => updateForm("gender", v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Select gender" /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder={t("visitor.reception.selectGender")} /></SelectTrigger>
                     <SelectContent side="bottom" avoidCollisions={false} className="max-h-[200px] overflow-y-auto">
                       {["Male", "Female", "Other"].map((g) => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                        <SelectItem key={g} value={g}>{t(`visitor.reception.genders.${g}`)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -1302,19 +1309,19 @@ export default function Reception() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">ID Type</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.hub.idType")}</label>
                   <Select value={form.idType} onValueChange={(v) => updateForm("idType", v)}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="Select ID type" /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder={t("visitor.reception.selectIdType")} /></SelectTrigger>
                     <SelectContent side="bottom" avoidCollisions={false} className="max-h-[200px] overflow-y-auto">
-                      {["Passport", "National ID", "Driver's License", "Emirates ID", "Company Badge"].map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
+                      {["Passport", "National ID", "Driver's License", "Emirates ID", "Company Badge"].map((opt) => (
+                        <SelectItem key={opt} value={opt}>{t(`visitor.reception.idTypes.${opt}`)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">ID Number</label>
-                  <Input placeholder="ID number" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.idNumber} onChange={(e) => updateForm("idNumber", e.target.value)} />
+                  <label className="text-xs text-muted-foreground">{t("visitor.directory.idNumber")}</label>
+                  <Input placeholder={t("visitor.directory.idNumberPlaceholder")} className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.idNumber} onChange={(e) => updateForm("idNumber", e.target.value)} />
                 </div>
               </div>
             </div>
@@ -1325,9 +1332,9 @@ export default function Reception() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Host / Employee *</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.hostEmployee")}</label>
                   <Select value={form.host || ""} onValueChange={onPickHost}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder={filteredHostEmployees.length === 0 ? "No employees in this department" : "Select host"} /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder={filteredHostEmployees.length === 0 ? t("visitor.reception.noEmpDept") : t("visitor.reception.selectHost")} /></SelectTrigger>
                     <SelectContent side="bottom" avoidCollisions={false} className="max-h-[260px] overflow-y-auto">
                       {filteredHostEmployees.map((h) => {
                         const meta = [h.departmentName, h.branchName].filter(Boolean).join(" · ");
@@ -1341,9 +1348,9 @@ export default function Reception() {
                   </Select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Department</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.department")}</label>
                   <Select value={form.department || ""} onValueChange={onPickDepartment}>
-                    <SelectTrigger className="w-full"><SelectValue placeholder="All departments" /></SelectTrigger>
+                    <SelectTrigger className="w-full"><SelectValue placeholder={t("visitor.reception.allDepartments")} /></SelectTrigger>
                     <SelectContent side="bottom" avoidCollisions={false} className="max-h-[260px] overflow-y-auto">
                       {hostDepartments.map((d) => (
                         <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
@@ -1354,7 +1361,7 @@ export default function Reception() {
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Allowed From *</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.allowedFrom")}</label>
                   <Input
                     type="time"
                     className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
@@ -1363,7 +1370,7 @@ export default function Reception() {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs text-muted-foreground">Allowed To *</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.allowedTo")}</label>
                   <Input
                     type="time"
                     className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
@@ -1371,34 +1378,34 @@ export default function Reception() {
                     onChange={(e) => updateForm("visitToTime", e.target.value)}
                   />
                   {form.visitFromTime && form.visitToTime && form.visitToTime <= form.visitFromTime && (
-                    <p className="text-[11px] text-destructive">End time must be after start time</p>
+                    <p className="text-[11px] text-destructive">{t("visitor.reception.endAfterStart")}</p>
                   )}
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">Purpose of Visit *</label>
+                <label className="text-xs text-muted-foreground">{t("visitor.reception.purposeOfVisit")}</label>
                 <Select value={form.purpose} onValueChange={(v) => updateForm("purpose", v)}>
-                  <SelectTrigger><SelectValue placeholder="Select purpose" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("visitor.reception.selectPurpose")} /></SelectTrigger>
                   <SelectContent>
                     {["Business Meeting", "Interview", "Delivery", "Maintenance", "Audit", "Site Visit", "Training", "Event", "Other"].map((p) => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                      <SelectItem key={p} value={p}>{t(`visitor.reception.purposes.${p}`)}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs text-muted-foreground">Grant Device Access (optional)</label>
+                  <label className="text-xs text-muted-foreground">{t("visitor.reception.grantDevice")}</label>
                   {(form.deviceIds?.length || 0) > 0 && (
-                    <span className="text-[10px] text-teal-600 font-medium">{form.deviceIds.length} selected</span>
+                    <span className="text-[10px] text-teal-600 font-medium">{t("visitor.reception.selectedCount", { count: form.deviceIds.length })}</span>
                   )}
                 </div>
                 <p className="text-[11px] text-muted-foreground">
-                  Select the device(s) this visitor may use. A temporary ID is created and access auto-expires after the allowed time.
+                  {t("visitor.reception.deviceHint")}
                 </p>
                 <div className="max-h-40 overflow-y-auto rounded-lg border border-border/50 divide-y divide-border/40">
                   {companyDevices.length === 0 ? (
-                    <div className="px-3 py-3 text-xs text-muted-foreground">No devices found for this company.</div>
+                    <div className="px-3 py-3 text-xs text-muted-foreground">{t("visitor.reception.noDevicesCompany")}</div>
                   ) : (
                     companyDevices.map((d) => {
                       const checked = (form.deviceIds || []).includes(d.id);
@@ -1416,20 +1423,20 @@ export default function Reception() {
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">Vehicle License Plate</label>
-                <Input placeholder="e.g. ABC-1234" className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.vehiclePlate} onChange={(e) => updateForm("vehiclePlate", e.target.value)} />
+                <label className="text-xs text-muted-foreground">{t("visitor.reception.vehiclePlate")}</label>
+                <Input placeholder={t("visitor.reception.vehiclePlatePlaceholder")} className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.vehiclePlate} onChange={(e) => updateForm("vehiclePlate", e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs text-muted-foreground">Additional Notes</label>
-                <Textarea placeholder="Any special instructions or notes..." className="resize-none h-20 dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} />
+                <label className="text-xs text-muted-foreground">{t("visitor.reception.additionalNotes")}</label>
+                <Textarea placeholder={t("visitor.reception.notesPlaceholder")} className="resize-none h-20 dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10" value={form.notes} onChange={(e) => updateForm("notes", e.target.value)} />
               </div>
               <div className="bg-muted/30 rounded-lg p-3 border border-border/50">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
                   <Upload className="w-3.5 h-3.5" />
-                  <span className="font-medium">Upload Documents (optional)</span>
+                  <span className="font-medium">{t("visitor.reception.uploadDocs")}</span>
                   {form.documents?.length > 0 && (
                     <span className="ml-auto text-[10px] font-semibold text-foreground">
-                      {form.documents.length} file{form.documents.length === 1 ? "" : "s"}
+                      {form.documents.length === 1 ? t("visitor.reception.fileCountOne", { count: form.documents.length }) : t("visitor.reception.fileCount", { count: form.documents.length })}
                     </span>
                   )}
                 </div>
@@ -1450,9 +1457,9 @@ export default function Reception() {
                 >
                   <FileText className="w-5 h-5 mx-auto text-muted-foreground mb-1" />
                   <p className="text-xs text-muted-foreground">
-                    {docDragOver ? "Release to add files" : "Drop files here or click to upload"}
+                    {docDragOver ? t("visitor.reception.releaseFiles") : t("visitor.reception.dropFiles")}
                   </p>
-                  <p className="text-[10px] text-muted-foreground/60">ID, NDA, Insurance, Work Permit · max ~5 MB each</p>
+                  <p className="text-[10px] text-muted-foreground/60">{t("visitor.reception.docHint")}</p>
                   <input
                     ref={docInputRef}
                     type="file"
@@ -1485,13 +1492,13 @@ export default function Reception() {
                             onClick={(e) => e.stopPropagation()}
                             className="text-[10px] text-indigo-600 dark:text-indigo-400 font-semibold hover:underline shrink-0"
                           >
-                            View
+                            {t("visitor.common.view")}
                           </a>
                         )}
                         <button
                           type="button"
                           onClick={(e) => { e.stopPropagation(); removeDoc(d.id); }}
-                          title="Remove"
+                          title={t("visitor.reception.remove")}
                           className="w-5 h-5 rounded-full text-muted-foreground hover:bg-rose-500/15 hover:text-rose-500 flex items-center justify-center shrink-0"
                         >
                           <X className="w-3 h-3" />
@@ -1509,25 +1516,25 @@ export default function Reception() {
             <div className="space-y-4">
               {/* Summary */}
               <div className="bg-muted/30 rounded-lg p-4 border border-border/50 space-y-3">
-                <h4 className="text-sm font-semibold text-foreground">Visitor Summary</h4>
+                <h4 className="text-sm font-semibold text-foreground">{t("visitor.reception.visitorSummary")}</h4>
                 <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
-                  <div><span className="text-muted-foreground">Name:</span> <span className="text-foreground font-medium">{form.firstName} {form.lastName}</span></div>
-                  <div><span className="text-muted-foreground">Company:</span> <span className="text-foreground font-medium">{form.company}</span></div>
-                  <div><span className="text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{form.visitorType}</span></div>
-                  <div><span className="text-muted-foreground">Host:</span> <span className="text-foreground font-medium">{hostEmployees.find((e) => String(e.id) === String(form.host))?.name || "—"}</span></div>
-                  <div><span className="text-muted-foreground">Purpose:</span> <span className="text-foreground font-medium">{form.purpose}</span></div>
-                  <div><span className="text-muted-foreground">Allowed:</span> <span className="text-foreground font-medium">{form.visitFromTime} – {form.visitToTime} (today)</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sName")}</span> <span className="text-foreground font-medium">{form.firstName} {form.lastName}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sCompany")}</span> <span className="text-foreground font-medium">{form.company}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sType")}</span> <span className="text-foreground font-medium">{form.visitorType}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sHost")}</span> <span className="text-foreground font-medium">{hostEmployees.find((e) => String(e.id) === String(form.host))?.name || "—"}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sPurpose")}</span> <span className="text-foreground font-medium">{form.purpose}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sAllowed")}</span> <span className="text-foreground font-medium">{form.visitFromTime} – {form.visitToTime} ({t("visitor.reception.today")})</span></div>
                   {(form.deviceIds?.length || 0) > 0 && (
-                    <div className="col-span-2"><span className="text-muted-foreground">Device access:</span> <span className="text-foreground font-medium">{companyDevices.filter((d) => form.deviceIds.includes(d.id)).map((d) => d.name).join(", ")}</span></div>
+                    <div className="col-span-2"><span className="text-muted-foreground">{t("visitor.reception.sDeviceAccess")}</span> <span className="text-foreground font-medium">{companyDevices.filter((d) => form.deviceIds.includes(d.id)).map((d) => d.name).join(", ")}</span></div>
                   )}
-                  <div><span className="text-muted-foreground">Department:</span> <span className="text-foreground font-medium">{form.department || "—"}</span></div>
-                  {form.idType && <div><span className="text-muted-foreground">ID:</span> <span className="text-foreground font-medium">{form.idType} · {form.idNumber}</span></div>}
-                  {form.nationality && <div><span className="text-muted-foreground">Nationality:</span> <span className="text-foreground font-medium">{form.nationality}</span></div>}
-                  {form.dateOfBirth && <div><span className="text-muted-foreground">DOB:</span> <span className="text-foreground font-medium">{form.dateOfBirth}</span></div>}
-                  {form.gender && <div><span className="text-muted-foreground">Gender:</span> <span className="text-foreground font-medium">{form.gender}</span></div>}
-                  {form.expiryDate && <div><span className="text-muted-foreground">ID Expiry:</span> <span className="text-foreground font-medium">{form.expiryDate}</span></div>}
-                  {form.vehiclePlate && <div><span className="text-muted-foreground">Vehicle:</span> <span className="text-foreground font-medium">{form.vehiclePlate}</span></div>}
-                  {form.cardNumber && <div><span className="text-muted-foreground">Card #:</span> <span className="text-foreground font-medium font-mono">{form.cardNumber}</span></div>}
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sDepartment")}</span> <span className="text-foreground font-medium">{form.department || "—"}</span></div>
+                  {form.idType && <div><span className="text-muted-foreground">{t("visitor.reception.sId")}</span> <span className="text-foreground font-medium">{form.idType} · {form.idNumber}</span></div>}
+                  {form.nationality && <div><span className="text-muted-foreground">{t("visitor.reception.sNationality")}</span> <span className="text-foreground font-medium">{form.nationality}</span></div>}
+                  {form.dateOfBirth && <div><span className="text-muted-foreground">{t("visitor.reception.sDob")}</span> <span className="text-foreground font-medium">{form.dateOfBirth}</span></div>}
+                  {form.gender && <div><span className="text-muted-foreground">{t("visitor.reception.sGender")}</span> <span className="text-foreground font-medium">{form.gender}</span></div>}
+                  {form.expiryDate && <div><span className="text-muted-foreground">{t("visitor.reception.sExpiry")}</span> <span className="text-foreground font-medium">{form.expiryDate}</span></div>}
+                  {form.vehiclePlate && <div><span className="text-muted-foreground">{t("visitor.reception.sVehicle")}</span> <span className="text-foreground font-medium">{form.vehiclePlate}</span></div>}
+                  {form.cardNumber && <div><span className="text-muted-foreground">{t("visitor.reception.sCard")}</span> <span className="text-foreground font-medium font-mono">{form.cardNumber}</span></div>}
                 </div>
               </div>
 
@@ -1537,10 +1544,10 @@ export default function Reception() {
                   <Fingerprint className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-foreground">Face Verification</p>
-                  <p className="text-xs text-muted-foreground">Capture visitor face for identity verification</p>
+                  <p className="text-sm font-medium text-foreground">{t("visitor.reception.faceVerification")}</p>
+                  <p className="text-xs text-muted-foreground">{t("visitor.reception.faceHint")}</p>
                   <Button size="sm" variant="outline" className="mt-1.5 h-7 text-xs">
-                    <Camera className="w-3 h-3 mr-1" /> Capture Face
+                    <Camera className="w-3 h-3 mr-1" /> {t("visitor.reception.captureFace")}
                   </Button>
                 </div>
               </div>
@@ -1552,10 +1559,10 @@ export default function Reception() {
                     <CreditCard className="w-6 h-6" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground">Access Card</p>
-                    <p className="text-xs text-muted-foreground mb-2">Tap or scan the visitor badge to assign a card number.</p>
+                    <p className="text-sm font-medium text-foreground">{t("visitor.reception.accessCard")}</p>
+                    <p className="text-xs text-muted-foreground mb-2">{t("visitor.reception.cardHint")}</p>
                     <Input
-                      placeholder="Card / Badge number"
+                      placeholder={t("visitor.reception.cardPlaceholder")}
                       autoComplete="off"
                       className="dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10 font-mono tracking-wider"
                       value={form.cardNumber}
@@ -1567,26 +1574,26 @@ export default function Reception() {
 
               {/* Agreements */}
               <div className="space-y-3">
-                <h4 className="text-sm font-semibold text-foreground">Agreements</h4>
+                <h4 className="text-sm font-semibold text-foreground">{t("visitor.reception.agreements")}</h4>
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <Checkbox checked={form.ndaAccepted} onCheckedChange={(v) => updateForm("ndaAccepted", !!v)} className="mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-foreground">Non-Disclosure Agreement</p>
-                    <p className="text-[10px] text-muted-foreground">Visitor agrees to company confidentiality terms</p>
+                    <p className="text-xs font-medium text-foreground">{t("visitor.reception.nda")}</p>
+                    <p className="text-[10px] text-muted-foreground">{t("visitor.reception.ndaDesc")}</p>
                   </div>
                 </label>
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <Checkbox checked={form.safetyAccepted} onCheckedChange={(v) => updateForm("safetyAccepted", !!v)} className="mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-foreground">Safety Induction</p>
-                    <p className="text-[10px] text-muted-foreground">Visitor acknowledges safety guidelines and emergency procedures</p>
+                    <p className="text-xs font-medium text-foreground">{t("visitor.reception.safety")}</p>
+                    <p className="text-[10px] text-muted-foreground">{t("visitor.reception.safetyDesc")}</p>
                   </div>
                 </label>
                 <label className="flex items-start gap-2.5 cursor-pointer">
                   <Checkbox checked={form.privacyAccepted} onCheckedChange={(v) => updateForm("privacyAccepted", !!v)} className="mt-0.5" />
                   <div>
-                    <p className="text-xs font-medium text-foreground">Privacy Consent *</p>
-                    <p className="text-[10px] text-muted-foreground">Visitor consents to data collection and processing</p>
+                    <p className="text-xs font-medium text-foreground">{t("visitor.reception.privacy")}</p>
+                    <p className="text-[10px] text-muted-foreground">{t("visitor.reception.privacyDesc")}</p>
                   </div>
                 </label>
               </div>
@@ -1595,7 +1602,7 @@ export default function Reception() {
 
           <DialogFooter className="flex items-center justify-between gap-2 pt-2">
             {step > 1 ? (
-              <Button variant="outline" onClick={() => setStep(step - 1)}>Back</Button>
+              <Button variant="outline" onClick={() => setStep(step - 1)}>{t("visitor.reception.back")}</Button>
             ) : (
               <div />
             )}
@@ -1605,7 +1612,7 @@ export default function Reception() {
                 disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
                 onClick={() => setStep(step + 1)}
               >
-                Continue
+                {t("visitor.reception.continue")}
               </Button>
             ) : (
               <Button
@@ -1614,8 +1621,8 @@ export default function Reception() {
                 onClick={handleSubmit}
               >
                 {submitting
-                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Checking In…</>
-                  : <><UserCheck className="w-4 h-4 mr-2" /> Check In Visitor</>}
+                  ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> {t("visitor.reception.checkingIn")}</>
+                  : <><UserCheck className="w-4 h-4 mr-2" /> {t("visitor.reception.checkInVisitor")}</>}
               </Button>
             )}
           </DialogFooter>
@@ -1626,7 +1633,7 @@ export default function Reception() {
       <Dialog open={!!viewVisitor} onOpenChange={(open) => { if (!open) setViewVisitor(null); }}>
         <DialogContent className="sm:max-w-md p-6">
           <DialogHeader>
-            <DialogTitle className="text-lg font-bold text-foreground">Visitor Details</DialogTitle>
+            <DialogTitle className="text-lg font-bold text-foreground">{t("visitor.reception.visitorDetails")}</DialogTitle>
           </DialogHeader>
           {viewVisitor && (
             <div className="space-y-4">
@@ -1638,15 +1645,15 @@ export default function Reception() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                <div><span className="text-muted-foreground">Host:</span> <span className="text-foreground font-medium">{viewVisitor.host}</span></div>
-                <div><span className="text-muted-foreground">Zone:</span> <span className="text-foreground font-medium">{viewVisitor.zone}</span></div>
-                <div><span className="text-muted-foreground">In:</span> <span className="text-foreground font-medium">{viewVisitor.checkedIn}</span></div>
-                <div><span className="text-muted-foreground">Out:</span> <span className="text-foreground font-medium">{viewVisitor.expectedOut}</span></div>
-                <div><span className="text-muted-foreground">Badge:</span> <span className="text-foreground font-medium font-mono">{viewVisitor.badge}</span></div>
-                <div><span className="text-muted-foreground">Type:</span> <span className="text-foreground font-medium">{viewVisitor.visitorType}</span></div>
-                {viewVisitor.email && <div className="col-span-2"><span className="text-muted-foreground">Email:</span> <span className="text-foreground font-medium">{viewVisitor.email}</span></div>}
-                {viewVisitor.phone && <div className="col-span-2"><span className="text-muted-foreground">Phone:</span> <span className="text-foreground font-medium">{viewVisitor.phone}</span></div>}
-                <div className="col-span-2"><span className="text-muted-foreground">Purpose:</span> <span className="text-foreground font-medium">{viewVisitor.purpose}</span></div>
+                <div><span className="text-muted-foreground">{t("visitor.reception.sHost")}</span> <span className="text-foreground font-medium">{viewVisitor.host}</span></div>
+                <div><span className="text-muted-foreground">{t("visitor.dash.zone")}:</span> <span className="text-foreground font-medium">{viewVisitor.zone}</span></div>
+                <div><span className="text-muted-foreground">{t("visitor.reception.inLabel")}:</span> <span className="text-foreground font-medium">{viewVisitor.checkedIn}</span></div>
+                <div><span className="text-muted-foreground">{t("visitor.reception.outLabel")}:</span> <span className="text-foreground font-medium">{viewVisitor.expectedOut}</span></div>
+                <div><span className="text-muted-foreground">{t("visitor.reception.badge")}:</span> <span className="text-foreground font-medium font-mono">{viewVisitor.badge}</span></div>
+                <div><span className="text-muted-foreground">{t("visitor.reception.sType")}</span> <span className="text-foreground font-medium">{viewVisitor.visitorType}</span></div>
+                {viewVisitor.email && <div className="col-span-2"><span className="text-muted-foreground">{t("visitor.common.email")}:</span> <span className="text-foreground font-medium">{viewVisitor.email}</span></div>}
+                {viewVisitor.phone && <div className="col-span-2"><span className="text-muted-foreground">{t("visitor.common.phone")}:</span> <span className="text-foreground font-medium">{viewVisitor.phone}</span></div>}
+                <div className="col-span-2"><span className="text-muted-foreground">{t("visitor.reception.sPurpose")}</span> <span className="text-foreground font-medium">{viewVisitor.purpose}</span></div>
               </div>
               {viewVisitor.visitorId && (
                 <Button
@@ -1655,7 +1662,7 @@ export default function Reception() {
                   disabled={deletingId === viewVisitor.visitorId}
                   onClick={() => handleDeleteInside(viewVisitor)}
                 >
-                  <Trash2 className="w-4 h-4 mr-2" /> {deletingId === viewVisitor.visitorId ? "Deleting…" : "Delete Visitor"}
+                  <Trash2 className="w-4 h-4 mr-2" /> {deletingId === viewVisitor.visitorId ? t("visitor.directory.deleting") : t("visitor.directory.deleteVisitor")}
                 </Button>
               )}
             </div>
@@ -1668,14 +1675,14 @@ export default function Reception() {
         <DialogContent className="sm:max-w-md p-6">
           <DialogHeader>
             <DialogTitle className="text-lg font-bold text-foreground">
-              {scanMode === "qr" ? "Scan Visitor QR Code" : scanMode === "rfid" ? "Tap RFID Card" : "Tap NFC Token"}
+              {scanMode === "qr" ? t("visitor.reception.scanQrTitle") : scanMode === "rfid" ? t("visitor.reception.tapRfid") : t("visitor.reception.tapNfc")}
             </DialogTitle>
             <DialogDescription className="text-muted-foreground text-sm">
               {scanMode === "qr"
-                ? "Point the scanner at the visitor's QR invitation"
+                ? t("visitor.reception.scanQrDesc")
                 : scanMode === "rfid"
-                ? "Hold the RFID card near the reader"
-                : "Tap the NFC badge or phone on the reader"}
+                ? t("visitor.reception.rfidDesc")
+                : t("visitor.reception.nfcDesc")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1711,14 +1718,14 @@ export default function Reception() {
                     ? <Radio className="w-10 h-10 text-teal-600 animate-pulse" />
                     : <Nfc className="w-10 h-10 text-teal-600 animate-pulse" />}
                   <p className="text-xs text-muted-foreground">
-                    {scanMode === "qr" ? "Scanning QR…" : scanMode === "rfid" ? "Reading RFID…" : "Listening for NFC…"}
+                    {scanMode === "qr" ? t("visitor.reception.scanningQr") : scanMode === "rfid" ? t("visitor.reception.readingRfid") : t("visitor.reception.listeningNfc")}
                   </p>
                   <Wifi className="w-3 h-3 text-teal-600 animate-pulse" />
                 </div>
               ) : qrResult ? (
                 <div className="flex flex-col items-center gap-2">
                   <CheckCircle2 className="w-10 h-10 text-success" />
-                  <p className="text-xs text-success font-medium">Match Found</p>
+                  <p className="text-xs text-success font-medium">{t("visitor.reception.matchFound")}</p>
                 </div>
               ) : scanError ? (
                 <div className="flex flex-col items-center gap-2 px-4 text-center">
@@ -1728,7 +1735,7 @@ export default function Reception() {
               ) : (
                 <div className="flex flex-col items-center gap-2">
                   {scanMode === "qr" ? <QrCode className="w-10 h-10 text-muted-foreground" /> : scanMode === "rfid" ? <Radio className="w-10 h-10 text-muted-foreground" /> : <Nfc className="w-10 h-10 text-muted-foreground" />}
-                  <p className="text-xs text-muted-foreground">Ready to scan</p>
+                  <p className="text-xs text-muted-foreground">{t("visitor.reception.readyScan")}</p>
                 </div>
               )}
             </div>
@@ -1751,13 +1758,13 @@ export default function Reception() {
                     <p className="font-semibold text-foreground">{qrResult.name}</p>
                     <p className="text-xs text-muted-foreground">{qrResult.company}</p>
                   </div>
-                  <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium ${typeColors[qrResult.type]}`}>{qrResult.type}</span>
+                  <span className={`ml-auto text-xs px-2 py-0.5 rounded-full font-medium ${typeColors[qrResult.type]}`}>{typeLabel(qrResult.type)}</span>
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-border/50">
-                  <div><span className="text-muted-foreground">Host:</span> <span className="text-foreground font-medium">{qrResult.host}</span></div>
-                  <div><span className="text-muted-foreground">Time:</span> <span className="text-foreground font-medium">{qrResult.time}</span></div>
-                  <div><span className="text-muted-foreground">Dept:</span> <span className="text-foreground font-medium">{qrResult.department}</span></div>
-                  <div><span className="text-muted-foreground">Purpose:</span> <span className="text-foreground font-medium truncate">{qrResult.purpose}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sHost")}</span> <span className="text-foreground font-medium">{qrResult.host}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.common.time")}:</span> <span className="text-foreground font-medium">{qrResult.time}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.department")}:</span> <span className="text-foreground font-medium">{qrResult.department}</span></div>
+                  <div><span className="text-muted-foreground">{t("visitor.reception.sPurpose")}</span> <span className="text-foreground font-medium truncate">{qrResult.purpose}</span></div>
                 </div>
               </div>
             )}
@@ -1766,16 +1773,16 @@ export default function Reception() {
           <DialogFooter className="flex gap-2">
             {!qrResult ? (
               <>
-                <Button variant="outline" onClick={() => setScanOpen(false)}>Cancel</Button>
-                {scanError && <Button onClick={() => runScan(scanMode)}>Retry</Button>}
+                <Button variant="outline" onClick={() => setScanOpen(false)}>{t("visitor.common.cancel")}</Button>
+                {scanError && <Button onClick={() => runScan(scanMode)}>{t("visitor.reception.retry")}</Button>}
               </>
             ) : (
               <>
                 <Button variant="outline" onClick={() => runScan(scanMode)}>
-                  <ScanLine className="w-4 h-4 mr-2" /> Scan Again
+                  <ScanLine className="w-4 h-4 mr-2" /> {t("visitor.reception.scanAgain")}
                 </Button>
                 <Button className="bg-teal-600 text-white hover:bg-teal-700" onClick={handleQrCheckIn}>
-                  <UserCheck className="w-4 h-4 mr-2" /> Check In
+                  <UserCheck className="w-4 h-4 mr-2" /> {t("visitor.reception.checkIn")}
                 </Button>
               </>
             )}
@@ -1790,9 +1797,9 @@ export default function Reception() {
               <span className="w-8 h-8 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                 <Phone className="w-4 h-4" />
               </span>
-              Call a Host
+              {t("visitor.reception.callAHost")}
             </DialogTitle>
-            <DialogDescription className="text-xs">Filter by branch, department, or employee.</DialogDescription>
+            <DialogDescription className="text-xs">{t("visitor.reception.filterByBde")}</DialogDescription>
           </DialogHeader>
 
           {(() => {
@@ -1837,10 +1844,10 @@ export default function Reception() {
                       }}
                     >
                       <SelectTrigger className="h-9 w-full text-xs">
-                        <SelectValue placeholder="All Branches" />
+                        <SelectValue placeholder={t("visitor.reception.allBranches")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__all">All Branches</SelectItem>
+                        <SelectItem value="__all">{t("visitor.reception.allBranches")}</SelectItem>
                         {branchOptions.map((b) => (
                           <SelectItem key={b} value={b}>{b}</SelectItem>
                         ))}
@@ -1855,10 +1862,10 @@ export default function Reception() {
                       }}
                     >
                       <SelectTrigger className="h-9 w-full text-xs">
-                        <SelectValue placeholder="All Departments" />
+                        <SelectValue placeholder={t("visitor.reception.allDepartments")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__all">All Departments</SelectItem>
+                        <SelectItem value="__all">{t("visitor.reception.allDepartments")}</SelectItem>
                         {deptOptions.map((d) => (
                           <SelectItem key={d} value={d}>{d}</SelectItem>
                         ))}
@@ -1869,10 +1876,10 @@ export default function Reception() {
                       onValueChange={(v) => setCallHostEmployeeId(v === "__all" ? "" : v)}
                     >
                       <SelectTrigger className="h-9 w-full text-xs">
-                        <SelectValue placeholder="All Employees" />
+                        <SelectValue placeholder={t("visitor.reception.allEmployees")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__all">All Employees</SelectItem>
+                        <SelectItem value="__all">{t("visitor.reception.allEmployees")}</SelectItem>
                         {employeeOptions.map((e) => (
                           <SelectItem key={e.id} value={String(e.id)}>{e.name}</SelectItem>
                         ))}
@@ -1882,7 +1889,7 @@ export default function Reception() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by name, department, or phone"
+                      placeholder={t("visitor.reception.searchNameDeptPhone")}
                       value={callHostQuery}
                       onChange={(e) => setCallHostQuery(e.target.value)}
                       className="pl-9 dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
@@ -1893,7 +1900,7 @@ export default function Reception() {
                 <div className="max-h-[420px] overflow-y-auto divide-y divide-border/50">
                   {list.length === 0 ? (
                     <div className="px-5 py-8 text-center text-sm text-muted-foreground">
-                      {hostEmployees.length === 0 ? "Loading employees…" : "No employees match the filters."}
+                      {hostEmployees.length === 0 ? t("visitor.reception.loadingEmployees") : t("visitor.reception.noEmpMatch")}
                     </div>
                   ) : (
                     list.slice(0, 200).map((e) => {
@@ -1928,7 +1935,7 @@ export default function Reception() {
                             {cleanPhone ? (
                               <div className="text-xs font-mono text-foreground tabular-nums">{e.phone}</div>
                             ) : (
-                              <span className="text-[11px] text-muted-foreground italic">No number</span>
+                              <span className="text-[11px] text-muted-foreground italic">{t("visitor.reception.noNumber")}</span>
                             )}
                           </div>
                         </div>
@@ -1949,10 +1956,10 @@ export default function Reception() {
               <span className="w-8 h-8 rounded-lg bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                 <DoorOpen className="w-4 h-4" />
               </span>
-              Open Gate
+              {t("visitor.reception.qa.openGate")}
             </DialogTitle>
             <DialogDescription className="text-xs">
-              Pick a device to unlock. You'll be asked for the device PIN next.
+              {t("visitor.reception.gateHint")}
             </DialogDescription>
           </DialogHeader>
 
@@ -1980,7 +1987,7 @@ export default function Reception() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       autoFocus
-                      placeholder="Search device by name or branch"
+                      placeholder={t("visitor.reception.searchDevice")}
                       className="pl-9 dark:!bg-slate-900 dark:!text-slate-200 dark:!border-white/10"
                       value={gateSearch}
                       onChange={(e) => setGateSearch(e.target.value)}
@@ -1988,10 +1995,10 @@ export default function Reception() {
                   </div>
                   {!gateLoading && gateDevices.length > 0 && (
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>{filtered.length} device{filtered.length === 1 ? "" : "s"}</span>
+                      <span>{filtered.length === 1 ? t("visitor.reception.deviceCountOne", { count: filtered.length }) : t("visitor.reception.deviceCount", { count: filtered.length })}</span>
                       <span className="inline-flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                        {onlineCount} online · {gateDevices.length - onlineCount} offline
+                        {t("visitor.reception.onlineOffline", { online: onlineCount, offline: gateDevices.length - onlineCount })}
                       </span>
                     </div>
                   )}
@@ -2001,13 +2008,13 @@ export default function Reception() {
                   {gateLoading ? (
                     <div className="py-10 text-center text-sm text-muted-foreground">
                       <Loader2 className="w-5 h-5 animate-spin mx-auto mb-2 text-muted-foreground" />
-                      Loading devices…
+                      {t("visitor.reception.loadingDevices")}
                     </div>
                   ) : filtered.length === 0 ? (
                     <div className="py-10 text-center">
                       <DoorOpen className="w-7 h-7 mx-auto text-muted-foreground/50 mb-2" />
                       <div className="text-sm text-muted-foreground">
-                        {gateDevices.length === 0 ? "No devices registered." : "No devices match your search."}
+                        {gateDevices.length === 0 ? t("visitor.reception.noDevicesRegistered") : t("visitor.reception.noDeviceMatch")}
                       </div>
                     </div>
                   ) : (
@@ -2041,7 +2048,7 @@ export default function Reception() {
                                     {d.name || d.device_id}
                                   </div>
                                   <div className="text-[11px] text-muted-foreground truncate">
-                                    {d?.branch?.branch_name || "No branch"} · {d.device_id}
+                                    {d?.branch?.branch_name || t("visitor.reception.noBranch")} · {d.device_id}
                                   </div>
                                 </div>
                               </div>
@@ -2049,7 +2056,7 @@ export default function Reception() {
                                 <span className={`text-[10px] font-bold uppercase tracking-wider ${
                                   online ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"
                                 }`}>
-                                  {online ? "Online" : "Offline"}
+                                  {online ? t("visitor.reception.online") : t("visitor.reception.offline")}
                                 </span>
                                 {online && (
                                   <span className="hidden group-hover:inline-flex items-center text-emerald-600 dark:text-emerald-400">
@@ -2068,14 +2075,14 @@ export default function Reception() {
                 <div className="px-5 py-3 border-t border-border flex items-center justify-between text-[11px] text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                    PIN required after selection
+                    {t("visitor.reception.pinRequired")}
                   </span>
                   <button
                     type="button"
                     onClick={() => setOpenGateOpen(false)}
                     className="text-muted-foreground hover:text-foreground"
                   >
-                    Cancel
+                    {t("visitor.common.cancel")}
                   </button>
                 </div>
               </>
@@ -2092,12 +2099,12 @@ export default function Reception() {
           try {
             const r = await openDoor({ device_id: gateActiveDeviceId, otp: pin });
             if (r?.status) {
-              toast.success(r?.message || "Door opened");
+              toast.success(r?.message || t("visitor.reception.toastDoorOpened"));
             } else {
-              toast.error("Door open command failed");
+              toast.error(t("visitor.reception.toastDoorFailed"));
             }
           } catch (e) {
-            toast.error("Failed to open door", { description: parseApiError(e) });
+            toast.error(t("visitor.reception.toastFailedOpenDoor"), { description: parseApiError(e) });
           } finally {
             setGatePinModal(false);
           }

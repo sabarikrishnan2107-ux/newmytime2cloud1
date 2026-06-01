@@ -1,11 +1,14 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 export default function VisitorCards() {
+  const { t } = useTranslation();
   const cards = [
-    { title: "Total Visitors", value: 120, color: "border-blue-500" },
-    { title: "Checked In", value: 85, color: "border-green-500" },
-    { title: "Checked Out", value: 70, color: "border-gray-500" },
-    { title: "Pending Approval", value: 10, color: "border-yellow-500" },
+    { title: t("visitor.dashboard.cards.total"), value: 120, color: "border-blue-500" },
+    { title: t("visitor.dashboard.cards.checkedIn"), value: 85, color: "border-green-500" },
+    { title: t("visitor.dashboard.cards.checkedOut"), value: 70, color: "border-gray-500" },
+    { title: t("visitor.dashboard.cards.pendingApproval"), value: 10, color: "border-yellow-500" },
   ];
 
   return (

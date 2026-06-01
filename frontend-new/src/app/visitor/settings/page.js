@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Settings as SettingsIcon,
   ShieldCheck,
@@ -154,6 +155,7 @@ function Toggle({ checked, onChange, label, description }) {
 }
 
 function ChipList({ items, onAdd, onRemove, placeholder, emptyText }) {
+  const { t } = useTranslation();
   const [draft, setDraft] = useState("");
   const submit = () => {
     const v = draft.trim();
@@ -166,7 +168,7 @@ function ChipList({ items, onAdd, onRemove, placeholder, emptyText }) {
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-1.5">
         {items.length === 0 ? (
-          <span className="text-[11px] text-slate-500 dark:text-slate-400">{emptyText || "No items yet."}</span>
+          <span className="text-[11px] text-slate-500 dark:text-slate-400">{emptyText || t("visitor.settings.noItems")}</span>
         ) : (
           items.map((item) => (
             <span
@@ -178,7 +180,7 @@ function ChipList({ items, onAdd, onRemove, placeholder, emptyText }) {
                 type="button"
                 onClick={() => onRemove(item)}
                 className="text-slate-400 hover:text-rose-500"
-                title="Remove"
+                title={t("visitor.reception.remove")}
               >
                 <X className="w-3 h-3" />
               </button>
@@ -203,7 +205,7 @@ function ChipList({ items, onAdd, onRemove, placeholder, emptyText }) {
           onClick={submit}
           className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white px-3 h-10 text-sm font-semibold shadow-sm shrink-0"
         >
-          <Plus className="w-4 h-4" /> Add
+          <Plus className="w-4 h-4" /> {t("visitor.common.add")}
         </button>
       </div>
     </div>
@@ -213,6 +215,7 @@ function ChipList({ items, onAdd, onRemove, placeholder, emptyText }) {
 const APPROVER_ROLE_OPTIONS = ["Reception", "Host", "Security", "Admin", "Manager"];
 
 export default function VisitorSettingsPage() {
+  const { t } = useTranslation();
   const [s, setS] = useState(DEFAULTS);
   const [savedFlash, setSavedFlash] = useState(false);
   const [dirty, setDirty] = useState(false);
@@ -247,10 +250,13 @@ export default function VisitorSettingsPage() {
   };
 
   const approvalSummary = useMemo(() => {
-    if (s.approvalLevel === "none") return "Pre-registrations are auto-confirmed";
-    if (s.approvalLevel === "two") return `Two-level approval · ${s.approverRoles.join(" → ") || "No roles set"}`;
-    return `Single-level approval by ${s.approverRoles.join(", ") || "—"}`;
-  }, [s.approvalLevel, s.approverRoles]);
+    if (s.approvalLevel === "none") return t("visitor.settings.summaryAuto");
+    if (s.approvalLevel === "two")
+      return t("visitor.settings.summaryTwo", {
+        roles: s.approverRoles.join(" → ") || t("visitor.settings.noRolesSet"),
+      });
+    return t("visitor.settings.summarySingle", { roles: s.approverRoles.join(", ") || "—" });
+  }, [s.approvalLevel, s.approverRoles, t]);
 
   return (
     <div className="p-4 sm:p-6 pb-10 overflow-y-auto max-h-[calc(100vh-100px)] bg-slate-50 dark:bg-slate-950">
@@ -260,15 +266,15 @@ export default function VisitorSettingsPage() {
           <div>
             <h1 className="text-xl sm:text-2xl font-extrabold text-slate-800 dark:text-white flex items-center gap-2">
               <SettingsIcon className="w-6 h-6 text-indigo-500" />
-              Visitor Settings
+              {t("visitor.settings.title")}
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-              Configure approval flow, purposes, visitor types, and reception defaults.
+              {t("visitor.settings.subtitle")}
             </p>
           </div>
           {dirty && (
             <span className="hidden sm:inline-flex items-center gap-1.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-2.5 py-1 text-[11px] font-semibold">
-              <AlertCircle className="w-3.5 h-3.5" /> Unsaved changes
+              <AlertCircle className="w-3.5 h-3.5" /> {t("visitor.settings.unsavedChanges")}
             </span>
           )}
         </div>
@@ -277,19 +283,19 @@ export default function VisitorSettingsPage() {
         <div className="grid lg:grid-cols-2 gap-5 mb-5">
           <SectionCard
             icon={ShieldCheck}
-            title="Pre-Registration Approval"
-            description="Decide who must approve a pre-registration before the visitor is confirmed."
+            title={t("visitor.settings.preRegApproval")}
+            description={t("visitor.settings.preRegApprovalDesc")}
             accent="indigo"
           >
             <div className="grid sm:grid-cols-2 gap-4">
-              <Field label="Approval Level" hint="Controls how many sign-offs a request needs.">
+              <Field label={t("visitor.settings.approvalLevel")} hint={t("visitor.settings.approvalLevelHint")}>
                 <Select value={s.approvalLevel} onChange={(e) => update({ approvalLevel: e.target.value })}>
-                  <option value="none">No approval (auto-confirm)</option>
-                  <option value="single">Single-level approval</option>
-                  <option value="two">Two-level approval</option>
+                  <option value="none">{t("visitor.settings.approvalNone")}</option>
+                  <option value="single">{t("visitor.settings.approvalSingle")}</option>
+                  <option value="two">{t("visitor.settings.approvalTwo")}</option>
                 </Select>
               </Field>
-              <Field label="Approver Roles" hint="Members of these roles can approve / reject.">
+              <Field label={t("visitor.settings.approverRoles")} hint={t("visitor.settings.approverRolesHint")}>
                 <div className="flex flex-wrap gap-1.5 pt-2">
                   {APPROVER_ROLE_OPTIONS.map((r) => {
                     const active = s.approverRoles.includes(r);
@@ -320,34 +326,34 @@ export default function VisitorSettingsPage() {
               <Toggle
                 checked={s.autoApprovePreCheck}
                 onChange={(v) => update({ autoApprovePreCheck: v })}
-                label="Auto-confirm pre-checked visitors"
-                description="If a visitor is verified at the gate, skip manual approval."
+                label={t("visitor.settings.autoConfirm")}
+                description={t("visitor.settings.autoConfirmDesc")}
               />
             </div>
           </SectionCard>
 
           <SectionCard
             icon={Bell}
-            title="Notifications"
-            description="When and how hosts and reception staff get notified."
+            title={t("visitor.settings.notifications")}
+            description={t("visitor.settings.notificationsDesc")}
             accent="amber"
           >
             <div className="divide-y divide-slate-100 dark:divide-white/5">
               <Toggle
                 checked={s.notifyHostOnArrival}
                 onChange={(v) => update({ notifyHostOnArrival: v })}
-                label="Notify host on visitor arrival"
-                description="Sends an email / push when the visitor checks in."
+                label={t("visitor.settings.notifyHost")}
+                description={t("visitor.settings.notifyHostDesc")}
               />
               <Toggle
                 checked={s.dailyDigest}
                 onChange={(v) => update({ dailyDigest: v })}
-                label="Daily expected-visitor digest"
-                description="Email reception each morning with today's pre-registrations."
+                label={t("visitor.settings.dailyDigest")}
+                description={t("visitor.settings.dailyDigestDesc")}
               />
             </div>
             <div className="mt-3 pt-3 border-t border-slate-100 dark:border-white/5 grid grid-cols-2 gap-4">
-              <Field label="Overstay Alert (min)" hint="Trigger an alert this many minutes after expected exit.">
+              <Field label={t("visitor.settings.overstayAlert")} hint={t("visitor.settings.overstayAlertHint")}>
                 <Input
                   type="number"
                   min={0}
@@ -356,7 +362,7 @@ export default function VisitorSettingsPage() {
                   onChange={(e) => update({ overstayAlertMins: Number(e.target.value) || 0 })}
                 />
               </Field>
-              <Field label="Auto check-out (hrs)" hint="Auto check-out visitors still on-site after N hours.">
+              <Field label={t("visitor.settings.autoCheckout")} hint={t("visitor.settings.autoCheckoutHint")}>
                 <Input
                   type="number"
                   min={0}
@@ -373,14 +379,14 @@ export default function VisitorSettingsPage() {
         <div className="grid lg:grid-cols-3 gap-5 mb-5">
           <SectionCard
             icon={FileText}
-            title="Purpose of Visit"
-            description="Shown as a dropdown when registering visitors."
+            title={t("visitor.settings.purposeTitle")}
+            description={t("visitor.settings.purposeDesc")}
             accent="emerald"
           >
             <ChipList
               items={s.purposes}
-              placeholder="e.g. Audit, Training"
-              emptyText="No purposes added."
+              placeholder={t("visitor.settings.purposePlaceholder")}
+              emptyText={t("visitor.settings.noPurposes")}
               onAdd={(v) => update({ purposes: [...s.purposes, v] })}
               onRemove={(v) => update({ purposes: s.purposes.filter((x) => x !== v) })}
             />
@@ -388,14 +394,14 @@ export default function VisitorSettingsPage() {
 
           <SectionCard
             icon={Tag}
-            title="Visitor Types"
-            description="Categorise visitors for reporting and badge colours."
+            title={t("visitor.settings.typesTitle")}
+            description={t("visitor.settings.typesDesc")}
             accent="sky"
           >
             <ChipList
               items={s.visitorTypes}
-              placeholder="e.g. Investor"
-              emptyText="No visitor types defined."
+              placeholder={t("visitor.settings.typesPlaceholder")}
+              emptyText={t("visitor.settings.noTypes")}
               onAdd={(v) => update({ visitorTypes: [...s.visitorTypes, v] })}
               onRemove={(v) => update({ visitorTypes: s.visitorTypes.filter((x) => x !== v) })}
             />
@@ -403,14 +409,14 @@ export default function VisitorSettingsPage() {
 
           <SectionCard
             icon={Workflow}
-            title="ID Types Accepted"
-            description="Identification documents reception can capture."
+            title={t("visitor.settings.idTypesTitle")}
+            description={t("visitor.settings.idTypesDesc")}
             accent="rose"
           >
             <ChipList
               items={s.idTypes}
-              placeholder="e.g. Residency Visa"
-              emptyText="No ID types configured."
+              placeholder={t("visitor.settings.idTypesPlaceholder")}
+              emptyText={t("visitor.settings.noIdTypes")}
               onAdd={(v) => update({ idTypes: [...s.idTypes, v] })}
               onRemove={(v) => update({ idTypes: s.idTypes.filter((x) => x !== v) })}
             />
@@ -420,12 +426,12 @@ export default function VisitorSettingsPage() {
         {/* Defaults */}
         <SectionCard
           icon={Clock}
-          title="Visit Defaults"
-          description="Defaults pre-filled on new visitor registrations."
+          title={t("visitor.settings.visitDefaults")}
+          description={t("visitor.settings.visitDefaultsDesc")}
           accent="slate"
         >
           <div className="grid sm:grid-cols-3 gap-4">
-            <Field label="Default Duration (min)" hint="Used to estimate expected exit time.">
+            <Field label={t("visitor.settings.defaultDuration")} hint={t("visitor.settings.defaultDurationHint")}>
               <Input
                 type="number"
                 min={0}
@@ -434,7 +440,7 @@ export default function VisitorSettingsPage() {
                 onChange={(e) => update({ defaultDurationMins: Number(e.target.value) || 0 })}
               />
             </Field>
-            <Field label="Badge Expiry (hrs)" hint="How long a printed badge stays valid.">
+            <Field label={t("visitor.settings.badgeExpiry")} hint={t("visitor.settings.badgeExpiryHint")}>
               <Input
                 type="number"
                 min={0}
@@ -453,14 +459,14 @@ export default function VisitorSettingsPage() {
             <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2 min-w-0">
               {savedFlash ? (
                 <span className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold">
-                  <Check className="w-3.5 h-3.5" /> Saved
+                  <Check className="w-3.5 h-3.5" /> {t("visitor.settings.saved")}
                 </span>
               ) : dirty ? (
                 <span className="inline-flex items-center gap-1.5 text-amber-600 dark:text-amber-400 font-semibold">
-                  <AlertCircle className="w-3.5 h-3.5" /> You have unsaved changes
+                  <AlertCircle className="w-3.5 h-3.5" /> {t("visitor.settings.unsavedChangesLong")}
                 </span>
               ) : (
-                <span>All changes saved.</span>
+                <span>{t("visitor.settings.allSaved")}</span>
               )}
             </div>
             <div className="flex items-center gap-2 shrink-0">
@@ -469,7 +475,7 @@ export default function VisitorSettingsPage() {
                 onClick={onReset}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 px-3 h-9 text-sm font-semibold hover:bg-slate-50 dark:hover:bg-slate-800"
               >
-                Reset to defaults
+                {t("visitor.settings.resetDefaults")}
               </button>
               <button
                 type="button"
@@ -477,7 +483,7 @@ export default function VisitorSettingsPage() {
                 disabled={!dirty}
                 className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white px-4 h-9 text-sm font-semibold shadow"
               >
-                <Save className="w-4 h-4" /> Save Changes
+                <Save className="w-4 h-4" /> {t("visitor.settings.saveChanges")}
               </button>
             </div>
           </div>

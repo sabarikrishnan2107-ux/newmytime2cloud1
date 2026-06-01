@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { Loader2, Search } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { api, buildQueryParams } from "@/lib/api-client";
 import {
   Dialog,
@@ -116,6 +117,12 @@ function normaliseRow(row, kpiKey) {
 }
 
 export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
+  const { t } = useTranslation();
+  const statusLabel = (s) => {
+    const key = String(s || "").toLowerCase().replace(/\s+/g, "");
+    const known = { checkedin: 1, checkedout: 1, pending: 1, blacklisted: 1 };
+    return known[key] ? t(`visitor.common.statuses.${key}`) : s;
+  };
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -143,7 +150,7 @@ export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
         if (!cancelled) setRows(normalised);
       } catch (e) {
         if (!cancelled) {
-          setError(e?.message || "Failed to load");
+          setError(e?.message || t("visitor.common.failedLoad"));
           setRows([]);
         }
       } finally {
@@ -172,9 +179,9 @@ export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
       <DialogContent className="min-w-[900px] max-w-[1100px] p-0 overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
         <DialogHeader className="px-6 py-4 border-b border-slate-200 dark:border-[#1d2b4a] bg-white dark:bg-[#0e1730] text-slate-800 dark:text-white">
           <div className="flex items-center justify-between gap-3">
-            <DialogTitle className="text-base font-semibold">{title || "Details"}</DialogTitle>
+            <DialogTitle className="text-base font-semibold">{title || t("visitor.common.details")}</DialogTitle>
             <span className="text-xs font-semibold bg-slate-100 dark:bg-white/10 text-slate-700 dark:text-white rounded-full px-2.5 py-0.5">
-              {filteredRows.length} record{filteredRows.length === 1 ? "" : "s"}
+              {filteredRows.length} {filteredRows.length === 1 ? t("visitor.common.record") : t("visitor.common.records")}
             </span>
           </div>
         </DialogHeader>
@@ -186,7 +193,7 @@ export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
               type="text"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-              placeholder="Search name, company, host..."
+              placeholder={t("visitor.common.searchNameCompanyHost")}
               className="w-full pl-9 pr-3 py-2 text-sm rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-primary/30"
             />
           </div>
@@ -195,13 +202,13 @@ export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
         <div className="px-6 py-4 max-h-[60vh] overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-16 text-slate-500 dark:text-slate-300">
-              <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading...
+              <Loader2 className="w-5 h-5 mr-2 animate-spin" /> {t("visitor.common.loading")}
             </div>
           ) : error ? (
             <div className="py-12 text-center text-sm text-rose-500">{error}</div>
           ) : filteredRows.length === 0 ? (
             <div className="py-12 text-center text-sm text-slate-500 dark:text-slate-400">
-              No records found.
+              {t("visitor.common.noRecords")}
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
@@ -209,12 +216,12 @@ export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
                 <thead className="bg-slate-100 dark:bg-slate-800">
                   <tr>
                     <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">#</th>
-                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Visitor</th>
-                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Company</th>
-                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Host</th>
-                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Type</th>
-                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Check-In</th>
-                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">Status</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">{t("visitor.common.visitor")}</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">{t("visitor.common.company")}</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">{t("visitor.common.host")}</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">{t("visitor.common.type")}</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">{t("visitor.common.checkIn")}</th>
+                    <th className="px-3 py-3 text-left font-semibold text-slate-700 dark:text-slate-200">{t("visitor.common.status")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -228,7 +235,7 @@ export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
                       <td className="px-3 py-2.5 text-slate-700 dark:text-slate-200 whitespace-nowrap">{r.checkIn}</td>
                       <td className="px-3 py-2.5">
                         <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold bg-primary/10 text-primary">
-                          {r.status}
+                          {statusLabel(r.status)}
                         </span>
                       </td>
                     </tr>
@@ -241,21 +248,21 @@ export default function KpiDetailDialog({ open, onClose, kpiKey, title }) {
 
         {totalPages > 1 && (
           <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
-            <span>Page {page} of {totalPages}</span>
+            <span>{t("visitor.common.pageOf", { page, total: totalPages })}</span>
             <div className="flex gap-2">
               <button
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="px-3 py-1 rounded border border-slate-300 dark:border-slate-700 disabled:opacity-40"
               >
-                Prev
+                {t("visitor.common.prev")}
               </button>
               <button
                 onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-3 py-1 rounded border border-slate-300 dark:border-slate-700 disabled:opacity-40"
               >
-                Next
+                {t("visitor.common.next")}
               </button>
             </div>
           </div>
