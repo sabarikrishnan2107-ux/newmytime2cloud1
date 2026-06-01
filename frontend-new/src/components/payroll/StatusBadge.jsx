@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 const statusStyles = {
   draft: "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400",
   pending: "bg-amber-100 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400",
@@ -9,11 +11,14 @@ const statusStyles = {
 };
 
 export function StatusBadge({ status }) {
-  const style = statusStyles[status?.toLowerCase()] || statusStyles.draft;
+  const { t } = useTranslation();
+  const key = status?.toLowerCase();
+  const style = statusStyles[key] || statusStyles.draft;
+  const label = t(`payroll.common.statuses.${key}`, { defaultValue: status });
   return (
     <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${style}`}>
       <span className="h-1.5 w-1.5 rounded-full bg-current"></span>
-      {status}
+      {label}
     </span>
   );
 }

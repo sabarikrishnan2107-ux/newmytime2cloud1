@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
 import { Search, Plus, Eye, Edit, Trash2, X, Mail, Phone, Building, Shield } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const typeColors = {
   Business: "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400",
@@ -27,6 +28,12 @@ function VisitorAvatar({ src, name, className = "w-10 h-10" }) {
 }
 
 export default function VisitorDirectory() {
+  const { t } = useTranslation();
+  const statusLabel = (s) => {
+    const key = String(s || "").toLowerCase().replace(/-/g, "");
+    const known = { checkedin: 1, checkedout: 1, active: 1 };
+    return known[key] ? t(`visitor.common.statuses.${key}`) : s;
+  };
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const [selectedVisitor, setSelectedVisitor] = useState(null);
@@ -37,14 +44,14 @@ export default function VisitorDirectory() {
   const [vForm, setVForm] = useState({ first_name: "", last_name: "", phone_number: "", email: "", visitor_company_name: "", id_type: "", id_number: "" });
 
   const handleDelete = async (visitor) => {
-    if (!window.confirm(`Delete visitor "${visitor.name}"? This permanently removes the record.`)) return;
+    if (!window.confirm(t("visitor.directory.confirmDelete", { name: visitor.name }))) return;
     setDeletingId(visitor.id);
     try {
       await api.delete(`/visitor/${visitor.id}`);
       setSelectedVisitor((s) => (s && s.id === visitor.id ? null : s));
       setVisitors((prev) => prev.filter((v) => v.id !== visitor.id));
     } catch (e) {
-      alert(e?.response?.data?.message || "Failed to delete visitor");
+      alert(e?.response?.data?.message || t("visitor.directory.deleteFailed"));
     } finally {
       setDeletingId(null);
     }
@@ -75,7 +82,7 @@ export default function VisitorDirectory() {
   };
 
   const handleAddVisitor = async () => {
-    if (!vForm.first_name) { alert("First name is required"); return; }
+    if (!vForm.first_name) { alert(t("visitor.directory.firstNameRequired")); return; }
     setSaving(true);
     try {
       const params = await buildQueryParams({});
@@ -104,7 +111,7 @@ export default function VisitorDirectory() {
       setAddDialog(false);
       setVForm({ first_name: "", last_name: "", phone_number: "", email: "", visitor_company_name: "", id_type: "", id_number: "" });
       fetchVisitors();
-    } catch (e) { alert(e?.response?.data?.message || "Failed to add visitor"); }
+    } catch (e) { alert(e?.response?.data?.message || t("visitor.directory.addFailed")); }
     finally { setSaving(false); }
   };
 
@@ -118,25 +125,25 @@ export default function VisitorDirectory() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Visitor Directory</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">All registered visitors and their visit history</p>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t("visitor.directory.title")}</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t("visitor.directory.subtitle")}</p>
         </div>
         <button onClick={() => setAddDialog(true)} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm">
-          <Plus className="h-3.5 w-3.5" /> Add Visitor
+          <Plus className="h-3.5 w-3.5" /> {t("visitor.directory.addVisitor")}
         </button>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input placeholder="Search name, company, email..." value={search} onChange={e => setSearch(e.target.value)}
+          <input placeholder={t("visitor.directory.searchPlaceholder")} value={search} onChange={e => setSearch(e.target.value)}
             className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
         <select value={typeFilter} onChange={e => setTypeFilter(e.target.value)}
           className="rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-          <option value="all">All Types</option>
-          <option value="Business">Business</option><option value="Contractor">Contractor</option>
-          <option value="Delivery">Delivery</option><option value="Interview">Interview</option><option value="VIP">VIP</option>
+          <option value="all">{t("visitor.dash.allTypes")}</option>
+          <option value="Business">{t("visitor.dash.types.business")}</option><option value="Contractor">{t("visitor.dash.types.contractor")}</option>
+          <option value="Delivery">{t("visitor.dash.types.delivery")}</option><option value="Interview">{t("visitor.dash.types.interview")}</option><option value="VIP">{t("visitor.dash.types.vip")}</option>
         </select>
       </div>
 
@@ -151,34 +158,34 @@ export default function VisitorDirectory() {
                   <div className="text-[10px] text-gray-400">{v.company}</div>
                 </div>
               </div>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${typeColors[v.type] || "bg-gray-100 text-gray-500"}`}>{v.type}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${typeColors[v.type] || "bg-gray-100 text-gray-500"}`}>{t("visitor.common.visitor")}</span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div className="flex items-center gap-1.5 text-gray-500"><Mail className="w-3 h-3" />{v.email}</div>
               <div className="flex items-center gap-1.5 text-gray-500"><Phone className="w-3 h-3" />{v.phone}</div>
               <div className="flex items-center gap-1.5 text-gray-500"><Shield className="w-3 h-3" />{v.idType}: {v.idNumber}</div>
-              <div className="flex items-center gap-1.5 text-gray-500"><Building className="w-3 h-3" />{v.totalVisits} visits</div>
+              <div className="flex items-center gap-1.5 text-gray-500"><Building className="w-3 h-3" />{t("visitor.directory.visitsCount", { count: v.totalVisits })}</div>
             </div>
             <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100 dark:border-white/5">
-              <span className="text-[10px] text-gray-400">Last visit: {v.lastVisit}</span>
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${v.status === "active" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"}`}>{v.status}</span>
+              <span className="text-[10px] text-gray-400">{t("visitor.directory.lastVisit")} {v.lastVisit}</span>
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${v.status === "active" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-red-100 dark:bg-red-900/20 text-red-700 dark:text-red-400"}`}>{statusLabel(v.status)}</span>
             </div>
             <div className="flex items-center gap-2 mt-3">
               <button
                 onClick={(e) => { e.stopPropagation(); setSelectedVisitor(v); }}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 px-2 py-1.5 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                <Eye className="h-3.5 w-3.5" /> View
+                <Eye className="h-3.5 w-3.5" /> {t("visitor.common.view")}
               </button>
               <button
                 disabled={deletingId === v.id}
                 onClick={(e) => { e.stopPropagation(); handleDelete(v); }}
                 className="flex-1 inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-300 dark:border-red-500/30 px-2 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition disabled:opacity-50">
-                <Trash2 className="h-3.5 w-3.5" /> {deletingId === v.id ? "Deleting…" : "Delete"}
+                <Trash2 className="h-3.5 w-3.5" /> {deletingId === v.id ? t("visitor.directory.deleting") : t("visitor.common.delete")}
               </button>
             </div>
           </div>
         ))}
-        {filtered.length === 0 && <div className="col-span-full text-center py-8 text-gray-400 text-xs">No visitors found</div>}
+        {filtered.length === 0 && <div className="col-span-full text-center py-8 text-gray-400 text-xs">{t("visitor.directory.noVisitors")}</div>}
       </div>
 
       {selectedVisitor && (
@@ -196,9 +203,9 @@ export default function VisitorDirectory() {
               {selectedVisitor.photo && (
                 <VisitorAvatar src={selectedVisitor.photo} name={selectedVisitor.name} className="w-24 h-24 mx-auto" />
               )}
-              {[["Company", selectedVisitor.company], ["Email", selectedVisitor.email], ["Phone", selectedVisitor.phone],
-                ["ID Type", selectedVisitor.idType], ["ID Number", selectedVisitor.idNumber], ["Type", selectedVisitor.type],
-                ["Total Visits", selectedVisitor.totalVisits], ["Last Visit", selectedVisitor.lastVisit], ["Status", selectedVisitor.status]].map(([label, value]) => (
+              {[[t("visitor.common.company"), selectedVisitor.company], [t("visitor.common.email"), selectedVisitor.email], [t("visitor.common.phone"), selectedVisitor.phone],
+                [t("visitor.hub.idType"), selectedVisitor.idType], [t("visitor.directory.idNumber"), selectedVisitor.idNumber], [t("visitor.common.type"), t("visitor.common.visitor")],
+                [t("visitor.directory.totalVisits"), selectedVisitor.totalVisits], [t("visitor.directory.lastVisitLabel"), selectedVisitor.lastVisit], [t("visitor.common.status"), statusLabel(selectedVisitor.status)]].map(([label, value]) => (
                 <div key={label} className="flex justify-between text-xs">
                   <span className="text-gray-500">{label}</span><span className="text-gray-800 dark:text-gray-200 font-medium">{value}</span>
                 </div>
@@ -207,7 +214,7 @@ export default function VisitorDirectory() {
                 disabled={deletingId === selectedVisitor.id}
                 onClick={() => handleDelete(selectedVisitor)}
                 className="w-full inline-flex items-center justify-center gap-1.5 rounded-lg border border-red-300 dark:border-red-500/30 px-3 py-2 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition disabled:opacity-50">
-                <Trash2 className="h-3.5 w-3.5" /> {deletingId === selectedVisitor.id ? "Deleting…" : "Delete Visitor"}
+                <Trash2 className="h-3.5 w-3.5" /> {deletingId === selectedVisitor.id ? t("visitor.directory.deleting") : t("visitor.directory.deleteVisitor")}
               </button>
             </div>
           </div>
@@ -220,12 +227,12 @@ export default function VisitorDirectory() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAddDialog(false)}></div>
           <div className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">Add Visitor</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{t("visitor.directory.addVisitor")}</h3>
               <button onClick={() => setAddDialog(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                {[["First Name", "first_name", "Enter first name"], ["Last Name", "last_name", "Enter last name"]].map(([label, key, ph]) => (
+                {[[t("visitor.directory.firstName"), "first_name", t("visitor.directory.enterFirstName")], [t("visitor.directory.lastName"), "last_name", t("visitor.directory.enterLastName")]].map(([label, key, ph]) => (
                   <div key={key} className="space-y-1.5">
                     <label className="text-xs font-medium text-gray-500">{label}</label>
                     <input type="text" placeholder={ph} value={vForm[key]} onChange={e => setVForm({ ...vForm, [key]: e.target.value })}
@@ -235,42 +242,42 @@ export default function VisitorDirectory() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Phone</label>
-                  <input type="tel" placeholder="Phone number" value={vForm.phone_number} onChange={e => setVForm({ ...vForm, phone_number: e.target.value })}
+                  <label className="text-xs font-medium text-gray-500">{t("visitor.common.phone")}</label>
+                  <input type="tel" placeholder={t("visitor.directory.phonePlaceholder")} value={vForm.phone_number} onChange={e => setVForm({ ...vForm, phone_number: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Email</label>
-                  <input type="email" placeholder="Email" value={vForm.email} onChange={e => setVForm({ ...vForm, email: e.target.value })}
+                  <label className="text-xs font-medium text-gray-500">{t("visitor.common.email")}</label>
+                  <input type="email" placeholder={t("visitor.directory.emailPlaceholder")} value={vForm.email} onChange={e => setVForm({ ...vForm, email: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Company</label>
-                <input type="text" placeholder="Visitor's company" value={vForm.visitor_company_name} onChange={e => setVForm({ ...vForm, visitor_company_name: e.target.value })}
+                <label className="text-xs font-medium text-gray-500">{t("visitor.common.company")}</label>
+                <input type="text" placeholder={t("visitor.directory.companyPlaceholder")} value={vForm.visitor_company_name} onChange={e => setVForm({ ...vForm, visitor_company_name: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">ID Type</label>
+                  <label className="text-xs font-medium text-gray-500">{t("visitor.hub.idType")}</label>
                   <select value={vForm.id_type} onChange={e => setVForm({ ...vForm, id_type: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    <option value="">Select...</option><option value="Passport">Passport</option><option value="National ID">National ID</option>
-                    <option value="Emirates ID">Emirates ID</option><option value="Driver License">Driver License</option>
+                    <option value="">{t("visitor.directory.select")}</option><option value="Passport">{t("visitor.hub.idTypes.passport")}</option><option value="National ID">{t("visitor.hub.idTypes.nationalId")}</option>
+                    <option value="Emirates ID">{t("visitor.hub.idTypes.emiratesId")}</option><option value="Driver License">{t("visitor.hub.idTypes.driverLicense")}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">ID Number</label>
-                  <input type="text" placeholder="ID number" value={vForm.id_number} onChange={e => setVForm({ ...vForm, id_number: e.target.value })}
+                  <label className="text-xs font-medium text-gray-500">{t("visitor.directory.idNumber")}</label>
+                  <input type="text" placeholder={t("visitor.directory.idNumberPlaceholder")} value={vForm.id_number} onChange={e => setVForm({ ...vForm, id_number: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
-              <button onClick={() => setAddDialog(false)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Cancel</button>
+              <button onClick={() => setAddDialog(false)} className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">{t("visitor.common.cancel")}</button>
               <button disabled={saving} onClick={handleAddVisitor}
                 className="px-4 py-2 rounded-lg bg-primary text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm disabled:opacity-50">
-                {saving ? "Saving..." : "Add Visitor"}
+                {saving ? t("visitor.common.saving") : t("visitor.directory.addVisitor")}
               </button>
             </div>
           </div>

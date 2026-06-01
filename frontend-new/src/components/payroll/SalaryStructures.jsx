@@ -6,6 +6,7 @@ import { Search, Plus, Eye, Edit, X, ArrowLeft, Wallet, TrendingUp, Calendar, Aw
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import ProfilePicture from "@/components/ProfilePicture";
 import MonthPicker from "@/components/ui/MonthPicker";
+import { useTranslation } from "react-i18next";
 
 const emptyForm = {
   employee_id: "", effective_from: "", effective_to: "", salary_mode: "gross_based",
@@ -14,6 +15,7 @@ const emptyForm = {
 };
 
 export default function SalaryStructures() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [openStructure, setOpenStructure] = useState(null);
@@ -54,13 +56,13 @@ export default function SalaryStructures() {
   };
 
   const deleteStructure = async (id) => {
-    if (!confirm("Delete this salary structure? This cannot be undone.")) return;
+    if (!confirm(t("payroll.salaryStructures.confirmDelete"))) return;
     try {
       const params = await buildQueryParams({});
       await api.delete(`/payroll-management/salary-structures/${id}`, { params });
       fetchStructures();
     } catch (e) {
-      alert(e?.response?.data?.message || "Failed to delete structure");
+      alert(e?.response?.data?.message || t("payroll.salaryStructures.deleteFailed"));
     }
   };
 
@@ -121,7 +123,7 @@ export default function SalaryStructures() {
         {/* Top bar with back button */}
         <div className="flex items-center justify-between gap-3">
           <button onClick={() => setOpenStructure(null)} className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border border-gray-200 dark:border-white/10 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-white/5 transition">
-            <ArrowLeft className="h-3.5 w-3.5" /> Back to list
+            <ArrowLeft className="h-3.5 w-3.5" /> {t("payroll.register.backToList")}
           </button>
           <button
             onClick={() => {
@@ -140,7 +142,7 @@ export default function SalaryStructures() {
               setDialogOpen(true);
             }}
             className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary text-white text-xs font-medium hover:bg-blue-600 transition shadow-sm">
-            <Edit className="h-3.5 w-3.5" /> Edit Structure
+            <Edit className="h-3.5 w-3.5" /> {t("payroll.salaryStructures.editStructure")}
           </button>
         </div>
 
@@ -152,7 +154,7 @@ export default function SalaryStructures() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
-                  placeholder="Select Branch"
+                  placeholder={t("payroll.salaryStructures.selectBranch")}
                   value={search}
                   onChange={e => setSearch(e.target.value)}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary"
@@ -188,8 +190,8 @@ export default function SalaryStructures() {
           {/* Right — salary structure detail */}
           <div className="flex-1 space-y-4">
             <div>
-              <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Salary Structure</h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Salary components, allowances, and deduction settings.</p>
+              <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t("payroll.salaryStructures.detailTitle")}</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400">{t("payroll.salaryStructures.detailSubtitle")}</p>
             </div>
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Profile + Summary card */}
@@ -200,8 +202,8 @@ export default function SalaryStructures() {
                 </div>
                 <div className="flex-1">
                   <h2 className="text-lg font-bold text-gray-800 dark:text-gray-100">{s.employeeName}</h2>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Dept: {s.department || "—"}</p>
-                  <div className="mt-1 inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"><span className="material-symbols-outlined text-[14px]">badge</span>ID: {s.employeeId}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("payroll.fields.dept")}: {s.department || "—"}</p>
+                  <div className="mt-1 inline-flex items-center gap-1.5 text-xs text-gray-500 dark:text-gray-400"><span className="material-symbols-outlined text-[14px]">badge</span>{t("payroll.fields.id")}: {s.employeeId}</div>
                 </div>
                 <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase ${s.status === "active" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.status}</span>
               </div>
@@ -210,15 +212,15 @@ export default function SalaryStructures() {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Basic Salary</div>
+                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">{t("payroll.fields.basicSalary")}</div>
                   <div className="mt-1 text-xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">{s.basicSalary.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">Allowances</div>
+                  <div className="text-[10px] uppercase tracking-wider text-gray-500 font-bold">{t("payroll.fields.allowances")}</div>
                   <div className="mt-1 text-xl font-bold text-gray-800 dark:text-gray-100 tabular-nums">{totalAllowances.toLocaleString()}</div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-primary font-bold">Gross Salary</div>
+                  <div className="text-[10px] uppercase tracking-wider text-primary font-bold">{t("payroll.fields.grossSalary")}</div>
                   <div className="mt-1 text-xl font-bold text-primary tabular-nums">{s.grossSalary.toLocaleString()}</div>
                 </div>
               </div>
@@ -229,24 +231,24 @@ export default function SalaryStructures() {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                   <div className="size-8 rounded-lg bg-primary/10 flex items-center justify-center"><Wallet className="h-4 w-4 text-primary" /></div>
-                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500">Mode</span>
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-gray-500">{t("payroll.salaryStructures.mode")}</span>
                 </div>
               </div>
-              <div className="text-2xl font-bold text-gray-800 dark:text-gray-100 capitalize">{(s.salary_mode || "gross_based").replace(/_/g, " ")}</div>
+              <div className="text-2xl font-bold text-gray-800 dark:text-gray-100 capitalize">{t(`payroll.settings.general.salaryModeOptions.${s.salary_mode || "gross_based"}`, { defaultValue: (s.salary_mode || "gross_based").replace(/_/g, " ") })}</div>
               <div className="mt-2 flex items-center gap-2 text-xs">
-                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.overtimeEligible ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>OT {s.overtimeEligible ? "Yes" : "No"}</span>
+                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.overtimeEligible ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>OT {s.overtimeEligible ? t("payroll.fields.yes") : t("payroll.fields.no")}</span>
               </div>
             </div>
 
             {/* Allowance breakdown — full width */}
             <div className="lg:col-span-2 rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-6">
-              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4">Allowance Breakdown</h3>
+              <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-4">{t("payroll.salaryStructures.allowanceBreakdown")}</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-3 text-sm">
-                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">House Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.houseAllowance.toLocaleString()}</span></div>
-                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">Transport Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.transportAllowance.toLocaleString()}</span></div>
-                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">Food Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.foodAllowance.toLocaleString()}</span></div>
-                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">Medical Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.medicalAllowance.toLocaleString()}</span></div>
-                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5 sm:col-span-2"><span className="text-gray-500 dark:text-gray-400">Other Allowance</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.otherAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">{t("payroll.fields.houseAllowance")}</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.houseAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">{t("payroll.fields.transportAllowance")}</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.transportAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">{t("payroll.fields.foodAllowance")}</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.foodAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5"><span className="text-gray-500 dark:text-gray-400">{t("payroll.fields.medicalAllowance")}</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.medicalAllowance.toLocaleString()}</span></div>
+                <div className="flex justify-between items-center py-1.5 border-b border-gray-100 dark:border-white/5 sm:col-span-2"><span className="text-gray-500 dark:text-gray-400">{t("payroll.fields.otherAllowance")}</span><span className="font-semibold text-gray-800 dark:text-gray-100 tabular-nums">{s.otherAllowance.toLocaleString()}</span></div>
               </div>
             </div>
 
@@ -255,21 +257,21 @@ export default function SalaryStructures() {
               <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="size-8 rounded-lg bg-amber-500/10 flex items-center justify-center"><TrendingUp className="h-4 w-4 text-amber-500" /></div>
-                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Deductions</span>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.fields.deductions")}</span>
                 </div>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">Loan Deduction</span><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.loan_deduction ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.loan_deduction ? "On" : "Off"}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">Advance Deduction</span><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.advance_deduction ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.advance_deduction ? "On" : "Off"}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">{t("payroll.salaryStructures.loanDeduction")}</span><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.loan_deduction ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.loan_deduction ? t("payroll.fields.on") : t("payroll.fields.off")}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">{t("payroll.salaryStructures.advanceDeduction")}</span><span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase ${s.advance_deduction ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>{s.advance_deduction ? t("payroll.fields.on") : t("payroll.fields.off")}</span></div>
                 </div>
               </div>
               <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-5">
                 <div className="flex items-center gap-2 mb-3">
                   <div className="size-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><Calendar className="h-4 w-4 text-blue-500" /></div>
-                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">Effective Period</span>
+                  <span className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.salaryStructures.effectivePeriod")}</span>
                 </div>
                 <div className="space-y-2 text-xs">
-                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">From</span><span className="font-semibold text-gray-800 dark:text-gray-100">{s.effective_from || "—"}</span></div>
-                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">To</span><span className="font-semibold text-gray-800 dark:text-gray-100">{s.effective_to || "—"}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">{t("payroll.common.from")}</span><span className="font-semibold text-gray-800 dark:text-gray-100">{s.effective_from || "—"}</span></div>
+                  <div className="flex justify-between items-center"><span className="text-gray-500 dark:text-gray-400">{t("payroll.common.to")}</span><span className="font-semibold text-gray-800 dark:text-gray-100">{s.effective_to || "—"}</span></div>
                 </div>
               </div>
             </div>
@@ -287,12 +289,12 @@ export default function SalaryStructures() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Salary Structures</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Define employee-wise salary components and allowances</p>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t("payroll.salaryStructures.title")}</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t("payroll.salaryStructures.subtitle")}</p>
         </div>
         <button onClick={() => { setEditingId(null); setForm(emptyForm); setDialogOpen(true); }}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm">
-          <Plus className="h-3.5 w-3.5" /> Add Structure
+          <Plus className="h-3.5 w-3.5" /> {t("payroll.salaryStructures.addStructure")}
         </button>
       </div>
 
@@ -300,7 +302,7 @@ export default function SalaryStructures() {
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <div className="relative max-w-sm flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input placeholder="Search employee..." value={search} onChange={e => setSearch(e.target.value)}
+          <input placeholder={t("payroll.salaryStructures.searchEmployee")} value={search} onChange={e => setSearch(e.target.value)}
             className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
         <div className="flex items-center gap-2">
@@ -311,9 +313,9 @@ export default function SalaryStructures() {
             <button
               onClick={() => setSelectedMonth("")}
               className="inline-flex items-center gap-1 px-2.5 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              title="Show all months"
+              title={t("payroll.salaryStructures.showAllMonths")}
             >
-              <X className="h-3.5 w-3.5" /> All
+              <X className="h-3.5 w-3.5" /> {t("payroll.common.all")}
             </button>
           )}
         </div>
@@ -325,14 +327,14 @@ export default function SalaryStructures() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                <th className="px-4 py-3">Employee</th>
-                <th className="px-3 py-3">Department</th>
-                <th className="px-3 py-3">Basic</th>
-                <th className="px-3 py-3">Gross</th>
-                <th className="px-3 py-3">Allowances</th>
-                <th className="px-3 py-3">OT Eligible</th>
-                <th className="px-3 py-3">Status</th>
-                <th className="px-3 py-3">Actions</th>
+                <th className="px-4 py-3">{t("payroll.common.employee")}</th>
+                <th className="px-3 py-3">{t("payroll.common.department")}</th>
+                <th className="px-3 py-3">{t("payroll.fields.basic")}</th>
+                <th className="px-3 py-3">{t("payroll.fields.gross")}</th>
+                <th className="px-3 py-3">{t("payroll.fields.allowances")}</th>
+                <th className="px-3 py-3">{t("payroll.salaryStructures.otEligible")}</th>
+                <th className="px-3 py-3">{t("payroll.common.status")}</th>
+                <th className="px-3 py-3">{t("payroll.common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -351,7 +353,7 @@ export default function SalaryStructures() {
                         </div>
                         <div>
                           <div className="text-xs font-medium text-gray-800 dark:text-gray-100">{s.employeeName}</div>
-                          <div className="text-[10px] text-gray-400">ID: {s.employeeId}</div>
+                          <div className="text-[10px] text-gray-400">{t("payroll.fields.id")}: {s.employeeId}</div>
                         </div>
                       </div>
                     </td>
@@ -361,7 +363,7 @@ export default function SalaryStructures() {
                     <td className="px-3 py-3">{totalAllowances.toLocaleString()}</td>
                     <td className="px-3 py-3">
                       <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold ${s.overtimeEligible ? "bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
-                        {s.overtimeEligible ? "Yes" : "No"}
+                        {s.overtimeEligible ? t("payroll.fields.yes") : t("payroll.fields.no")}
                       </span>
                     </td>
                     <td className="px-3 py-3">
@@ -382,7 +384,7 @@ export default function SalaryStructures() {
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <Eye className="w-4 h-4 text-slate-700 dark:text-slate-200" />
-                            <span className="text-slate-700 dark:text-slate-200 font-medium">View</span>
+                            <span className="text-slate-700 dark:text-slate-200 font-medium">{t("payroll.common.view")}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={(e) => {
@@ -404,14 +406,14 @@ export default function SalaryStructures() {
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <Edit className="w-4 h-4 text-slate-700 dark:text-slate-200" />
-                            <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
+                            <span className="text-slate-700 dark:text-slate-200 font-medium">{t("payroll.common.edit")}</span>
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={(e) => { e.stopPropagation(); deleteStructure(s.id); }}
                             className="flex items-center gap-2 px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
                           >
                             <Trash2 className="w-4 h-4 text-red-600 dark:text-red-400" />
-                            <span className="text-red-600 dark:text-red-400 font-medium">Delete</span>
+                            <span className="text-red-600 dark:text-red-400 font-medium">{t("payroll.common.delete")}</span>
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -420,7 +422,7 @@ export default function SalaryStructures() {
                 );
               })}
               {filtered.length === 0 && (
-                <tr><td colSpan="8" className="px-4 py-8 text-center text-gray-400 text-xs">No salary structures found. Click "Add Structure" to create one.</td></tr>
+                <tr><td colSpan="8" className="px-4 py-8 text-center text-gray-400 text-xs">{t("payroll.salaryStructures.emptyList")}</td></tr>
               )}
             </tbody>
           </table>
@@ -434,29 +436,29 @@ export default function SalaryStructures() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDialogOpen(false)}></div>
           <div className="relative w-full max-w-2xl max-h-[85vh] overflow-y-auto bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{editingId ? "Edit Salary Structure" : "New Salary Structure"}</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{editingId ? t("payroll.salaryStructures.dialogTitleEdit") : t("payroll.salaryStructures.dialogTitleNew")}</h3>
               <button onClick={() => setDialogOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
 
             <div className="grid grid-cols-3 gap-4 mb-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Branch</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.common.branch")}</label>
                 <select value={selectedBranch} onChange={e => { setSelectedBranch(e.target.value); setSelectedDept(""); setForm({ ...form, employee_id: "" }); }}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                  <option value="">All Branches</option>
+                  <option value="">{t("payroll.common.allBranches")}</option>
                   {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Department</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.common.department")}</label>
                 <select value={selectedDept} onChange={e => { setSelectedDept(e.target.value); setForm({ ...form, employee_id: "" }); }}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                  <option value="">All Departments</option>
+                  <option value="">{t("payroll.common.allDepartments")}</option>
                   {filteredDepts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Employee</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.common.employee")}</label>
                 <select value={form.employee_id} onChange={e => {
                   const empId = e.target.value;
                   setForm({ ...form, employee_id: empId });
@@ -469,32 +471,32 @@ export default function SalaryStructures() {
                   }
                 }}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                  <option value="">Select employee</option>
+                  <option value="">{t("payroll.common.selectEmployee")}</option>
                   {filteredEmployees.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name || ""}</option>)}
                 </select>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Salary Mode</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.salaryStructures.salaryMode")}</label>
                 <select value={form.salary_mode} onChange={e => setForm({ ...form, salary_mode: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                  <option value="gross_based">Gross Based</option>
-                  <option value="basic_based">Basic Based</option>
+                  <option value="gross_based">{t("payroll.settings.general.salaryModeOptions.gross_based")}</option>
+                  <option value="basic_based">{t("payroll.settings.general.salaryModeOptions.basic_based")}</option>
                 </select>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Effective From</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.salaryStructures.effectiveFrom")}</label>
                 <input type="date" value={form.effective_from} onChange={e => setForm({ ...form, effective_from: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
               </div>
               {[
-                { label: "Basic Salary", key: "basic_salary" },
-                { label: "House Allowance", key: "house_allowance" },
-                { label: "Transport Allowance", key: "transport_allowance" },
-                { label: "Food Allowance", key: "food_allowance" },
-                { label: "Medical Allowance", key: "medical_allowance" },
-                { label: "Other Allowance", key: "other_allowance" },
+                { label: t("payroll.fields.basicSalary"), key: "basic_salary" },
+                { label: t("payroll.fields.houseAllowance"), key: "house_allowance" },
+                { label: t("payroll.fields.transportAllowance"), key: "transport_allowance" },
+                { label: t("payroll.fields.foodAllowance"), key: "food_allowance" },
+                { label: t("payroll.fields.medicalAllowance"), key: "medical_allowance" },
+                { label: t("payroll.fields.otherAllowance"), key: "other_allowance" },
               ].map(({ label, key }) => (
                 <div key={key} className="space-y-1.5">
                   <label className="text-xs font-medium text-gray-500">{label}</label>
@@ -504,9 +506,9 @@ export default function SalaryStructures() {
               ))}
               <div className="col-span-2 flex items-center gap-6 p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-white/10">
                 {[
-                  { label: "Overtime Eligible", key: "overtime_eligible" },
-                  { label: "Loan Deduction", key: "loan_deduction" },
-                  { label: "Advance Deduction", key: "advance_deduction" },
+                  { label: t("payroll.salaryStructures.overtimeEligible"), key: "overtime_eligible" },
+                  { label: t("payroll.salaryStructures.loanDeduction"), key: "loan_deduction" },
+                  { label: t("payroll.salaryStructures.advanceDeduction"), key: "advance_deduction" },
                 ].map(({ label, key }) => (
                   <label key={key} className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-300 cursor-pointer">
                     <input type="checkbox" checked={form[key]} onChange={e => setForm({ ...form, [key]: e.target.checked })}
@@ -520,10 +522,10 @@ export default function SalaryStructures() {
             <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => setDialogOpen(false)}
                 className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                Cancel
+                {t("payroll.common.cancel")}
               </button>
               <button disabled={saving} onClick={async () => {
-                if (!form.employee_id || !form.basic_salary) { alert("Employee and Basic Salary are required"); return; }
+                if (!form.employee_id || !form.basic_salary) { alert(t("payroll.salaryStructures.validationRequired")); return; }
                 setSaving(true);
                 try {
                   const params = await buildQueryParams({});
@@ -536,11 +538,11 @@ export default function SalaryStructures() {
                   setForm(emptyForm);
                   setEditingId(null);
                   fetchStructures();
-                } catch (e) { alert(e?.response?.data?.message || "Save failed"); }
+                } catch (e) { alert(e?.response?.data?.message || t("payroll.common.saveFailed")); }
                 finally { setSaving(false); }
               }}
                 className="px-4 py-2 rounded-lg bg-primary text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm disabled:opacity-50">
-                {saving ? "Saving..." : editingId ? "Update" : "Save Structure"}
+                {saving ? t("payroll.common.saving") : editingId ? t("payroll.salaryStructures.update") : t("payroll.salaryStructures.saveStructure")}
               </button>
             </div>
           </div>
@@ -555,18 +557,18 @@ export default function SalaryStructures() {
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-white/10 px-5 py-4 flex items-center justify-between">
               <div>
                 <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{viewItem.employeeName}</h3>
-                <p className="text-[10px] text-gray-500">{viewItem.department} &middot; ID: {viewItem.employeeId}</p>
+                <p className="text-[10px] text-gray-500">{viewItem.department} &middot; {t("payroll.fields.id")}: {viewItem.employeeId}</p>
               </div>
               <button onClick={() => setViewItem(null)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
             <div className="p-5 space-y-4">
               {[
-                ["Basic Salary", viewItem.basicSalary],
-                ["House Allowance", viewItem.houseAllowance],
-                ["Transport Allowance", viewItem.transportAllowance],
-                ["Food Allowance", viewItem.foodAllowance],
-                ["Medical Allowance", viewItem.medicalAllowance],
-                ["Other Allowance", viewItem.otherAllowance],
+                [t("payroll.fields.basicSalary"), viewItem.basicSalary],
+                [t("payroll.fields.houseAllowance"), viewItem.houseAllowance],
+                [t("payroll.fields.transportAllowance"), viewItem.transportAllowance],
+                [t("payroll.fields.foodAllowance"), viewItem.foodAllowance],
+                [t("payroll.fields.medicalAllowance"), viewItem.medicalAllowance],
+                [t("payroll.fields.otherAllowance"), viewItem.otherAllowance],
               ].map(([label, val]) => (
                 <div key={label} className="flex justify-between text-xs">
                   <span className="text-gray-500">{label}</span>
@@ -574,15 +576,15 @@ export default function SalaryStructures() {
                 </div>
               ))}
               <div className="flex justify-between text-xs border-t border-gray-100 dark:border-white/10 pt-3">
-                <span className="font-semibold text-gray-700 dark:text-gray-300">Gross Salary</span>
+                <span className="font-semibold text-gray-700 dark:text-gray-300">{t("payroll.fields.grossSalary")}</span>
                 <span className="font-bold text-gray-800 dark:text-gray-100">{viewItem.grossSalary.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-xs pt-2">
-                <span className="text-gray-500">OT Eligible</span>
-                <span className={`font-bold ${viewItem.overtimeEligible ? "text-blue-500" : "text-gray-400"}`}>{viewItem.overtimeEligible ? "Yes" : "No"}</span>
+                <span className="text-gray-500">{t("payroll.salaryStructures.otEligible")}</span>
+                <span className={`font-bold ${viewItem.overtimeEligible ? "text-blue-500" : "text-gray-400"}`}>{viewItem.overtimeEligible ? t("payroll.fields.yes") : t("payroll.fields.no")}</span>
               </div>
               <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Status</span>
+                <span className="text-gray-500">{t("payroll.common.status")}</span>
                 <span className={`font-bold ${viewItem.status === "active" ? "text-emerald-500" : "text-gray-400"}`}>{viewItem.status}</span>
               </div>
             </div>

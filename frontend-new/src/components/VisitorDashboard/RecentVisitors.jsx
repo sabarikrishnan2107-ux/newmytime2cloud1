@@ -1,10 +1,13 @@
 "use client";
 
+import { useTranslation } from "react-i18next";
+
 export default function RecentVisitors() {
+  const { t } = useTranslation();
   const visitors = [
-    { name: "John Doe", type: "Client", time: "10:30 AM", status: "Checked In" },
-    { name: "Sarah Smith", type: "Vendor", time: "11:00 AM", status: "Checked Out" },
-    { name: "Ali Khan", type: "Interviewee", time: "11:15 AM", status: "Pending" },
+    { name: "John Doe", type: t("visitor.dashboard.types.client"), time: "10:30 AM", statusKey: "checkedin" },
+    { name: "Sarah Smith", type: t("visitor.dashboard.types.vendor"), time: "11:00 AM", statusKey: "checkedout" },
+    { name: "Ali Khan", type: t("visitor.dashboard.types.interviewee"), time: "11:15 AM", statusKey: "pending" },
   ];
 
   return (
@@ -12,10 +15,10 @@ export default function RecentVisitors() {
       <table className="min-w-full border border-gray-200 rounded-xl">
         <thead className="bg-gray-50">
           <tr>
-            <th className="p-3 text-left text-sm font-semibold text-gray-600">Name</th>
-            <th className="p-3 text-left text-sm font-semibold text-gray-600">Type</th>
-            <th className="p-3 text-left text-sm font-semibold text-gray-600">Time</th>
-            <th className="p-3 text-left text-sm font-semibold text-gray-600">Status</th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">{t("visitor.common.name")}</th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">{t("visitor.common.type")}</th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">{t("visitor.common.time")}</th>
+            <th className="p-3 text-left text-sm font-semibold text-gray-600">{t("visitor.common.status")}</th>
           </tr>
         </thead>
         <tbody>
@@ -25,13 +28,13 @@ export default function RecentVisitors() {
               <td className="p-3">{v.type}</td>
               <td className="p-3">{v.time}</td>
               <td className={`p-3 font-medium ${
-                v.status === "Checked In"
+                v.statusKey === "checkedin"
                   ? "text-green-600"
-                  : v.status === "Checked Out"
+                  : v.statusKey === "checkedout"
                   ? "text-gray-500"
                   : "text-yellow-600"
               }`}>
-                {v.status}
+                {t(`visitor.common.statuses.${v.statusKey}`)}
               </td>
             </tr>
           ))}

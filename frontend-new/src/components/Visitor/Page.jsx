@@ -1,7 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
+import { useTranslation } from "react-i18next";
 
 const VisitorHub = () => {
+  const { t } = useTranslation();
   const [capturedPhoto, setCapturedPhoto] = useState(null);
   const [cameraOpen, setCameraOpen] = useState(false);
   const videoRef = useRef(null);
@@ -121,7 +123,7 @@ const VisitorHub = () => {
         setCapturedPhoto(`data:${mime};base64,${resp.cardHolderPhoto}`);
       }
     } catch (e) {
-      alert("EID read failed: " + (e.message || e));
+      alert(t("visitor.hub.eidReadFailed") + " " + (e.message || e));
     } finally {
       setEidReading(false);
     }
@@ -133,7 +135,7 @@ const VisitorHub = () => {
       streamRef.current = stream;
       if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraOpen(true);
-    } catch (e) { alert("Camera access denied"); }
+    } catch (e) { alert(t("visitor.hub.cameraDenied")); }
   };
 
   const capturePhoto = () => {
@@ -167,7 +169,7 @@ const VisitorHub = () => {
         host: "---",
         time: v.time_in || "---",
         status_id: v.status_id,
-        status: v.status_id === 6 ? "On-site" : v.status_id === 7 ? "Checked Out" : v.status_id === 1 ? "Pending" : "---",
+        status: v.status_id === 6 ? t("visitor.common.statuses.onsite") : v.status_id === 7 ? t("visitor.common.statuses.checkedout") : v.status_id === 1 ? t("visitor.common.statuses.pending") : "---",
         statusClass: v.status_id === 6 ? "bg-indigo-100 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/20"
           : v.status_id === 7 ? "bg-gray-100 dark:bg-gray-800 text-gray-500 border-gray-200 dark:border-gray-700"
           : "bg-amber-100 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-200 dark:border-amber-500/20",
@@ -181,7 +183,7 @@ const VisitorHub = () => {
   useEffect(() => { fetchData(); }, []);
 
   const handleCheckIn = async () => {
-    if (!form.first_name.trim()) { alert("Visitor name is required"); return; }
+    if (!form.first_name.trim()) { alert(t("visitor.hub.nameRequired")); return; }
     setSubmitting(true);
     try {
       const params = await buildQueryParams({});
@@ -217,16 +219,16 @@ const VisitorHub = () => {
       };
       const { data } = await api.post("/visitor-register", payload);
       if (data && data.status === false) {
-        alert("Check-in failed: " + (data.message || "Unknown error"));
+        alert(t("visitor.hub.checkinFailed") + " " + (data.message || "Unknown error"));
         return;
       }
-      alert("Visitor checked in!");
+      alert(t("visitor.hub.checkedIn"));
       setForm({ first_name: "", phone_number: "", id_number: "", id_type: "" });
       setCapturedPhoto(null);
       fetchData();
     } catch (e) {
-      const msg = e?.response?.data?.message || e?.message || "Check-in failed";
-      alert("Check-in failed: " + msg);
+      const msg = e?.response?.data?.message || e?.message || t("visitor.hub.checkinFailed");
+      alert(t("visitor.hub.checkinFailed") + " " + msg);
     } finally { setSubmitting(false); }
   };
 
@@ -235,7 +237,7 @@ const VisitorHub = () => {
       const params = await buildQueryParams({});
       await api.post(`/visitor-status-update/${id}`, { ...params, status_id: 7, checked_out_datetime: new Date().toISOString() });
       fetchData();
-    } catch (e) { alert("Check-out failed"); }
+    } catch (e) { alert(t("visitor.hub.checkoutFailed")); }
   };
 
   return (
@@ -243,10 +245,10 @@ const VisitorHub = () => {
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: "Visitors Today", value: stats.total_today, icon: "groups", color: "emerald" },
-          { label: "Currently On-site", value: stats.checked_in, icon: "domain_verification", color: "indigo" },
-          { label: "Expected", value: stats.pre_registered, icon: "schedule", color: "purple" },
-          { label: "Pending Approval", value: stats.pending_approvals, icon: "pending_actions", color: "amber" },
+          { label: t("visitor.hub.kpi.visitorsToday"), value: stats.total_today, icon: "groups", color: "emerald" },
+          { label: t("visitor.hub.kpi.currentlyOnsite"), value: stats.checked_in, icon: "domain_verification", color: "indigo" },
+          { label: t("visitor.hub.kpi.expected"), value: stats.pre_registered, icon: "schedule", color: "purple" },
+          { label: t("visitor.hub.kpi.pendingApproval"), value: stats.pending_approvals, icon: "pending_actions", color: "amber" },
         ].map((kpi) => (
           <div key={kpi.label} className="bg-white dark:bg-slate-900/50 rounded-xl p-5 flex flex-col gap-1 border border-slate-200 dark:border-slate-800 shadow-sm">
             <div className="flex justify-between items-start">
@@ -270,7 +272,7 @@ const VisitorHub = () => {
             <div className="flex items-center justify-between mb-4 relative z-10">
               <h3 className="text-lg font-bold text-slate-800 dark:text-white flex items-center gap-2">
                 <span className="p-1 rounded bg-indigo-500/10"><span className="material-symbols-outlined text-indigo-600 dark:text-indigo-400 text-sm">how_to_reg</span></span>
-                Quick Check-in
+                {t("visitor.hub.quickCheckin")}
               </h3>
             </div>
 
@@ -280,20 +282,20 @@ const VisitorHub = () => {
                 <div className="h-32 md:h-full min-h-[180px] rounded-lg border-2 border-dashed border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50 flex flex-col items-center justify-center gap-2 text-slate-400 overflow-hidden relative">
                   {capturedPhoto ? (
                     <>
-                      <img src={capturedPhoto} alt="Visitor" className="w-full h-full object-cover rounded-lg" />
-                      <button onClick={retakePhoto} className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded-full hover:bg-black/80 transition">Retake</button>
+                      <img src={capturedPhoto} alt={t("visitor.common.visitor")} className="w-full h-full object-cover rounded-lg" />
+                      <button onClick={retakePhoto} className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/60 text-white text-[10px] font-bold px-3 py-1 rounded-full hover:bg-black/80 transition">{t("visitor.hub.retake")}</button>
                     </>
                   ) : cameraOpen ? (
                     <>
                       <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover rounded-lg" />
                       <button onClick={capturePhoto} className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-indigo-600 text-white text-[10px] font-bold px-4 py-1.5 rounded-full hover:bg-indigo-700 transition flex items-center gap-1">
-                        <span className="material-symbols-outlined text-sm">photo_camera</span> Capture
+                        <span className="material-symbols-outlined text-sm">photo_camera</span> {t("visitor.hub.capture")}
                       </button>
                     </>
                   ) : (
                     <button onClick={startCamera} className="flex flex-col items-center gap-2 hover:text-indigo-500 transition-colors cursor-pointer">
                       <span className="material-symbols-outlined text-3xl">photo_camera</span>
-                      <span className="text-[10px] font-semibold uppercase">Take Photo</span>
+                      <span className="text-[10px] font-semibold uppercase">{t("visitor.hub.takePhoto")}</span>
                     </button>
                   )}
                 </div>
@@ -302,9 +304,9 @@ const VisitorHub = () => {
               {/* Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1">
                 {[
-                  { label: "Visitor Name", icon: "person", placeholder: "Enter full name", key: "first_name" },
-                  { label: "Phone Number", icon: "call", placeholder: "(555) 000-0000", key: "phone_number" },
-                  { label: "ID Number", icon: "pin", placeholder: "Enter ID number", key: "id_number" },
+                  { label: t("visitor.hub.visitorName"), icon: "person", placeholder: t("visitor.hub.enterFullName"), key: "first_name" },
+                  { label: t("visitor.hub.phoneNumber"), icon: "call", placeholder: "(555) 000-0000", key: "phone_number" },
+                  { label: t("visitor.hub.idNumber"), icon: "pin", placeholder: t("visitor.hub.enterIdNumber"), key: "id_number" },
                 ].map((field) => (
                   <div key={field.key} className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{field.label}</label>
@@ -319,18 +321,18 @@ const VisitorHub = () => {
                   </div>
                 ))}
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">ID Type</label>
+                  <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wide">{t("visitor.hub.idType")}</label>
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <span className="material-symbols-outlined text-slate-400 text-[20px]">badge</span>
                     </div>
                     <select value={form.id_type} onChange={e => setForm({ ...form, id_type: e.target.value })}
                       className="block w-full pl-10 pr-10 border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-900/80 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 text-sm h-11 text-slate-900 dark:text-white transition-all appearance-none">
-                      <option value="">Select ID Type...</option>
-                      <option value="National ID">National ID</option>
-                      <option value="Passport">Passport</option>
-                      <option value="Emirates ID">Emirates ID</option>
-                      <option value="Driver License">Driver License</option>
+                      <option value="">{t("visitor.hub.selectIdType")}</option>
+                      <option value="National ID">{t("visitor.hub.idTypes.nationalId")}</option>
+                      <option value="Passport">{t("visitor.hub.idTypes.passport")}</option>
+                      <option value="Emirates ID">{t("visitor.hub.idTypes.emiratesId")}</option>
+                      <option value="Driver License">{t("visitor.hub.idTypes.driverLicense")}</option>
                     </select>
                   </div>
                 </div>
@@ -341,12 +343,12 @@ const VisitorHub = () => {
               <button disabled={eidReading || !eidScriptReady} onClick={handleReadEid}
                 className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-500 dark:hover:bg-emerald-400 text-white font-bold py-3 px-6 rounded-lg flex items-center gap-2 uppercase tracking-wide text-xs shadow-md transition-all disabled:opacity-50">
                 <span className="material-symbols-outlined text-lg">badge</span>
-                {eidReading ? "Reading..." : "Read Emirates ID"}
+                {eidReading ? t("visitor.hub.reading") : t("visitor.hub.readEid")}
               </button>
               <button disabled={submitting} onClick={handleCheckIn}
                 className="bg-indigo-600 hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 text-white font-bold py-3 px-8 rounded-lg flex items-center gap-2 uppercase tracking-wide text-xs shadow-md transition-all disabled:opacity-50">
                 <span className="material-symbols-outlined text-lg">check_circle</span>
-                {submitting ? "Checking in..." : "Check-in Visitor"}
+                {submitting ? t("visitor.hub.checkingIn") : t("visitor.hub.checkinVisitor")}
               </button>
             </div>
           </div>
@@ -356,18 +358,18 @@ const VisitorHub = () => {
             <div className="p-5 border-b border-slate-200 dark:border-slate-700/50 flex items-center justify-between bg-slate-50 dark:bg-slate-800/30">
               <div className="flex items-center gap-2">
                 <span className="material-symbols-outlined text-slate-600 dark:text-slate-300">table_rows</span>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Live Visitor Log</h3>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">{t("visitor.hub.liveLog")}</h3>
               </div>
             </div>
             <div className="overflow-x-auto flex-1">
               <table className="w-full text-left text-sm text-slate-600 dark:text-slate-300">
                 <thead className="bg-slate-100/80 dark:bg-slate-900/50 text-xs uppercase text-slate-500 font-bold tracking-wider">
                   <tr>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Visitor Name</th>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Company</th>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Time</th>
-                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">Status</th>
-                    <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800">Actions</th>
+                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">{t("visitor.hub.visitorName")}</th>
+                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">{t("visitor.common.company")}</th>
+                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">{t("visitor.common.time")}</th>
+                    <th className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">{t("visitor.common.status")}</th>
+                    <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800">{t("visitor.common.actions")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -395,7 +397,7 @@ const VisitorHub = () => {
                       <td className="px-6 py-4 text-right">
                         <div className="flex items-center justify-end gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
                           {v.status_id === 6 && (
-                            <button onClick={() => handleCheckOut(v.id)} className="p-1.5 text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-all" title="Check Out">
+                            <button onClick={() => handleCheckOut(v.id)} className="p-1.5 text-slate-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-md transition-all" title={t("visitor.hub.checkOut")}>
                               <span className="material-symbols-outlined text-[20px]">logout</span>
                             </button>
                           )}
@@ -404,7 +406,7 @@ const VisitorHub = () => {
                     </tr>
                   ))}
                   {visitors.length === 0 && (
-                    <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-400 text-xs">No visitors yet</td></tr>
+                    <tr><td colSpan="5" className="px-6 py-8 text-center text-slate-400 text-xs">{t("visitor.hub.noVisitorsYet")}</td></tr>
                   )}
                 </tbody>
               </table>
@@ -418,7 +420,7 @@ const VisitorHub = () => {
             <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-100 dark:border-slate-800">
               <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <span className="material-symbols-outlined text-slate-400">notifications_active</span>
-                Activity Feed
+                {t("visitor.hub.activityFeed")}
               </h3>
             </div>
             <div className="relative pl-4 border-l border-slate-200 dark:border-slate-800 space-y-6">
@@ -427,17 +429,17 @@ const VisitorHub = () => {
                   <span className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full bg-indigo-500 ring-4 ring-white dark:ring-slate-900"></span>
                   <div className="flex flex-col gap-1 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <div className="flex justify-between items-start">
-                      <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">Check-in</p>
+                      <p className="text-sm font-bold text-indigo-600 dark:text-indigo-400">{t("visitor.hub.checkin")}</p>
                       <span className="text-[10px] text-slate-400">{v.time}</span>
                     </div>
                     <p className="text-xs text-slate-600 dark:text-slate-400">
-                      <span className="font-bold text-slate-900 dark:text-white">{v.name}</span> checked in from {v.company}
+                      <span className="font-bold text-slate-900 dark:text-white">{v.name}</span> {t("visitor.hub.checkedInFrom", { company: v.company })}
                     </p>
                   </div>
                 </div>
               ))}
               {visitors.length === 0 && (
-                <p className="text-xs text-slate-400 pl-2">No recent activity</p>
+                <p className="text-xs text-slate-400 pl-2">{t("visitor.hub.noRecentActivity")}</p>
               )}
             </div>
           </div>

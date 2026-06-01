@@ -11,8 +11,10 @@ import { useRouter } from "next/navigation";
 import { parseApiError } from "@/lib/utils";
 import { SuccessDialog } from "@/components/SuccessDialog";
 import DropDown from "@/components/ui/DropDown";
+import { useTranslation } from "react-i18next";
 
 export default function GroupLogin() {
+  const { t } = useTranslation();
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -87,7 +89,8 @@ export default function GroupLogin() {
   const columns = Columns({
     onSuccess: handleSuccess,
     handleRowClick: handleRowClick,
-    pageTitle: "Payroll Formulla"
+    pageTitle: t("payroll.tabs.formula.label"),
+    t,
   });
 
   return (
@@ -95,19 +98,19 @@ export default function GroupLogin() {
       <div className="flex flex-wrap items-center justify-between mb-6">
         <div className="flex flex-wrap items-center space-x-3 space-y-2 sm:space-y-0">
           <h2 className="text-2xl font-extrabold text-gray-900 flex items-center">
-            Payroll Formulla
+            {t("payroll.tabs.formula.label")}
           </h2>
 
           <div className="flex flex-col">
             <DropDown
-              placeholder="Choose Branch"
+              placeholder={t("payroll.tabs.chooseBranch")}
               value={selectedBranchId}
-              items={[{ id: null, name: "Select All" }, ...branches]}
+              items={[{ id: null, name: t("payroll.tabs.selectAll") }, ...branches]}
               onChange={setSelectedBranchId}
             />
           </div>
         </div>
-        <Create pageTitle="Payroll Formulla" onSuccess={handleSuccess} />
+        <Create pageTitle={t("payroll.tabs.formula.label")} onSuccess={handleSuccess} />
 
         <SuccessDialog
           open={successOpen}

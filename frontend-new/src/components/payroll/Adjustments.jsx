@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { api, buildQueryParams } from "@/lib/api-client";
 import { Search, Plus, Trash2, X, Paperclip } from "lucide-react";
 import MonthPicker from "@/components/ui/MonthPicker";
+import { useTranslation } from "react-i18next";
 
 const typeColors = {
   bonus: "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400",
@@ -18,6 +19,7 @@ const typeColors = {
 const emptyAdjForm = { employee_id: "", type: "bonus", amount: "", payroll_month: "", remarks: "", attachment: null };
 
 export default function Adjustments() {
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [adjustments, setAdjustments] = useState([]);
@@ -75,12 +77,12 @@ export default function Adjustments() {
   });
 
   const handleDelete = async (id) => {
-    if (!confirm("Delete this adjustment?")) return;
+    if (!confirm(t("payroll.adjustments.confirmDelete"))) return;
     try {
       const params = await buildQueryParams({});
       await api.delete(`/payroll-management/adjustments/${id}`, { params });
       fetchAdjustments();
-    } catch (e) { alert("Delete failed"); }
+    } catch (e) { alert(t("payroll.common.deleteFailed")); }
   };
 
   const filtered = adjustments.filter(a =>
@@ -92,19 +94,19 @@ export default function Adjustments() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Payroll Adjustments</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Manage bonus, incentive, arrears, fines, and other payroll adjustments</p>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t("payroll.adjustments.title")}</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t("payroll.adjustments.subtitle")}</p>
         </div>
         <button onClick={() => setDialogOpen(true)}
           className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm">
-          <Plus className="h-3.5 w-3.5" /> Add Adjustment
+          <Plus className="h-3.5 w-3.5" /> {t("payroll.adjustments.addAdjustment")}
         </button>
       </div>
 
       {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)}
+        <input placeholder={t("payroll.common.searchPlaceholder")} value={search} onChange={e => setSearch(e.target.value)}
           className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-9 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-1 focus:ring-primary" />
       </div>
 
@@ -114,15 +116,15 @@ export default function Adjustments() {
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                <th className="px-4 py-3">Employee</th>
-                <th className="px-3 py-3">Month</th>
-                <th className="px-3 py-3">Type</th>
-                <th className="px-3 py-3">Amount</th>
-                <th className="px-3 py-3">Remarks</th>
-                <th className="px-3 py-3">Attach</th>
-                <th className="px-3 py-3">Created By</th>
-                <th className="px-3 py-3">Date</th>
-                <th className="px-3 py-3">Actions</th>
+                <th className="px-4 py-3">{t("payroll.common.employee")}</th>
+                <th className="px-3 py-3">{t("payroll.common.month")}</th>
+                <th className="px-3 py-3">{t("payroll.common.type")}</th>
+                <th className="px-3 py-3">{t("payroll.common.amount")}</th>
+                <th className="px-3 py-3">{t("payroll.common.remarks")}</th>
+                <th className="px-3 py-3">{t("payroll.adjustments.attach")}</th>
+                <th className="px-3 py-3">{t("payroll.adjustments.createdBy")}</th>
+                <th className="px-3 py-3">{t("payroll.adjustments.date")}</th>
+                <th className="px-3 py-3">{t("payroll.common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -130,12 +132,12 @@ export default function Adjustments() {
                 <tr key={a.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition text-xs text-gray-600 dark:text-gray-300">
                   <td className="px-4 py-3">
                     <div className="text-xs font-medium text-gray-800 dark:text-gray-100">{a.employeeName}</div>
-                    <div className="text-[10px] text-gray-400">ID: {a.employeeId}</div>
+                    <div className="text-[10px] text-gray-400">{t("payroll.adjustments.idShort")}: {a.employeeId}</div>
                   </td>
                   <td className="px-3 py-3">{a.payrollMonth}</td>
                   <td className="px-3 py-3">
                     <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${typeColors[a.type] || typeColors.other_addition}`}>
-                      {a.type.replace("_", " ")}
+                      {t(`payroll.adjustments.types.${a.type}`, { defaultValue: a.type.replace("_", " ") })}
                     </span>
                   </td>
                   <td className="px-3 py-3 font-semibold text-gray-800 dark:text-gray-100">{a.amount.toLocaleString()}</td>
@@ -160,7 +162,7 @@ export default function Adjustments() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan="9" className="px-4 py-8 text-center text-gray-400 text-xs">No adjustments found</td></tr>
+                <tr><td colSpan="9" className="px-4 py-8 text-center text-gray-400 text-xs">{t("payroll.adjustments.empty")}</td></tr>
               )}
             </tbody>
           </table>
@@ -173,30 +175,30 @@ export default function Adjustments() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setDialogOpen(false)}></div>
           <div className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">New Adjustment</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{t("payroll.adjustments.dialogTitle")}</h3>
               <button onClick={() => setDialogOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Branch</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.common.branch")}</label>
                   <select value={selBranch} onChange={e => { setSelBranch(e.target.value); setSelDept(""); setAdjForm({ ...adjForm, employee_id: "" }); }}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    <option value="">All Branches</option>
+                    <option value="">{t("payroll.common.allBranches")}</option>
                     {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Department</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.common.department")}</label>
                   <select value={selDept} onChange={e => { setSelDept(e.target.value); setAdjForm({ ...adjForm, employee_id: "" }); }}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    <option value="">All Depts</option>
+                    <option value="">{t("payroll.common.allDepartments")}</option>
                     {filtDepts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Employee</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.common.employee")}</label>
                   <select value={adjForm.employee_id} onChange={e => {
                     const empId = e.target.value;
                     setAdjForm({ ...adjForm, employee_id: empId });
@@ -209,53 +211,53 @@ export default function Adjustments() {
                     }
                   }}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    <option value="">Select employee</option>
+                    <option value="">{t("payroll.common.selectEmployee")}</option>
                     {filtEmps.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name || ""}</option>)}
                   </select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Type</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.common.type")}</label>
                   <select value={adjForm.type} onChange={e => setAdjForm({ ...adjForm, type: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-                    <option value="bonus">Bonus</option>
-                    <option value="incentive">Incentive</option>
-                    <option value="arrears">Arrears</option>
-                    <option value="fine">Fine</option>
-                    <option value="reimbursement">Reimbursement</option>
-                    <option value="other_addition">Other Addition</option>
-                    <option value="other_deduction">Other Deduction</option>
+                    <option value="bonus">{t("payroll.adjustments.types.bonus")}</option>
+                    <option value="incentive">{t("payroll.adjustments.types.incentive")}</option>
+                    <option value="arrears">{t("payroll.adjustments.types.arrears")}</option>
+                    <option value="fine">{t("payroll.adjustments.types.fine")}</option>
+                    <option value="reimbursement">{t("payroll.adjustments.types.reimbursement")}</option>
+                    <option value="other_addition">{t("payroll.adjustments.types.other_addition")}</option>
+                    <option value="other_deduction">{t("payroll.adjustments.types.other_deduction")}</option>
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Amount</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.common.amount")}</label>
                   <input type="number" placeholder="0" value={adjForm.amount} onChange={e => setAdjForm({ ...adjForm, amount: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Payroll Month</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.adjustments.payrollMonth")}</label>
                 <MonthPicker
                   value={adjForm.payroll_month}
                   onChange={v => setAdjForm({ ...adjForm, payroll_month: v })}
-                  placeholder="Select payroll month"
+                  placeholder={t("payroll.adjustments.selectPayrollMonth")}
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Remarks</label>
-                <textarea placeholder="Reason..." rows={3} value={adjForm.remarks} onChange={e => setAdjForm({ ...adjForm, remarks: e.target.value })}
+                <label className="text-xs font-medium text-gray-500">{t("payroll.common.remarks")}</label>
+                <textarea placeholder={t("payroll.adjustments.reasonPlaceholder")} rows={3} value={adjForm.remarks} onChange={e => setAdjForm({ ...adjForm, remarks: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 resize-none"></textarea>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Attachment (optional, ≤ 5 MB)</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.adjustments.attachmentLabel")}</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="file"
                     onChange={(e) => {
                       const f = e.target.files?.[0] || null;
                       if (f && f.size > 5 * 1024 * 1024) {
-                        alert("File too large. Maximum 5 MB.");
+                        alert(t("payroll.adjustments.fileTooLarge"));
                         e.target.value = "";
                         return;
                       }
@@ -265,7 +267,7 @@ export default function Adjustments() {
                   />
                   {adjForm.attachment && (
                     <button type="button" onClick={() => setAdjForm({ ...adjForm, attachment: null })}
-                      className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400" aria-label="Clear file">
+                      className="p-1 rounded-md hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400" aria-label={t("payroll.adjustments.clearFile")}>
                       <X className="h-3.5 w-3.5" />
                     </button>
                   )}
@@ -276,10 +278,10 @@ export default function Adjustments() {
             <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => setDialogOpen(false)}
                 className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                Cancel
+                {t("payroll.common.cancel")}
               </button>
               <button disabled={saving} onClick={async () => {
-                if (!adjForm.employee_id || !adjForm.amount || !adjForm.payroll_month) { alert("Employee, Amount, and Payroll Month are required"); return; }
+                if (!adjForm.employee_id || !adjForm.amount || !adjForm.payroll_month) { alert(t("payroll.adjustments.validationRequired")); return; }
                 setSaving(true);
                 try {
                   const params = await buildQueryParams({});
@@ -299,11 +301,11 @@ export default function Adjustments() {
                   setDialogOpen(false);
                   setAdjForm(emptyAdjForm);
                   fetchAdjustments();
-                } catch (e) { alert(e?.response?.data?.message || "Save failed"); }
+                } catch (e) { alert(e?.response?.data?.message || t("payroll.common.saveFailed")); }
                 finally { setSaving(false); }
               }}
                 className="px-4 py-2 rounded-lg bg-primary text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm disabled:opacity-50">
-                {saving ? "Saving..." : "Save"}
+                {saving ? t("payroll.common.saving") : t("payroll.common.save")}
               </button>
             </div>
           </div>

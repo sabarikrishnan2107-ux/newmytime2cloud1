@@ -18,6 +18,7 @@ import {
 import MonthPicker from "@/components/ui/MonthPicker";
 import MultiDropDown from "@/components/ui/MultiDropDown";
 import DropDown from "@/components/ui/DropDown";
+import { useTranslation } from "react-i18next";
 
 const employeeTypeOptions = [
   { id: "Full Time",  name: "Full Time" },
@@ -66,6 +67,14 @@ const REPORTS = [
 ];
 
 export default function PayrollReports() {
+  const { t } = useTranslation();
+  const employeeTypeOptionsT = [
+    { id: "Full Time",  name: t("payroll.reports.employeeTypes.fullTime") },
+    { id: "Part Time",  name: t("payroll.reports.employeeTypes.partTime") },
+    { id: "Contractor", name: t("payroll.reports.employeeTypes.contractor") },
+    { id: "Trainee",    name: t("payroll.reports.employeeTypes.trainee") },
+  ];
+  const reportName = (id) => t(`payroll.reports.list.${id}.name`, { defaultValue: REPORTS.find((r) => r.id === id)?.name || id });
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
   const [downloading, setDownloading] = useState(null);
 
@@ -132,7 +141,7 @@ export default function PayrollReports() {
           const batches = batchesRes.data?.data || [];
           const batch = batches.find((b) => b.month === month);
           if (!batch) {
-            alert("No payroll batch found for this month");
+            alert(t("payroll.reports.noBatchForMonth"));
             return;
           }
           const recordsRes = await api.get(`/payroll-management/records/${batch.id}`, {
@@ -154,7 +163,7 @@ export default function PayrollReports() {
             })
             .map((r) => r.id);
           if (matched.length === 0) {
-            alert("No payslip records found for the selected employees in this month");
+            alert(t("payroll.reports.noRecordsForEmployees"));
             return;
           }
           bulkParams.record_ids = matched.join(",");
@@ -241,18 +250,18 @@ export default function PayrollReports() {
             <div class="subtitle">${reportName} · ${monthLabel}</div>
           </div>
         </div>
-        <div class="confidential">Confidential</div>
+        <div class="confidential">${t("payroll.reports.pdf.confidential")}</div>
       </div>
     </div>
 
     <div class="meta">
-      <div class="meta-item"><span class="meta-label">Report</span><span class="meta-value">${reportName}</span></div>
-      <div class="meta-item"><span class="meta-label">Period</span><span class="meta-value">${monthLabel}</span></div>
-      <div class="meta-item"><span class="meta-label">Generated</span><span class="meta-value">${generatedOn}</span></div>
-      <div class="meta-item"><span class="meta-label">Records</span><span class="meta-value">${totalRows}</span></div>
+      <div class="meta-item"><span class="meta-label">${t("payroll.reports.pdf.report")}</span><span class="meta-value">${reportName}</span></div>
+      <div class="meta-item"><span class="meta-label">${t("payroll.reports.pdf.period")}</span><span class="meta-value">${monthLabel}</span></div>
+      <div class="meta-item"><span class="meta-label">${t("payroll.reports.pdf.generated")}</span><span class="meta-value">${generatedOn}</span></div>
+      <div class="meta-item"><span class="meta-label">${t("payroll.reports.pdf.records")}</span><span class="meta-value">${totalRows}</span></div>
     </div>
 
-    <div class="section-title"><span class="dot"></span> Data Set</div>
+    <div class="section-title"><span class="dot"></span> ${t("payroll.reports.pdf.dataSet")}</div>
 
     <div class="wrap">
       <table>
@@ -262,15 +271,15 @@ export default function PayrollReports() {
     </div>
 
     <div class="footer">
-      <div class="footer-brand">${companyName} · Generated ${generatedOn}</div>
-      <div class="footer-total">${totalRows} Record${totalRows === 1 ? "" : "s"}</div>
+      <div class="footer-brand">${companyName} · ${t("payroll.reports.pdf.generated")} ${generatedOn}</div>
+      <div class="footer-total">${totalRows} ${totalRows === 1 ? t("payroll.reports.pdf.recordSingular") : t("payroll.reports.pdf.recordPlural")}</div>
     </div>
   </div>
   <script>window.onload=()=>{setTimeout(()=>window.print(),300)}</script>
 </body></html>`);
       win.document.close();
     } catch (e) {
-      alert("Download failed. Make sure payroll has been generated for this month.");
+      alert(t("payroll.reports.downloadFailed"));
     } finally {
       setDownloading(null);
     }
@@ -293,7 +302,7 @@ export default function PayrollReports() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (e) {
-      alert("Download failed. Make sure payroll has been generated for this month.");
+      alert(t("payroll.reports.downloadFailed"));
     } finally {
       setDownloading(null);
     }
@@ -310,9 +319,9 @@ export default function PayrollReports() {
     <div className="space-y-5">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">Reports</h1>
+        <h1 className="text-2xl font-extrabold text-gray-800 dark:text-gray-100 tracking-tight">{t("payroll.reports.title")}</h1>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-          Generate and download payroll reports in CSV or PDF format
+          {t("payroll.reports.subtitle")}
         </p>
       </div>
 
@@ -320,7 +329,7 @@ export default function PayrollReports() {
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex flex-col min-w-[180px]">
           <MultiDropDown
-            placeholder="Branch"
+            placeholder={t("payroll.common.branch")}
             items={branches}
             value={selectedBranchIds}
             onChange={setSelectedBranchIds}
@@ -329,7 +338,7 @@ export default function PayrollReports() {
         </div>
         <div className="flex flex-col min-w-[180px]">
           <MultiDropDown
-            placeholder="Department"
+            placeholder={t("payroll.common.department")}
             items={departments}
             value={selectedDepartmentIds}
             onChange={setSelectedDepartmentIds}
@@ -338,8 +347,8 @@ export default function PayrollReports() {
         </div>
         <div className="flex flex-col min-w-[180px]">
           <MultiDropDown
-            placeholder="Employee Type"
-            items={employeeTypeOptions}
+            placeholder={t("payroll.reports.employeeTypeFilter")}
+            items={employeeTypeOptionsT}
             value={selectedEmployeeTypes}
             onChange={setSelectedEmployeeTypes}
             badgesCount={1}
@@ -347,7 +356,7 @@ export default function PayrollReports() {
         </div>
         <div className="flex flex-col min-w-[220px]">
           <MultiDropDown
-            placeholder="Employees"
+            placeholder={t("payroll.common.employees")}
             items={selectedEmployeeTypes?.length ? employees.filter(matchesSelectedType) : employees}
             value={selectedEmployeeIds}
             onChange={setSelectedEmployeeIds}
@@ -358,8 +367,8 @@ export default function PayrollReports() {
         {/* Report Type dropdown */}
         <div className="flex flex-col min-w-[220px]">
           <DropDown
-            placeholder="Report Type"
-            items={REPORTS.map((r) => ({ id: r.id, name: r.name }))}
+            placeholder={t("payroll.reports.reportType")}
+            items={REPORTS.map((r) => ({ id: r.id, name: reportName(r.id) }))}
             value={selectedReport}
             onChange={(val) => setSelectedReport(val)}
           />
@@ -367,7 +376,7 @@ export default function PayrollReports() {
 
         {/* Month picker */}
         <div className="flex items-center min-w-[200px] h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/80 shadow-sm overflow-hidden">
-          <MonthPicker value={month} onChange={setMonth} placeholder="Select month" />
+          <MonthPicker value={month} onChange={setMonth} placeholder={t("payroll.reports.selectMonth")} />
         </div>
 
         {/* Download actions */}
@@ -378,15 +387,15 @@ export default function PayrollReports() {
             className="inline-flex items-center justify-center gap-2 h-10 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/80 px-5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/80 hover:-translate-y-px hover:shadow-sm transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-none"
           >
             {csvBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileSpreadsheet className="h-3.5 w-3.5" />}
-            Download CSV
+            {t("payroll.reports.downloadCsv")}
           </button>
           <button
-            onClick={() => handlePdfDownload(selectedReport, activeReport.name)}
+            onClick={() => handlePdfDownload(selectedReport, reportName(selectedReport))}
             disabled={pdfBusy}
             className="inline-flex items-center justify-center gap-2 h-10 rounded-xl bg-gradient-to-r from-primary to-purple-600 px-5 text-xs font-semibold text-white shadow-md shadow-primary/30 hover:shadow-lg hover:shadow-primary/40 hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
           >
             {pdfBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            Download PDF
+            {t("payroll.reports.downloadPdf")}
           </button>
         </div>
       </div>
@@ -397,8 +406,8 @@ export default function PayrollReports() {
           <activeReport.icon className={`h-5 w-5 ${activeReport.accent.icon}`} strokeWidth={2} />
         </div>
         <div className="min-w-0">
-          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{activeReport.name}</h3>
-          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{activeReport.desc}</p>
+          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100">{reportName(activeReport.id)}</h3>
+          <p className="text-[11px] text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">{t(`payroll.reports.list.${activeReport.id}.desc`, { defaultValue: activeReport.desc })}</p>
         </div>
       </div>
     </div>

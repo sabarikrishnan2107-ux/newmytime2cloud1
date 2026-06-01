@@ -12,6 +12,7 @@ import {
     XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, LabelList,
 } from "recharts";
 import { api, buildQueryParams } from "@/lib/api-client";
+import { useTranslation } from "react-i18next";
 
 const COLOR_GROSS = "#a78bfa";
 const COLOR_NET = "#22d3ee";
@@ -53,6 +54,7 @@ const TrendTooltip = ({ active, payload, label, currency }) => {
 };
 
 const Payroll = ({ employee_id, bank, payroll = {} }) => {
+    const { t } = useTranslation();
     const [records, setRecords] = useState([]);
     const [structure, setStructure] = useState(null);
     const [settingsCurrency, setSettingsCurrency] = useState(null);
@@ -196,10 +198,10 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
         const ot = Number(latest?.ot_amount ?? 0);
         const bonus = Number((latest?.bonus ?? 0)) + Number((latest?.incentive ?? 0));
         const allItems = [
-            { name: "Basic", value: basic, color: COMPOSITION_COLORS[0] },
-            { name: "Allowances", value: allowances, color: COMPOSITION_COLORS[1] },
-            { name: "OT", value: ot, color: COMPOSITION_COLORS[2] },
-            { name: "Bonus", value: bonus, color: COMPOSITION_COLORS[3] },
+            { name: t("payroll.fields.basic"), value: basic, color: COMPOSITION_COLORS[0] },
+            { name: t("payroll.fields.allowances"), value: allowances, color: COMPOSITION_COLORS[1] },
+            { name: t("payroll.employeeEdit.ot"), value: ot, color: COMPOSITION_COLORS[2] },
+            { name: t("payroll.employeeEdit.bonus"), value: bonus, color: COMPOSITION_COLORS[3] },
         ];
         const total = allItems.reduce((s, i) => s + i.value, 0);
         const items = allItems.filter((i) => i.value > 0);
@@ -212,15 +214,15 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
         <div className="flex flex-col gap-5">
             <div className="flex items-center justify-between flex-wrap gap-3">
                 <div>
-                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">Payroll</h2>
+                    <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t("payroll.employeeEdit.payroll")}</h2>
                     <p className="text-xs text-[#9db0b9] mt-0.5">
                         {loading
-                            ? "Loading…"
+                            ? t("payroll.employeeEdit.loadingDots")
                             : noData
-                            ? `No payroll records for ${selectedYear}.`
+                            ? t("payroll.employeeEdit.noRecordsYear", { year: selectedYear })
                             : selectedMonth === "all"
-                            ? `${records.length} ${records.length === 1 ? "record" : "records"} for ${selectedYear}`
-                            : `${filteredRecords.length} ${filteredRecords.length === 1 ? "record" : "records"} for ${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
+                            ? t("payroll.employeeEdit.recordsFor", { count: records.length, noun: records.length === 1 ? t("payroll.employeeEdit.record") : t("payroll.employeeEdit.records"), period: selectedYear })
+                            : t("payroll.employeeEdit.recordsFor", { count: filteredRecords.length, noun: filteredRecords.length === 1 ? t("payroll.employeeEdit.record") : t("payroll.employeeEdit.records"), period: `${MONTH_NAMES[selectedMonth]} ${selectedYear}` })}
                     </p>
                 </div>
                 <div className="relative" ref={pickerRef}>
@@ -230,7 +232,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                         className="inline-flex items-center gap-2 rounded-xl bg-white/5 border border-white/10 px-3 py-2 text-sm font-bold text-white hover:bg-white/10 transition-colors"
                     >
                         <Calendar size={14} className="text-violet-300" />
-                        {selectedMonth === "all" ? "All months" : MONTH_NAMES[selectedMonth]} {selectedYear}
+                        {selectedMonth === "all" ? t("payroll.employeeEdit.allMonths") : MONTH_NAMES[selectedMonth]} {selectedYear}
                         <ChevronRight size={14} className={`text-slate-400 transition-transform ${pickerOpen ? "rotate-90" : ""}`} />
                     </button>
                     {pickerOpen && (
@@ -240,7 +242,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                     type="button"
                                     onClick={() => setSelectedYear((y) => y - 1)}
                                     className="size-8 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors"
-                                    title="Previous year"
+                                    title={t("payroll.employeeEdit.previousYear")}
                                 >
                                     <ChevronLeft size={16} />
                                 </button>
@@ -249,7 +251,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                     type="button"
                                     onClick={() => setSelectedYear((y) => y + 1)}
                                     className="size-8 rounded-lg hover:bg-white/10 text-slate-300 flex items-center justify-center transition-colors"
-                                    title="Next year"
+                                    title={t("payroll.employeeEdit.nextYear")}
                                 >
                                     <ChevronRight size={16} />
                                 </button>
@@ -263,7 +265,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                         : "bg-white/5 text-slate-300 hover:bg-white/10"
                                 }`}
                             >
-                                All months
+                                {t("payroll.employeeEdit.allMonths")}
                             </button>
                             <div className="grid grid-cols-3 gap-1.5">
                                 {MONTH_NAMES.map((name, idx) => (
@@ -289,19 +291,19 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <div className="glass-card rounded-2xl p-6 flex flex-col">
                 <div className="flex items-center justify-between mb-5">
-                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">Payroll Summary</h3>
+                    <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t("payroll.employeeEdit.payrollSummary")}</h3>
                     <span className="inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full bg-green-500/10 text-green-400 border border-green-500/20">
-                        <CheckCircle2 size={14} /> {isProcessed ? "Processed" : latestStatus ? latestStatus.charAt(0).toUpperCase() + latestStatus.slice(1) : "—"}
+                        <CheckCircle2 size={14} /> {isProcessed ? t("payroll.employeeEdit.processed") : latestStatus ? latestStatus.charAt(0).toUpperCase() + latestStatus.slice(1) : "—"}
                     </span>
                 </div>
 
                 <div className="flex flex-col gap-1 mb-5">
-                    <span className="text-xs font-bold text-[#9db0b9] uppercase tracking-wider">Last Net Pay</span>
+                    <span className="text-xs font-bold text-[#9db0b9] uppercase tracking-wider">{t("payroll.employeeEdit.lastNetPay")}</span>
                     <span className="text-4xl font-bold bg-gradient-to-r from-violet-400 to-indigo-400 bg-clip-text text-transparent">
                         {currency} {fmt(lastNetPay)}
                     </span>
                     {lastPaidRaw && (
-                        <span className="text-sm text-[#9db0b9]">Paid {formatLong(lastPaidRaw)}</span>
+                        <span className="text-sm text-[#9db0b9]">{t("payroll.employeeEdit.paidOn", { date: formatLong(lastPaidRaw) })}</span>
                     )}
                 </div>
 
@@ -309,7 +311,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                     <div className="rounded-xl p-3.5 bg-white/5 border border-white/5">
                         <div className="flex items-center gap-2 text-[#9db0b9] mb-1">
                             <Calendar size={14} />
-                            <span className="text-[11px] font-semibold uppercase tracking-wider">Next Payday</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wider">{t("payroll.employeeEdit.nextPayday")}</span>
                         </div>
                         <span className="text-sm font-bold text-slate-900 dark:text-white">
                             {nextPaydayLabel || "—"}
@@ -318,7 +320,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                     <div className="rounded-xl p-3.5 bg-white/5 border border-white/5">
                         <div className="flex items-center gap-2 text-[#9db0b9] mb-1">
                             <Wallet size={14} />
-                            <span className="text-[11px] font-semibold uppercase tracking-wider">{selectedYear} Earnings</span>
+                            <span className="text-[11px] font-semibold uppercase tracking-wider">{t("payroll.employeeEdit.yearEarnings", { year: selectedYear })}</span>
                         </div>
                         <span className="text-sm font-bold text-slate-900 dark:text-white">
                             {currency} {fmt(ytdEarnings)}
@@ -331,20 +333,20 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                     onClick={downloadLatest}
                     className="mt-auto inline-flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 text-white font-bold text-sm shadow-lg shadow-violet-500/30 transition-all"
                 >
-                    <Download size={16} /> Download Salary Slip
+                    <Download size={16} /> {t("payroll.employeeEdit.downloadSalarySlip")}
                 </button>
             </div>
 
             <div className="glass-card rounded-2xl p-6 lg:col-span-2 flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5">Recent Payslips</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-5">{t("payroll.employeeEdit.recentPayslips")}</h3>
                 <div className="flex flex-col gap-2.5">
                     {recentPayslips.length === 0 && (
                         <div className="text-center text-sm text-slate-500 py-10">
                             {loading
-                                ? "Loading…"
+                                ? t("payroll.employeeEdit.loadingDots")
                                 : selectedMonth === "all"
-                                ? `No payslips for ${selectedYear}`
-                                : `No payslip for ${MONTH_NAMES[selectedMonth]} ${selectedYear}`}
+                                ? t("payroll.employeeEdit.noPayslipsYear", { year: selectedYear })
+                                : t("payroll.employeeEdit.noPayslipMonth", { period: `${MONTH_NAMES[selectedMonth]} ${selectedYear}` })}
                         </div>
                     )}
                     {recentPayslips.map((r) => {
@@ -365,7 +367,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                             {monthName}
                                         </span>
                                         <span className="text-xs text-[#9db0b9]">
-                                            Net pay {currency} {fmt(r.net_salary)}
+                                            {t("payroll.employeeEdit.netPayLabel")} {currency} {fmt(r.net_salary)}
                                         </span>
                                     </div>
                                 </div>
@@ -377,7 +379,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                                 : "bg-orange-500/10 text-orange-400 border-orange-500/20"
                                         }`}
                                     >
-                                        {itemPaid ? "Paid" : itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : "—"}
+                                        {itemPaid ? t("payroll.common.statuses.paid") : itemStatus ? itemStatus.charAt(0).toUpperCase() + itemStatus.slice(1) : "—"}
                                     </span>
                                     <button
                                         type="button"
@@ -396,15 +398,15 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
             <div className="glass-card rounded-2xl p-6 lg:col-span-3">
                 <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
                     <div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Salary Trend</h3>
-                        <p className="text-xs text-[#9db0b9] mt-0.5">Gross vs Net · last 6 months in {selectedYear}</p>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t("payroll.employeeEdit.salaryTrend")}</h3>
+                        <p className="text-xs text-[#9db0b9] mt-0.5">{t("payroll.employeeEdit.grossVsNet", { year: selectedYear })}</p>
                     </div>
                     <div className="flex items-center gap-2">
                         <div className="inline-flex items-center gap-0.5 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 p-0.5">
                             {[
-                                { id: "area", Icon: AreaIcon, title: "Area chart" },
-                                { id: "line", Icon: LineIcon, title: "Line chart" },
-                                { id: "bar", Icon: BarIcon, title: "Bar chart" },
+                                { id: "area", Icon: AreaIcon, title: t("payroll.employeeEdit.areaChart") },
+                                { id: "line", Icon: LineIcon, title: t("payroll.employeeEdit.lineChart") },
+                                { id: "bar", Icon: BarIcon, title: t("payroll.employeeEdit.barChart") },
                             ].map(opt => {
                                 const Icon = opt.Icon;
                                 return (
@@ -434,7 +436,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                             >
                                 {yoyChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
                                 {yoyChange >= 0 ? "+" : ""}
-                                {yoyChange.toFixed(1)}% YoY
+                                {yoyChange.toFixed(1)}% {t("payroll.employeeEdit.yoy")}
                             </span>
                         )}
                     </div>
@@ -442,7 +444,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                 <div className="h-[260px] w-full">
                     {trendData.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-sm text-slate-500">
-                            {loading ? "Loading…" : "Trend data not available yet"}
+                            {loading ? t("payroll.employeeEdit.loadingDots") : t("payroll.employeeEdit.noTrend")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
@@ -463,8 +465,8 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                     <YAxis tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency} ${fmtK(v)}`} />
                                     <Tooltip content={<TrendTooltip currency={currency} />} cursor={{ stroke: "rgba(255,255,255,0.15)" }} />
                                     <Legend iconType="circle" wrapperStyle={{ fontSize: 12, color: "#9db0b9" }} />
-                                    <Area type="monotone" dataKey="gross" name="Gross" stroke={COLOR_GROSS} strokeWidth={2} fill="url(#grossAreaFill)" />
-                                    <Area type="monotone" dataKey="net" name="Net" stroke={COLOR_NET} strokeWidth={2} fill="url(#netAreaFill)" />
+                                    <Area type="monotone" dataKey="gross" name={t("payroll.dashboard.series.gross")} stroke={COLOR_GROSS} strokeWidth={2} fill="url(#grossAreaFill)" />
+                                    <Area type="monotone" dataKey="net" name={t("payroll.dashboard.series.net")} stroke={COLOR_NET} strokeWidth={2} fill="url(#netAreaFill)" />
                                 </AreaChart>
                             ) : trendChartType === "line" ? (
                                 <LineChart data={trendData} margin={{ top: 20, right: 16, left: 0, bottom: 0 }}>
@@ -473,8 +475,8 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                     <YAxis tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency} ${fmtK(v)}`} />
                                     <Tooltip content={<TrendTooltip currency={currency} />} cursor={{ stroke: "rgba(255,255,255,0.15)" }} />
                                     <Legend iconType="circle" wrapperStyle={{ fontSize: 12, color: "#9db0b9" }} />
-                                    <Line type="monotone" dataKey="gross" name="Gross" stroke={COLOR_GROSS} strokeWidth={2.5} dot={{ r: 4, fill: COLOR_GROSS, stroke: "#0f172a", strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                                    <Line type="monotone" dataKey="net" name="Net" stroke={COLOR_NET} strokeWidth={2.5} dot={{ r: 4, fill: COLOR_NET, stroke: "#0f172a", strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                    <Line type="monotone" dataKey="gross" name={t("payroll.dashboard.series.gross")} stroke={COLOR_GROSS} strokeWidth={2.5} dot={{ r: 4, fill: COLOR_GROSS, stroke: "#0f172a", strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                                    <Line type="monotone" dataKey="net" name={t("payroll.dashboard.series.net")} stroke={COLOR_NET} strokeWidth={2.5} dot={{ r: 4, fill: COLOR_NET, stroke: "#0f172a", strokeWidth: 2 }} activeDot={{ r: 6 }} />
                                 </LineChart>
                             ) : (
                                 <ComposedChart data={trendData} margin={{ top: 28, right: 24, left: 0, bottom: 0 }} barCategoryGap="25%">
@@ -493,10 +495,10 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                     <YAxis tick={{ fill: "#9db0b9", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${currency} ${fmtK(v)}`} />
                                     <Tooltip content={<TrendTooltip currency={currency} />} cursor={{ fill: "rgba(255,255,255,0.04)" }} />
                                     <Legend iconType="circle" wrapperStyle={{ fontSize: 12, color: "#9db0b9", paddingTop: 8 }} />
-                                    <Bar dataKey="gross" name="Gross" fill="url(#grossBarFill)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                                    <Bar dataKey="gross" name={t("payroll.dashboard.series.gross")} fill="url(#grossBarFill)" radius={[6, 6, 0, 0]} maxBarSize={48}>
                                         <LabelList dataKey="gross" position="top" formatter={(v) => fmtK(v)} fill="#cbd5e1" fontSize={10} fontWeight={600} />
                                     </Bar>
-                                    <Bar dataKey="net" name="Net" fill="url(#netBarFill)" radius={[6, 6, 0, 0]} maxBarSize={48}>
+                                    <Bar dataKey="net" name={t("payroll.dashboard.series.net")} fill="url(#netBarFill)" radius={[6, 6, 0, 0]} maxBarSize={48}>
                                         <LabelList dataKey="net" position="top" formatter={(v) => fmtK(v)} fill="#cbd5e1" fontSize={10} fontWeight={600} />
                                     </Bar>
                                 </ComposedChart>
@@ -509,8 +511,8 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
             <div className="glass-card rounded-2xl p-6 lg:col-span-1">
                 <div className="flex items-start justify-between mb-4">
                     <div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Net vs Deductions</h3>
-                        <p className="text-xs text-[#9db0b9] mt-0.5">Monthly stacked breakdown</p>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t("payroll.employeeEdit.netVsDeductions")}</h3>
+                        <p className="text-xs text-[#9db0b9] mt-0.5">{t("payroll.employeeEdit.monthlyStacked")}</p>
                     </div>
                     <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
                         {currency}
@@ -519,7 +521,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                 <div className="h-[230px] w-full">
                     {deductionData.length === 0 ? (
                         <div className="h-full flex items-center justify-center text-sm text-slate-500">
-                            {loading ? "Loading…" : "No breakdown data"}
+                            {loading ? t("payroll.employeeEdit.loadingDots") : t("payroll.employeeEdit.noBreakdown")}
                         </div>
                     ) : (
                         <ResponsiveContainer width="100%" height="100%">
@@ -539,8 +541,8 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
             <div className="glass-card rounded-2xl p-6 lg:col-span-2">
                 <div className="flex items-start justify-between mb-4">
                     <div>
-                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Salary Composition</h3>
-                        <p className="text-xs text-[#9db0b9] mt-0.5">Latest month split</p>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t("payroll.employeeEdit.salaryComposition")}</h3>
+                        <p className="text-xs text-[#9db0b9] mt-0.5">{t("payroll.employeeEdit.latestMonthSplit")}</p>
                     </div>
                     {composition.total > 0 && (
                         <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
@@ -550,7 +552,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                 </div>
                 {composition.total === 0 ? (
                     <div className="h-[230px] flex items-center justify-center text-sm text-slate-500">
-                        {loading ? "Loading…" : "No composition data"}
+                        {loading ? t("payroll.employeeEdit.loadingDots") : t("payroll.employeeEdit.noComposition")}
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-5 gap-6 items-center">
@@ -588,7 +590,7 @@ const Payroll = ({ employee_id, bank, payroll = {} }) => {
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                                <span className="text-[10px] font-bold text-[#9db0b9] uppercase tracking-wider">Total</span>
+                                <span className="text-[10px] font-bold text-[#9db0b9] uppercase tracking-wider">{t("payroll.employeeEdit.total")}</span>
                                 <span className="text-lg font-bold text-slate-900 dark:text-white tabular-nums">
                                     {fmt(composition.total)}
                                 </span>

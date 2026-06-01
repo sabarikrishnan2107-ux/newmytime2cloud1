@@ -21,6 +21,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const Edit = ({
   pageTitle = "item",
@@ -29,6 +30,7 @@ const Edit = ({
   controlledOpen,
   controlledSetOpen,
 }) => {
+  const { t } = useTranslation();
   const isControlled = controlledOpen !== undefined;
   const [open, setOpen] = useState(false);
   const actualOpen = isControlled ? controlledOpen : open;
@@ -65,7 +67,7 @@ const Edit = ({
     setLoading(true);
     try {
       await updatePayrollGenerationDate(initialData.id, { ...form, date: formatDateDubai(form.date) });
-      onSuccess({ title: `${pageTitle} Saved`, description: `${pageTitle} Saved successfully` }); actualSetOpen(false);
+      onSuccess({ title: t("payroll.tabs.actions.successSaved", { title: pageTitle }), description: t("payroll.tabs.actions.successSavedDesc", { title: pageTitle }) }); actualSetOpen(false);
     } catch (error) {
       setError(parseApiError(error));
     } finally {
@@ -78,19 +80,19 @@ const Edit = ({
       <DialogContent className="max-w-2xl p-6 rounded-2xl shadow-xl w-[400px]">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold text-gray-800">
-            Edit {pageTitle}
+            {t("payroll.tabs.actions.edit", { title: pageTitle })}
           </DialogTitle>
           <p className="text-sm text-gray-500 mt-1">
-            Salary Payslip Generation Date (Every Month)
+            {t("payroll.tabs.generationDate.dialogDesc")}
           </p>
         </DialogHeader>
 
         <div className="mt-6 space-y-6">
           {/* Branch selection */}
           <div>
-            <Label className="text-sm mb-2 block">Select Branch</Label>
+            <Label className="text-sm mb-2 block">{t("payroll.tabs.selectBranch")}</Label>
             <DropDown
-              placeholder="Choose Branch"
+              placeholder={t("payroll.tabs.chooseBranch")}
               value={form.branch_id}
               items={branches}
               onChange={(val) => handleChange("branch_id", val)}
@@ -99,7 +101,7 @@ const Edit = ({
 
           {/* Calendar Date Picker */}
           <div>
-            <Label className="text-sm mb-2 block">Select Date</Label>
+            <Label className="text-sm mb-2 block">{t("payroll.tabs.selectDate")}</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -107,7 +109,7 @@ const Edit = ({
                   className="w-full justify-start text-left font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.date ? formatDateDubai(form.date) : <span>Pick a date</span>}
+                  {form.date ? formatDateDubai(form.date) : <span>{t("payroll.tabs.pickDate")}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0" align="start">
@@ -132,14 +134,14 @@ const Edit = ({
         {/* Footer */}
         <DialogFooter className="mt-6 flex justify-end gap-3">
           <Button variant="outline" onClick={() => setOpen(false)} className="rounded-lg">
-            Cancel
+            {t("payroll.common.cancel")}
           </Button>
           <Button
             onClick={onSubmit}
             disabled={loading}
             className="rounded-lg bg-primary text-white"
           >
-            {loading ? "Saving..." : `Save`}
+            {loading ? t("payroll.common.saving") : t("payroll.tabs.actions.saveShort")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -5,99 +5,90 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Device;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
+use Illuminate\Support\Facades\Log; // Added Log Facade
 
 class RectifyAttendanceLogs extends Command
 {
-    /**
-     * The name and signature of the console command.
-     * Usage: php artisan attendance:rectify {date?}
-     */
-    protected $signature = 'attendance:rectify {date? : The date to start fixing from (YYYY-MM-DD)}';
+    protected $signature = 'attendance:rectify';
+    protected $description = 'Syncs attendance log_types with device function settings (Auto, In, Out, Option) - Only updates NULL log_types';
 
     /**
-     * The console command description.
+     * Helper to log to both Console and the dedicated Log File
      */
-    protected $description = 'Syncs attendance log_types with device function settings (Auto, In, Out)';
+    private function logInfo($message)
+    {
+        $this->info($message);
+        Log::channel('attendance_rectify')->info($message);
+    }
 
     public function handle()
     {
-        // 1. Determine Start Date (Default to today)
-        $dateArgument = $this->argument('date');
-        $startDate = $dateArgument ? Carbon::parse($dateArgument)->toDateString() : Carbon::today()->toDateString();
+        // Start Logging
+        Log::channel('attendance_rectify')->info("--- Command Started: Rectifying all NULL log_types ---");
+        $this->warn("!!! Rectifying all NULL log_types !!!");
 
-        $this->warn("!!! Rectifying logs from: {$startDate} onwards !!!");
+        try {
+            $deviceFunctionMap = Device::excludeMobile()
+                ->get(['device_id', 'function'])
+                ->pluck('function', 'device_id')
+                ->toArray();
 
-        // 2. Fetch Device Mapping (id -> function)
-        // Exclude mobile to focus on hardware devices
-        $deviceFunctionMap = Device::excludeMobile()
-            ->get(['device_id', 'function'])
-            ->pluck('function', 'device_id')
-            ->toArray();
+            // No date window: process every row with a NULL log_type, regardless of log_date
+            // or created_at. This catches backfilled "missing logs" whose dates are old.
+            $query = DB::table('attendance_logs')->whereNull('log_type');
 
-        $correctedCount = 0;
-        $processedCount = 0;
-
-        // 3. Query logs in the specified range
-        $query = DB::table('attendance_logs')
-            ->whereNotIn("log_type", ['in', 'out']) // Only check logs that are not already 'Auto'
-            ->whereDate('log_date', '>=', $startDate);
-
-        $totalFound = $query->count();
-        $this->info("Found {$totalFound} logs to verify.");
-
-        if ($totalFound === 0) {
-            $this->info("Nothing to process.");
-            return;
-        }
-
-        // 4. Process in chunks for memory efficiency
-        $query->orderBy('id')->chunk(500, function ($logs) use ($deviceFunctionMap, &$correctedCount, &$processedCount) {
-            foreach ($logs as $log) {
-                $deviceId = trim($log->DeviceID);
-
-                // Get the function from the device table
-                $deviceFunction = $deviceFunctionMap[$deviceId] ?? '';
-
-                /**
-                 * LOGIC MAPPING 
-                 * Matches your FUNCTIONS constant: 
-                 * { id: 'auto', name: 'Auto' }, { id: 'In', name: 'In' }, { id: 'Out', name: 'Out' }
-                 */
-                if ($deviceFunction === 'auto') {
-                    $expectedType = 'Auto';
-                } elseif ($deviceFunction === 'In') {
-                    $expectedType = 'In';
-                } elseif ($deviceFunction === 'Out') {
-                    $expectedType = 'Out';
-                } else {
-                    // Fallback: If 'in' is in DeviceID string, use 'In'. 
-                    // Otherwise, default to 'Auto' (NOT 'Out')
-                    $expectedType = (str_contains(strtolower($deviceId), 'in')) ? 'In' : 'Auto';
-                }
-
-                // 5. Check for mismatch and update
-                // Using trim on current log_type to catch hidden spaces
-                if (trim($log->log_type) !== $expectedType) {
-                    DB::table('attendance_logs')
-                        ->where('id', $log->id)
-                        ->update(['log_type' => $expectedType]);
-
-                    $correctedCount++;
-                }
-
-                $processedCount++;
+            $totalFound = $query->count();
+            
+            if ($totalFound === 0) {
+                $this->logInfo("Nothing to process. All logs have log_type set.");
+                return;
             }
-            // Show progress in console
-            $this->output->write(".");
-        });
 
-        $this->newline();
-        $this->table(
-            ['Total Processed', 'Total Corrected', 'Start Date'],
-            [[$processedCount, $correctedCount, $startDate]]
-        );
+            $this->logInfo("Found {$totalFound} logs with NULL log_type to fix.");
 
-        $this->info("Successfully rectified attendance logs.");
+            $correctedCount = 0;
+            $processedCount = 0;
+
+            $query->chunkById(500, function ($logs) use ($deviceFunctionMap, &$correctedCount, &$processedCount) {
+                $grouped = ['Auto' => [], 'In' => [], 'Out' => [], 'Option' => []];
+
+                foreach ($logs as $log) {
+                    $deviceId = trim($log->DeviceID);
+                    $deviceFunction = $deviceFunctionMap[$deviceId] ?? 'auto';
+
+                    $expectedType = match (strtolower($deviceFunction)) {
+                        'auto'   => 'Auto',
+                        'in'     => 'In',
+                        'out'    => 'Out',
+                        'option' => 'Option',
+                        default  => 'Auto',
+                    };
+
+                    $grouped[$expectedType][] = $log->id;
+                    $processedCount++;
+                }
+
+                foreach ($grouped as $type => $ids) {
+                    if (!empty($ids)) {
+                        DB::table('attendance_logs')->whereIn('id', $ids)->update(['log_type' => $type]);
+                        $correctedCount += count($ids);
+                    }
+                }
+                
+                $this->output->write(".");
+            });
+
+            $this->newLine();
+            
+            // Final Summary Logging
+            $summary = "Summary: Processed: {$processedCount} | Corrected: {$correctedCount}";
+            $this->logInfo($summary);
+            $this->logInfo("✓ Successfully rectified NULL attendance logs.");
+
+        } catch (\Exception $e) {
+            $errorMessage = "Error rectifying logs: " . $e->getMessage();
+            $this->error($errorMessage);
+            Log::channel('attendance_rectify')->error($errorMessage, ['exception' => $e]);
+        }
     }
 }

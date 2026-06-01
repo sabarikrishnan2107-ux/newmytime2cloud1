@@ -5,12 +5,13 @@ import { Plus, Pencil, Trash2, UserCheck, Search } from "lucide-react";
 import { getHosts, deleteHost } from "@/lib/api";
 import { notify, parseApiError } from "@/lib/utils";
 import HostModal from "./HostModal";
+import { useTranslation } from "react-i18next";
 
 const fullName = (e) =>
-    [(e?.first_name || ""), (e?.last_name || "")].filter(Boolean).join(" ").trim() ||
-    "Employee removed";
+    [(e?.first_name || ""), (e?.last_name || "")].filter(Boolean).join(" ").trim();
 
 const Hosts = () => {
+    const { t } = useTranslation();
     const [hosts, setHosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [search, setSearch] = useState("");
@@ -23,7 +24,7 @@ const Hosts = () => {
             const data = await getHosts();
             setHosts(Array.isArray(data) ? data : []);
         } catch (e) {
-            notify("Error", parseApiError(e), "error");
+            notify(t("visitor.hosts.errorTitle"), parseApiError(e), "error");
         } finally {
             setLoading(false);
         }
@@ -44,14 +45,14 @@ const Hosts = () => {
     };
 
     const onDelete = async (host) => {
-        const name = fullName(host.employee);
-        if (!window.confirm(`Remove "${name}" from the host list?`)) return;
+        const name = fullName(host.employee) || t("visitor.hosts.employeeRemoved");
+        if (!window.confirm(t("visitor.hosts.confirmRemove", { name }))) return;
         try {
             await deleteHost(host.id);
-            notify("Removed", "Host removed.", "success");
+            notify(t("visitor.hosts.removedTitle"), t("visitor.hosts.removedToast"), "success");
             fetchHosts();
         } catch (e) {
-            notify("Error", parseApiError(e), "error");
+            notify(t("visitor.hosts.errorTitle"), parseApiError(e), "error");
         }
     };
 
@@ -67,16 +68,16 @@ const Hosts = () => {
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Hosts</h1>
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t("visitor.hosts.title")}</h1>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
-                        Designated employees who receive visitors.
+                        {t("visitor.hosts.subtitle")}
                     </p>
                 </div>
                 <button
                     onClick={onAdd}
                     className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-primary-700 text-white text-sm font-bold rounded-lg shadow-sm transition-colors"
                 >
-                    <Plus size={16} /> Add Host
+                    <Plus size={16} /> {t("visitor.hosts.addHost")}
                 </button>
             </div>
 
@@ -88,13 +89,13 @@ const Hosts = () => {
                 <input
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name or employee ID"
+                    placeholder={t("visitor.hosts.searchPlaceholder")}
                     className="w-full pl-9 pr-4 py-2.5 text-sm bg-white border border-slate-200 rounded-xl shadow-sm placeholder-slate-400 text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-200"
                 />
             </div>
 
             {loading ? (
-                <p className="text-sm text-slate-500">Loading hosts...</p>
+                <p className="text-sm text-slate-500">{t("visitor.hosts.loading")}</p>
             ) : filtered.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
                     <div className="inline-flex w-12 h-12 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-primary items-center justify-center mb-3">
@@ -102,8 +103,8 @@ const Hosts = () => {
                     </div>
                     <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
                         {search
-                            ? "No hosts match your search."
-                            : "No hosts yet — add the first one."}
+                            ? t("visitor.hosts.noMatch")
+                            : t("visitor.hosts.noHostsYet")}
                     </p>
                     {!search && (
                         <button
@@ -136,7 +137,7 @@ const Hosts = () => {
                                         </p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                                             {host.employee?.employee_id
-                                                ? `ID ${host.employee.employee_id}`
+                                                ? t("visitor.hosts.idLabel", { id: host.employee.employee_id })
                                                 : "—"}
                                             {host.employee?.department?.name
                                                 ? ` · ${host.employee.department.name}`
@@ -166,13 +167,13 @@ const Hosts = () => {
                                         onClick={() => onEdit(host)}
                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"
                                     >
-                                        <Pencil size={13} /> Edit
+                                        <Pencil size={13} /> {t("visitor.common.edit")}
                                     </button>
                                     <button
                                         onClick={() => onDelete(host)}
                                         className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                                     >
-                                        <Trash2 size={13} /> Delete
+                                        <Trash2 size={13} /> {t("visitor.common.delete")}
                                     </button>
                                 </div>
                             </div>

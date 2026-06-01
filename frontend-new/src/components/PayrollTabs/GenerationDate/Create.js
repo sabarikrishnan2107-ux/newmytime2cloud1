@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 const defaultPayload = {
   branch_id: "",
@@ -27,6 +28,7 @@ const defaultPayload = {
 };
 
 const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [globalError, setGlobalError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -62,8 +64,8 @@ const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
       onSuccess({
-        title: `${pageTitle} Save`,
-        description: `${pageTitle} Save successfully`,
+        title: t("payroll.tabs.actions.successSave", { title: pageTitle }),
+        description: t("payroll.tabs.actions.successSaveDesc", { title: pageTitle }),
       });
       setOpen(false);
     } catch (error) {
@@ -75,25 +77,25 @@ const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>Add {pageTitle}</Button>
+      <Button onClick={() => setOpen(true)}>{t("payroll.tabs.actions.add", { title: pageTitle })}</Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl p-6 rounded-2xl shadow-xl w-[400px]">
           <DialogHeader>
             <DialogTitle className="text-lg font-semibold text-gray-800">
-              Create New {pageTitle}
+              {t("payroll.tabs.actions.createNew", { title: pageTitle })}
             </DialogTitle>
             <p className="text-sm text-gray-500 mt-1">
-              Salary Payslip Generation Date (Every Month)
+              {t("payroll.tabs.generationDate.dialogDesc")}
             </p>
           </DialogHeader>
 
           <div className="mt-6 space-y-6">
             {/* Branch selection */}
             <div>
-              <Label className="text-sm mb-2 block">Select Branch</Label>
+              <Label className="text-sm mb-2 block">{t("payroll.tabs.selectBranch")}</Label>
               <DropDown
-                placeholder="Choose Branch"
+                placeholder={t("payroll.tabs.chooseBranch")}
                 value={form.branch_id}
                 items={branches}
                 onChange={(val) => handleChange("branch_id", val)}
@@ -102,7 +104,7 @@ const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
 
             {/* Calendar Date Picker */}
             <div>
-              <Label className="text-sm mb-2 block">Select Date</Label>
+              <Label className="text-sm mb-2 block">{t("payroll.tabs.selectDate")}</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -110,7 +112,7 @@ const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
                     className="w-full justify-start text-left font-normal"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.date ? formatDateDubai(form.date) : <span>Pick a date</span>}
+                    {form.date ? formatDateDubai(form.date) : <span>{t("payroll.tabs.pickDate")}</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0" align="start">
@@ -135,14 +137,14 @@ const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
           {/* Footer */}
           <DialogFooter className="mt-6 flex justify-end gap-3">
             <Button variant="outline" onClick={() => setOpen(false)} className="rounded-lg">
-              Cancel
+              {t("payroll.common.cancel")}
             </Button>
             <Button
               onClick={onSubmit}
               disabled={loading}
               className="rounded-lg bg-primary text-white"
             >
-              {loading ? "Saving..." : `Create ${pageTitle}`}
+              {loading ? t("payroll.common.saving") : t("payroll.tabs.actions.create", { title: pageTitle })}
             </Button>
           </DialogFooter>
         </DialogContent>

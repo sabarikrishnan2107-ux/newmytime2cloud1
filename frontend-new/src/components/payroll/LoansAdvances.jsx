@@ -7,6 +7,7 @@ import DateRangeSelect from "@/components/ui/DateRange";
 import MonthPicker from "@/components/ui/MonthPicker";
 import { getUser } from "@/config";
 import { getCompanyLogo as fetchCompanyLogo, getCompanyProfile } from "@/lib/endpoint/company";
+import { useTranslation } from "react-i18next";
 
 const emptyLoanForm = { employee_id: "", loan_amount: "", monthly_installment: "", start_month: "", end_month: "", remarks: "" };
 const emptyAdvForm = { employee_id: "", advance_amount: "", monthly_recovery: "", issue_date: "", remarks: "" };
@@ -384,6 +385,7 @@ function resolvePhoto(employee) {
 }
 
 export default function LoansAdvances() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("loans");
   const [loanDialog, setLoanDialog] = useState(false);
   const [advDialog, setAdvDialog] = useState(false);
@@ -597,23 +599,23 @@ export default function LoansAdvances() {
   const BranchDeptEmpFilter = ({ formValue, onEmpChange }) => (
     <div className="grid grid-cols-3 gap-3">
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-gray-500">Branch</label>
+        <label className="text-xs font-medium text-gray-500">{t("payroll.common.branch")}</label>
         <select value={selBranch} onChange={e => { setSelBranch(e.target.value); setSelDept(""); onEmpChange(""); }}
           className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-          <option value="">All Branches</option>
+          <option value="">{t("payroll.common.allBranches")}</option>
           {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-gray-500">Department</label>
+        <label className="text-xs font-medium text-gray-500">{t("payroll.common.department")}</label>
         <select value={selDept} onChange={e => { setSelDept(e.target.value); onEmpChange(""); }}
           className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-          <option value="">All Depts</option>
+          <option value="">{t("payroll.common.allDepartments")}</option>
           {filtDepts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
       </div>
       <div className="space-y-1.5">
-        <label className="text-xs font-medium text-gray-500">Employee</label>
+        <label className="text-xs font-medium text-gray-500">{t("payroll.common.employee")}</label>
         <select value={formValue} onChange={e => {
           const empId = e.target.value;
           onEmpChange(empId);
@@ -626,7 +628,7 @@ export default function LoansAdvances() {
           }
         }}
           className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300">
-          <option value="">Select employee</option>
+          <option value="">{t("payroll.common.selectEmployee")}</option>
           {filtEmps.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name || ""}</option>)}
         </select>
       </div>
@@ -636,17 +638,17 @@ export default function LoansAdvances() {
   return (
     <div className="space-y-5">
       <div>
-        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Loans & Advances</h1>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Manage employee loans, salary advances, and recovery schedules</p>
+        <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.title")}</h1>
+        <p className="text-xs text-gray-500 dark:text-gray-400">{t("payroll.loans.subtitle")}</p>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-4 border-b border-gray-200 dark:border-white/10">
         <button onClick={() => setActiveTab("loans")} className={`pb-3 text-xs font-bold flex items-center gap-1.5 transition ${activeTab === "loans" ? "border-b-2 border-primary text-primary" : "text-gray-400 hover:text-gray-600"}`}>
-          <Landmark className="h-3.5 w-3.5" /> Loans
+          <Landmark className="h-3.5 w-3.5" /> {t("payroll.loans.loansTab")}
         </button>
         <button onClick={() => setActiveTab("advances")} className={`pb-3 text-xs font-bold flex items-center gap-1.5 transition ${activeTab === "advances" ? "border-b-2 border-primary text-primary" : "text-gray-400 hover:text-gray-600"}`}>
-          <HandCoins className="h-3.5 w-3.5" /> Advances
+          <HandCoins className="h-3.5 w-3.5" /> {t("payroll.loans.advancesTab")}
         </button>
       </div>
 
@@ -654,13 +656,13 @@ export default function LoansAdvances() {
       <div className="flex flex-wrap items-center gap-2.5">
         <select value={filterBranch} onChange={e => { setFilterBranch(e.target.value); setFilterDept(""); setFilterEmployee(""); }}
           className="rounded-full border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 shadow-sm hover:border-gray-400 dark:hover:border-white/20 transition cursor-pointer min-w-[140px]">
-          <option value="">Branch</option>
+          <option value="">{t("payroll.common.branch")}</option>
           {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
         </select>
 
         <select value={filterDept} onChange={e => { setFilterDept(e.target.value); setFilterEmployee(""); }}
           className="rounded-full border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 shadow-sm hover:border-gray-400 dark:hover:border-white/20 transition cursor-pointer min-w-[160px]">
-          <option value="">Department</option>
+          <option value="">{t("payroll.common.department")}</option>
           {filterDepts.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
         </select>
 
@@ -676,7 +678,7 @@ export default function LoansAdvances() {
           }
         }}
           className="rounded-full border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 shadow-sm hover:border-gray-400 dark:hover:border-white/20 transition cursor-pointer min-w-[160px]">
-          <option value="">Employees</option>
+          <option value="">{t("payroll.common.employees")}</option>
           {filterEmps.map(emp => <option key={emp.id} value={emp.id}>{emp.first_name} {emp.last_name || ""}</option>)}
         </select>
 
@@ -689,12 +691,12 @@ export default function LoansAdvances() {
 
         <div className="relative flex-1 min-w-[200px] max-w-xs">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-          <input placeholder="Search employee or ID..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+          <input placeholder={t("payroll.register.searchEmpId")} value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
             className="w-full rounded-full border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 pl-10 pr-3 py-2 text-sm text-gray-700 dark:text-gray-300 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition" />
         </div>
 
         {(searchQuery || filterBranch || filterDept || filterEmployee || filterFrom || filterTo) && (
-          <button onClick={clearFilters} title="Clear all filters"
+          <button onClick={clearFilters} title={t("payroll.loans.clearAllFilters")}
             className="rounded-full border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 p-2.5 text-gray-500 hover:text-red-500 hover:border-red-300 shadow-sm transition">
             <RotateCcw className="h-4 w-4" />
           </button>
@@ -708,11 +710,11 @@ export default function LoansAdvances() {
             {loanMode === "detail" ? (
               <button onClick={() => { setLoanMode("table"); setViewLoan(null); }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                ← Back to List
+                ← {t("payroll.loans.backToList")}
               </button>
             ) : <span />}
             <button onClick={() => { setEditingLoanId(null); setLoanForm(emptyLoanForm); setLoanDialog(true); }} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm">
-              <Plus className="h-3.5 w-3.5" /> Add Loan
+              <Plus className="h-3.5 w-3.5" /> {t("payroll.loans.addLoan")}
             </button>
           </div>
 
@@ -723,13 +725,13 @@ export default function LoansAdvances() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-white/5 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                      <th className="px-4 py-4">Employee</th>
-                      <th className="px-3 py-4">Loan Amount</th>
-                      <th className="px-3 py-4">Installment</th>
-                      <th className="px-3 py-4">Outstanding</th>
-                      <th className="px-3 py-4">Period</th>
-                      <th className="px-3 py-4 min-w-[160px]">Recovered</th>
-                      <th className="px-3 py-4">Status</th>
+                      <th className="px-4 py-4">{t("payroll.common.employee")}</th>
+                      <th className="px-3 py-4">{t("payroll.loans.loanAmount")}</th>
+                      <th className="px-3 py-4">{t("payroll.loans.installment")}</th>
+                      <th className="px-3 py-4">{t("payroll.loans.outstanding")}</th>
+                      <th className="px-3 py-4">{t("payroll.loans.period")}</th>
+                      <th className="px-3 py-4 min-w-[160px]">{t("payroll.loans.recovered")}</th>
+                      <th className="px-3 py-4">{t("payroll.common.status")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -751,7 +753,7 @@ export default function LoansAdvances() {
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-800 dark:text-gray-100">{l.employeeName}</div>
-                                <div className="text-xs text-gray-400 mt-0.5">ID: {l.employeeId}</div>
+                                <div className="text-xs text-gray-400 mt-0.5">{t("payroll.fields.id")}: {l.employeeId}</div>
                               </div>
                             </div>
                           </td>
@@ -775,7 +777,7 @@ export default function LoansAdvances() {
                     })}
                     {displayedLoans.length === 0 && (
                       <tr><td colSpan="7" className="px-4 py-10 text-center text-gray-400 text-sm">
-                        {loans.length === 0 ? 'No loans found. Click "Add Loan" to create one.' : "No loans match the selected filters."}
+                        {loans.length === 0 ? t("payroll.loans.noLoans") : t("payroll.loans.noLoansMatch")}
                       </td></tr>
                     )}
                   </tbody>
@@ -790,12 +792,12 @@ export default function LoansAdvances() {
             {/* Left list */}
             <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden flex flex-col">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Loans ({displayedLoans.length})</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("payroll.loans.loansCount", { count: displayedLoans.length })}</h3>
               </div>
               <div className="flex-1 overflow-y-auto max-h-[640px]">
                 {displayedLoans.length === 0 && (
                   <div className="px-4 py-10 text-center text-gray-400 text-sm">
-                    {loans.length === 0 ? "No loans yet" : "No matches"}
+                    {loans.length === 0 ? t("payroll.loans.noLoansYet") : t("payroll.loans.noMatches")}
                   </div>
                 )}
                 {displayedLoans.map(l => {
@@ -814,7 +816,7 @@ export default function LoansAdvances() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{l.employeeName}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">ID: {l.employeeId}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{t("payroll.fields.id")}: {l.employeeId}</div>
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-xs font-bold text-gray-800 dark:text-gray-100">{l.loanAmount.toLocaleString()}</div>
@@ -843,8 +845,8 @@ export default function LoansAdvances() {
                   const d = new Date(y, m - 1 + n, 1);
                   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
                 };
-                const lastDeduction = installmentsPaid > 0 ? monthShift(l.startMonth, installmentsPaid - 1) : "Not started";
-                const nextDeduction = installmentsLeft > 0 ? monthShift(l.startMonth, installmentsPaid) : "Fully paid";
+                const lastDeduction = installmentsPaid > 0 ? monthShift(l.startMonth, installmentsPaid - 1) : t("payroll.loans.notStarted");
+                const nextDeduction = installmentsLeft > 0 ? monthShift(l.startMonth, installmentsPaid) : t("payroll.loans.fullyPaid");
 
                 return (
                   <div className="h-full flex flex-col">
@@ -862,7 +864,7 @@ export default function LoansAdvances() {
                           </div>
                           <div className="min-w-0">
                             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">{l.employeeName}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ID: {l.employeeId} · Loan #{l.id}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("payroll.fields.id")}: {l.employeeId} · {t("payroll.loans.loanWord")} #{l.id}</p>
                             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
                               {emp?.department?.name && (
                                 <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> {emp.department.name}</span>
@@ -877,16 +879,16 @@ export default function LoansAdvances() {
                           </div>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
-                          <button title="Download PDF" onClick={async () => {
+                          <button title={t("payroll.loans.downloadPdf")} onClick={async () => {
                             try {
                               const params = await buildQueryParams({});
                               const url = `${api.defaults.baseURL}/payroll-management/loan-advance-statement/${l.employee_id}?company_id=${params.company_id}`;
                               window.open(url, "_blank");
-                            } catch (e) { alert("Failed to open statement"); }
+                            } catch (e) { alert(t("payroll.loans.failedOpenStatement")); }
                           }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-primary transition">
                             <Download className="h-4 w-4" />
                           </button>
-                          <button title="Edit" onClick={() => {
+                          <button title={t("payroll.common.edit")} onClick={() => {
                             setEditingLoanId(l.id);
                             setLoanForm({
                               employee_id: String(l.employee_id),
@@ -904,13 +906,13 @@ export default function LoansAdvances() {
                           }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-primary transition">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button title="Delete" onClick={async () => {
-                            if (!confirm(`Delete loan for ${l.employeeName}?`)) return;
+                          <button title={t("payroll.common.delete")} onClick={async () => {
+                            if (!confirm(t("payroll.loans.confirmDeleteLoan", { name: l.employeeName }))) return;
                             try {
                               const params = await buildQueryParams({});
                               await api.delete(`/payroll-management/loans/${l.id}`, { params });
                               fetchLoans();
-                            } catch (e) { alert(e?.response?.data?.message || "Delete failed"); }
+                            } catch (e) { alert(e?.response?.data?.message || t("payroll.common.deleteFailed")); }
                           }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-red-500 transition">
                             <Trash className="h-4 w-4" />
                           </button>
@@ -928,7 +930,7 @@ export default function LoansAdvances() {
                               <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                             </div>
                           </div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Total Loan</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{t("payroll.loans.totalLoan")}</p>
                           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{l.loanAmount.toLocaleString()}</p>
                         </div>
                         <div className="relative rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all overflow-hidden">
@@ -938,9 +940,9 @@ export default function LoansAdvances() {
                               <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                             </div>
                           </div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Paid So Far</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{t("payroll.loans.paidSoFar")}</p>
                           <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{totalPaid.toLocaleString()}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{paidPercent}% of total</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{t("payroll.loans.percentOfTotal", { percent: paidPercent })}</p>
                         </div>
                         <div className="relative rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all overflow-hidden">
                           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-400 to-rose-600"></div>
@@ -949,9 +951,9 @@ export default function LoansAdvances() {
                               <AlertCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                             </div>
                           </div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Outstanding</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{t("payroll.loans.outstanding")}</p>
                           <p className="text-2xl font-bold text-rose-600 dark:text-rose-400 tabular-nums">{l.outstandingBalance.toLocaleString()}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{installmentsLeft} installments left</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{t("payroll.loans.installmentsLeftCount", { count: installmentsLeft })}</p>
                         </div>
                       </div>
 
@@ -962,25 +964,25 @@ export default function LoansAdvances() {
                             <TrendingUp className="h-4 w-4 text-primary" />
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Recovery Progress</h4>
-                            <p className="text-[10px] text-gray-400">Tracking installment recovery</p>
+                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.recoveryProgress")}</h4>
+                            <p className="text-[10px] text-gray-400">{t("payroll.loans.trackingInstallment")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-6 mb-6">
-                          <CircularProgress percent={paidPercent} size={140} stroke={12} gradientFrom="#6366f1" gradientTo="#3b82f6" labelTop="Recovered" labelBottom="of total" gradientId="loanProg" />
+                          <CircularProgress percent={paidPercent} size={140} stroke={12} gradientFrom="#6366f1" gradientTo="#3b82f6" labelTop={t("payroll.loans.recovered")} labelBottom={t("payroll.loans.ofTotal")} gradientId="loanProg" />
                           <div className="flex-1 space-y-3">
                             <div className="flex items-center gap-3">
                               <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                               <div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Paid</div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{t("payroll.loans.paid")}</div>
                                 <div className="text-base font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{installmentsPaid} <span className="text-xs text-gray-400 font-normal">/ {totalInstallments}</span></div>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
                               <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                               <div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Remaining</div>
-                                <div className="text-base font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{installmentsLeft} <span className="text-xs text-gray-400 font-normal">installments</span></div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{t("payroll.loans.remaining")}</div>
+                                <div className="text-base font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{installmentsLeft} <span className="text-xs text-gray-400 font-normal">{t("payroll.loans.installmentsWord")}</span></div>
                               </div>
                             </div>
                           </div>
@@ -995,23 +997,23 @@ export default function LoansAdvances() {
                             <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                               <Calendar className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                             </div>
-                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Payment Schedule</h4>
+                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.paymentSchedule")}</h4>
                           </div>
                           <div className="space-y-1">
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Monthly Installment</span>
+                              <span className="text-xs text-gray-500">{t("payroll.loans.monthlyInstallment")}</span>
                               <span className="text-sm font-bold text-gray-800 dark:text-gray-100 tabular-nums">{l.monthlyInstallment.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Loan Period</span>
+                              <span className="text-xs text-gray-500">{t("payroll.loans.loanPeriod")}</span>
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{l.startMonth} → {l.endMonth}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/10">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Last Deduction</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{t("payroll.loans.lastDeduction")}</span>
                               <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{lastDeduction}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/10">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>Next Deduction</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>{t("payroll.loans.nextDeduction")}</span>
                               <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{nextDeduction}</span>
                             </div>
                           </div>
@@ -1022,26 +1024,26 @@ export default function LoansAdvances() {
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                               <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                             </div>
-                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Loan Summary</h4>
+                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.loanSummary")}</h4>
                           </div>
                           <div className="space-y-1">
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Status</span>
+                              <span className="text-xs text-gray-500">{t("payroll.common.status")}</span>
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${l.status === "active" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${l.status === "active" ? "bg-emerald-500" : "bg-gray-400"}`}></span>
                                 {l.status?.toUpperCase()}
                               </span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Total Installments</span>
+                              <span className="text-xs text-gray-500">{t("payroll.loans.totalInstallments")}</span>
                               <span className="text-sm font-bold text-gray-800 dark:text-gray-100 tabular-nums">{totalInstallments}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-500" />Installments Paid</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-500" />{t("payroll.loans.installmentsPaid")}</span>
                               <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{installmentsPaid}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><AlertCircle className="h-3 w-3 text-amber-500" />Installments Left</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><AlertCircle className="h-3 w-3 text-amber-500" />{t("payroll.loans.installmentsLeft")}</span>
                               <span className="text-sm font-bold text-amber-600 dark:text-amber-400 tabular-nums">{installmentsLeft}</span>
                             </div>
                           </div>
@@ -1056,20 +1058,20 @@ export default function LoansAdvances() {
                               <Calendar className="h-4 w-4 text-primary" />
                             </div>
                             <div>
-                              <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Deduction Schedule</h4>
-                              <p className="text-[10px] text-gray-400">{totalInstallments} monthly deductions</p>
+                              <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.deductionSchedule")}</h4>
+                              <p className="text-[10px] text-gray-400">{t("payroll.loans.monthlyDeductionsCount", { count: totalInstallments })}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 text-[10px]">
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Paid</span>
-                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Next</span>
-                            <span className="flex items-center gap-1 text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>Upcoming</span>
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>{t("payroll.loans.paid")}</span>
+                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><span className="w-2 h-2 rounded-full bg-amber-500"></span>{t("payroll.loans.next")}</span>
+                            <span className="flex items-center gap-1 text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>{t("payroll.loans.upcoming")}</span>
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
                           {Array.from({ length: totalInstallments }, (_, i) => {
                             const monthLabel = (() => {
-                              if (!/^\d{4}-\d{2}/.test(l.startMonth || "")) return `Month ${i + 1}`;
+                              if (!/^\d{4}-\d{2}/.test(l.startMonth || "")) return t("payroll.loans.monthN", { n: i + 1 });
                               const [y, m] = l.startMonth.split("-").map(Number);
                               const d = new Date(y, m - 1 + i, 1);
                               return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
@@ -1099,7 +1101,7 @@ export default function LoansAdvances() {
                                     : isNext ? "text-amber-600 dark:text-amber-400"
                                     : "text-gray-400"
                                   }`}>
-                                    {isPaid ? "Deducted" : isNext ? "Next Deduction" : "Upcoming"}
+                                    {isPaid ? t("payroll.loans.deducted") : isNext ? t("payroll.loans.nextDeduction") : t("payroll.loans.upcoming")}
                                   </div>
                                 </div>
                                 <div className={`text-sm font-bold tabular-nums ${
@@ -1114,7 +1116,7 @@ export default function LoansAdvances() {
                           })}
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-xs">
-                          <span className="text-gray-500">Total Deducted So Far</span>
+                          <span className="text-gray-500">{t("payroll.loans.totalDeductedSoFar")}</span>
                           <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{(installmentsPaid * l.monthlyInstallment).toLocaleString()}</span>
                         </div>
                       </div>
@@ -1123,7 +1125,7 @@ export default function LoansAdvances() {
                         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-6 shadow-sm">
                           <div className="flex items-center gap-2 mb-3">
                             <div className="w-1 h-4 rounded-full bg-primary"></div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Remarks</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">{t("payroll.common.remarks")}</h4>
                           </div>
                           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed pl-3">{l.remarks}</p>
                         </div>
@@ -1133,7 +1135,7 @@ export default function LoansAdvances() {
                 );
               })() : (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm p-10 text-center">
-                  Select a loan from the list to view details
+                  {t("payroll.loans.selectLoan")}
                 </div>
               )}
             </div>
@@ -1149,11 +1151,11 @@ export default function LoansAdvances() {
             {advMode === "detail" ? (
               <button onClick={() => { setAdvMode("table"); setViewAdv(null); }}
                 className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-                ← Back to List
+                ← {t("payroll.loans.backToList")}
               </button>
             ) : <span />}
             <button onClick={() => { setEditingAdvId(null); setAdvForm(emptyAdvForm); setAdvDialog(true); }} className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm">
-              <Plus className="h-3.5 w-3.5" /> Add Advance
+              <Plus className="h-3.5 w-3.5" /> {t("payroll.loans.addAdvance")}
             </button>
           </div>
 
@@ -1164,7 +1166,7 @@ export default function LoansAdvances() {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-white/5 text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                      <th className="px-4 py-4">Employee</th><th className="px-3 py-4">Advance</th><th className="px-3 py-4">Monthly Recovery</th><th className="px-3 py-4">Outstanding</th><th className="px-3 py-4">Issue Date</th><th className="px-3 py-4">Status</th>
+                      <th className="px-4 py-4">{t("payroll.common.employee")}</th><th className="px-3 py-4">{t("payroll.loans.advance")}</th><th className="px-3 py-4">{t("payroll.loans.monthlyRecovery")}</th><th className="px-3 py-4">{t("payroll.loans.outstanding")}</th><th className="px-3 py-4">{t("payroll.loans.issueDate")}</th><th className="px-3 py-4">{t("payroll.common.status")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-white/5">
@@ -1185,7 +1187,7 @@ export default function LoansAdvances() {
                               </div>
                               <div>
                                 <div className="text-sm font-medium text-gray-800 dark:text-gray-100">{a.employeeName}</div>
-                                <div className="text-xs text-gray-400 mt-0.5">ID: {a.employeeId}</div>
+                                <div className="text-xs text-gray-400 mt-0.5">{t("payroll.fields.id")}: {a.employeeId}</div>
                               </div>
                             </div>
                           </td>
@@ -1199,7 +1201,7 @@ export default function LoansAdvances() {
                     })}
                     {displayedAdvances.length === 0 && (
                       <tr><td colSpan="6" className="px-4 py-10 text-center text-gray-400 text-sm">
-                        {advances.length === 0 ? 'No advances found. Click "Add Advance" to create one.' : "No advances match the selected filters."}
+                        {advances.length === 0 ? t("payroll.loans.noAdvances") : t("payroll.loans.noAdvancesMatch")}
                       </td></tr>
                     )}
                   </tbody>
@@ -1214,12 +1216,12 @@ export default function LoansAdvances() {
             {/* Left list */}
             <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden flex flex-col">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-white/5 flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">Advances ({displayedAdvances.length})</h3>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">{t("payroll.loans.advancesCount", { count: displayedAdvances.length })}</h3>
               </div>
               <div className="flex-1 overflow-y-auto max-h-[640px]">
                 {displayedAdvances.length === 0 && (
                   <div className="px-4 py-10 text-center text-gray-400 text-sm">
-                    {advances.length === 0 ? "No advances yet" : "No matches"}
+                    {advances.length === 0 ? t("payroll.loans.noAdvancesYet") : t("payroll.loans.noMatches")}
                   </div>
                 )}
                 {displayedAdvances.map(a => {
@@ -1238,7 +1240,7 @@ export default function LoansAdvances() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{a.employeeName}</div>
-                        <div className="text-xs text-gray-400 mt-0.5">ID: {a.employeeId}</div>
+                        <div className="text-xs text-gray-400 mt-0.5">{t("payroll.fields.id")}: {a.employeeId}</div>
                       </div>
                       <div className="text-right shrink-0">
                         <div className="text-xs font-bold text-gray-800 dark:text-gray-100">{a.advanceAmount.toLocaleString()}</div>
@@ -1268,8 +1270,8 @@ export default function LoansAdvances() {
                   d.setMonth(d.getMonth() + n);
                   return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
                 };
-                const lastDeduction = recoveriesDone > 0 ? monthShift(a.issueDate, recoveriesDone - 1) : "Not started";
-                const nextDeduction = recoveriesLeft > 0 ? monthShift(a.issueDate, recoveriesDone) : "Fully recovered";
+                const lastDeduction = recoveriesDone > 0 ? monthShift(a.issueDate, recoveriesDone - 1) : t("payroll.loans.notStarted");
+                const nextDeduction = recoveriesLeft > 0 ? monthShift(a.issueDate, recoveriesDone) : t("payroll.loans.fullyRecovered");
 
                 return (
                   <div className="h-full flex flex-col">
@@ -1287,7 +1289,7 @@ export default function LoansAdvances() {
                           </div>
                           <div className="min-w-0">
                             <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 truncate">{a.employeeName}</h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">ID: {a.employeeId} · Advance #{a.id}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{t("payroll.fields.id")}: {a.employeeId} · {t("payroll.loans.advanceWord")} #{a.id}</p>
                             <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[11px] text-gray-500 dark:text-gray-400">
                               {emp?.department?.name && (
                                 <span className="flex items-center gap-1"><Briefcase className="h-3 w-3" /> {emp.department.name}</span>
@@ -1302,16 +1304,16 @@ export default function LoansAdvances() {
                           </div>
                         </div>
                         <div className="flex gap-1.5 shrink-0">
-                          <button title="Download PDF" onClick={async () => {
+                          <button title={t("payroll.loans.downloadPdf")} onClick={async () => {
                             try {
                               const params = await buildQueryParams({});
                               const url = `${api.defaults.baseURL}/payroll-management/loan-advance-statement/${a.employee_id}?company_id=${params.company_id}`;
                               window.open(url, "_blank");
-                            } catch (e) { alert("Failed to open statement"); }
+                            } catch (e) { alert(t("payroll.loans.failedOpenStatement")); }
                           }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-amber-500 transition">
                             <Download className="h-4 w-4" />
                           </button>
-                          <button title="Edit" onClick={() => {
+                          <button title={t("payroll.common.edit")} onClick={() => {
                             setEditingAdvId(a.id);
                             setAdvForm({
                               employee_id: String(a.employee_id),
@@ -1328,13 +1330,13 @@ export default function LoansAdvances() {
                           }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-primary transition">
                             <Edit className="h-4 w-4" />
                           </button>
-                          <button title="Delete" onClick={async () => {
-                            if (!confirm(`Delete advance for ${a.employeeName}?`)) return;
+                          <button title={t("payroll.common.delete")} onClick={async () => {
+                            if (!confirm(t("payroll.loans.confirmDeleteAdvance", { name: a.employeeName }))) return;
                             try {
                               const params = await buildQueryParams({});
                               await api.delete(`/payroll-management/advances/${a.id}`, { params });
                               fetchAdvances();
-                            } catch (e) { alert(e?.response?.data?.message || "Delete failed"); }
+                            } catch (e) { alert(e?.response?.data?.message || t("payroll.common.deleteFailed")); }
                           }} className="p-2 rounded-lg border border-gray-200 dark:border-white/10 hover:bg-gray-100 dark:hover:bg-white/10 text-gray-500 dark:text-gray-400 hover:text-red-500 transition">
                             <Trash className="h-4 w-4" />
                           </button>
@@ -1351,7 +1353,7 @@ export default function LoansAdvances() {
                               <Wallet className="h-5 w-5 text-amber-600 dark:text-amber-400" />
                             </div>
                           </div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Total Advance</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{t("payroll.loans.totalAdvance")}</p>
                           <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 tabular-nums">{a.advanceAmount.toLocaleString()}</p>
                         </div>
                         <div className="relative rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all overflow-hidden">
@@ -1361,9 +1363,9 @@ export default function LoansAdvances() {
                               <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
                             </div>
                           </div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Recovered</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{t("payroll.loans.recovered")}</p>
                           <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{totalPaid.toLocaleString()}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{paidPercent}% of total</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{t("payroll.loans.percentOfTotal", { percent: paidPercent })}</p>
                         </div>
                         <div className="relative rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all overflow-hidden">
                           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-rose-400 to-rose-600"></div>
@@ -1372,9 +1374,9 @@ export default function LoansAdvances() {
                               <AlertCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />
                             </div>
                           </div>
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">Outstanding</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 mb-1">{t("payroll.loans.outstanding")}</p>
                           <p className="text-2xl font-bold text-rose-600 dark:text-rose-400 tabular-nums">{a.outstandingBalance.toLocaleString()}</p>
-                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{recoveriesLeft} recoveries left</p>
+                          <p className="text-[10px] text-gray-400 dark:text-gray-500 mt-1">{t("payroll.loans.recoveriesLeftCount", { count: recoveriesLeft })}</p>
                         </div>
                       </div>
 
@@ -1384,25 +1386,25 @@ export default function LoansAdvances() {
                             <TrendingUp className="h-4 w-4 text-amber-500" />
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Recovery Progress</h4>
-                            <p className="text-[10px] text-gray-400">Tracking advance recovery</p>
+                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.recoveryProgress")}</h4>
+                            <p className="text-[10px] text-gray-400">{t("payroll.loans.trackingAdvance")}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-6">
-                          <CircularProgress percent={paidPercent} size={140} stroke={12} gradientFrom="#f59e0b" gradientTo="#f97316" labelTop="Recovered" labelBottom="of total" gradientId="advProg" />
+                          <CircularProgress percent={paidPercent} size={140} stroke={12} gradientFrom="#f59e0b" gradientTo="#f97316" labelTop={t("payroll.loans.recovered")} labelBottom={t("payroll.loans.ofTotal")} gradientId="advProg" />
                           <div className="flex-1 space-y-3">
                             <div className="flex items-center gap-3">
                               <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                               <div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Recovered</div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{t("payroll.loans.recovered")}</div>
                                 <div className="text-base font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">{recoveriesDone} <span className="text-xs text-gray-400 font-normal">/ {recoveriesTotal}</span></div>
                               </div>
                             </div>
                             <div className="flex items-center gap-3">
                               <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
                               <div>
-                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">Remaining</div>
-                                <div className="text-base font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{recoveriesLeft} <span className="text-xs text-gray-400 font-normal">recoveries</span></div>
+                                <div className="text-[10px] uppercase tracking-wider text-gray-500 font-medium">{t("payroll.loans.remaining")}</div>
+                                <div className="text-base font-semibold text-amber-600 dark:text-amber-400 tabular-nums">{recoveriesLeft} <span className="text-xs text-gray-400 font-normal">{t("payroll.loans.recoveriesWord")}</span></div>
                               </div>
                             </div>
                           </div>
@@ -1415,23 +1417,23 @@ export default function LoansAdvances() {
                             <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
                               <Calendar className="h-4 w-4 text-amber-500" />
                             </div>
-                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Recovery Schedule</h4>
+                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.recoverySchedule")}</h4>
                           </div>
                           <div className="space-y-1">
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Monthly Recovery</span>
+                              <span className="text-xs text-gray-500">{t("payroll.loans.monthlyRecovery")}</span>
                               <span className="text-sm font-bold text-gray-800 dark:text-gray-100 tabular-nums">{a.monthlyRecovery.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Issue Date</span>
+                              <span className="text-xs text-gray-500">{t("payroll.loans.issueDate")}</span>
                               <span className="text-sm font-medium text-gray-700 dark:text-gray-200">{a.issueDate}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-900/10 border border-emerald-100 dark:border-emerald-500/10">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>Last Deduction</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>{t("payroll.loans.lastDeduction")}</span>
                               <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{lastDeduction}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg bg-amber-50/50 dark:bg-amber-900/10 border border-amber-100 dark:border-amber-500/10">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>Next Deduction</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>{t("payroll.loans.nextDeduction")}</span>
                               <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{nextDeduction}</span>
                             </div>
                           </div>
@@ -1442,26 +1444,26 @@ export default function LoansAdvances() {
                             <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                               <CheckCircle className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                             </div>
-                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Advance Summary</h4>
+                            <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.advanceSummary")}</h4>
                           </div>
                           <div className="space-y-1">
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Status</span>
+                              <span className="text-xs text-gray-500">{t("payroll.common.status")}</span>
                               <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${a.status === "active" ? "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400" : "bg-gray-100 dark:bg-gray-800 text-gray-500"}`}>
                                 <span className={`w-1.5 h-1.5 rounded-full ${a.status === "active" ? "bg-emerald-500" : "bg-gray-400"}`}></span>
                                 {a.status?.toUpperCase()}
                               </span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500">Total Recoveries</span>
+                              <span className="text-xs text-gray-500">{t("payroll.loans.totalRecoveries")}</span>
                               <span className="text-sm font-bold text-gray-800 dark:text-gray-100 tabular-nums">{recoveriesTotal}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-500" />Recoveries Done</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><CheckCircle className="h-3 w-3 text-emerald-500" />{t("payroll.loans.recoveriesDone")}</span>
                               <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{recoveriesDone}</span>
                             </div>
                             <div className="flex justify-between items-center py-2.5 px-3 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition">
-                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><AlertCircle className="h-3 w-3 text-amber-500" />Recoveries Left</span>
+                              <span className="text-xs text-gray-500 flex items-center gap-1.5"><AlertCircle className="h-3 w-3 text-amber-500" />{t("payroll.loans.recoveriesLeft")}</span>
                               <span className="text-sm font-bold text-amber-600 dark:text-amber-400 tabular-nums">{recoveriesLeft}</span>
                             </div>
                           </div>
@@ -1476,22 +1478,22 @@ export default function LoansAdvances() {
                               <Calendar className="h-4 w-4 text-amber-500" />
                             </div>
                             <div>
-                              <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">Recovery Schedule</h4>
-                              <p className="text-[10px] text-gray-400">{recoveriesTotal} monthly recoveries</p>
+                              <h4 className="text-sm font-bold text-gray-800 dark:text-gray-100">{t("payroll.loans.recoverySchedule")}</h4>
+                              <p className="text-[10px] text-gray-400">{t("payroll.loans.monthlyRecoveriesCount", { count: recoveriesTotal })}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-3 text-[10px]">
-                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>Recovered</span>
-                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><span className="w-2 h-2 rounded-full bg-amber-500"></span>Next</span>
-                            <span className="flex items-center gap-1 text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>Upcoming</span>
+                            <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400"><span className="w-2 h-2 rounded-full bg-emerald-500"></span>{t("payroll.loans.recovered")}</span>
+                            <span className="flex items-center gap-1 text-amber-600 dark:text-amber-400"><span className="w-2 h-2 rounded-full bg-amber-500"></span>{t("payroll.loans.next")}</span>
+                            <span className="flex items-center gap-1 text-gray-400"><span className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-600"></span>{t("payroll.loans.upcoming")}</span>
                           </div>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-[320px] overflow-y-auto pr-1">
                           {Array.from({ length: recoveriesTotal }, (_, i) => {
                             const monthLabel = (() => {
-                              if (!a.issueDate) return `Month ${i + 1}`;
+                              if (!a.issueDate) return t("payroll.loans.monthN", { n: i + 1 });
                               const d = new Date(a.issueDate);
-                              if (isNaN(d.getTime())) return `Month ${i + 1}`;
+                              if (isNaN(d.getTime())) return t("payroll.loans.monthN", { n: i + 1 });
                               d.setMonth(d.getMonth() + i);
                               return d.toLocaleDateString("en-US", { month: "short", year: "numeric" });
                             })();
@@ -1520,7 +1522,7 @@ export default function LoansAdvances() {
                                     : isNext ? "text-amber-600 dark:text-amber-400"
                                     : "text-gray-400"
                                   }`}>
-                                    {isPaid ? "Recovered" : isNext ? "Next Recovery" : "Upcoming"}
+                                    {isPaid ? t("payroll.loans.recovered") : isNext ? t("payroll.loans.nextRecovery") : t("payroll.loans.upcoming")}
                                   </div>
                                 </div>
                                 <div className={`text-sm font-bold tabular-nums ${
@@ -1535,7 +1537,7 @@ export default function LoansAdvances() {
                           })}
                         </div>
                         <div className="mt-4 pt-4 border-t border-gray-100 dark:border-white/5 flex items-center justify-between text-xs">
-                          <span className="text-gray-500">Total Recovered So Far</span>
+                          <span className="text-gray-500">{t("payroll.loans.totalRecoveredSoFar")}</span>
                           <span className="font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">{(recoveriesDone * a.monthlyRecovery).toLocaleString()}</span>
                         </div>
                       </div>
@@ -1544,7 +1546,7 @@ export default function LoansAdvances() {
                         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900 p-6 shadow-sm">
                           <div className="flex items-center gap-2 mb-3">
                             <div className="w-1 h-4 rounded-full bg-amber-500"></div>
-                            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">Remarks</h4>
+                            <h4 className="text-xs font-bold uppercase tracking-wider text-gray-600 dark:text-gray-300">{t("payroll.common.remarks")}</h4>
                           </div>
                           <p className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed pl-3">{a.remarks}</p>
                         </div>
@@ -1554,7 +1556,7 @@ export default function LoansAdvances() {
                 );
               })() : (
                 <div className="h-full flex items-center justify-center text-gray-400 text-sm p-10 text-center">
-                  Select an advance from the list to view details
+                  {t("payroll.loans.selectAdvance")}
                 </div>
               )}
             </div>
@@ -1569,52 +1571,52 @@ export default function LoansAdvances() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setLoanDialog(false)}></div>
           <div className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{editingLoanId ? "Edit Loan" : "New Loan"}</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{editingLoanId ? t("payroll.loans.editLoan") : t("payroll.loans.newLoan")}</h3>
               <button onClick={() => { setLoanDialog(false); setEditingLoanId(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-4">
               <BranchDeptEmpFilter formValue={loanForm.employee_id} onEmpChange={v => setLoanForm({ ...loanForm, employee_id: v })} />
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Loan Amount</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.loans.loanAmount")}</label>
                   <input type="number" placeholder="0" value={loanForm.loan_amount} onChange={e => setLoanForm({ ...loanForm, loan_amount: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Monthly Installment</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.loans.monthlyInstallment")}</label>
                   <input type="number" placeholder="0" value={loanForm.monthly_installment} onChange={e => setLoanForm({ ...loanForm, monthly_installment: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Start Month</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.loans.startMonth")}</label>
                   <MonthPicker
                     value={loanForm.start_month}
                     onChange={v => setLoanForm({ ...loanForm, start_month: v })}
-                    placeholder="Select start month"
+                    placeholder={t("payroll.loans.selectStartMonth")}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">End Month</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.loans.endMonth")}</label>
                   <MonthPicker
                     value={loanForm.end_month}
                     onChange={v => setLoanForm({ ...loanForm, end_month: v })}
-                    placeholder="Select end month"
+                    placeholder={t("payroll.loans.selectEndMonth")}
                   />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Remarks</label>
-                <textarea placeholder="Reason..." rows={2} value={loanForm.remarks} onChange={e => setLoanForm({ ...loanForm, remarks: e.target.value })}
+                <label className="text-xs font-medium text-gray-500">{t("payroll.common.remarks")}</label>
+                <textarea placeholder={t("payroll.adjustments.reasonPlaceholder")} rows={2} value={loanForm.remarks} onChange={e => setLoanForm({ ...loanForm, remarks: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 resize-none"></textarea>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => { setLoanDialog(false); setEditingLoanId(null); }}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Cancel</button>
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">{t("payroll.common.cancel")}</button>
               <button disabled={saving} onClick={async () => {
-                if (!loanForm.employee_id || !loanForm.loan_amount || !loanForm.monthly_installment) { alert("Employee, Loan Amount, and Monthly Installment are required"); return; }
+                if (!loanForm.employee_id || !loanForm.loan_amount || !loanForm.monthly_installment) { alert(t("payroll.loans.loanValidation")); return; }
                 setSaving(true);
                 try {
                   const params = await buildQueryParams({});
@@ -1627,11 +1629,11 @@ export default function LoansAdvances() {
                   setLoanForm(emptyLoanForm);
                   setEditingLoanId(null);
                   fetchLoans();
-                } catch (e) { alert(e?.response?.data?.message || "Save failed"); }
+                } catch (e) { alert(e?.response?.data?.message || t("payroll.common.saveFailed")); }
                 finally { setSaving(false); }
               }}
                 className="px-4 py-2 rounded-lg bg-primary text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm disabled:opacity-50">
-                {saving ? "Saving..." : editingLoanId ? "Update Loan" : "Save Loan"}
+                {saving ? t("payroll.common.saving") : editingLoanId ? t("payroll.loans.updateLoan") : t("payroll.loans.saveLoan")}
               </button>
             </div>
           </div>
@@ -1644,39 +1646,39 @@ export default function LoansAdvances() {
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setAdvDialog(false)}></div>
           <div className="relative w-full max-w-lg bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-white/10 p-6">
             <div className="flex items-center justify-between mb-5">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{editingAdvId ? "Edit Advance" : "New Advance"}</h3>
+              <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">{editingAdvId ? t("payroll.loans.editAdvance") : t("payroll.loans.newAdvance")}</h3>
               <button onClick={() => { setAdvDialog(false); setEditingAdvId(null); }} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400"><X className="h-4 w-4" /></button>
             </div>
             <div className="space-y-4">
               <BranchDeptEmpFilter formValue={advForm.employee_id} onEmpChange={v => setAdvForm({ ...advForm, employee_id: v })} />
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Advance Amount</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.loans.advanceAmount")}</label>
                   <input type="number" placeholder="0" value={advForm.advance_amount} onChange={e => setAdvForm({ ...advForm, advance_amount: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-medium text-gray-500">Monthly Recovery</label>
+                  <label className="text-xs font-medium text-gray-500">{t("payroll.loans.monthlyRecovery")}</label>
                   <input type="number" placeholder="0" value={advForm.monthly_recovery} onChange={e => setAdvForm({ ...advForm, monthly_recovery: e.target.value })}
                     className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
                 </div>
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Issue Date</label>
+                <label className="text-xs font-medium text-gray-500">{t("payroll.loans.issueDate")}</label>
                 <input type="date" value={advForm.issue_date} onChange={e => setAdvForm({ ...advForm, issue_date: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300" />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-medium text-gray-500">Remarks</label>
-                <textarea placeholder="Reason..." rows={2} value={advForm.remarks} onChange={e => setAdvForm({ ...advForm, remarks: e.target.value })}
+                <label className="text-xs font-medium text-gray-500">{t("payroll.common.remarks")}</label>
+                <textarea placeholder={t("payroll.adjustments.reasonPlaceholder")} rows={2} value={advForm.remarks} onChange={e => setAdvForm({ ...advForm, remarks: e.target.value })}
                   className="w-full rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 resize-none"></textarea>
               </div>
             </div>
             <div className="flex justify-end gap-2 mt-5">
               <button onClick={() => { setAdvDialog(false); setEditingAdvId(null); }}
-                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">Cancel</button>
+                className="px-4 py-2 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">{t("payroll.common.cancel")}</button>
               <button disabled={saving} onClick={async () => {
-                if (!advForm.employee_id || !advForm.advance_amount || !advForm.monthly_recovery) { alert("Employee, Advance Amount, and Monthly Recovery are required"); return; }
+                if (!advForm.employee_id || !advForm.advance_amount || !advForm.monthly_recovery) { alert(t("payroll.loans.advanceValidation")); return; }
                 setSaving(true);
                 try {
                   const params = await buildQueryParams({});
@@ -1689,11 +1691,11 @@ export default function LoansAdvances() {
                   setAdvForm(emptyAdvForm);
                   setEditingAdvId(null);
                   fetchAdvances();
-                } catch (e) { alert(e?.response?.data?.message || "Save failed"); }
+                } catch (e) { alert(e?.response?.data?.message || t("payroll.common.saveFailed")); }
                 finally { setSaving(false); }
               }}
                 className="px-4 py-2 rounded-lg bg-primary text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm disabled:opacity-50">
-                {saving ? "Saving..." : editingAdvId ? "Update Advance" : "Save Advance"}
+                {saving ? t("payroll.common.saving") : editingAdvId ? t("payroll.loans.updateAdvance") : t("payroll.loans.saveAdvance")}
               </button>
             </div>
           </div>

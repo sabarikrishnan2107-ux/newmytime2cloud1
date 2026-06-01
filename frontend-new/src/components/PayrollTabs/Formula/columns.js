@@ -6,16 +6,18 @@ import { MoreVertical, PenBox, Trash2 } from "lucide-react";
 import Edit from "@/components/PayrollTabs/Formula/Edit";
 import { deletePayrollFormula } from "@/lib/api";
 import { parseApiError } from "@/lib/utils";
+import { useTranslation } from "react-i18next";
 
 function OptionsMenu({ admin, pageTitle, onSuccess = (e) => { e } }) {
+  const { t } = useTranslation();
   const [openEdit, setOpenEdit] = useState(false);
 
   const onDelete = async (id) => {
-    const confirmDelete = window.confirm("Are you sure you want to delete this item?");
+    const confirmDelete = window.confirm(t("payroll.tabs.confirmDelete"));
     if (!confirmDelete) return; // exit if user cancels
     try {
       await deletePayrollFormula(id);
-      onSuccess({ title: `${pageTitle} Deleted`, description: `${pageTitle} Deleted successfully` }); actualSetOpen(false);
+      onSuccess({ title: t("payroll.tabs.actions.successDeleted", { title: pageTitle }), description: t("payroll.tabs.actions.successDeletedDesc", { title: pageTitle }) }); actualSetOpen(false);
       setOpenEdit(false); // close menu
     } catch (error) {
       console.log(parseApiError(error));
@@ -40,13 +42,13 @@ function OptionsMenu({ admin, pageTitle, onSuccess = (e) => { e } }) {
             onClick={() => setOpenEdit("edit")}
             className="flex items-center gap-2 text-sm w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-600"
           >
-            <PenBox size={14} /> Edit
+            <PenBox size={14} /> {t("payroll.common.edit")}
           </button>
           <button
             onClick={() => onDelete(admin.id)}
             className="flex items-center gap-2 text-sm w-full text-left px-3 py-2 hover:bg-gray-100 text-gray-600"
           >
-            <Trash2 size={14} /> Delete
+            <Trash2 size={14} /> {t("payroll.common.delete")}
           </button>
         </div>
       )}
@@ -65,11 +67,11 @@ function OptionsMenu({ admin, pageTitle, onSuccess = (e) => { e } }) {
   );
 }
 
-export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
+export default function Columns({ pageTitle, onSuccess = (e) => { e }, t = (k) => k } = {}) {
   return [
     {
       key: "branch",
-      header: "Branch",
+      header: t("payroll.common.branch"),
       render: (admin) => (
         <span className="text-gray-800 cursor-pointer" title={admin.branch?.branch_name || "—"}>
           {admin.branch?.branch_name || "—"}
@@ -78,7 +80,7 @@ export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
     },
     {
       key: "salary_type",
-      header: "Salary type",
+      header: t("payroll.tabs.formula.salaryType"),
       render: (admin) => (
         <span className="text-gray-800 cursor-pointer" title={admin.salary_type || "—"}>
           {admin.salary_type || "—"}
@@ -87,7 +89,7 @@ export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
     },
     {
       key: "ot_value",
-      header: "OT Value",
+      header: t("payroll.tabs.formula.otValue"),
       render: (admin) => (
         <span className="text-gray-800 cursor-pointer" title={admin.ot_value || "—"}>
           {admin.ot_value || "—"}
@@ -96,7 +98,7 @@ export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
     },
     {
       key: "deduction_value",
-      header: "Deduction Value",
+      header: t("payroll.tabs.formula.deductionValue"),
       render: (admin) => (
         <span className="text-gray-800 cursor-pointer" title={admin.deduction_value || "—"}>
           {admin.deduction_value || "—"}
@@ -105,7 +107,7 @@ export default function Columns({ pageTitle, onSuccess = (e) => { e } } = {}) {
     },
     {
       key: "options",
-      header: "Options",
+      header: t("payroll.tabs.options"),
       render: (admin) => (
         <OptionsMenu pageTitle={pageTitle} admin={admin} onSuccess={onSuccess} />
       ),

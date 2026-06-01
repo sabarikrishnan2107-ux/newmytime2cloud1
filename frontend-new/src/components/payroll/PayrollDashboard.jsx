@@ -16,6 +16,7 @@ import {
   PieChart, Pie, Cell, Legend,
   AreaChart, Area, LineChart, Line, ComposedChart
 } from "recharts";
+import { useTranslation } from "react-i18next";
 
 const COLORS = ['hsl(199,89%,38%)', 'hsl(152,60%,40%)', 'hsl(38,92%,50%)', 'hsl(262,52%,47%)', 'hsl(0,72%,51%)', 'hsl(199,89%,58%)'];
 
@@ -58,6 +59,7 @@ function ChartTooltip({ active, payload, label }) {
 }
 
 export default function PayrollDashboard() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [stats, setStats] = useState(null);
   const [batches, setBatches] = useState([]);
@@ -102,7 +104,7 @@ export default function PayrollDashboard() {
     try {
       const params = await buildQueryParams({});
       const { data } = await api.post("/payroll-management/generate", { ...params, month });
-      alert(data.message || "Payroll generated");
+      alert(data.message || t("payroll.dashboard.generated"));
       // Refresh
       const res = await api.get("/payroll-management/dashboard", { params: { ...params, month } });
       setStats(res.data);
@@ -112,7 +114,7 @@ export default function PayrollDashboard() {
       const allB = bRes.data?.data || [];
       setBatches(allB.filter(b => b.month === month));
     } catch (e) {
-      alert(e?.response?.data?.message || "Error generating payroll");
+      alert(e?.response?.data?.message || t("payroll.dashboard.generateError"));
     } finally {
       setGenerating(false);
     }
@@ -134,8 +136,8 @@ export default function PayrollDashboard() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Payroll Dashboard</h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400">Manage salary processing, approvals, deductions, allowances, and payslip generation</p>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">{t("payroll.dashboard.title")}</h1>
+          <p className="text-xs text-gray-500 dark:text-gray-400">{t("payroll.dashboard.subtitle")}</p>
         </div>
         <div className="flex gap-2 items-center">
           <div className="w-[180px]">
@@ -145,28 +147,28 @@ export default function PayrollDashboard() {
             onClick={() => router.push('/payslips/salary-structures')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
-            <Plus className="h-3.5 w-3.5" /> Salary Structures
+            <Plus className="h-3.5 w-3.5" /> {t("payroll.dashboard.salaryStructures")}
           </button>
           <button
             onClick={handleGenerate}
             disabled={generating}
             className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-blue-600 transition shadow-sm disabled:opacity-50"
           >
-            <Play className="h-3.5 w-3.5" /> {generating ? "Generating..." : "Generate Payroll"}
+            <Play className="h-3.5 w-3.5" /> {generating ? t("payroll.dashboard.generating") : t("payroll.dashboard.generatePayroll")}
           </button>
         </div>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3">
-        <KPICard title="Total Employees" value={totals.empCount} icon={Users} variant="primary" />
-        <KPICard title="Gross Salary" value={totals.gross.toLocaleString()} icon={DollarSign} variant="primary" />
-        <KPICard title="Total Deductions" value={totals.ded.toLocaleString()} icon={TrendingDown} variant="destructive" />
-        <KPICard title="Net Salary" value={totals.net.toLocaleString()} icon={Wallet} variant="success" />
-        <KPICard title="Overtime Amount" value={totals.ot.toLocaleString()} icon={Clock} variant="warning" />
-        <KPICard title="Pending Approval" value={totals.pending} icon={AlertCircle} variant="warning" />
-        <KPICard title="Approved" value={totals.approved} icon={CheckCircle} variant="success" />
-        <KPICard title="Paid Employees" value={totals.paid} icon={CreditCard} variant="primary" />
+        <KPICard title={t("payroll.dashboard.kpi.totalEmployees")} value={totals.empCount} icon={Users} variant="primary" />
+        <KPICard title={t("payroll.dashboard.kpi.grossSalary")} value={totals.gross.toLocaleString()} icon={DollarSign} variant="primary" />
+        <KPICard title={t("payroll.dashboard.kpi.totalDeductions")} value={totals.ded.toLocaleString()} icon={TrendingDown} variant="destructive" />
+        <KPICard title={t("payroll.dashboard.kpi.netSalary")} value={totals.net.toLocaleString()} icon={Wallet} variant="success" />
+        <KPICard title={t("payroll.dashboard.kpi.overtimeAmount")} value={totals.ot.toLocaleString()} icon={Clock} variant="warning" />
+        <KPICard title={t("payroll.dashboard.kpi.pendingApproval")} value={totals.pending} icon={AlertCircle} variant="warning" />
+        <KPICard title={t("payroll.dashboard.kpi.approved")} value={totals.approved} icon={CheckCircle} variant="success" />
+        <KPICard title={t("payroll.dashboard.kpi.paidEmployees")} value={totals.paid} icon={CreditCard} variant="primary" />
       </div>
 
       {/* Charts */}
@@ -174,8 +176,8 @@ export default function PayrollDashboard() {
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4">
           <div className="flex items-start justify-between gap-3 mb-3 flex-wrap">
             <div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Monthly Payroll Trend</h3>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Gross, Net & Deductions over time</p>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("payroll.dashboard.trendTitle")}</h3>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{t("payroll.dashboard.trendSubtitle")}</p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               {/* Period selector */}
@@ -198,9 +200,9 @@ export default function PayrollDashboard() {
               {/* Chart-type toggle (icons) */}
               <div className="inline-flex rounded-lg border border-gray-200 dark:border-white/10 bg-gray-100 dark:bg-gray-800 p-0.5">
                 {[
-                  { id: "area", Icon: AreaIcon, title: "Area" },
-                  { id: "bar", Icon: BarIcon, title: "Bar" },
-                  { id: "line", Icon: LineIcon, title: "Line" },
+                  { id: "area", Icon: AreaIcon, title: t("payroll.dashboard.chartType.area") },
+                  { id: "bar", Icon: BarIcon, title: t("payroll.dashboard.chartType.bar") },
+                  { id: "line", Icon: LineIcon, title: t("payroll.dashboard.chartType.line") },
                 ].map(opt => (
                   <button key={opt.id} onClick={() => setTrendType(opt.id)} title={opt.title}
                     className={`p-1.5 rounded-md transition ${
@@ -235,9 +237,9 @@ export default function PayrollDashboard() {
                 <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} dy={6} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} axisLine={false} tickLine={false} width={48} />
                 <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)', radius: 6 }} wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }} content={<ChartTooltip />} />
-                <Bar dataKey="gross" name="Gross" fill="url(#grossGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                <Bar dataKey="net" name="Net" fill="url(#netGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
-                <Bar dataKey="deductions" name="Deductions" fill="url(#dedGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="gross" name={t("payroll.dashboard.series.gross")} fill="url(#grossGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="net" name={t("payroll.dashboard.series.net")} fill="url(#netGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
+                <Bar dataKey="deductions" name={t("payroll.dashboard.series.deductions")} fill="url(#dedGrad)" radius={[6, 6, 0, 0]} maxBarSize={36} />
               </BarChart>
             ) : trendType === "area" ? (
               <ComposedChart data={filteredTrend} margin={{ top: 18, right: 12, left: -8, bottom: 4 }} barCategoryGap="22%" barGap={3}>
@@ -259,9 +261,9 @@ export default function PayrollDashboard() {
                 <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} dy={6} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} axisLine={false} tickLine={false} width={48} />
                 <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)', radius: 6 }} wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }} content={<ChartTooltip />} />
-                <Bar dataKey="gross" name="Gross" fill="url(#grossBar2)" radius={[6, 6, 0, 0]} maxBarSize={42} />
-                <Area type="monotone" dataKey="net" name="Net" stroke="#059669" strokeWidth={2.5} fill="url(#netArea)" activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }} />
-                <Area type="monotone" dataKey="deductions" name="Deductions" stroke="#e11d48" strokeWidth={2.5} fill="url(#dedArea)" activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }} />
+                <Bar dataKey="gross" name={t("payroll.dashboard.series.gross")} fill="url(#grossBar2)" radius={[6, 6, 0, 0]} maxBarSize={42} />
+                <Area type="monotone" dataKey="net" name={t("payroll.dashboard.series.net")} stroke="#059669" strokeWidth={2.5} fill="url(#netArea)" activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }} />
+                <Area type="monotone" dataKey="deductions" name={t("payroll.dashboard.series.deductions")} stroke="#e11d48" strokeWidth={2.5} fill="url(#dedArea)" activeDot={{ r: 5, strokeWidth: 2, stroke: '#fff' }} />
               </ComposedChart>
             ) : (
               <LineChart data={filteredTrend} margin={{ top: 18, right: 12, left: -8, bottom: 4 }}>
@@ -269,25 +271,25 @@ export default function PayrollDashboard() {
                 <XAxis dataKey="month" tick={{ fill: '#94a3b8', fontSize: 11, fontWeight: 600 }} axisLine={false} tickLine={false} dy={6} />
                 <YAxis tick={{ fill: '#94a3b8', fontSize: 10 }} tickFormatter={v => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v} axisLine={false} tickLine={false} width={48} />
                 <Tooltip cursor={{ stroke: 'rgba(148,163,184,0.3)', strokeWidth: 1 }} wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }} content={<ChartTooltip />} />
-                <Line type="monotone" dataKey="gross" name="Gross" stroke="#0284c7" strokeWidth={3} dot={{ fill: '#0284c7', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
-                <Line type="monotone" dataKey="net" name="Net" stroke="#059669" strokeWidth={3} dot={{ fill: '#059669', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
-                <Line type="monotone" dataKey="deductions" name="Deductions" stroke="#e11d48" strokeWidth={3} dot={{ fill: '#e11d48', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
+                <Line type="monotone" dataKey="gross" name={t("payroll.dashboard.series.gross")} stroke="#0284c7" strokeWidth={3} dot={{ fill: '#0284c7', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
+                <Line type="monotone" dataKey="net" name={t("payroll.dashboard.series.net")} stroke="#059669" strokeWidth={3} dot={{ fill: '#059669', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
+                <Line type="monotone" dataKey="deductions" name={t("payroll.dashboard.series.deductions")} stroke="#e11d48" strokeWidth={3} dot={{ fill: '#e11d48', r: 4 }} activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }} />
               </LineChart>
             )}
           </ResponsiveContainer>
           {/* Legend at bottom */}
           <div className="flex items-center justify-center gap-4 mt-2 text-[11px] font-medium">
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-600"></span><span className="text-gray-500 dark:text-gray-400">Gross</span></span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600"></span><span className="text-gray-500 dark:text-gray-400">Net</span></span>
-            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-rose-400 to-rose-600"></span><span className="text-gray-500 dark:text-gray-400">Deductions</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-sky-400 to-sky-600"></span><span className="text-gray-500 dark:text-gray-400">{t("payroll.dashboard.series.gross")}</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-emerald-400 to-emerald-600"></span><span className="text-gray-500 dark:text-gray-400">{t("payroll.dashboard.series.net")}</span></span>
+            <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gradient-to-b from-rose-400 to-rose-600"></span><span className="text-gray-500 dark:text-gray-400">{t("payroll.dashboard.series.deductions")}</span></span>
           </div>
         </div>
 
         <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 p-4">
           <div className="flex items-start justify-between mb-1">
             <div>
-              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Department Salary Cost</h3>
-              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">Distribution across departments</p>
+              <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("payroll.dashboard.deptCostTitle")}</h3>
+              <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">{t("payroll.dashboard.deptCostSubtitle")}</p>
             </div>
           </div>
           {(() => {
@@ -328,7 +330,7 @@ export default function PayrollDashboard() {
                       wrapperStyle={{ zIndex: 50, outline: 'none', pointerEvents: 'none' }}
                       content={<ChartTooltip />}
                     />
-                    <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-500 dark:fill-gray-400" style={{ fontSize: 10, letterSpacing: 0.5 }}>TOTAL</text>
+                    <text x="50%" y="48%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-500 dark:fill-gray-400" style={{ fontSize: 10, letterSpacing: 0.5 }}>{t("payroll.dashboard.total")}</text>
                     <text x="50%" y="55%" textAnchor="middle" dominantBaseline="middle" className="fill-gray-800 dark:fill-gray-100" style={{ fontSize: 16, fontWeight: 700 }}>{totalCost >= 1000 ? `${(totalCost / 1000).toFixed(1)}k` : totalCost}</text>
                   </PieChart>
                 </ResponsiveContainer>
@@ -353,30 +355,30 @@ export default function PayrollDashboard() {
       {/* Recent Batches Table */}
       <div className="rounded-xl border border-gray-200 dark:border-white/10 bg-white dark:bg-gray-900/50 overflow-hidden">
         <div className="px-4 py-3 border-b border-gray-200 dark:border-white/10 flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">Recent Payroll Batches</h3>
+          <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200">{t("payroll.dashboard.recentBatches")}</h3>
           <button onClick={() => router.push('/payslips')} className="text-[10px] font-bold text-primary hover:underline uppercase tracking-wider">
-            View All
+            {t("payroll.dashboard.viewAll")}
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>
               <tr className="border-b border-gray-100 dark:border-white/5 text-[10px] font-bold uppercase tracking-wider text-gray-500">
-                <th className="px-4 py-3">Month</th>
-                <th className="px-4 py-3">Branch</th>
-                <th className="px-4 py-3">Employees</th>
-                <th className="px-4 py-3">Gross</th>
-                <th className="px-4 py-3">Deductions</th>
-                <th className="px-4 py-3">Net</th>
-                <th className="px-4 py-3">Status</th>
-                <th className="px-4 py-3">Actions</th>
+                <th className="px-4 py-3">{t("payroll.common.month")}</th>
+                <th className="px-4 py-3">{t("payroll.common.branch")}</th>
+                <th className="px-4 py-3">{t("payroll.common.employees")}</th>
+                <th className="px-4 py-3">{t("payroll.dashboard.series.gross")}</th>
+                <th className="px-4 py-3">{t("payroll.dashboard.series.deductions")}</th>
+                <th className="px-4 py-3">{t("payroll.dashboard.series.net")}</th>
+                <th className="px-4 py-3">{t("payroll.common.status")}</th>
+                <th className="px-4 py-3">{t("payroll.common.actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-white/5">
               {batches.map(b => (
                 <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-white/5 transition text-xs text-gray-600 dark:text-gray-300">
                   <td className="px-4 py-3 font-medium text-gray-800 dark:text-gray-100">{b.month}</td>
-                  <td className="px-4 py-3">{b.branch_id || "All"}</td>
+                  <td className="px-4 py-3">{b.branch_id || t("payroll.common.all")}</td>
                   <td className="px-4 py-3">{b.total_employees}</td>
                   <td className="px-4 py-3">{parseFloat(b.total_gross || 0).toLocaleString()}</td>
                   <td className="px-4 py-3">{parseFloat(b.total_deductions || 0).toLocaleString()}</td>
@@ -386,34 +388,34 @@ export default function PayrollDashboard() {
                     <div className="flex gap-1">
                       {b.status === "draft" && (
                         <button onClick={async () => {
-                          if (!confirm("Approve this batch?")) return;
+                          if (!confirm(t("payroll.dashboard.confirmApproveBatch"))) return;
                           const params = await buildQueryParams({});
                           try {
                             await api.post(`/payroll-management/approve/${b.id}`, params);
                             const res = await api.get("/payroll-management/batches", { params: { ...params, per_page: 10 } });
                             setBatches(res.data?.data || []);
-                          } catch (e) { alert("Failed"); }
+                          } catch (e) { alert(t("payroll.common.failed")); }
                         }} className="px-2 py-1 rounded text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-200 transition">
-                          Approve
+                          {t("payroll.dashboard.approve")}
                         </button>
                       )}
                       {b.status === "approved" && (
                         <button onClick={async () => {
-                          if (!confirm("Mark as Paid?")) return;
+                          if (!confirm(t("payroll.dashboard.confirmMarkPaid"))) return;
                           const params = await buildQueryParams({});
                           try {
                             await api.post(`/payroll-management/mark-paid/${b.id}`, params);
                             const res = await api.get("/payroll-management/batches", { params: { ...params, per_page: 10 } });
                             setBatches(res.data?.data || []);
-                          } catch (e) { alert("Failed"); }
+                          } catch (e) { alert(t("payroll.common.failed")); }
                         }} className="px-2 py-1 rounded text-[10px] font-bold bg-blue-100 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-200 transition">
-                          Mark Paid
+                          {t("payroll.dashboard.markPaid")}
                         </button>
                       )}
                       {b.status === "paid" && (
-                        <span className="text-[10px] text-gray-400">Completed</span>
+                        <span className="text-[10px] text-gray-400">{t("payroll.dashboard.completed")}</span>
                       )}
-                      <button title="View Records" onClick={() => router.push(`/payslips/register?batch=${b.id}`)}
+                      <button title={t("payroll.dashboard.viewRecords")} onClick={() => router.push(`/payslips/register?batch=${b.id}`)}
                         className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-primary transition">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
@@ -422,7 +424,7 @@ export default function PayrollDashboard() {
                 </tr>
               ))}
               {batches.length === 0 && (
-                <tr><td colSpan="8" className="px-4 py-8 text-center text-gray-400 text-xs">No batches yet. Click "Generate Payroll" to create one.</td></tr>
+                <tr><td colSpan="8" className="px-4 py-8 text-center text-gray-400 text-xs">{t("payroll.dashboard.noBatches")}</td></tr>
               )}
             </tbody>
           </table>
@@ -434,39 +436,39 @@ export default function PayrollDashboard() {
         <div className="flex flex-wrap gap-2">
           {batches[0]?.status === "draft" && (
             <button onClick={async () => {
-              if (!confirm("Approve the latest payroll batch?")) return;
+              if (!confirm(t("payroll.dashboard.confirmApproveLatest"))) return;
               try {
                 const params = await buildQueryParams({});
                 await api.post(`/payroll-management/approve/${batches[0].id}`, params);
-                alert("Payroll approved!");
+                alert(t("payroll.dashboard.approvedSuccess"));
                 const { data } = await api.get("/payroll-management/batches", { params: { ...params, per_page: 10 } });
                 setBatches(data?.data || []);
-              } catch (e) { alert(e?.response?.data?.message || "Approve failed"); }
+              } catch (e) { alert(e?.response?.data?.message || t("payroll.dashboard.approveFailed")); }
             }} className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-300 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-900/10 px-3 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition">
-              <ThumbsUp className="h-3.5 w-3.5" /> Approve Payroll
+              <ThumbsUp className="h-3.5 w-3.5" /> {t("payroll.dashboard.approvePayroll")}
             </button>
           )}
           {batches[0]?.status === "approved" && (
             <button onClick={async () => {
-              if (!confirm("Mark the latest batch as Paid?")) return;
+              if (!confirm(t("payroll.dashboard.confirmMarkLatestPaid"))) return;
               try {
                 const params = await buildQueryParams({});
                 await api.post(`/payroll-management/mark-paid/${batches[0].id}`, params);
-                alert("Payroll marked as paid!");
+                alert(t("payroll.dashboard.markedPaidSuccess"));
                 const { data } = await api.get("/payroll-management/batches", { params: { ...params, per_page: 10 } });
                 setBatches(data?.data || []);
-              } catch (e) { alert(e?.response?.data?.message || "Failed"); }
+              } catch (e) { alert(e?.response?.data?.message || t("payroll.common.failed")); }
             }} className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 dark:border-blue-500/30 bg-blue-50 dark:bg-blue-900/10 px-3 py-2 text-xs font-medium text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/20 transition">
-              <CreditCard className="h-3.5 w-3.5" /> Mark as Paid
+              <CreditCard className="h-3.5 w-3.5" /> {t("payroll.dashboard.markAsPaid")}
             </button>
           )}
           <button onClick={() => router.push('/payslips/register')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <FileText className="h-3.5 w-3.5" /> View Register
+            <FileText className="h-3.5 w-3.5" /> {t("payroll.dashboard.viewRegister")}
           </button>
           <button onClick={() => router.push('/payslips/reports')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
-            <Download className="h-3.5 w-3.5" /> Download Reports
+            <Download className="h-3.5 w-3.5" /> {t("payroll.dashboard.downloadReports")}
           </button>
         </div>
       )}
