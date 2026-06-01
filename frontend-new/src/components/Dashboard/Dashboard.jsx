@@ -2,6 +2,7 @@
 
 import AttendanceCard from "@/components/Dashboard/AttendanceCard";
 import EventsAndInsights from "@/components/Dashboard/EventsAndInsights";
+import FireAlarmPopup from "@/components/Dashboard/FireAlarmPopup";
 import LiveFeed from "@/components/Dashboard/LiveFeed";
 import Stats from "@/components/Dashboard/Stats";
 import WelnessCard from "@/components/Dashboard/WelnessCard";
@@ -46,6 +47,7 @@ const AdminDashboard = () => {
 
   return (
     <div className="p-4 pb-24 overflow-y-auto max-h-[calc(100vh-100px)]">
+      <FireAlarmPopup />
       <div className="px-2 mb-4 flex justify-between items-center">
         <h2 className="text-2xl font-extrabold text-gray-700 dark:text-gray-100 font-display tracking-tight">
           {t('dashboard.header.pageTitle')}

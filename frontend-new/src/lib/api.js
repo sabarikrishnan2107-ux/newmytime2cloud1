@@ -968,6 +968,34 @@ export const getCompanyInfo = async () => {
     return await axios.get(`${API_BASE}/company/${user?.company_id || 0}`);
 };
 
+// ===== Fire Alarm =====
+// Mirrors the old Nuxt admin panel's alarm popup polling.
+// getAlarmNotification returns devices where alarm_status = 1 for this company.
+export const getAlarmNotifications = async () => {
+    const user = await getUser();
+    if (!user?.company_id) return [];
+    const { data } = await axios.get(`${API_BASE}/get_notifications_alarm`, {
+        params: { company_id: user.company_id },
+    });
+    return Array.isArray(data) ? data : [];
+};
+
+// Turns off a device's alarm (status = 0). Backend closes the SDK alarm and
+// updates devices.alarm_status, which clears the popup on the next poll.
+export const turnOffDeviceAlarm = async (serial_number) => {
+    const user = await getUser();
+    const { data } = await axios.post(`${API_BASE}/update-device-alarm-status`, {
+        company_id: user?.company_id || 0,
+        serial_number,
+        status: 0,
+    });
+    return data;
+};
+
+// Alarm sound served by the backend at <root>/alarm_sounds/alarm-sound1.mp3
+export const getAlarmSoundUrl = () => `${API_BASE.replace(/\/api\/?$/, "")}/alarm_sounds/alarm-sound1.mp3`;
+// ===== Fire Alarm END =====
+
 
 export const api = axios.create({
     baseURL: API_BASE,
