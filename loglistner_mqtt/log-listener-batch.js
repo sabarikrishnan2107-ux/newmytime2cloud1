@@ -259,7 +259,7 @@ function connectWebSocket() {
           fs.mkdirSync(alarmDir, { recursive: true });
           fs.appendFileSync(path.join(alarmDir, `alarm-logs-${date}.csv`), `${SN},${RecordDate}\n`);
           console.log("🔥 Alarm:", `${SN},${RecordDate}`);
-          const alarmUrl = `${process.env.BACKEND_URL || "https://backend.mytime2cloud.com/api"}/loadalarm_csv`;
+          const alarmUrl = `${process.env.BACKEND_URL || "https://v2backend.mytime2cloud.com/api"}/loadalarm_csv`;
           axios.get(alarmUrl, { params: { 11111: "1111" }, timeout: 1000 * 30 })
             .catch((e) => logError("loadalarm_csv trigger failed: " + e.message));
         } catch (e) {
