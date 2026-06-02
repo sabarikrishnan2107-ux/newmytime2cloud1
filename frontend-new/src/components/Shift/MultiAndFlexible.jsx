@@ -108,9 +108,13 @@ const MultiAndFlexible = ({ shift = "", handleChange = () => {} }) => {
                   type="checkbox"
                   className="sr-only peer"
                   checked={shift.is_auto_deduct}
-                  onChange={(e) =>
-                    handleChange("is_auto_deduct", e.target.checked)
-                  }
+                  onChange={(e) => {
+                    handleChange("is_auto_deduct", e.target.checked);
+                    // When auto-deduct is turned off, reset the break minutes to 0.
+                    if (!e.target.checked) {
+                      handleChange("break_duration", minutesToHHMM(0));
+                    }
+                  }}
                 />
                 {/* Custom Toggle Switch */}
                 <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-500 peer-checked:dark:bg-emerald-500"></div>

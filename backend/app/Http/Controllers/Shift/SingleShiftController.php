@@ -270,9 +270,15 @@ class SingleShiftController extends Controller
                 }
             }
 
-            // Final check: IN exists but no OUT = Missing
-            if ($item["in"] !== "---" && $item["out"] === "---" && !in_array($item["status"], ["O", "H", "L", "A"])) {
-                $item["status"] = "M";
+            // Final check: only one punch (in OR out missing) = Missing; both present but under the worked-minutes floor = Absent
+            if (!in_array($item["status"], ["O", "H", "L", "A", "HD"])) {
+                $hasIn  = $item["in"]  !== "---";
+                $hasOut = $item["out"] !== "---";
+                if ($hasIn !== $hasOut) {
+                    $item["status"] = "M";
+                } elseif ($hasIn && $hasOut && is_string($item["total_hrs"]) && str_contains($item["total_hrs"], ":") && time_to_minutes($item["total_hrs"]) < (int) config('attendance.min_present_minutes', 60)) {
+                    $item["status"] = "A";
+                }
             }
 
             $items[] = $item;
@@ -560,6 +566,9 @@ class SingleShiftController extends Controller
                 if ($item["in"] !== "---" && $item["out"] === "---") {
                     // Has IN but no OUT — Missing
                     $item["status"] = "M";
+                } elseif ($item["in"] !== "---" && $item["out"] !== "---" && is_string($item["total_hrs"]) && str_contains($item["total_hrs"], ":") && time_to_minutes($item["total_hrs"]) < (int) config('attendance.min_present_minutes', 60)) {
+                    // Has a real IN and OUT but too few worked minutes — Absent
+                    $item["status"] = "A";
                 } elseif ($item["in"] === "---" && count($logs) > 0) {
                     // Has logs but none in IN window — take first log as IN, mark Missing
                     $fallbackLog = collect($logs)->first();

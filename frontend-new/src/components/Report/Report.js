@@ -62,21 +62,6 @@ function AttendanceTableInner() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMissingLogsOpen, setIsMissingLogsOpen] = useState(false);
 
-  // Helper to get current month's first and last day (matching Vue behavior)
-  const getDefaultDateRange = () => {
-    const dt = new Date();
-    const y = dt.getFullYear();
-    const m = dt.getMonth() + 1;
-    const lastDay = new Date(y, m, 0).getDate(); // Last day of current month
-    const mm = m < 10 ? `0${m}` : m;
-    return {
-      from: `${y}-${mm}-01`,
-      to: `${y}-${mm}-${lastDay < 10 ? '0' + lastDay : lastDay}`,
-    };
-  };
-
-  const defaultDates = getDefaultDateRange();
-
   // filters
   const [shiftTypeId, setShiftTypeId] = useState(`0`);
   const [selectedStatusIds, setSelectedStatusIds] = useState([]);
@@ -98,8 +83,9 @@ function AttendanceTableInner() {
     { id: "monthly", name: "Monthly" },
   ];
 
-  const [from, setFrom] = useState(defaultDates.from);
-  const [to, setTo] = useState(defaultDates.to);
+  // No default range — the user picks the date range manually.
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const [records, setAttendance] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -275,6 +261,11 @@ function AttendanceTableInner() {
       !selectedEmployeeIds?.length
     ) {
       notify("Warning", "Employee not selected", "warning");
+      return;
+    }
+
+    if (!from || !to) {
+      notify("Warning", "Date range must be selected", "warning");
       return;
     }
 

@@ -422,6 +422,18 @@ class NightShiftController extends Controller
                 }
             }
 
+            // Finalize: only one punch (in OR out missing) → Missing; both present but under the worked-minutes floor → Absent
+            $minPresentMins = (int) config('attendance.min_present_minutes', 60);
+            if (!in_array($item["status"], ["O", "H", "L", "A", "HD"])) {
+                $hasIn  = $item["in"]  !== "---";
+                $hasOut = $item["out"] !== "---";
+                if ($hasIn !== $hasOut) {
+                    $item["status"] = "M";
+                } elseif ($hasIn && $hasOut && is_string($item["total_hrs"]) && str_contains($item["total_hrs"], ":") && time_to_minutes($item["total_hrs"]) < $minPresentMins) {
+                    $item["status"] = "A";
+                }
+            }
+
             $items[] = $item;
         }
 

@@ -126,7 +126,9 @@ export default (shiftTypeId, { onViewLogs } = {}) => {
                         <span className={`text-sm inline-flex items-center gap-1 ${getBgColor(log.status)}`}
                             style={{ padding: "2px 10px", borderRadius: "50px" }}
                         >
-                            {setStatusLabel(log?.status)}
+                            {(log?.status === "L" || log?.status === "V") && log?.leave_type_name
+                                ? log.leave_type_name
+                                : setStatusLabel(log?.status)}
                             {short && (
                                 <span
                                     className="text-red-500 font-bold leading-none"

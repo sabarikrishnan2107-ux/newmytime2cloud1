@@ -79,6 +79,7 @@ class RenderController extends Controller
             $this->gapFillMissingRows($request);
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
+            $this->normalizeWorkedStatuses($request);
             return $r;
         }
 
@@ -87,6 +88,7 @@ class RenderController extends Controller
             $this->gapFillMissingRows($request);
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
+            $this->normalizeWorkedStatuses($request);
             return $r;
         }
 
@@ -95,6 +97,7 @@ class RenderController extends Controller
             $this->gapFillMissingRows($request);
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
+            $this->normalizeWorkedStatuses($request);
             return $r;
         }
 
@@ -106,6 +109,7 @@ class RenderController extends Controller
             $this->gapFillMissingRows($request);
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
+            $this->normalizeWorkedStatuses($request);
             return $results;
         }
 
@@ -115,6 +119,7 @@ class RenderController extends Controller
             $this->gapFillMissingRows($request);
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
+            $this->normalizeWorkedStatuses($request);
             return $results;
         }
 
@@ -124,6 +129,7 @@ class RenderController extends Controller
             $this->gapFillMissingRows($request);
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
+            $this->normalizeWorkedStatuses($request);
             return $results;
         }
 
@@ -136,6 +142,7 @@ class RenderController extends Controller
         $this->gapFillMissingRows($request);
         $this->backfillDeviceIdsFromLogs($request);
         $this->dispatchWeekoffForRange($request);
+        $this->normalizeWorkedStatuses($request);
         return $results;
     }
 
@@ -163,6 +170,69 @@ class RenderController extends Controller
                 try { RenderWeekOffJob::dispatchSync($companyId, $ym, $empId); } catch (\Throwable $e) {}
             }
         }
+    }
+
+    /**
+     * Final, renderer-agnostic status normalization for the just-rendered rows.
+     * Runs after EVERY renderer (Auto/Filo/Single/Night/Split) and after week-off,
+     * so the rule is applied uniformly no matter which path wrote the row:
+     *   - exactly one punch present (IN or OUT missing) -> Missing (M)
+     *   - both punches present but worked < min_present_minutes -> Absent (A)
+     * Protected statuses (week-off/holiday/leave/absent/half-day/vacation) are left as-is.
+     */
+    protected function normalizeWorkedStatuses(Request $request): int
+    {
+        $companyId   = (int) ($request->company_id ?? ($request->company_ids[0] ?? 0));
+        $employeeIds = (array) ($request->employee_ids ?? []);
+        $dates       = (array) ($request->dates ?? []);
+
+        if (!$companyId || !$dates) {
+            return 0;
+        }
+
+        try {
+            $from = Carbon::parse($dates[0])->format('Y-m-d');
+            $to   = Carbon::parse($dates[1] ?? $dates[0])->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return 0;
+        }
+
+        $minPresent = (int) config('attendance.min_present_minutes', 60);
+        $blank = fn($v) => $v === null || $v === '' || $v === '---';
+
+        $query = DB::table('attendances')
+            ->where('company_id', $companyId)
+            ->whereBetween('date', [$from, $to])
+            ->whereNotIn('status', ['O', 'H', 'L', 'A', 'HD', 'V']);
+
+        if ($employeeIds) {
+            $query->whereIn('employee_id', $employeeIds);
+        }
+
+        $updated = 0;
+
+        foreach ($query->get(['id', 'in', 'out', 'status', 'total_hrs']) as $row) {
+            $hasIn  = !$blank($row->in);
+            $hasOut = !$blank($row->out);
+            $new = null;
+
+            if ($hasIn !== $hasOut) {
+                $new = 'M';
+            } elseif (
+                $hasIn && $hasOut
+                && is_string($row->total_hrs) && str_contains($row->total_hrs, ':')
+                && time_to_minutes($row->total_hrs) < $minPresent
+            ) {
+                $new = 'A';
+            }
+
+            if ($new !== null && $new !== $row->status) {
+                DB::table('attendances')->where('id', $row->id)->update(['status' => $new]);
+                $updated++;
+            }
+        }
+
+        return $updated;
     }
 
     /**

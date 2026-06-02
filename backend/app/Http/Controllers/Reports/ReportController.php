@@ -7,6 +7,7 @@ use App\Jobs\GenerateAttendanceReportPDF;
 use App\Models\Attendance;
 use App\Models\Company;
 use App\Models\Employee;
+use App\Models\EmployeeLeaves;
 use App\Models\Payroll;
 use Carbon\Carbon;
 use DateTime;
@@ -58,6 +59,10 @@ class ReportController extends Controller
         // the badge value instead of system_user_id. Without this they render as '---'.
         Attendance::rehydrateEmployeesByBadge($data->items(), (int) $request->company_id);
 
+        // Resolve the specific leave-type name (Annual Leave, Sick Leave, …) for any
+        // day stamped as leave/vacation, looked up live from the approved request.
+        $this->attachLeaveTypeNames($data->items());
+
         $showTabs = json_decode($request->showTabs, true) ?: [];
 
         // only for multi in/out
@@ -84,6 +89,80 @@ class ReportController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * For rows stamped as leave (L) or vacation (V), attach the specific leave-type
+     * name from the matching approved leave request so the report can show e.g.
+     * "Annual Leave" / "Sick Leave" instead of a generic "LEAVE".
+     */
+    private function attachLeaveTypeNames($items): void
+    {
+        $items = is_array($items) ? $items : collect($items)->all();
+
+        $leaveRows = array_filter($items, fn($r) => in_array($r->status ?? null, ['L', 'V'], true));
+        if (!$leaveRows) {
+            return;
+        }
+
+        $empIds = [];
+        $dates  = [];
+        foreach ($leaveRows as $r) {
+            if ($eid = ($r->employee->id ?? null)) {
+                $empIds[] = $eid;
+            }
+            if ($d = $this->rowDateString($r)) {
+                $dates[] = $d;
+            }
+        }
+        $empIds = array_values(array_unique(array_filter($empIds)));
+        $dates  = array_values(array_filter($dates));
+        if (!$empIds || !$dates) {
+            return;
+        }
+
+        $leaves = EmployeeLeaves::with('leave_type')
+            ->where('status', 1)
+            ->whereIn('employee_id', $empIds)
+            ->where('start_date', '<=', max($dates))
+            ->where('end_date', '>=', min($dates))
+            ->get(['id', 'employee_id', 'start_date', 'end_date', 'leave_type_id']);
+
+        foreach ($items as $r) {
+            if (!in_array($r->status ?? null, ['L', 'V'], true)) {
+                continue;
+            }
+
+            $eid  = $r->employee->id ?? null;
+            $d    = $this->rowDateString($r);
+            $name = null;
+
+            if ($eid && $d) {
+                foreach ($leaves as $lv) {
+                    if ((int) $lv->employee_id === (int) $eid
+                        && $d >= Carbon::parse($lv->start_date)->format('Y-m-d')
+                        && $d <= Carbon::parse($lv->end_date)->format('Y-m-d')
+                    ) {
+                        $name = $lv->leave_type->name ?? null;
+                        break;
+                    }
+                }
+            }
+
+            // Keep the column meaningful even if the source request was edited/removed.
+            $r->leave_type_name = ($name && $name !== '---')
+                ? $name
+                : ($r->status === 'V' ? 'Vacation' : 'Leave');
+        }
+    }
+
+    private function rowDateString($r): ?string
+    {
+        $d = $r->date ?? null;
+        if (!$d) {
+            return null;
+        }
+        return $d instanceof Carbon ? $d->format('Y-m-d') : Carbon::parse($d)->format('Y-m-d');
     }
 
     public function general($model, $per_page = 100)

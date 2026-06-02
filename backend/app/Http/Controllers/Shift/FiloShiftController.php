@@ -185,8 +185,10 @@ class FiloShiftController extends Controller
                 }
             }
 
-            // Handle Check Out and Total Hours
-            if ($lastLog && $filteredLogs->count() > 1) {
+            // Handle Check Out and Total Hours.
+            // Require a DISTINCT out punch: the same punch (same time) must not be
+            // counted as both IN and OUT (that produced 00:00-hour "PRESENT" rows).
+            if ($lastLog && $filteredLogs->count() > 1 && $firstLog["time"] !== $lastLog["time"]) {
                 $item["status"] = ($item["status"] == "LC") ? "LC" : "P";
                 $item["device_id_out"] = $lastLog["DeviceID"] ?? "---";
                 $item["out"] = $lastLog["time"] ?? "---";
@@ -216,6 +218,18 @@ class FiloShiftController extends Controller
                     if ($item["early_going"] != "---") {
                         $item["status"] = "EG";
                     }
+                }
+            }
+
+            // Finalize: only one punch (in OR out missing) → Missing; both present but under the worked-minutes floor → Absent
+            $minPresentMins = (int) config('attendance.min_present_minutes', 60);
+            if (!in_array($item["status"], ["O", "H", "L", "A", "HD"])) {
+                $hasIn  = $item["in"]  !== "---";
+                $hasOut = $item["out"] !== "---";
+                if ($hasIn !== $hasOut) {
+                    $item["status"] = "M";
+                } elseif ($hasIn && $hasOut && is_string($item["total_hrs"]) && str_contains($item["total_hrs"], ":") && time_to_minutes($item["total_hrs"]) < $minPresentMins) {
+                    $item["status"] = "A";
                 }
             }
 
@@ -403,6 +417,18 @@ class FiloShiftController extends Controller
                     } else {
                         $item["ot"] = "00:00";
                     }
+                }
+            }
+
+            // Finalize: only one punch (in OR out missing) → Missing; both present but under the worked-minutes floor → Absent
+            $minPresentMins = (int) config('attendance.min_present_minutes', 60);
+            if (!in_array($item["status"], ["O", "H", "L", "A", "HD"])) {
+                $hasIn  = $item["in"]  !== "---";
+                $hasOut = $item["out"] !== "---";
+                if ($hasIn !== $hasOut) {
+                    $item["status"] = "M";
+                } elseif ($hasIn && $hasOut && is_string($item["total_hrs"]) && str_contains($item["total_hrs"], ":") && time_to_minutes($item["total_hrs"]) < $minPresentMins) {
+                    $item["status"] = "A";
                 }
             }
 

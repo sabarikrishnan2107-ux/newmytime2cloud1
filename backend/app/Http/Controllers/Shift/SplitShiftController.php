@@ -149,6 +149,16 @@ class SplitShiftController extends Controller
             $currentDayKey = Attendance::DAY_MAP[$dayOfWeekThreeLetter] ?? '';
             $status = Attendance::processWeekOffFunc($currentDayKey, $shift['weekoff_rules'] ?? "A", $id, $date, $row->system_user_id, $allLogs->first());
 
+            // An IN punch with no matching OUT punch (in any session) = incomplete day → Missing.
+            // A complete day under the worked-minutes floor → Absent.
+            $hasUnpairedIn = collect($logsJson)->contains(function ($l) {
+                return ($l["in"] ?? "---") !== "---" && ($l["out"] ?? "---") === "---";
+            });
+            $minPresentMins = (int) config('attendance.min_present_minutes', 60);
+            $computedStatus = ($hasUnpairedIn || $totalMinutes <= 0)
+                ? Attendance::MISSING
+                : ($totalMinutes < $minPresentMins ? Attendance::ABSENT : Attendance::PRESENT);
+
             $items[] = [
                 "employee_id"   => $row->system_user_id,
                 "company_id"    => $id,
@@ -156,7 +166,7 @@ class SplitShiftController extends Controller
                 "shift_id"      => $shift->id,
                 "shift_type_id" => $shift->shift_type_id,
                 "total_hrs"     => $this->minutesToHours($totalMinutes),
-                "status"        => $status ?? (($totalMinutes > 0) ? Attendance::PRESENT : Attendance::MISSING),
+                "status"        => $status ?? $computedStatus,
                 "logs"          => json_encode($logsJson),
             ];
         }
@@ -403,7 +413,19 @@ class SplitShiftController extends Controller
                 }
             }
 
-            $item["status"] = (count($logsJson)) ? Attendance::PRESENT : Attendance::MISSING;
+            // An IN punch with no matching OUT punch (in any session) = incomplete day → Missing.
+            // A complete day under the worked-minutes floor → Absent.
+            $hasUnpairedIn = collect($logsJson)->contains(function ($l) {
+                return ($l["in"] ?? "---") !== "---" && ($l["out"] ?? "---") === "---";
+            });
+            $minPresentMins = (int) config('attendance.min_present_minutes', 60);
+            if ($hasUnpairedIn || !count($logsJson) || $totalMinutes <= 0) {
+                $item["status"] = Attendance::MISSING;
+            } elseif ($totalMinutes < $minPresentMins) {
+                $item["status"] = Attendance::ABSENT;
+            } else {
+                $item["status"] = Attendance::PRESENT;
+            }
 
             // ✅ Final summary per employee
             $item["employee_id"] = $row->system_user_id;
