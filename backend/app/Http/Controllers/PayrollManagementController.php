@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdvanceDeduction;
+use App\Models\Attendance;
 use App\Models\AttendanceLog;
 use App\Models\Employee;
 use App\Models\EmployeeAdvance;
@@ -460,7 +461,22 @@ class PayrollManagementController extends Controller
                     $byDate[$date][] = $log;
                 }
 
-                $presentDays = count($byDate);
+                $workedDays = count($byDate);
+
+                // Week-off ('O') and holiday ('H') are PAID days — they must count as
+                // present, NOT absent. Source = the attendance status table (same as the
+                // monthly report), excluding any day the employee actually worked.
+                $paidNonWorkingDays = Attendance::where('company_id', $companyId)
+                    ->where('employee_id', $emp->system_user_id)
+                    ->whereBetween('date', [$monthStart, $monthEnd])
+                    ->whereIn('status', ['O', 'H'])
+                    ->pluck('date')
+                    ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+                    ->unique()
+                    ->reject(fn($d) => isset($byDate[$d]))
+                    ->count();
+
+                $presentDays = $workedDays + $paidNonWorkingDays;
                 $absentDays = max(0, $daysDivisor - $presentDays);
 
                 // Get shift for OT/late calculation

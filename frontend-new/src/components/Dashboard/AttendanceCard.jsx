@@ -24,13 +24,17 @@ const ABSENT_COLOR = "#f43f5e";
 // artifact where `radius` draws a tiny nub at value 0). Only the TOP-most visible
 // segment of the stack gets rounded top corners.
 function AbsentBar(props) {
-  if (!props.value || props.height <= 0) return null;
+  // Gate on the real data value (not props.value, which is a [start,end] array for
+  // stacked bars) so a 0 never renders even a sub-pixel sliver.
+  const absent = Number(props.payload?.absent || 0);
+  if (absent <= 0 || props.height <= 0) return null;
   return <Rectangle {...props} radius={[5, 5, 0, 0]} />;
 }
 function PresentBar(props) {
-  if (!props.value || props.height <= 0) return null;
+  const present = Number(props.payload?.present || 0);
+  if (present <= 0 || props.height <= 0) return null;
   // Present sits at the bottom; round its top only when there's no absent on top.
-  const isTop = !(props.payload && props.payload.absent > 0);
+  const isTop = !(Number(props.payload?.absent || 0) > 0);
   return <Rectangle {...props} radius={isTop ? [5, 5, 0, 0] : [0, 0, 0, 0]} />;
 }
 
@@ -141,7 +145,15 @@ function AttendanceCard({ branch_ids, department_ids }) {
     strokeDasharray: "2 4",
   };
   const xAxisProps = {
-    dataKey: "dayLetter",
+    // Key the axis on the unique date — NOT the day letter. Sat/Sun (both "S") and
+    // Thu/Tue (both "T") share a letter, and duplicate category values make recharts
+    // resolve two bars to the same point (tooltip showed the same day twice).
+    dataKey: "date",
+    interval: 0,
+    tickFormatter: (value) => {
+      const row = chartData.find((r) => r.date === value);
+      return row ? row.dayLetter : "";
+    },
     axisLine: false,
     tickLine: false,
     tick: { fontSize: 11, fill: "currentColor", fillOpacity: 0.6 },
