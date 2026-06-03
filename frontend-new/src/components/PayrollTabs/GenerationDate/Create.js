@@ -12,7 +12,7 @@ import {
 import DropDown from "@/components/ui/DropDown";
 
 import { getBranches, createPayrollGenerationDate } from "@/lib/api";
-import { formatDateDubai, parseApiError } from "@/lib/utils";
+import { formatDateLocal, parseApiError } from "@/lib/utils";
 
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
     setLoading(true);
     try {
 
-      await createPayrollGenerationDate({ ...form, date: formatDateDubai(form.date) });
+      await createPayrollGenerationDate({ ...form, date: formatDateLocal(form.date) });
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
 
@@ -112,7 +112,7 @@ const Create = ({ pageTitle = "Add Item", onSuccess = (e) => { e } }) => {
                     className="w-full justify-start text-left font-normal"
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {form.date ? formatDateDubai(form.date) : <span>{t("payroll.tabs.pickDate")}</span>}
+                    {form.date ? formatDateLocal(form.date) : <span>{t("payroll.tabs.pickDate")}</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="p-0" align="start">

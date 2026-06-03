@@ -49,7 +49,32 @@
       "PowerShell(\"stopped\")",
       "PowerShell($out = \"d:\\\\newmytime2cloud\\\\frontend-new\\\\out\"; \"out exists: \" + \\(Test-Path $out\\); \"top-level entries: \" + \\(Get-ChildItem $out -ErrorAction SilentlyContinue\\).Count; \"index.html: \" + \\(Test-Path \"$out\\\\index.html\"\\); \"device page: \" + \\(Test-Path \"$out\\\\device\\\\index.html\"\\); \"out last write: \" + \\(Get-Item $out\\).LastWriteTime; \"newest file in out: \" + \\(Get-ChildItem $out -Recurse -File | Sort-Object LastWriteTime -Desc | Select-Object -First 1\\).LastWriteTime; \"node still running: \" + [bool]\\(Get-Process node -ErrorAction SilentlyContinue\\))",
       "PowerShell(\"--- ssh available? ---\"; \\(Get-Command ssh -ErrorAction SilentlyContinue\\).Source; \\(Get-Command scp -ErrorAction SilentlyContinue\\).Source; \\(Get-Command rsync -ErrorAction SilentlyContinue\\).Source; \\(Get-Command pscp -ErrorAction SilentlyContinue\\).Source; \\(Get-Command plink -ErrorAction SilentlyContinue\\).Source; \"--- ssh config ---\"; if \\(Test-Path \"$env:USERPROFILE\\\\.ssh\\\\config\"\\) { Get-Content \"$env:USERPROFILE\\\\.ssh\\\\config\" } else { \"no ssh config\" }; \"--- known_hosts hosts ---\"; if \\(Test-Path \"$env:USERPROFILE\\\\.ssh\\\\known_hosts\"\\) { \\(Get-Content \"$env:USERPROFILE\\\\.ssh\\\\known_hosts\" | ForEach-Object { \\($_ -split ' '\\)[0] }\\) -join \"`n\" } else { \"no known_hosts\" }; \"--- keys ---\"; Get-ChildItem \"$env:USERPROFILE\\\\.ssh\\\\\" -ErrorAction SilentlyContinue | Select-Object Name; \"--- is path local? ---\"; Test-Path \"/var/www/v2.mytime2cloud.com\")",
-      "Bash(php -l app/Http/Controllers/VisitorController.php)"
+      "Bash(php -l app/Http/Controllers/VisitorController.php)",
+      "Bash(where ssh *)",
+      "Bash(ssh -V)",
+      "Bash(where scp *)",
+      "Bash(where sshpass *)",
+      "Bash(command -v sshpass)",
+      "Read(//c/Program Files/Git/usr/bin/**)",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -i \"D:\\\\ssh_login_key.ppk\" -P 53217 -batch root@139.59.69.241 \"hostname; whoami; pm2 -v; uptime\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -i \"D:\\\\ssh_login_key.ppk\" -P 53217 root@139.59.69.241 \"echo CONNECTED_OK; hostname; pm2 -v\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\puttygen.exe\" \"D:\\\\ssh_login_key.ppk\" -O private-openssh -o \"D:\\\\key_openssh.pem\")",
+      "Bash(echo \"exit=$?\")",
+      "Read(//d//**)",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\puttygen.exe\" \"D:\\\\ssh_login_key.ppk\" -O private-openssh -o \"D:\\\\key_openssh.pem\" 2>\"D:\\\\pg_err.txt\"; echo \"exit=$?\"; cat \"D:\\\\pg_err.txt\" 2>/dev/null; ls -la \"D:\\\\key_openssh.pem\" 2>/dev/null || echo \"no output file\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -i \"D:\\\\ssh_login_key.ppk\" -P 53217 -batch root@139.59.69.241 \"echo CONNECTED_OK; pm2 -v\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -P 53217 -batch root@139.59.69.241 \"echo CONNECTED_OK; hostname; pm2 -v; whoami\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -P 53217 -batch root@139.59.69.241 \"pm2 list\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -P 53217 -batch root@139.59.69.241 \"pm2 describe 27 | grep -Ei 'script path|exec cwd|name|status|restarts|unstable|uptime|out log|error log'\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -P 53217 -batch root@139.59.69.241 \"echo '===== ERROR LOG \\(tail 40\\) ====='; tail -n 40 /root/.pm2/logs/log-listener-batch-v2-error.log; echo; echo '===== OUT LOG \\(tail 30\\) ====='; tail -n 30 /root/.pm2/logs/log-listener-batch-v2-out.log\")",
+      "Bash('C:\\\\Program Files\\\\PuTTY\\\\plink.exe' -P 53217 -batch root@139.59.69.241 'cd /var/www/mytime2cloud/mytime2cloud-v2-services/listener; echo '\\\\''=== listener dir logs ==='\\\\''; ls -la logs/ 2>/dev/null | tail -15; echo '\\\\''=== failed-attendance today: Hilal registered device hits ==='\\\\''; F=$\\(ls -t logs/failed-attendance-*.jsonl 2>/dev/null | head -1\\); echo \"file=$F\"; grep -oE '\\\\''OX-94520250110\\(04|14|16|22|54|84|96\\)'\\\\'' $F 2>/dev/null | sort | uniq -c')",
+      "Bash('C:\\\\Program Files\\\\PuTTY\\\\plink.exe' -P 53217 -batch root@139.59.69.241 ' *)",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\pscp.exe\" -P 53217 \"d:\\\\newmytime2cloud\\\\loglistner_mqtt\\\\replay-failed.js\" root@139.59.69.241:/var/www/mytime2cloud/mytime2cloud-v2-services/listener/replay-failed.js)",
+      "Bash(echo \"scp exit=$?\")",
+      "Read(//tmp/**)"
+    ],
+    "additionalDirectories": [
+      "D:\\"
     ]
   }
 }

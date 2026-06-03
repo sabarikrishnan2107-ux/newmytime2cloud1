@@ -12,7 +12,7 @@ import {
 import DropDown from "@/components/ui/DropDown";
 import DateRangeSelect from "@/components/ui/DateRange";
 import { getMissingLogsDeviceList, getMissingAttendanceLogs } from "@/lib/api";
-import { formatDateDubai, notify, parseApiError } from "@/lib/utils";
+import { formatDateLocal, notify, parseApiError } from "@/lib/utils";
 
 /**
  * Missing Device Logs — re-pulls attendance logs that a device failed to push
@@ -23,7 +23,7 @@ import { formatDateDubai, notify, parseApiError } from "@/lib/utils";
 export default function MissingLogsModal({ open, onClose }) {
   const [devices, setDevices] = useState([]);
   const [deviceId, setDeviceId] = useState(null);
-  const [date, setDate] = useState(formatDateDubai(new Date()));
+  const [date, setDate] = useState(formatDateLocal(new Date()));
 
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -222,7 +222,7 @@ export default function MissingLogsModal({ open, onClose }) {
                 numberOfMonths={1}
                 onChange={({ from, to }) => {
                   const picked = from || to;
-                  setDate(picked ? formatDateDubai(picked) : "");
+                  setDate(picked ? formatDateLocal(picked) : "");
                 }}
               />
               {errors.date && (

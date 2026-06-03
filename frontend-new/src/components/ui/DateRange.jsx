@@ -3,7 +3,7 @@
 import { format, addMonths, subMonths, startOfMonth } from "date-fns";
 import { Calendar as CalendarIcon, Check, X, ChevronLeft, ChevronRight } from "lucide-react";
 
-import { cn, formatDateDubai } from "@/lib/utils";
+import { cn, formatDateLocal, parseDateLocal } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -156,6 +156,11 @@ export default function DateRangeSelect({
 }) {
   const [date, setDate] = useState({ from: null, to: null });
   const [draftDate, setDraftDate] = useState(date);
+  // The first-clicked day of an in-progress range selection. Kept SEPARATE from
+  // draftDate so background re-renders (e.g. live WebSocket/MQTT updates) that
+  // re-sync draftDate from `value` can't wipe the in-progress anchor and cause
+  // the 2nd click to be misread as a 1st click.
+  const [anchor, setAnchor] = useState(null);
   const [open, setOpen] = useState(false);
   const [yearPickerOpen, setYearPickerOpen] = useState(false);
   const [viewMonth, setViewMonth] = useState(new Date());
@@ -171,17 +176,29 @@ export default function DateRangeSelect({
   useEffect(() => {
     if (value?.from || value?.to) {
       const newRange = {
-        from: value.from ? new Date(value.from) : null,
-        to: value.to ? new Date(value.to) : null,
+        from: value.from ? parseDateLocal(value.from) : null,
+        to: value.to ? parseDateLocal(value.to) : null,
       };
       setDate(newRange);
-      setDraftDate(newRange);
+      // Only mirror the committed value into the draft when the picker is
+      // CLOSED. While it's open the user may be mid-selection (anchor set,
+      // waiting for the 2nd click); re-syncing here would clobber that.
+      if (!open) setDraftDate(newRange);
     }
-  }, [value]);
+    // `value` is often a fresh object literal each parent render, so depend on
+    // the actual date strings — not the object identity — to avoid needless runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value?.from, value?.to, open]);
 
   const handleOpenChange = (newOpen) => {
     setOpen(newOpen);
-    if (!newOpen) {
+    if (newOpen) {
+      // Fresh selection session — start with no anchor so the first click
+      // always sets the anchor, regardless of any pre-seeded committed range.
+      setAnchor(null);
+      setDraftDate(date);
+    } else {
+      setAnchor(null);
       setDraftDate(date);
       setYearPickerOpen(false);
     }
@@ -192,39 +209,40 @@ export default function DateRangeSelect({
     setOpen(false);
     setYearPickerOpen(false);
     onChange({
-      from: formatDateDubai(range.from),
-      to: formatDateDubai(range.to),
+      from: formatDateLocal(range.from),
+      to: formatDateLocal(range.to),
     });
   };
 
   // Drive the two-click range selection ourselves off the clicked day
-  // (react-day-picker v9 passes it as the 2nd onSelect arg). This keeps the
-  // behavior deterministic regardless of any pre-seeded committed range:
-  // first click sets the anchor and keeps the popover open, second click
-  // completes the range and closes it.
+  // (react-day-picker v9 passes it as the 2nd onSelect arg) and an explicit
+  // `anchor` state. This stays deterministic regardless of any pre-seeded
+  // committed range or background re-render: first click sets the anchor and
+  // keeps the popover open, second click completes the range and closes it.
   const handleRangeSelect = (range, selectedDay) => {
     const clicked = selectedDay || range?.to || range?.from;
     if (!clicked) return;
 
-    const hasAnchor = draftDate?.from && !draftDate?.to;
-    if (!hasAnchor) {
+    if (!anchor) {
       // First click — set the anchor, stay open, wait for the second date.
+      setAnchor(clicked);
       setDraftDate({ from: clicked, to: null });
       return;
     }
 
     // Second click — complete the range (ordering the two dates) and close.
-    const anchor = draftDate.from;
     const finalRange =
       clicked.getTime() < anchor.getTime()
         ? { from: clicked, to: anchor }
         : { from: anchor, to: clicked };
+    setAnchor(null);
     setDraftDate(finalRange);
     commitRange(finalRange);
   };
 
   const handleSingleSelect = (d) => {
     const range = { from: d || null, to: d || null };
+    setAnchor(null);
     setDraftDate(range);
     if (d) commitRange(range);
   };

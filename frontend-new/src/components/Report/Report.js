@@ -12,7 +12,7 @@ import Pagination from '@/lib/Pagination';
 import DataTable from '@/components/ui/DataTable';
 import Columns from "./columns";
 import MultiDropDown from '@/components/ui/MultiDropDown';
-import { formatDateDubai, notify, parseApiError } from '@/lib/utils';
+import { formatDateLocal, notify, parseApiError } from '@/lib/utils';
 import RegenerateReport from '@/components/Report/Regenerate';
 import { getAttendanceTabs } from '@/lib/endpoint/attendance';
 import LoadingProgressDialog from './LoadingProgressDialog';
@@ -281,8 +281,8 @@ function AttendanceTableInner() {
         shift_type_id: shiftTypeId,
         report_template: selectedReportTemplate,
         overtime: 0,
-        from_date: formatDateDubai(from),
-        to_date: formatDateDubai(to),
+        from_date: formatDateLocal(from),
+        to_date: formatDateLocal(to),
         employee_id: selectedEmployeeIds,
         statuses: isAbsentTab ? ['A'] : selectedStatusIds,
         department_ids: selectedDepartmentIds,
@@ -337,8 +337,8 @@ function AttendanceTableInner() {
         const PDF_SERVICE = process.env.NEXT_PUBLIC_PDF_SERVICE_URL || 'http://localhost:3002';
         const SUMMARY_BASE = process.env.NEXT_PUBLIC_SUMMARY_REPORT_URL || PDF_SERVICE;
         const userAbs = getUser();
-        const fromDateAbs = formatDateDubai(from);
-        const toDateAbs = absentMode === 'daily' ? fromDateAbs : formatDateDubai(to);
+        const fromDateAbs = formatDateLocal(from);
+        const toDateAbs = absentMode === 'daily' ? fromDateAbs : formatDateLocal(to);
         const mode = absentMode;
         const templatePath = `absent-report/${mode}.html`;
 
@@ -382,8 +382,8 @@ function AttendanceTableInner() {
       let company_id = user?.company_id ?? 0;
       let branch_id = user?.branch_id ?? null;
 
-      const fromDate = formatDateDubai(from);
-      const toDate = formatDateDubai(to);
+      const fromDate = formatDateLocal(from);
+      const toDate = formatDateLocal(to);
 
       // Common parameters used in most logic branches (matching Vue exactly)
       const commonParams = {

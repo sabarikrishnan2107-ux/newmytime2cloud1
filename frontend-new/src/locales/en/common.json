@@ -63,13 +63,18 @@
       "alert": "Alert"
     },
     "absences": {
-      "title": "Daily Absences",
-      "subtitle": "Last 7 days · bar height = absent count",
+      "title": "Daily Attendance",
+      "subtitle": "Present vs absent · last 7 days",
+      "present": "Present",
+      "absent": "Absent",
       "avg": "Avg",
       "peak": "Peak",
       "total": "Total",
+      "avgPresent": "Avg present",
+      "avgAbsent": "Avg absent",
+      "peakAbsent": "Peak absent",
       "tooltipAbsent": "absent",
-      "tooltipPresent": "Present:"
+      "tooltipPresent": "present"
     },
     "wellness": {
       "title": "Workforce Wellness",

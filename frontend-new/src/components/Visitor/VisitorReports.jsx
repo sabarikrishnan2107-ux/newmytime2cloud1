@@ -14,7 +14,7 @@ import {
 import Pagination from "@/lib/Pagination";
 import { api, buildQueryParams } from "@/lib/api-client";
 import { getBranches, getVisitorHosts } from "@/lib/api";
-import { formatDateDubai, parseApiError, notify } from "@/lib/utils";
+import { formatDateLocal, parseApiError, notify } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 
 const COL_KEY = {
@@ -143,8 +143,8 @@ export default function VisitorReports() {
         page: currentPage,
         per_page: perPage,
         report_type: reportType,
-        from_date: formatDateDubai(from),
-        to_date: formatDateDubai(to),
+        from_date: formatDateLocal(from),
+        to_date: formatDateLocal(to),
       };
       if (selectedVisitorTypes.length) params.visitor_types = selectedVisitorTypes.join(",");
       if (selectedStatuses.length) params.statuses = selectedStatuses.join(",");
@@ -198,8 +198,8 @@ export default function VisitorReports() {
     }
     const qs = new URLSearchParams({
       report_type: reportType,
-      from_date: formatDateDubai(from),
-      to_date: formatDateDubai(to),
+      from_date: formatDateLocal(from),
+      to_date: formatDateLocal(to),
       format,
     });
     if (selectedVisitorTypes.length) qs.append("visitor_types", selectedVisitorTypes.join(","));

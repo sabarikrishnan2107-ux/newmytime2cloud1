@@ -12,7 +12,7 @@ import {
 import DropDown from "@/components/ui/DropDown";
 
 import { getBranches, updatePayrollGenerationDate } from "@/lib/api";
-import { formatDateDubai, parseApiError } from "@/lib/utils";
+import { formatDateLocal, parseApiError } from "@/lib/utils";
 
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -66,7 +66,7 @@ const Edit = ({
     setError(null);
     setLoading(true);
     try {
-      await updatePayrollGenerationDate(initialData.id, { ...form, date: formatDateDubai(form.date) });
+      await updatePayrollGenerationDate(initialData.id, { ...form, date: formatDateLocal(form.date) });
       onSuccess({ title: t("payroll.tabs.actions.successSaved", { title: pageTitle }), description: t("payroll.tabs.actions.successSavedDesc", { title: pageTitle }) }); actualSetOpen(false);
     } catch (error) {
       setError(parseApiError(error));
@@ -109,7 +109,7 @@ const Edit = ({
                   className="w-full justify-start text-left font-normal"
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.date ? formatDateDubai(form.date) : <span>{t("payroll.tabs.pickDate")}</span>}
+                  {form.date ? formatDateLocal(form.date) : <span>{t("payroll.tabs.pickDate")}</span>}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="p-0" align="start">

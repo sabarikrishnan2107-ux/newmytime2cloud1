@@ -67,6 +67,43 @@ export const formatDateDubai = (date = new Date()) => {
   return formatter.format(d); // returns YYYY-MM-DD
 };
 
+// For dates the user PICKED on a calendar (a plain civil date with no real
+// time component). react-day-picker stores the clicked day as local midnight,
+// so we must serialize its LOCAL year/month/day — never reproject it into
+// another timezone, or clients east of Dubai (e.g. IST, UTC+5:30) shift back
+// a day (pick May 1 -> send Apr 30). Already-formatted "YYYY-MM-DD" strings
+// pass through unchanged.
+export const formatDateLocal = (date = new Date()) => {
+  if (!date) return "";
+  if (typeof date === "string") {
+    // If it's already a plain YYYY-MM-DD, keep it as-is.
+    const m = date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  }
+  const d = new Date(date);
+  if (Number.isNaN(d.getTime())) return "";
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`; // returns YYYY-MM-DD in the user's local day
+};
+
+// Parse a plain "YYYY-MM-DD" into a LOCAL-midnight Date. `new Date("2026-05-01")`
+// parses as UTC midnight, which lands on the previous day for users west of UTC
+// when read back into the calendar. Building the Date from numeric parts keeps
+// the civil day intact in every timezone. Non date-only values fall back to the
+// native Date constructor.
+export const parseDateLocal = (value) => {
+  if (!value) return null;
+  if (value instanceof Date) return value;
+  if (typeof value === "string") {
+    const m = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  }
+  const d = new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+};
+
 export const parseApiError = (error) => {
   if (error.response) {
 

@@ -18,7 +18,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { formatDateDubai, getBgColor, getMonthBounds, getSelectedMonthLabel, setStatusLabel } from '@/lib/utils';
+import { formatDateLocal, getBgColor, getMonthBounds, getSelectedMonthLabel, setStatusLabel } from '@/lib/utils';
 import { downloadSummaryPDF } from '@/lib/endpoint/report';
 import PDFProgressOverlay from './PDFProgressOverlay';
 
@@ -33,7 +33,7 @@ export default function ExecutiveAttendanceDashboardPage() {
 
   const [reportType, setReportType] = useState('daily'); // 'daily' or 'monthly'
 
-  const [selectedDate, setSelectedDate] = useState(formatDateDubai());
+  const [selectedDate, setSelectedDate] = useState(formatDateLocal());
 
   const [isLogsOpen, setIsLogsOpen] = useState(false);
   const [selectedLogRow, setSelectedLogRow] = useState(null);

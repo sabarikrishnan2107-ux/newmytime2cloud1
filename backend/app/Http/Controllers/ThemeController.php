@@ -633,18 +633,28 @@ class ThemeController extends Controller
                     ->when($request->filled("system_user_id"), function ($q) use ($request) {
                         $q->where("employee_id", $request->system_user_id);
                     })
-                    ->select('status')
+                    ->select('status', 'employee_id')
                     ->get();
+
+                // Count DISTINCT employees per status, not raw rows. An employee can
+                // have multiple attendance rows for one day (one per shift_type), and
+                // counting rows lets a daily count exceed the headcount. Mirror the
+                // dashboard cards, which count people. "M" (missing punch) is treated
+                // as present elsewhere, so it is NOT folded into absent.
+                $countByStatus = fn(string $status) => $model
+                    ->where('status', $status)
+                    ->unique('employee_id')
+                    ->count();
 
                 $finalarray[] = [
                     "date"           => $date,
-                    "presentCount"   => $model->where('status', 'P')->count(),
-                    "absentCount"    => $model->where('status', 'A')->count(),
-                    "missingCount"   => $model->where('status', 'M')->count(),
-                    "offCount"       => $model->where('status', 'O')->count(),
-                    "holidayCount"   => $model->where('status', 'H')->count(),
-                    "leaveCount"     => $model->where('status', 'L')->count(),
-                    "vaccationCount" => $model->where('status', 'V')->count(),
+                    "presentCount"   => $countByStatus('P'),
+                    "absentCount"    => $countByStatus('A'),
+                    "missingCount"   => $countByStatus('M'),
+                    "offCount"       => $countByStatus('O'),
+                    "holidayCount"   => $countByStatus('H'),
+                    "leaveCount"     => $countByStatus('L'),
+                    "vaccationCount" => $countByStatus('V'),
                 ];
             }
 
@@ -658,20 +668,58 @@ class ThemeController extends Controller
     {
         $rows = $this->dashboardGetCountslast7Days($request);
 
+        $companyId = $request->company_id;
+
+        // Headcount (same branch/department scope as the dashboard cards). The chart
+        // scales bar heights against this, so each bar reads as "X of N people".
+        $headcount = Employee::where("company_id", $companyId)
+            ->when($request->filled("branch_id"), fn($q) => $q->where("branch_id", $request->branch_id))
+            ->when($request->filled("department_id") && $request->department_id > 0, fn($q) => $q->where("department_id", $request->department_id))
+            ->when($request->filled("branch_ids"), fn($q) => $q->whereIn("branch_id", $request->branch_ids))
+            ->when($request->filled("department_ids"), fn($q) => $q->whereIn("department_id", $request->department_ids))
+            ->count();
+
+        // Present per day = DISTINCT employees who actually punched that day (attendance
+        // logs), exactly like the "Present Today" card. Status 'P' lags on the current
+        // day (still being processed), so reading logs keeps the chart in sync with the
+        // top cards. Absent is then derived the same way as "Unplanned Absence".
+        $dates = array_map(fn($r) => $r["date"], $rows);
+        $punchesByDay = [];
+        if (!empty($dates)) {
+            $punchesByDay = AttendanceLog::where('company_id', $companyId)
+                ->whereBetween('LogTime', [min($dates) . ' 00:00:00', max($dates) . ' 23:59:59'])
+                ->whereHas('employee', function ($q) use ($request) {
+                    $q->where('company_id', $request->company_id);
+                    if ($request->filled('branch_id')) $q->where('branch_id', $request->branch_id);
+                    if ($request->filled('department_id') && $request->department_id > 0) $q->where('department_id', $request->department_id);
+                    if ($request->filled('branch_ids')) $q->whereIn('branch_id', $request->branch_ids);
+                    if ($request->filled('department_ids')) $q->whereIn('department_id', $request->department_ids);
+                })
+                ->selectRaw('LEFT("LogTime", 10) as d, COUNT(DISTINCT "UserID") as c')
+                ->groupByRaw('LEFT("LogTime", 10)')
+                ->pluck('c', 'd')
+                ->toArray();
+        }
+
         $data = [];
         foreach ($rows as $row) {
-            $d         = new DateTime($row["date"]);
-            $absent    = (int) ($row["absentCount"] ?? 0) + (int) ($row["missingCount"] ?? 0);
+            $d        = new DateTime($row["date"]);
+            $leave    = (int) ($row["leaveCount"] ?? 0);
+            $vacation = (int) ($row["vaccationCount"] ?? 0);
+            $present  = (int) ($punchesByDay[$row["date"]] ?? 0);
+            // Mirror the "Unplanned Absence" card: everyone not present/on-leave/on-vacation.
+            $absent   = max(0, $headcount - ($present + $leave + $vacation));
 
             $data[] = [
                 "date"      => $row["date"],
                 "day"       => $d->format("D"),         // "Mon"
                 "dayLetter" => substr($d->format("D"), 0, 1),
                 "dateLabel" => $d->format("d M"),       // "11 May"
-                "present"   => (int) ($row["presentCount"] ?? 0),
+                "present"   => $present,
                 "absent"    => $absent,
-                "leave"     => (int) ($row["leaveCount"] ?? 0),
-                "vacation"  => (int) ($row["vaccationCount"] ?? 0),
+                "leave"     => $leave,
+                "vacation"  => $vacation,
+                "headcount" => $headcount,
             ];
         }
 

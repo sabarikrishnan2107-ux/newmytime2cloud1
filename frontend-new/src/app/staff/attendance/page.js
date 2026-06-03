@@ -5,7 +5,7 @@ import { api, buildQueryParams } from "@/lib/api-client";
 import { getStaffUser } from "@/lib/staff-user";
 import ProfilePicture from "@/components/ProfilePicture";
 import DateRangeSelect from "@/components/ui/DateRange";
-import { formatDateDubai } from "@/lib/utils";
+import { formatDateLocal } from "@/lib/utils";
 import {
   Contact,
   Edit3,
@@ -207,8 +207,8 @@ function getDefaultDateRange() {
   const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
   return {
-    from: formatDateDubai(monthStart),
-    to: formatDateDubai(today),
+    from: formatDateLocal(monthStart),
+    to: formatDateLocal(today),
   };
 }
 

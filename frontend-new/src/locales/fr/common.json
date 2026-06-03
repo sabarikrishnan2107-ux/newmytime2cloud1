@@ -63,13 +63,18 @@
       "alert": "Alerte"
     },
     "absences": {
-      "title": "Absences quotidiennes",
-      "subtitle": "7 derniers jours · hauteur de barre = nombre d'absences",
+      "title": "Présence quotidienne",
+      "subtitle": "Présents vs absents · 7 derniers jours",
+      "present": "Présents",
+      "absent": "Absents",
       "avg": "Moy.",
       "peak": "Pic",
       "total": "Total",
+      "avgPresent": "Moy. présents",
+      "avgAbsent": "Moy. absents",
+      "peakAbsent": "Pic absents",
       "tooltipAbsent": "absent",
-      "tooltipPresent": "Présents :"
+      "tooltipPresent": "présent"
     },
     "wellness": {
       "title": "Bien-être de l'équipe",

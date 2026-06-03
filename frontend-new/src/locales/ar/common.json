@@ -63,13 +63,18 @@
       "alert": "تنبيه"
     },
     "absences": {
-      "title": "حالات الغياب اليومية",
-      "subtitle": "آخر 7 أيام · ارتفاع العمود = عدد الغياب",
+      "title": "الحضور اليومي",
+      "subtitle": "الحاضرون مقابل الغائبين · آخر 7 أيام",
+      "present": "حاضر",
+      "absent": "غائب",
       "avg": "متوسط",
       "peak": "ذروة",
       "total": "إجمالي",
+      "avgPresent": "متوسط الحضور",
+      "avgAbsent": "متوسط الغياب",
+      "peakAbsent": "ذروة الغياب",
       "tooltipAbsent": "غائب",
-      "tooltipPresent": "حاضر:"
+      "tooltipPresent": "حاضر"
     },
     "wellness": {
       "title": "صحة القوى العاملة",

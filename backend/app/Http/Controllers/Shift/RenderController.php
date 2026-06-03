@@ -232,6 +232,74 @@ class RenderController extends Controller
             }
         }
 
+        // After normalization, (re)apply approved leaves so a regenerate never
+        // overwrites an approved-leave day with Absent/Missing.
+        $this->applyApprovedLeavesForRange($request);
+
+        return $updated;
+    }
+
+    /**
+     * For any APPROVED leave (status = 1) overlapping the rendered range, stamp the
+     * covered dates that came out Absent/Missing as Leave (L) — or Vacation (V) when
+     * the leave type is a vacation. Week-off (O), Holiday (H) and genuinely-Present
+     * days are left untouched, so a leave that spans a week-off still shows correctly.
+     */
+    protected function applyApprovedLeavesForRange(Request $request): int
+    {
+        $companyId   = (int) ($request->company_id ?? ($request->company_ids[0] ?? 0));
+        $employeeIds = (array) ($request->employee_ids ?? []);
+        $dates       = (array) ($request->dates ?? []);
+
+        if (!$companyId || !$dates) {
+            return 0;
+        }
+
+        try {
+            $from = Carbon::parse($dates[0])->format('Y-m-d');
+            $to   = Carbon::parse($dates[1] ?? $dates[0])->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return 0;
+        }
+
+        $leaves = EmployeeLeaves::with(['employee', 'leave_type'])
+            ->where('company_id', $companyId)
+            ->where('status', 1)
+            ->where('start_date', '<=', $to)
+            ->where('end_date', '>=', $from)
+            ->get();
+
+        $updated = 0;
+
+        foreach ($leaves as $leave) {
+            // Match attendance whether the row was keyed by system_user_id or the
+            // employees.id (legacy rows use either).
+            $empIds = array_values(array_filter([
+                $leave->employee->system_user_id ?? null,
+                $leave->employee->id ?? null,
+            ]));
+            if (!$empIds) {
+                continue;
+            }
+
+            $name = strtolower($leave->leave_type->name ?? '');
+            $leaveStatus = (strpos($name, 'vacation') !== false) ? 'V' : 'L';
+
+            $start = max($from, Carbon::parse($leave->start_date)->format('Y-m-d'));
+            $end   = min($to, Carbon::parse($leave->end_date)->format('Y-m-d'));
+
+            // Flip Absent/Missing (and the opposite leave-code) within the span to
+            // this leave's status, so the whole approved range reads uniformly.
+            $flipFrom = $leaveStatus === 'V' ? ['A', 'M', 'L'] : ['A', 'M', 'V'];
+
+            $updated += DB::table('attendances')
+                ->where('company_id', $companyId)
+                ->whereIn('employee_id', $empIds)
+                ->whereBetween('date', [$start, $end])
+                ->whereIn('status', $flipFrom)
+                ->update(['status' => $leaveStatus]);
+        }
+
         return $updated;
     }
 
