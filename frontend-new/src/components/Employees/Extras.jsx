@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getBranches, uploadEmployee, downloadEmployeeSampleTemplate, exportEmployeesExcel } from "@/lib/api";
-import { FileDown, Upload, FileSpreadsheet } from "lucide-react";
+import { Download, Upload, FileSpreadsheet } from "lucide-react";
 
 import {
   Popover,
@@ -140,32 +140,38 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
     }
   };
 
-  const btnBase = "p-2 transition-all duration-200 rounded-xl border glass-card !bg-white border-gray-200 dark:!bg-slate-900 dark:border-white/10 active:scale-95";
+  const btnBase = "inline-flex items-center gap-2 h-[42px] px-3.5 rounded-xl text-[13px] font-semibold border transition-all duration-200 active:scale-95";
 
   return (
     <>
       {/* Inline action buttons */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-2">
+        {/* Sample template (neutral) */}
         <button
-          title="Download Sample File"
+          title="Download sample template"
           onClick={handleDownloadSample}
-          className={`${btnBase} text-sky-600 hover:bg-sky-50 hover:border-sky-300 dark:text-sky-400 dark:hover:bg-sky-500/10 dark:hover:border-sky-500/40`}
+          className={`${btnBase} text-gray-600 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-800 dark:text-slate-300 dark:bg-slate-900 dark:border-white/10 dark:hover:bg-slate-800 dark:hover:text-white`}
         >
-          <FileDown className="w-5 h-5" />
+          <FileSpreadsheet className="w-[18px] h-[18px]" />
+          <span className="hidden sm:inline">Template</span>
         </button>
+        {/* Import (green) */}
         <button
-          title="Import Employees"
+          title="Import employees from Excel"
           onClick={() => setDialogOpen(true)}
-          className={`${btnBase} text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 dark:text-emerald-400 dark:hover:bg-emerald-500/10 dark:hover:border-emerald-500/40`}
+          className={`${btnBase} text-emerald-600 bg-emerald-50 border-emerald-200 hover:bg-emerald-100 dark:text-emerald-400 dark:bg-emerald-500/10 dark:border-emerald-500/30 dark:hover:bg-emerald-500/20`}
         >
-          <Upload className="w-5 h-5" />
+          <Download className="w-[18px] h-[18px]" />
+          <span className="hidden sm:inline">Import</span>
         </button>
+        {/* Export (blue) */}
         <button
-          title="Export Employees"
+          title="Export employees to Excel"
           onClick={handleExportEmployees}
-          className={`${btnBase} text-rose-600 hover:bg-rose-50 hover:border-rose-300 dark:text-rose-400 dark:hover:bg-rose-500/10 dark:hover:border-rose-500/40`}
+          className={`${btnBase} text-sky-600 bg-sky-50 border-sky-200 hover:bg-sky-100 dark:text-sky-400 dark:bg-sky-500/10 dark:border-sky-500/30 dark:hover:bg-sky-500/20`}
         >
-          <FileSpreadsheet className="w-5 h-5" />
+          <Upload className="w-[18px] h-[18px]" />
+          <span className="hidden sm:inline">Export</span>
         </button>
       </div>
       {/* Dialog */}

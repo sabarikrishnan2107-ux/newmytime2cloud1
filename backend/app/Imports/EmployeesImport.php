@@ -60,17 +60,16 @@ class EmployeesImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            $departmentId = $this->resolveDepartmentId($data['department']);
-            if (! $departmentId) {
-                $this->errors[] = "Row {$rowNumber}: department '{$data['department']}' not found for this company";
-                continue;
-            }
+            // Department is optional. If the name isn't found for this company,
+            // leave it blank (null) instead of rejecting the row — the user can
+            // assign the department later from the employee profile.
+            $departmentId = $this->resolveDepartmentId($data['department'] ?? '');
 
             $branchId = $this->resolveBranchId($data['branch'] ?? '') ?: $this->branchId;
             $designationId = $this->resolveDesignationId($data['designation'] ?? '');
 
             $payload = [
-                'title'          => $data['title'],
+                'title'          => $this->normalizeTitle($data['title']),
                 'employee_id'    => $data['employee_id'],
                 'system_user_id' => $data['employee_device_id'],
                 'first_name'     => $data['first_name'],
@@ -78,7 +77,7 @@ class EmployeesImport implements ToCollection, WithHeadingRow
                 'display_name'   => $data['display_name'],
                 'phone_number'   => $data['phone_number'] ?? null,
                 'whatsapp_number'=> $data['whatsapp_number'] ?? null,
-                'local_email'    => $data['email'] ?? null,
+                'local_email'    => $this->sanitizeEmail($data['email'] ?? null),
                 'joining_date'   => $this->parseDate($data['joining_date'] ?? null),
                 'company_id'     => $this->companyId,
                 'department_id'  => $departmentId,
@@ -178,27 +177,43 @@ class EmployeesImport implements ToCollection, WithHeadingRow
 
     protected function validate(array $data)
     {
+        // Forgiving import: only the two identity keys are required. Everything
+        // else (title, display_name, department, designation, branch, email,
+        // photo) is optional and left empty when missing/invalid so the row
+        // still imports — the user fills those in later from the profile.
         $rules = [
-            'title'              => ['required', 'in:Mr,Mrs,Miss,Ms,Dr'],
             'employee_id'        => ['required'],
             'employee_device_id' => ['required'],
-            'first_name'         => ['required'],
-            'last_name'          => ['required'],
-            'display_name'       => ['required', 'min:3', 'max:10'],
-            'department'         => ['required'],
-            'email'              => ['nullable', 'email'],
         ];
         $messages = [
-            'title.in'              => 'title must be one of Mr, Mrs, Miss, Ms, Dr',
-            'display_name.min'      => 'display_name must be at least 3 characters',
-            'display_name.max'      => 'display_name cannot exceed 10 characters',
-            'email.email'           => 'email is not valid',
+            'employee_id.required'        => 'employee_id is required',
+            'employee_device_id.required' => 'employee_device_id is required',
         ];
         $v = Validator::make($data, $rules, $messages);
         if ($v->fails()) {
             return implode('; ', $v->errors()->all());
         }
         return true;
+    }
+
+    /**
+     * Normalize a title to one of the allowed values (case-insensitive,
+     * tolerates a trailing dot like "Mr."). Returns null when it doesn't
+     * match, so the field is simply left blank instead of failing the row.
+     */
+    protected function normalizeTitle($value): ?string
+    {
+        if (empty($value)) return null;
+        $allowed = ['mr' => 'Mr', 'mrs' => 'Mrs', 'miss' => 'Miss', 'ms' => 'Ms', 'dr' => 'Dr'];
+        $key = strtolower(trim((string) $value, " .\t\n\r"));
+        return $allowed[$key] ?? null;
+    }
+
+    /** Keep a valid email, otherwise drop it (leave blank) rather than fail the row. */
+    protected function sanitizeEmail($value): ?string
+    {
+        if (empty($value)) return null;
+        return filter_var((string) $value, FILTER_VALIDATE_EMAIL) ? (string) $value : null;
     }
 
     protected function resolveDepartmentId($value): ?int
