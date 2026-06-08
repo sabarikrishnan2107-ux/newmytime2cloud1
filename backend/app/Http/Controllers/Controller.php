@@ -484,9 +484,16 @@ class Controller extends BaseController
         }
 
         $date = date('Y-m-d');
-        $time = date('H:i');
 
-        Storage::disk('local')->append("$logFilePath/$date.log", $payload);
+        try {
+            Storage::disk('local')->append("$logFilePath/$date.log", $payload);
+        } catch (\Throwable $e) {
+            // Debug logging must never break the business request. A storage
+            // permission issue on the log directory (e.g. a cron created the
+            // parent dir as another user) used to bubble up as a 500 from
+            // endpoints like /render_logs. Degrade silently to the framework log.
+            Log::warning("logOutPut failed for {$logFilePath}: " . $e->getMessage());
+        }
     }
 
     public function throwAuthException($request, $user)
