@@ -8,6 +8,7 @@ import {
   canUserAccessPath,
   firstAllowedHrefForUser,
 } from "@/lib/moduleAccess";
+import { featureForPath, canSeeFeature } from "@/lib/permissions-check";
 
 // Client-side page-level gate for manager logins. Admins/non-managers pass
 // through untouched. Managers are redirected away from modules their role does
@@ -30,7 +31,10 @@ export default function AccessGuard({ children }) {
   const manager = isManagerUser(user);
   const dest = manager ? firstAllowedHrefForUser(user) : null;
   const destNorm = (dest || "").replace(/\/+$/, "") || "/";
-  const blocked = manager && !!dest && !canUserAccessPath(user, path);
+  // Block when the module is off OR (the path maps to a feature the manager can't view).
+  const feat = featureForPath(path);
+  const featureBlocked = !!feat && !canSeeFeature(user, feat.moduleKey, feat.featureId);
+  const blocked = manager && !!dest && (!canUserAccessPath(user, path) || featureBlocked);
 
   useEffect(() => {
     if (ready && blocked && path !== destNorm) {

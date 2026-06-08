@@ -10,10 +10,19 @@ import Columns from "./columns";
 import Create from "./Create";
 import SubDepartmentCreate from "../SubDepartment/Create";
 import { notify, parseApiError } from "@/lib/utils";
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 import EditDepartment from "./Edit";
 import EditSubDepartment from "../SubDepartment/Edit";
 
 export default function Department() {
+  // Manager permission flags for the Department (Organization Settings) feature.
+  const user = getUser();
+  const canCreate = can(user, "settings", "department-tabs", "create");
+  const canEdit = can(user, "settings", "department-tabs", "edit");
+  const canDelete = can(user, "settings", "department-tabs", "delete");
+  const canView = can(user, "settings", "department-tabs", "view");
+
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -106,10 +115,10 @@ export default function Department() {
             Add Sub Department
           </button> */}
 
-          <SubDepartmentCreate onSuccess={fetchRecords} />
+          {canCreate && <SubDepartmentCreate onSuccess={fetchRecords} />}
 
 
-          <Create onSuccess={fetchRecords} />
+          {canCreate && <Create onSuccess={fetchRecords} />}
 
         </div>
       </div>
@@ -195,18 +204,20 @@ export default function Department() {
                   <td className="py-3 px-4 ">
                     <div className="flex justify-center gap-1">
 
-                      {
+                      {canEdit && (
                         isParent
                           ? <EditDepartment defaultPayload={record} onSuccess={fetchRecords} />
                           : <EditSubDepartment defaultPayload={record} onSuccess={fetchRecords} />
-                      }
+                      )}
 
+                      {canDelete && (
                       <button
                         onClick={() => isParent ? handleParentDelete(record.id) : handleDelete(record.id)}
                         className="p-1.5 rounded-md text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
                       >
                         <Trash size={15} />
                       </button>
+                      )}
                     </div>
                   </td>
                 </tr>

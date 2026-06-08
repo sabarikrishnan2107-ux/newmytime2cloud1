@@ -5,6 +5,8 @@ import { Search, Plus, RefreshCw } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getPaginatedRoles, removeEmployee, removeRole } from '@/lib/api';
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 
 import Columns from "./columns";
 import DataTable from '@/components/ui/DataTable';
@@ -15,6 +17,14 @@ import Input from '@/components/Theme/Input';
 export default function EmployeeDataTable() {
 
     const router = useRouter();
+
+    // Manager permission flags for the Roles feature. Non-managers => all true.
+    const user = getUser();
+    const canCreate = can(user, "settings", "roles", "create");
+    const canEdit = can(user, "settings", "roles", "edit");
+    const canDelete = can(user, "settings", "roles", "delete");
+    const canView = can(user, "settings", "roles", "view");
+
     const [employees, setEmployees] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -103,6 +113,7 @@ export default function EmployeeDataTable() {
                         access levels for your organization's workforce.
                     </p>
                 </div>
+                {canCreate && (
                 <Link href="/roles/create">
                     <button
                         className="group px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg shadow-lg shadow-indigo-500/30 transition-all duration-200 flex items-center gap-2 transform active:scale-95 whitespace-nowrap"
@@ -114,6 +125,7 @@ export default function EmployeeDataTable() {
                         NEW ROLE
                     </button>
                 </Link>
+                )}
 
             </div>
             <div
@@ -133,7 +145,7 @@ export default function EmployeeDataTable() {
             </div>
 
             <DataTable
-                columns={Columns(deleteItem, editItem)}
+                columns={Columns(deleteItem, editItem, { canEdit, canDelete })}
                 data={employees}
                 isLoading={isLoading}
                 error={error}

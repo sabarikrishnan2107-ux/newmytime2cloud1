@@ -9,6 +9,8 @@ import Create from "@/components/Branch/Create";
 import Edit from "@/components/Branch/Edit";
 import { useRouter } from "next/navigation";
 import { parseApiError } from "@/lib/utils";
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 
 import {
   Dialog,
@@ -18,6 +20,13 @@ import {
 } from "@/components/ui/dialog";
 
 export default function Branch() {
+  // Manager permission flags for the Branch feature. Non-managers => all true.
+  const user = getUser();
+  const canCreate = can(user, "settings", "branch", "create");
+  const canEdit = can(user, "settings", "branch", "edit");
+  const canDelete = can(user, "settings", "branch", "delete");
+  const canView = can(user, "settings", "branch", "view");
+
   const [open, setOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState(null);
@@ -63,7 +72,7 @@ export default function Branch() {
     fetchRecords();
   };
 
-  const columns = Columns({ onSuccess: fetchRecords, handleRowClick });
+  const columns = Columns({ onSuccess: fetchRecords, handleRowClick, canEdit, canDelete });
 
   const filtered = records.filter(b =>
     !search || (b.branch_name || "").toLowerCase().includes(search.toLowerCase()) ||
@@ -78,11 +87,13 @@ export default function Branch() {
           <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 dark:text-white">Branches</h1>
           <p className="text-gray-500 dark:text-slate-400 text-sm">Manage and configure your organizational branch network.</p>
         </div>
+        {canCreate && (
         <button onClick={() => setOpen(true)}
           className="bg-gradient-to-br from-indigo-500 to-indigo-700 dark:from-indigo-400 dark:to-indigo-600 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 shadow-lg shadow-indigo-500/20 active:scale-95 transition-all text-sm">
           <span className="material-symbols-outlined text-lg">add</span>
           Add Branch
         </button>
+        )}
       </div>
 
       {/* Data Table Card */}

@@ -5,6 +5,7 @@ import { Search, Plus, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { closeDoor, deleteDevice, getBranches, getDevices, openDoor, removeEmployee, checkDeviceHealth } from '@/lib/api';
 import { getUser } from '@/config';
+import { can } from '@/lib/permissions-check';
 import { Activity } from 'lucide-react';
 
 import Columns from "./columns";
@@ -22,6 +23,13 @@ import TimeSelectionModal from './TimeSelection';
 export default function EmployeeDataTable() {
 
   const router = useRouter();
+
+  // Manager permission flags for the Device feature. Non-managers => all true.
+  const permUser = getUser();
+  const canCreate = can(permUser, "settings", "device", "create");
+  const canEdit = can(permUser, "settings", "device", "edit");
+  const canDelete = can(permUser, "settings", "device", "delete");
+  const canView = can(permUser, "settings", "device", "view");
 
   const [branches, setBranches] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -215,13 +223,13 @@ export default function EmployeeDataTable() {
             {checkingHealth ? 'Checking...' : 'Online Devices'}
           </button>
 
-          <DeviceCreate onSuccess={handleRefresh} />
+          {canCreate && <DeviceCreate onSuccess={handleRefresh} />}
 
         </div>
       </div>
 
       <DataTable
-        columns={Columns(deleteItem, editItem, deviceSettings, setOpenDoor, setCloseDoor, setAlwaysOpenDevice)}
+        columns={Columns({ canDelete })}
         data={employees}
         isLoading={isLoading}
         error={error}

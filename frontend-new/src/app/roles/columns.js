@@ -14,7 +14,7 @@ import {
 
 
 
-export default (deleteItem, editItem) => [
+export default (deleteItem, editItem, perms = {}) => [
 
   {
     key: "name",
@@ -61,19 +61,23 @@ export default (deleteItem, editItem) => [
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-30  shadow-md rounded-md py-1">
+          {perms.canEdit !== false && (
           <DropdownMenuItem
             onSelect={() => editItem(item.id)}
             className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-slate-300 cursor-pointer"
           >
             <Pencil className="w-4 h-4" /> <span>Edit</span>
           </DropdownMenuItem>
+          )}
 
+          {perms.canDelete !== false && (
           <DropdownMenuItem
             onSelect={() => deleteItem(item.id)}
             className="flex items-center gap-2 px-3 py-2 text-gray-600 dark:text-slate-300 cursor-pointer"
           >
             <Trash className="w-4 h-4" /> <span>Delete</span>
           </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),

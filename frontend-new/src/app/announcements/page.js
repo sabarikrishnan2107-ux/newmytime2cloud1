@@ -6,6 +6,8 @@ import { RefreshCw } from 'lucide-react';
 import Input from '@/components/Theme/Input';
 import { getBranches, getDepartments } from '@/lib/api';
 import { getAnnouncements, deleteAnnouncement } from '@/lib/endpoint/announcements';
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 
 import DataTable from '@/components/ui/DataTable';
 import Pagination from '@/lib/Pagination';
@@ -17,6 +19,13 @@ import IconButton from '@/components/Theme/IconButton';
 import Create from '@/components/Announcement/Create';
 
 export default function List() {
+
+    // Manager permission flags for the Announcements feature. Non-managers => all true.
+    const user = getUser();
+    const canCreate = can(user, "settings", "announcements", "create");
+    const canEdit = can(user, "settings", "announcements", "edit");
+    const canDelete = can(user, "settings", "announcements", "delete");
+    const canView = can(user, "settings", "announcements", "view");
 
     const [records, setRecords] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -186,12 +195,12 @@ export default function List() {
                     />
 
                     {/* Create Button */}
-                    <Create onSuccess={handleCreateSuccess} />
+                    {canCreate && <Create onSuccess={handleCreateSuccess} />}
                 </div>
             </div>
 
             <DataTable
-                columns={Columns(handleRowClick, handleEdit, handleDelete, handleView)}
+                columns={Columns(handleRowClick, handleEdit, handleDelete, handleView, { canEdit, canDelete })}
                 data={records}
                 isLoading={isLoading}
                 error={error}

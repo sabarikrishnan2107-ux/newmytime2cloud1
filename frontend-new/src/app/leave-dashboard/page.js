@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next";
 import { getLeavesRequest, approveLeave, rejectLeave } from "@/lib/endpoint/leaves";
 import { getBranches, getDepartments, getDepartmentsByBranchIds } from "@/lib/api";
 import { getUser } from "@/config/index";
+import { can } from "@/lib/permissions-check";
 import MultiDropDown from "@/components/ui/MultiDropDown";
 import DropDown from "@/components/ui/DropDown";
 
@@ -220,6 +221,7 @@ function HeaderBand({
   selectedDepartmentIds, setSelectedDepartmentIds,
   selectedStatus, setSelectedStatus,
   onExport,
+  canView,
 }) {
   const { t } = useTranslation();
   return (
@@ -241,10 +243,12 @@ function HeaderBand({
             <MultiDropDown placeholder={t("leave.allDepartments")} items={departments} value={selectedDepartmentIds} onChange={setSelectedDepartmentIds} badgesCount={1} portalled={false} />
           </div>
           <MoreFilterPopover status={selectedStatus} onStatusChange={setSelectedStatus} />
-          <button onClick={onExport} className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/90 px-3 py-2 text-sm font-medium text-white hover:bg-sky-500">
-            <Download className="w-4 h-4" />
-            {t("leave.export")}
-          </button>
+          {canView && (
+            <button onClick={onExport} className="inline-flex items-center gap-1.5 rounded-lg bg-sky-500/90 px-3 py-2 text-sm font-medium text-white hover:bg-sky-500">
+              <Download className="w-4 h-4" />
+              {t("leave.export")}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -432,11 +436,11 @@ function UpcomingLeaves({ items }) {
   );
 }
 
-function RowMenu({ row, onAction }) {
+function RowMenu({ row, onAction, canEdit = true }) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
-  const showApprove = row.status !== 1;
-  const showReject = row.status !== 2;
+  const showApprove = canEdit && row.status !== 1;
+  const showReject = canEdit && row.status !== 2;
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
@@ -458,7 +462,7 @@ function RowMenu({ row, onAction }) {
   );
 }
 
-function ActivityTable({ rows, loading, onAction }) {
+function ActivityTable({ rows, loading, onAction, canEdit = true }) {
   const { t } = useTranslation();
   return (
     <div className="bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-white/10 rounded-xl">
@@ -515,7 +519,7 @@ function ActivityTable({ rows, loading, onAction }) {
                   <td className="px-5 py-3 font-semibold text-slate-900 dark:text-white">{r.total_days || r.days || "—"}</td>
                   <td className="px-5 py-3"><StatusPill status={r.status} /></td>
                   <td className="px-5 py-3 text-slate-600 dark:text-slate-400">{fmtDate(r.created_at)}</td>
-                  <td className="px-5 py-3 text-right"><RowMenu row={r} onAction={onAction} /></td>
+                  <td className="px-5 py-3 text-right"><RowMenu row={r} onAction={onAction} canEdit={canEdit} /></td>
                 </tr>
               );
             })}
@@ -541,6 +545,10 @@ export default function LeaveDashboard() {
   const [drillDown, setDrillDown] = useState(null);
 
   const user = useMemo(() => getUser(), []);
+  const canCreate = can(user, "leave", "leave-dashboard", "create");
+  const canEdit = can(user, "leave", "leave-dashboard", "edit");
+  const canDelete = can(user, "leave", "leave-dashboard", "delete");
+  const canView = can(user, "leave", "leave-dashboard", "view");
   const firstName = user?.first_name || user?.name?.split?.(" ")?.[0] || "there";
   const today = useMemo(() => startOfDay(new Date()), []);
 
@@ -641,6 +649,7 @@ export default function LeaveDashboard() {
         selectedStatus={selectedStatus}
         setSelectedStatus={setSelectedStatus}
         onExport={handleExport}
+        canView={canView}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -668,7 +677,7 @@ export default function LeaveDashboard() {
         <UpcomingLeaves items={upcoming} />
       </div>
 
-      <ActivityTable rows={leaves} loading={loading} onAction={handleRowAction} />
+      <ActivityTable rows={leaves} loading={loading} onAction={handleRowAction} canEdit={canEdit} />
 
       <DrillDownModal
         open={!!drillDown}

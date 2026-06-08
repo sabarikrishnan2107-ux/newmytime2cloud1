@@ -4,6 +4,8 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { deleteGroupLogin, getBranches, getDepartments, getManagerLogins } from '@/lib/api';
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 import { EmployeeExtras } from '@/components/Employees/Extras';
 
 import Columns from "./columns";
@@ -17,6 +19,13 @@ import IconButton from '@/components/Theme/IconButton';
 import Create from "@/components/GroupLogin/Create";
 
 export default function EmployeeDataTable() {
+
+  // Manager permission flags for the Manager Login feature. Non-managers => all true.
+  const user = getUser();
+  const canCreate = can(user, "settings", "login/manager-login", "create");
+  const canEdit = can(user, "settings", "login/manager-login", "edit");
+  const canDelete = can(user, "settings", "login/manager-login", "delete");
+  const canView = can(user, "settings", "login/manager-login", "view");
 
   const [payload, setPayload] = useState({
     employee_id: 0,
@@ -207,12 +216,12 @@ export default function EmployeeDataTable() {
           <EmployeeExtras data={employees} onUploadSuccess={fetchEmployees} />
 
           {/* New Employee Button */}
-          <Create isEditOpen={isEditOpen} pageTitle="Manager Login" onSuccess={handleRefresh} defaultPayload={payload} />
+          {canCreate && <Create isEditOpen={isEditOpen} pageTitle="Manager Login" onSuccess={handleRefresh} defaultPayload={payload} />}
         </div>
       </div>
 
       <DataTable
-        columns={Columns(editItem, deleteItem)}
+        columns={Columns(editItem, deleteItem, { canEdit, canDelete })}
         data={employees}
         isLoading={isLoading}
         error={error}

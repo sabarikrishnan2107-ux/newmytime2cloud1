@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import HistoryReplay from "@/components/Map/HistoryReplay";
 import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 import { getDeviceLogs, getBranches, getDepartmentsByBranchIds, getScheduledEmployeeList } from "@/lib/api";
 import { MapPin, Search, Smartphone, Download, RefreshCw, Loader2 } from "lucide-react";
 import { downloadReport } from "@/lib/endpoint/report";
@@ -119,6 +120,12 @@ function TrackerHistoryInner() {
 }
 
 function TrackerHistoryPicker({ router, initialDate }) {
+  const user = getUser();
+  const canCreate = can(user, "live_tracker", "tracker-history", "create");
+  const canEdit = can(user, "live_tracker", "tracker-history", "edit");
+  const canDelete = can(user, "live_tracker", "tracker-history", "delete");
+  const canView = can(user, "live_tracker", "tracker-history", "view");
+
   const [selectedDate, setSelectedDate] = useState(initialDate || new Date().toISOString().slice(0, 10));
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -389,14 +396,16 @@ function TrackerHistoryPicker({ router, initialDate }) {
           {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           Submit
         </button>
-        <button
-          onClick={handleDownloadPdf}
-          disabled={isDownloading || loading || filtered.length === 0}
-          className="inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-gradient-to-r from-primary to-purple-600 px-5 text-xs font-semibold text-white shadow-md shadow-primary/30 hover:shadow-lg hover:shadow-primary/40 hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
-        >
-          {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-          Download
-        </button>
+        {canView && (
+          <button
+            onClick={handleDownloadPdf}
+            disabled={isDownloading || loading || filtered.length === 0}
+            className="inline-flex items-center justify-center gap-2 h-11 rounded-xl bg-gradient-to-r from-primary to-purple-600 px-5 text-xs font-semibold text-white shadow-md shadow-primary/30 hover:shadow-lg hover:shadow-primary/40 hover:-translate-y-px transition-all disabled:opacity-50 disabled:hover:translate-y-0 disabled:hover:shadow-md"
+          >
+            {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+            Download
+          </button>
+        )}
       </div>
 
       <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg overflow-hidden">

@@ -7,6 +7,8 @@ import { useRouter } from 'next/navigation';
 import { Search, Download, MoreHorizontal, Plus, Eye, Check, X } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
 import { getBranches, getDepartmentsByBranchIds } from '@/lib/api';
+import { getUser } from '@/config';
+import { can } from '@/lib/permissions-check';
 import { getLeavesRequest, approveLeave, rejectLeave, uploadLeaveDocuments } from '@/lib/endpoint/leaves';
 import { Paperclip } from 'lucide-react';
 import { parseApiError } from '@/lib/utils';
@@ -88,10 +90,10 @@ function TypeChip({ name }) {
   );
 }
 
-function RowMenu({ row, onAction }) {
+function RowMenu({ row, onAction, canEdit = true }) {
   const [open, setOpen] = useState(false);
-  const showApprove = row.status !== 1;
-  const showReject = row.status !== 2;
+  const showApprove = canEdit && row.status !== 1;
+  const showReject = canEdit && row.status !== 2;
   return (
     <Popover.Root open={open} onOpenChange={setOpen}>
       <Popover.Trigger asChild>
@@ -131,6 +133,11 @@ const STATUS_ITEMS = [
 
 export default function LeavesPage() {
   const router = useRouter();
+  const user = getUser();
+  const canCreate = can(user, "leave", "leave", "create");
+  const canEdit = can(user, "leave", "leave", "edit");
+  const canDelete = can(user, "leave", "leave", "delete");
+  const canView = can(user, "leave", "leave", "view");
   const [open, setOpen] = useState(false);
   const [reasonDialog, setReasonDialog] = useState({ open: false, action: null, row: null, notes: "", file: null });
   const [isSubmittingReason, setIsSubmittingReason] = useState(false);
@@ -285,14 +292,18 @@ export default function LeavesPage() {
           <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">{total} total requests · live across all branches</p>
         </div>
         <div className="flex items-center gap-2">
-          <button onClick={handleExport} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/60 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
-            <Download className="w-4 h-4" />
-            Export
-          </button>
-          <Button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5">
-            <Plus className="w-4 h-4" />
-            New Leave
-          </Button>
+          {canView && (
+            <button onClick={handleExport} className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-slate-800/60 px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800">
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+          )}
+          {canCreate && (
+            <Button onClick={() => setOpen(true)} className="inline-flex items-center gap-1.5">
+              <Plus className="w-4 h-4" />
+              New Leave
+            </Button>
+          )}
         </div>
       </div>
 
@@ -388,7 +399,7 @@ export default function LeavesPage() {
                     <td className="px-5 py-3 font-semibold text-slate-900 dark:text-white">{computeTotalDays(r) ?? "—"}</td>
                     <td className="px-5 py-3 text-slate-600 dark:text-slate-300 max-w-xs truncate" title={reason}>{reason}</td>
                     <td className="px-5 py-3"><StatusPill status={r.status} /></td>
-                    <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}><RowMenu row={r} onAction={handleRowAction} /></td>
+                    <td className="px-5 py-3 text-right" onClick={(e) => e.stopPropagation()}><RowMenu row={r} onAction={handleRowAction} canEdit={canEdit} /></td>
                   </tr>
                 );
               })}

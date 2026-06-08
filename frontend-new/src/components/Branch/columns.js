@@ -15,7 +15,7 @@ import { deleteBranch } from "@/lib/api";
 import { parseApiError } from "@/lib/utils";
 
 
-function OptionsMenu({ item, onSuccess = () => { } }) {
+function OptionsMenu({ item, onSuccess = () => { }, canEdit = true, canDelete = true }) {
   const [openEdit, setOpenEdit] = useState(false);
 
   const onDelete = async (id) => {
@@ -43,6 +43,7 @@ function OptionsMenu({ item, onSuccess = () => { } }) {
           className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1"
           onClick={(e) => e.stopPropagation()}
         >
+          {canEdit !== false && (
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
@@ -53,6 +54,8 @@ function OptionsMenu({ item, onSuccess = () => { } }) {
             <PenBox className="w-4 h-4 text-slate-700 dark:text-slate-200" />
             <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
           </DropdownMenuItem>
+          )}
+          {canDelete !== false && (
           <DropdownMenuItem
             onClick={(e) => {
               e.stopPropagation();
@@ -63,6 +66,7 @@ function OptionsMenu({ item, onSuccess = () => { } }) {
             <Trash2 className="w-4 h-4 text-red-500" />
             <span className="text-red-600 dark:text-red-400 font-medium">Delete</span>
           </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -81,7 +85,7 @@ function OptionsMenu({ item, onSuccess = () => { } }) {
   );
 }
 
-export default function Columns({ handleRowClick, onSuccess = () => { } } = {}) {
+export default function Columns({ handleRowClick, onSuccess = () => { }, canEdit = true, canDelete = true } = {}) {
   return [
     {
       key: "branch_name",
@@ -149,6 +153,8 @@ export default function Columns({ handleRowClick, onSuccess = () => { } } = {}) 
         <OptionsMenu
           item={item}
           onSuccess={onSuccess}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       ),
     },

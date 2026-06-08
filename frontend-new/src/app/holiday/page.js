@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { RefreshCw } from 'lucide-react';
 import { getBranches } from '@/lib/api';
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 
 import Columns from "./columns";
 import DataTable from '@/components/ui/DataTable';
@@ -19,6 +21,13 @@ import SyncWithGoogle from '@/components/Holidays/SyncWithGoogle';
 import DateRangeSelect from '@/components/ui/DateRange';
 
 export default function EmployeeDataTable() {
+
+    // Manager permission flags for the Holiday feature. Non-managers => all true.
+    const user = getUser();
+    const canCreate = can(user, "settings", "holiday", "create");
+    const canEdit = can(user, "settings", "holiday", "edit");
+    const canDelete = can(user, "settings", "holiday", "delete");
+    const canView = can(user, "settings", "holiday", "view");
 
     const [employees, setEmployees] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -188,9 +197,9 @@ export default function EmployeeDataTable() {
                         title="Refresh Data"
                     />
 
-                    <SyncWithGoogle onSuccess={handleRefresh} />
+                    {canCreate && <SyncWithGoogle onSuccess={handleRefresh} />}
 
-                    <HolidaysCreate onSuccess={handleRefresh} />
+                    {canCreate && <HolidaysCreate onSuccess={handleRefresh} />}
                 </div>
             </div>
 
@@ -199,7 +208,7 @@ export default function EmployeeDataTable() {
             }
 
             <DataTable
-                columns={Columns(deleteItem, editItem)}
+                columns={Columns(deleteItem, editItem, { canEdit, canDelete })}
                 data={employees}
                 isLoading={isLoading}
                 error={error}

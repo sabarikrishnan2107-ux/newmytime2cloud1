@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { deleteDesignations, getDesignations } from "@/lib/api";
 import { notify, parseApiError } from "@/lib/utils";
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 import Create from "@/components/Designation/Create";
 import Input from "../Theme/Input";
 import { Loader } from "../Loader";
@@ -10,6 +12,13 @@ import { Pencil, Trash } from "lucide-react";
 import EditDesignation from "./Edit";
 
 export default function Designation() {
+  // Manager permission flags for the Designation (Organization Settings) feature.
+  const user = getUser();
+  const canCreate = can(user, "settings", "department-tabs", "create");
+  const canEdit = can(user, "settings", "department-tabs", "edit");
+  const canDelete = can(user, "settings", "department-tabs", "delete");
+  const canView = can(user, "settings", "department-tabs", "view");
+
   const [records, setRecords] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -78,7 +87,7 @@ export default function Designation() {
           <h3 className="font-bold text-white text-lg">Designations</h3>
         </div>
 
-        <Create onSuccess={fetchRecords} />
+        {canCreate && <Create onSuccess={fetchRecords} />}
       </div>
 
       <div className="p-4 bg-surface-card">
@@ -108,11 +117,13 @@ export default function Designation() {
                 </span>
               </div>
               <div className="flex items-center gap-1 opacity-100">
-                <EditDesignation defaultPayload={e} onSuccess={fetchRecords} />
+                {canEdit && <EditDesignation defaultPayload={e} onSuccess={fetchRecords} />}
 
+                {canDelete && (
                 <button onClick={() => handleDelete(e.id)} className="p-1.5 rounded-md hover:bg-red-500/10 text-slate-400 hover:text-red-400 transition-colors">
                   <Trash size={15} />
                 </button>
+                )}
               </div>
             </div>
           </div>

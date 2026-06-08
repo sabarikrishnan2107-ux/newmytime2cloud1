@@ -9,7 +9,7 @@ import {
 
 const safe = (v, fallback = "—") => (v === null || v === undefined || v === "" ? fallback : v);
 
-export default function (handleRowClick, onEdit, onDelete, t = (k) => k) {
+export default function (handleRowClick, onEdit, onDelete, t = (k) => k, perms = {}) {
   return [
     {
       key: "name",
@@ -107,6 +107,7 @@ export default function (handleRowClick, onEdit, onDelete, t = (k) => k) {
             /* This prevents clicking inside the menu from triggering the row click */
             onClick={(e) => e.stopPropagation()}
           >
+            {perms.canEdit !== false && (
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation(); // Stop row redirect
@@ -117,7 +118,9 @@ export default function (handleRowClick, onEdit, onDelete, t = (k) => k) {
               <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" />
               <span className="text-slate-700 dark:text-slate-200 font-medium">{t("shift.edit")}</span>
             </DropdownMenuItem>
+            )}
 
+            {perms.canDelete !== false && (
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation(); // Stop row redirect
@@ -128,6 +131,7 @@ export default function (handleRowClick, onEdit, onDelete, t = (k) => k) {
               <Trash className="w-4 h-4 text-red-600 dark:text-red-400" />
               <span className="text-red-600 dark:text-red-400 font-medium">{t("shift.delete")}</span>
             </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

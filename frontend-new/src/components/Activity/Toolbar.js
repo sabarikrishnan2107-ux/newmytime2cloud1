@@ -30,6 +30,7 @@ export default function Toolbar({
     isExporting = false,
     hasActiveFilters = false,
     onClear,
+    canExport = true,
 }) {
     return (
         <div className="space-y-3 mb-4">
@@ -54,6 +55,7 @@ export default function Toolbar({
                         <X size={14} /> Clear filters
                     </button>
                 )}
+                {canExport && (
                 <button
                     type="button"
                     onClick={onPrint}
@@ -63,6 +65,7 @@ export default function Toolbar({
                     <Printer size={16} />
                     {isExporting ? "Generating..." : "Print PDF"}
                 </button>
+                )}
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">

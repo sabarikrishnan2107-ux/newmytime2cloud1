@@ -5,6 +5,8 @@ import { Search, Plus, RefreshCw } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getBranches, getDepartments, getDepartmentsByBranchIds, getEmployees, removeEmployee } from '@/lib/api';
+import { getUser } from '@/config';
+import { can } from '@/lib/permissions-check';
 import { EmployeeExtras } from '@/components/Employees/Extras';
 
 import Columns from "./columns";
@@ -22,6 +24,13 @@ import { changeRequest } from '@/lib/endpoint/attendance';
 import ChangeRequestDialog from '@/components/Attendance/ChangeRequestDialog';
 
 export default function EmployeeDataTable() {
+
+    // Manager permission flags for the Change Request feature. Non-managers => all true.
+    const user = getUser();
+    const canCreate = can(user, "attendance", "attendance/change_request", "create");
+    const canEdit = can(user, "attendance", "attendance/change_request", "edit");
+    const canDelete = can(user, "attendance", "attendance/change_request", "delete");
+    const canView = can(user, "attendance", "attendance/change_request", "view");
 
     const [employees, setEmployees] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -212,7 +221,7 @@ export default function EmployeeDataTable() {
             }
 
             <DataTable
-                columns={Columns(editItem)}
+                columns={Columns(editItem, { canEdit, canDelete, canView })}
                 data={employees}
                 isLoading={isLoading}
                 error={error}

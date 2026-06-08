@@ -10,6 +10,8 @@ import Columns from "./columns";
 
 import Input from '@/components/Theme/Input';
 import { getShifts, removeShift } from '@/lib/api';
+import { getUser } from '@/config';
+import { can } from '@/lib/permissions-check';
 import Pagination from '@/lib/Pagination';
 import DataTable from '@/components/ui/DataTable';
 import IconButton from '@/components/Theme/IconButton';
@@ -18,6 +20,13 @@ import { parseApiError } from '@/lib/utils';
 export default function ShiftPage() {
 
     const { t } = useTranslation();
+
+    // Manager permission flags for the Shift feature. Non-managers => all true.
+    const user = getUser();
+    const canCreate = can(user, "attendance", "shift", "create");
+    const canEdit = can(user, "attendance", "shift", "edit");
+    const canDelete = can(user, "attendance", "shift", "delete");
+    const canView = can(user, "attendance", "shift", "view");
 
     const [records, setRecords] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -118,17 +127,19 @@ export default function ShiftPage() {
                     />
 
 
+                    {canCreate && (
                     <Link href="/shift/create">
                         <button className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap">
                             <Plus className="w-4 h-4" />
                             <span>{t('shift.newButton')}</span>
                         </button>
                     </Link>
+                    )}
                 </div>
             </div>
 
             <DataTable
-                columns={Columns(handleRowClick, onEdit, onDelete, t)}
+                columns={Columns(handleRowClick, onEdit, onDelete, t, { canEdit, canDelete })}
                 data={records}
                 isLoading={isLoading}
                 error={error}

@@ -17,6 +17,8 @@ import {
   AreaChart, Area, LineChart, Line, ComposedChart
 } from "recharts";
 import { useTranslation } from "react-i18next";
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 
 const COLORS = ['hsl(199,89%,38%)', 'hsl(152,60%,40%)', 'hsl(38,92%,50%)', 'hsl(262,52%,47%)', 'hsl(0,72%,51%)', 'hsl(199,89%,58%)'];
 
@@ -61,6 +63,11 @@ function ChartTooltip({ active, payload, label }) {
 export default function PayrollDashboard() {
   const { t } = useTranslation();
   const router = useRouter();
+  const user = getUser();
+  const canCreate = can(user, "payroll", "payslips", "create");
+  const canEdit   = can(user, "payroll", "payslips", "edit");
+  const canDelete = can(user, "payroll", "payslips", "delete");
+  const canView   = can(user, "payroll", "payslips", "view");
   const [stats, setStats] = useState(null);
   const [batches, setBatches] = useState([]);
   const [month, setMonth] = useState(new Date().toISOString().slice(0, 7));
@@ -143,12 +150,15 @@ export default function PayrollDashboard() {
           <div className="w-[180px]">
             <MonthPicker value={month} onChange={setMonth} />
           </div>
+          {canCreate && (
           <button
             onClick={() => router.push('/payslips/salary-structures')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition"
           >
             <Plus className="h-3.5 w-3.5" /> {t("payroll.dashboard.salaryStructures")}
           </button>
+          )}
+          {canCreate && (
           <button
             onClick={handleGenerate}
             disabled={generating}
@@ -156,6 +166,7 @@ export default function PayrollDashboard() {
           >
             <Play className="h-3.5 w-3.5" /> {generating ? t("payroll.dashboard.generating") : t("payroll.dashboard.generatePayroll")}
           </button>
+          )}
         </div>
       </div>
 
@@ -386,7 +397,7 @@ export default function PayrollDashboard() {
                   <td className="px-4 py-3"><StatusBadge status={b.status} /></td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
-                      {b.status === "draft" && (
+                      {canEdit && b.status === "draft" && (
                         <button onClick={async () => {
                           if (!confirm(t("payroll.dashboard.confirmApproveBatch"))) return;
                           const params = await buildQueryParams({});
@@ -399,7 +410,7 @@ export default function PayrollDashboard() {
                           {t("payroll.dashboard.approve")}
                         </button>
                       )}
-                      {b.status === "approved" && (
+                      {canEdit && b.status === "approved" && (
                         <button onClick={async () => {
                           if (!confirm(t("payroll.dashboard.confirmMarkPaid"))) return;
                           const params = await buildQueryParams({});
@@ -415,10 +426,12 @@ export default function PayrollDashboard() {
                       {b.status === "paid" && (
                         <span className="text-[10px] text-gray-400">{t("payroll.dashboard.completed")}</span>
                       )}
+                      {canView && (
                       <button title={t("payroll.dashboard.viewRecords")} onClick={() => router.push(`/payslips/register?batch=${b.id}`)}
                         className="p-1 rounded hover:bg-gray-100 dark:hover:bg-white/10 text-gray-400 hover:text-primary transition">
                         <Eye className="h-3.5 w-3.5" />
                       </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -434,7 +447,7 @@ export default function PayrollDashboard() {
       {/* Action Buttons */}
       {batches.length > 0 && (
         <div className="flex flex-wrap gap-2">
-          {batches[0]?.status === "draft" && (
+          {canEdit && batches[0]?.status === "draft" && (
             <button onClick={async () => {
               if (!confirm(t("payroll.dashboard.confirmApproveLatest"))) return;
               try {
@@ -448,7 +461,7 @@ export default function PayrollDashboard() {
               <ThumbsUp className="h-3.5 w-3.5" /> {t("payroll.dashboard.approvePayroll")}
             </button>
           )}
-          {batches[0]?.status === "approved" && (
+          {canEdit && batches[0]?.status === "approved" && (
             <button onClick={async () => {
               if (!confirm(t("payroll.dashboard.confirmMarkLatestPaid"))) return;
               try {
@@ -462,14 +475,18 @@ export default function PayrollDashboard() {
               <CreditCard className="h-3.5 w-3.5" /> {t("payroll.dashboard.markAsPaid")}
             </button>
           )}
+          {canView && (
           <button onClick={() => router.push('/payslips/register')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
             <FileText className="h-3.5 w-3.5" /> {t("payroll.dashboard.viewRegister")}
           </button>
+          )}
+          {canView && (
           <button onClick={() => router.push('/payslips/reports')}
             className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-white/10 bg-white dark:bg-gray-800 px-3 py-2 text-xs font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
             <Download className="h-3.5 w-3.5" /> {t("payroll.dashboard.downloadReports")}
           </button>
+          )}
         </div>
       )}
     </div>

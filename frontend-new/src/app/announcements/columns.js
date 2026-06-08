@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 
-export default (handleRowClick, handleEdit, handleDelete, handleView) => {
+export default (handleRowClick, handleEdit, handleDelete, handleView, perms = {}) => {
 
     const getPriorityColor = (category) => {
         if (!category) return {};
@@ -111,18 +111,22 @@ export default (handleRowClick, handleEdit, handleDelete, handleView) => {
                         >
                             <Eye className="w-4 h-4 text-slate-700 dark:text-slate-200" /> <span className="text-indigo-500">View</span>
                         </DropdownMenuItem>
+                        {perms.canEdit !== false && (
                         <DropdownMenuItem
                             onClick={() => handleEdit(record)}
                             className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100"
                         >
                             <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" /> <span className="text-primary">Edit</span>
                         </DropdownMenuItem>
+                        )}
+                        {perms.canDelete !== false && (
                         <DropdownMenuItem
                             onClick={() => handleDelete(record)}
                             className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-red-50"
                         >
                             <Trash2 className="w-4 h-4 text-slate-700 dark:text-slate-200" /> <span className="text-red-500">Delete</span>
                         </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),

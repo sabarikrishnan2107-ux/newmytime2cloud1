@@ -6,6 +6,8 @@ import { RefreshCw } from 'lucide-react';
 
 import Input from '@/components/Theme/Input';
 import { getBranches, getDepartmentsByBranchIds, getScheduleEmployees, removeEmployeeSchedule } from '@/lib/api';
+import { getUser } from '@/config';
+import { can } from '@/lib/permissions-check';
 import { getEmployeesByDepartmentIds } from '@/lib/api/employee';
 
 import DataTable from '@/components/ui/DataTable';
@@ -23,6 +25,13 @@ import { SCHEDULE_STATS } from '@/lib/dropdowns';
 
 export default function SchedulePage() {
     const router = useRouter();
+
+    // Manager permission flags for the Schedule feature. Non-managers => all true.
+    const user = getUser();
+    const canCreate = can(user, "attendance", "schedule", "create");
+    const canEdit = can(user, "attendance", "schedule", "edit");
+    const canDelete = can(user, "attendance", "schedule", "delete");
+    const canView = can(user, "attendance", "schedule", "view");
 
     const [editModalOpen, setEditModalOpen] = useState(false);
     const [editEmployee, setEditEmployee] = useState(null);
@@ -256,15 +265,19 @@ export default function SchedulePage() {
                             title="Refresh Data"
                         />
 
+                        {canCreate && (
                         <Create onSuccess={handleRefresh} />
+                        )}
 
+                        {canDelete && (
                         <Delete onSuccess={handleRefresh} />
+                        )}
 
                     </div>
                 </div>
 
                 <DataTable
-                    columns={Columns(deleteItem, handleEdit, handleView)}
+                    columns={Columns(deleteItem, handleEdit, handleView, { canEdit, canDelete, canView })}
                     data={records}
                     isLoading={isLoading}
                     error={error}

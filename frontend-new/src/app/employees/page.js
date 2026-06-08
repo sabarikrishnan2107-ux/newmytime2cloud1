@@ -8,6 +8,7 @@ import Link from 'next/link';
 import QRCode from 'qrcode';
 import { getBranches, getDepartmentsByBranchIds, getEmployees, removeEmployee } from '@/lib/api';
 import { getUser } from '@/config';
+import { can } from '@/lib/permissions-check';
 import { EmployeeExtras } from '@/components/Employees/Extras';
 import EnrolledDevicesModal from '@/components/Employees/EnrolledDevicesModal';
 
@@ -23,6 +24,12 @@ export default function EmployeesPage() {
 
     const { t } = useTranslation();
     const router = useRouter();
+
+    // Manager permission flags for the Employee List feature. Non-managers => all true.
+    const user = getUser();
+    const canCreateEmp = can(user, 'employees', 'employees', 'create');
+    const canEditEmp = can(user, 'employees', 'employees', 'edit');
+    const canDeleteEmp = can(user, 'employees', 'employees', 'delete');
 
     const [branches, setBranches] = useState([]);
     const [departments, setDepartments] = useState([]);
@@ -406,18 +413,20 @@ export default function EmployeesPage() {
 
                     <EmployeeExtras data={employees} onUploadSuccess={fetchEmployees} />
 
-                    {/* New Employee Button */}
+                    {/* New Employee Button — managers need employees.create */}
+                    {canCreateEmp && (
                     <Link href="/employees/create">
                         <button className="bg-primary text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-indigo-700 transition-all flex items-center space-x-2 whitespace-nowrap">
                             <Plus className="w-4 h-4" />
                             <span>{t('employees.list.newButton')}</span>
                         </button>
                     </Link>
+                    )}
                 </div>
             </div>
 
             <DataTable
-                columns={Columns(t, deleteEmployee, editEmployee, showHostQr, (emp) => printEmployeeCard(emp), setDevicesEmployee)}
+                columns={Columns(t, deleteEmployee, editEmployee, showHostQr, (emp) => printEmployeeCard(emp), setDevicesEmployee, { canEdit: canEditEmp, canDelete: canDeleteEmp })}
                 data={employees}
                 isLoading={isLoading}
                 error={error}

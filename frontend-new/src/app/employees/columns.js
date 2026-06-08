@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import ProfilePicture from "@/components/ProfilePicture";
 
-export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnrolledDevices) => [
+export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnrolledDevices, perms = {}) => [
   {
     key: "employee",
     header: t('employees.columns.personnel'),
@@ -134,6 +134,7 @@ export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnro
             className="w-36 bg-white dark:bg-gray-900 shadow-md rounded-md py-1"
             onClick={(e) => e.stopPropagation()}
           >
+            {perms.canEdit !== false && (
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
@@ -144,6 +145,7 @@ export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnro
               <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" />
               <span className="text-slate-700 dark:text-slate-200 font-medium">{t('common.edit')}</span>
             </DropdownMenuItem>
+            )}
 
             {showHostQr && (
               <DropdownMenuItem
@@ -180,6 +182,7 @@ export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnro
               <span className="text-slate-700 dark:text-slate-200 font-medium">{t('employees.actions.devices')}</span>
             </DropdownMenuItem>
 
+            {perms.canDelete !== false && (
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
@@ -190,6 +193,7 @@ export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnro
               <Trash className="w-4 h-4 text-red-600 dark:text-red-400" />
               <span className="text-red-600 dark:text-red-400 font-medium">{t('common.delete')}</span>
             </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

@@ -17,7 +17,7 @@ import {
 import ProfilePicture from "@/components/ProfilePicture";
 
 
-export default (deleteItem, onEdit, onView) => {
+export default (deleteItem, onEdit, onView, perms = {}) => {
     return [
         {
             key: "employee",
@@ -132,6 +132,7 @@ export default (deleteItem, onEdit, onView) => {
                         /* This prevents clicking inside the menu from triggering the row click */
                         onClick={(e) => e.stopPropagation()}
                     >
+                        {perms.canView !== false && (
                         <DropdownMenuItem
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -142,6 +143,8 @@ export default (deleteItem, onEdit, onView) => {
                             <Eye className="w-4 h-4 text-slate-700 dark:text-slate-200" />
                             <span className="text-slate-700 dark:text-slate-200 font-medium">View</span>
                         </DropdownMenuItem>
+                        )}
+                        {perms.canEdit !== false && (
                         <DropdownMenuItem
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -152,6 +155,8 @@ export default (deleteItem, onEdit, onView) => {
                             <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" />
                             <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
                         </DropdownMenuItem>
+                        )}
+                        {perms.canDelete !== false && (
                         <DropdownMenuItem
                             onClick={(e) => {
                                 e.stopPropagation();
@@ -162,6 +167,7 @@ export default (deleteItem, onEdit, onView) => {
                             <Trash className="w-4 h-4 text-red-600 dark:text-red-400" />
                             <span className="text-red-600 dark:text-red-400 font-medium">Delete</span>
                         </DropdownMenuItem>
+                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
             ),

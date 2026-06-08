@@ -16,7 +16,7 @@ import {
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
 
-export default (editItem, deleteItem) => [
+export default (editItem, deleteItem, perms = {}) => [
   {
     key: "employee",
     header: "Name",
@@ -99,19 +99,23 @@ export default (editItem, deleteItem) => [
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-30 bg-white shadow-md rounded-md py-1">
+          {perms.canEdit !== false && (
           <DropdownMenuItem
             onClick={() => editItem(item)}
             className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100"
           >
             <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" /> <span className="text-primary">Edit</span>
           </DropdownMenuItem>
+          )}
 
+          {perms.canDelete !== false && (
           <DropdownMenuItem
             onClick={() => deleteItem(item.id)}
             className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100"
           >
             <Trash className="w-4 h-4 text-gray-500" /> <span className="text-gray-500">Delete</span>
           </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),

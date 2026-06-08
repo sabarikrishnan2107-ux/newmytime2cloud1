@@ -15,8 +15,14 @@ import DataTable from "@/components/ui/DataTable";
 import Columns from "./columns";
 import Toolbar from "./Toolbar";
 import { parseApiError } from "@/lib/utils";
+import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 
 export default function Activity() {
+    // Manager permission flags for the Activity feature. Non-managers => all true.
+    const user = getUser();
+    const canView = can(user, "settings", "activity", "view");
+
     const [records, setRecords] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -184,6 +190,7 @@ export default function Activity() {
                 isExporting={isExporting}
                 hasActiveFilters={hasActiveFilters}
                 onClear={handleClear}
+                canExport={canView}
             />
 
             {error && (

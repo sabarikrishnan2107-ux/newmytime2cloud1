@@ -24,7 +24,7 @@ import { getRandomItem } from "@/lib/utils";
 import ProfilePicture from "@/components/ProfilePicture";
 import LeaveViewDialog from "@/components/Employees/LeaveRequests";
 
-export default (editItem) => [
+export default (editItem, perms = {}) => [
   {
     key: "employee",
     header: "Name",
@@ -139,12 +139,14 @@ export default (editItem) => [
         </DropdownMenuTrigger>
 
         <DropdownMenuContent align="end" className="w-30 bg-white shadow-md rounded-md py-1">
+          {perms.canEdit !== false && (
           <DropdownMenuItem
             onClick={() => editItem(employee)}
             className="flex items-center gap-2 px-3 py-2 text-gray-700 hover:bg-gray-100"
           >
             <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" /> <LeaveViewDialog editedItem={employee} />  <span className="text-primary">Edit</span>
           </DropdownMenuItem>
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     ),

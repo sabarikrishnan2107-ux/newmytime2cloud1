@@ -4,7 +4,7 @@ import { deleteDevice, syncDeviceDateTime } from "@/lib/api";
 import { parseApiError, notify } from "@/lib/utils";
 
 
-export default function Columns({ pageTitle, handleRowClick, onSuccess = (e) => { e } } = {}) {
+export default function Columns({ pageTitle, handleRowClick, onSuccess = (e) => { e }, canDelete = true } = {}) {
 
   return [
     {
@@ -167,13 +167,13 @@ export default function Columns({ pageTitle, handleRowClick, onSuccess = (e) => 
       key: "options",
       header: "Options",
       render: (device) => (
-        <OptionsCell device={device} pageTitle={pageTitle} onSuccess={onSuccess} />
+        <OptionsCell device={device} pageTitle={pageTitle} onSuccess={onSuccess} canDelete={canDelete} />
       ),
     }
   ];
 }
 
-function OptionsCell({ device, pageTitle, onSuccess }) {
+function OptionsCell({ device, pageTitle, onSuccess, canDelete = true }) {
   const [open, setOpen] = useState(false);
 
   const onDeleteDevice = async (id) => {
@@ -192,7 +192,7 @@ function OptionsCell({ device, pageTitle, onSuccess }) {
     <div className="relative">
       <MoreVertical className="text-gray-600 hover:text-gray-800" onClick={() => setOpen(!open)} />
 
-      {open && (
+      {open && canDelete !== false && (
         <div className="absolute mt-2 w-24 bg-white border rounded shadow-lg z-10">
           <button
             onClick={() => {

@@ -22,6 +22,7 @@ import {
   closeDoor,
 } from "@/lib/api";
 import { getUser } from "@/config";
+import { can } from "@/lib/permissions-check";
 import { parseApiError, notify } from "@/lib/utils";
 
 function todayStr() {
@@ -117,6 +118,11 @@ function Breakdown({ employees, visitors }) {
 
 export default function AccessControlPage() {
   const { t } = useTranslation();
+  const user = getUser();
+  const canCreate = can(user, "access_control", "access_control", "create");
+  const canEdit   = can(user, "access_control", "access_control", "edit");
+  const canDelete = can(user, "access_control", "access_control", "delete");
+  const canView   = can(user, "access_control", "access_control", "view");
   const [filters, setFilters] = useState({
     branchIds: [],
     deviceIds: [],
@@ -448,6 +454,7 @@ export default function AccessControlPage() {
             </span>
           }
           cta={
+            canEdit && (
             <button
               onClick={() => {
                 if (!allDevices.length) {
@@ -465,6 +472,7 @@ export default function AccessControlPage() {
             >
               <Lock className="h-3.5 w-3.5" /> {t("accessControl.kpi.unlockNow")}
             </button>
+            )
           }
         />
       </section>

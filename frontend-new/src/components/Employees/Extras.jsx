@@ -28,9 +28,15 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 
 import { getUser } from "@/config/index";
+import { can } from "@/lib/permissions-check";
 import Input from "../Theme/Input";
 
 export function EmployeeExtras({ data, onUploadSuccess }) {
+  // Manager permission flags for the Employee List feature. Non-managers => all true.
+  const user = getUser();
+  const canCreate = can(user, "employees", "employees", "create");
+  const canView = can(user, "employees", "employees", "view");
+
   const [branches, setBranches] = useState([]);
   const [selectedBranch, setSelectedBranch] = useState(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -146,7 +152,8 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
     <>
       {/* Inline action buttons */}
       <div className="flex items-center gap-2">
-        {/* Sample template (neutral) */}
+        {/* Sample template (neutral) — read-only, needs view */}
+        {canView && (
         <button
           title="Download sample template"
           onClick={handleDownloadSample}
@@ -155,7 +162,9 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
           <FileSpreadsheet className="w-[18px] h-[18px]" />
           <span className="hidden sm:inline">Template</span>
         </button>
-        {/* Import (green) */}
+        )}
+        {/* Import (green) — creates employees, needs create */}
+        {canCreate && (
         <button
           title="Import employees from Excel"
           onClick={() => setDialogOpen(true)}
@@ -164,7 +173,9 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
           <Download className="w-[18px] h-[18px]" />
           <span className="hidden sm:inline">Import</span>
         </button>
-        {/* Export (blue) */}
+        )}
+        {/* Export (blue) — reads the list, needs view */}
+        {canView && (
         <button
           title="Export employees to Excel"
           onClick={handleExportEmployees}
@@ -173,6 +184,7 @@ export function EmployeeExtras({ data, onUploadSuccess }) {
           <Upload className="w-[18px] h-[18px]" />
           <span className="hidden sm:inline">Export</span>
         </button>
+        )}
       </div>
       {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
