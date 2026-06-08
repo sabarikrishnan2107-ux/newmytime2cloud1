@@ -14,8 +14,20 @@ export const buildQueryParams = async (params = {}) => {
         company_ids: [user?.company_id ?? 0],
     };
 
-    // Only include branch_id if it's not 0
-    if (user?.branch_id && user.branch_id !== 0) {
+    // Branch scope. Priority:
+    //   1) an explicit selection passed by the caller (e.g. a branch dropdown),
+    //   2) the user's assigned branches (user_branches pivot) — this is how a
+    //      manager is scoped to the branch(es) they were assigned to manage,
+    //   3) the legacy single branch_id column as a fallback.
+    // The scalar users.branch_id can hold a manager's *personal* employee branch,
+    // which may differ from the branch they were assigned to manage. Trusting it
+    // made managers see no data — their assigned departments never intersected
+    // the wrong branch (e.g. HYDERS PARK: branch_id=KODAI vs assigned=TANJORE).
+    if (Array.isArray(params?.branch_ids) && params.branch_ids.length > 0) {
+        queryParams.branch_ids = params.branch_ids;
+    } else if (Array.isArray(user?.branches) && user.branches.length > 0) {
+        queryParams.branch_ids = user.branches.map((b) => b.id);
+    } else if (user?.branch_id && user.branch_id !== 0) {
         queryParams.branch_id = user.branch_id;
     }
 
@@ -26,11 +38,6 @@ export const buildQueryParams = async (params = {}) => {
     else if (Array.isArray(params?.department_ids) && params.department_ids.length > 0) {
         queryParams.department_ids = params.department_ids;
     }
-
-    // queryParams.department_ids = [145, 410]
-
-
-    console.log(queryParams.department_ids);
 
     return queryParams;
 };

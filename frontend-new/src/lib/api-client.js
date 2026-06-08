@@ -31,15 +31,25 @@ api.interceptors.request.use((config) => {
 export const buildQueryParams = async (params = {}) => {
     const user = await getUser();
 
-    console.log(user);
-
     const queryParams = {
         company_id: user?.company_id ?? 0,
         ...params, // Overwrites defaults if specific params are passed
     };
 
-    // Auto-inject Branch ID if user is restricted to one
-    if (user?.branch_id && user.branch_id !== 0) {
+    // Branch scope. Priority:
+    //   1) an explicit selection passed by the caller (e.g. the dashboard branch picker),
+    //   2) the user's assigned branches (user_branches pivot) — how a manager is
+    //      scoped to the branch(es) they were assigned to manage,
+    //   3) the legacy single branch_id column as a fallback.
+    // The scalar users.branch_id can hold a manager's *personal* employee branch,
+    // which may differ from (or be 0 vs.) the branch they manage. Trusting it made
+    // managers see zero data on the dashboard (e.g. HYDERS PARK KODAI manager has
+    // branch_id=0 but is assigned branch KODAI). Scope by the assignment instead.
+    if (Array.isArray(params?.branch_ids) && params.branch_ids.length > 0) {
+        queryParams.branch_ids = params.branch_ids;
+    } else if (Array.isArray(user?.branches) && user.branches.length > 0) {
+        queryParams.branch_ids = user.branches.map((b) => b.id);
+    } else if (user?.branch_id && user.branch_id !== 0) {
         queryParams.branch_id = user.branch_id;
     }
 
