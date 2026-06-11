@@ -2,9 +2,10 @@
 
 import * as React from "react";
 
-const Label = ({ children }) => (
+const Label = ({ children, required }) => (
   <label className="block text-[10px] font-bold uppercase text-slate-600 dark:text-slate-300 mb-1">
     {children}
+    {required && <span className="text-red-500 ml-0.5">*</span>}
   </label>
 );
 
