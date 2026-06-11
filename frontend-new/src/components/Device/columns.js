@@ -27,7 +27,8 @@ export default function Columns(
   deviceSettings,
   setOpenDoor,
   setCloseDoor,
-  openAlwaysOpen
+  openAlwaysOpen,
+  perms = {}
 ) {
   return [
     {
@@ -81,14 +82,20 @@ export default function Columns(
     {
       key: "serial_number",
       header: "Serial No",
-      render: (device) => (
-        <span
-          className="text-slate-600 dark:text-slate-300 block max-w-[160px] truncate"
-          title={device.serial_number || "—"}
-        >
-          {device.serial_number || "—"}
-        </span>
-      ),
+      render: (device) => {
+        // The edit form's "Serial Number" maps to device_id, so show that here
+        // (preserves the exact case the user typed). Fall back to serial_number
+        // for camera devices that have no device_id.
+        const serial = device.device_id || device.serial_number || "—";
+        return (
+          <span
+            className="text-slate-600 dark:text-slate-300 block max-w-[160px] truncate"
+            title={serial}
+          >
+            {serial}
+          </span>
+        );
+      },
     },
     {
       key: "function",
@@ -247,6 +254,7 @@ export default function Columns(
             className="w-32 bg-white dark:bg-gray-900 shadow-md rounded-md py-1"
             onClick={(e) => e.stopPropagation()}
           >
+            {perms.canEdit !== false && (
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
@@ -257,7 +265,9 @@ export default function Columns(
               <Pencil className="w-4 h-4 text-slate-700 dark:text-slate-200" />
               <span className="text-slate-700 dark:text-slate-200 font-medium">Edit</span>
             </DropdownMenuItem>
+            )}
 
+            {perms.canEdit !== false && (
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
@@ -268,7 +278,9 @@ export default function Columns(
               <Settings className="w-4 h-4 text-slate-700 dark:text-slate-200" />
               <span className="text-slate-700 dark:text-slate-200 font-medium">Settings</span>
             </DropdownMenuItem>
+            )}
 
+            {perms.canDelete !== false && (
             <DropdownMenuItem
               onClick={(e) => {
                 e.stopPropagation();
@@ -279,6 +291,7 @@ export default function Columns(
               <Trash className="w-4 h-4 text-red-500" />
               <span className="text-red-600 dark:text-red-400 font-medium">Delete</span>
             </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       ),

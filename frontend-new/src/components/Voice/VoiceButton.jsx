@@ -35,7 +35,7 @@ const MAX_HISTORY = 8; // conversation turns kept for follow-up context
 
 export default function VoiceButton() {
   const router = useRouter();
-  const [enabled, setEnabled] = useState(true); // hands-free wake word on/off
+  const [enabled, setEnabled] = useState(false); // hands-free wake word on/off — default OFF
   const [language, setLanguage] = useState("en-US"); // mic + reply language
   const [panelOpen, setPanelOpen] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -52,7 +52,7 @@ export default function VoiceButton() {
   const silenceTimerRef = useRef(null);
   const resumeTimerRef = useRef(null);
   const stateRef = useRef("idle");
-  const enabledRef = useRef(true);
+  const enabledRef = useRef(false);
   const langRef = useRef("en-US");
   const conversationRef = useRef([]); // [{role:"user"|"assistant", content}]
   const manualStopRef = useRef(false);
@@ -422,7 +422,7 @@ export default function VoiceButton() {
   // Hydrate the hands-free preference, then auto-start on load.
   useEffect(() => {
     if (!isSupported) return;
-    let pref = true;
+    let pref = false; // default OFF — hands-free only turns on if the user explicitly enabled it
     try {
       const raw = localStorage.getItem(ENABLED_STORAGE_KEY);
       if (raw !== null) pref = raw === "true";
