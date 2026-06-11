@@ -19,9 +19,15 @@ class DepartmentController extends Controller
         $model = Department::query();
         $model->where('company_id', $request->company_id);
         $model->when($request->user_type == "department", fn($q) => $q->where("id", $request->department_id));
-        $model->when(request()->filled('branch_id'), fn($q) => $q->where('branch_id', request('branch_id')));
+        // Branch filters keep common departments (branch_id IS NULL) visible —
+        // departments like Accounts/HR are shared across all branches.
+        $model->when(request()->filled('branch_id'), fn($q) => $q->where(
+            fn($sub) => $sub->where('branch_id', request('branch_id'))->orWhereNull('branch_id')
+        ));
         $model->when(request()->filled('department_ids'), fn($q) => $q->whereIn('id', request('department_ids')));
-        $model->when(request()->filled('branch_ids'), fn($q) => $q->whereIn('branch_id', request('branch_ids')));
+        $model->when(request()->filled('branch_ids'), fn($q) => $q->where(
+            fn($sub) => $sub->whereIn('branch_id', request('branch_ids'))->orWhereNull('branch_id')
+        ));
         $model->orderBy(request('order_by') ? "id" : 'name', request('sort_by_desc') ? "desc" : "asc");
         return $model->get(["id", "name"]);
     }

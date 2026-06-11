@@ -14,14 +14,23 @@ class DepartmentRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation()
+    {
+        // No branch selected means a company-wide (common) department,
+        // e.g. Accounts or HR shared by all branches.
+        if (! $this->input('branch_id')) {
+            $this->merge(['branch_id' => null]);
+        }
+    }
+
     public function rules()
     {
         return [
             'name'         => 'required|string|min:4|max:50',
             'description'  => 'required|string|min:4|max:200',
 
-            // Changed from string validation to integer/exists validation
-            'branch_id'    => 'required|integer',
+            // Optional: null = common department shared across all branches
+            'branch_id'    => 'nullable|integer|exists:company_branches,id',
 
             // Ensure company_id is a valid integer and exists in the companies table
             'company_id'   => 'required|integer|exists:companies,id',
