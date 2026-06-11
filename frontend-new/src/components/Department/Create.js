@@ -10,10 +10,13 @@ import TextArea from "../Theme/TextArea";
 import DropDown from "../ui/DropDown";
 
 let defaultPayload = {
-  branch_id: 0,
+  branch_id: null,
   name: "",
   description: "",
 };
+
+// null branch_id = common department shared across all branches (e.g. Accounts, HR)
+const COMMON_BRANCH_OPTION = { id: null, name: "Common (All Branches)" };
 
 const Create = ({ onSuccess = () => { } }) => {
 
@@ -120,14 +123,14 @@ const Create = ({ onSuccess = () => { } }) => {
               <div className="p-6 space-y-5 bg-white/50 dark:bg-gray-900">
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-slate-400">
-                    Branch <span className="text-red-400">*</span>
+                    Branch
                   </label>
                   <DropDown
                     placeholder="Select Branch"
                     width="w-full"
                     value={form.branch_id}
                     onChange={(value) => handleChange("branch_id", value)}
-                    items={branches} />
+                    items={[COMMON_BRANCH_OPTION, ...branches]} />
                 </div>
                 <div className="space-y-1.5">
                   <label className="block text-sm font-medium text-slate-400">

@@ -189,7 +189,7 @@ export default function Department() {
                   </td>
 
                   <td className="py-3 px-4 text-blue-400 text-xs font-medium">
-                    {(record.branch_name || '-')}
+                    {record.branch_name || (isParent ? 'All Branches' : '-')}
                   </td>
 
 
