@@ -12,3 +12,4 @@ Route::get('timezone/search/{key}', [TimezoneController::class, 'search']);
 Route::get('timezone_list', [TimezoneController::class, 'timezonesList']);
 Route::get('timezone-list', [TimezoneController::class, 'dropdownList']);
 Route::post('create_default_timezones', [TimezoneController::class, 'createDefaultFullNoTimezones']);
+Route::post('sync_timezones_all_devices', [\App\Http\Controllers\SDKController::class, 'syncTimeGroupAllDevices']);

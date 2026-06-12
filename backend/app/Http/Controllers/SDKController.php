@@ -112,6 +112,28 @@ class SDKController extends Controller
         return $sdkResponse;
     }
 
+    // Push timezone *definitions* (the weekly grids) to every access device in one call.
+    // Returns a per-device {device_id, ok} summary so the UI can report offline devices.
+    public function syncTimeGroupAllDevices(Request $request)
+    {
+        $devices = Device::where('company_id', $request->company_id)
+            ->excludeMobile()
+            ->get(['device_id']);
+
+        $results = [];
+        foreach ($devices as $device) {
+            $req = new Request(['company_id' => $request->company_id]);
+            try {
+                $this->processTimeGroup($req, $device->device_id);
+                $results[] = ['device_id' => $device->device_id, 'ok' => true];
+            } catch (\Throwable $e) {
+                $results[] = ['device_id' => $device->device_id, 'ok' => false, 'error' => $e->getMessage()];
+            }
+        }
+
+        return $this->response('Timezone definitions synced', $results, true);
+    }
+
     public function renderEmptyTimeFrame()
     {
         $arr = [];

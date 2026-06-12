@@ -153,91 +153,77 @@ class TimezoneEmployeesController extends Controller
     public function timezonesDeviceEmployeesUpdate(Request $request)
     {
         $data = $request->all();
-
-        $arr = [];
+        $sdk = new SDKController();
+        $results = [];
 
         foreach ($data["employee_ids"] as $item) {
 
-
-            //reset timezone  on Device with 1 full access  
-            // $previousTimezones =   TimezoneEmployees::with(["device", "employee"])
-            //     ->where("company_id", $request->company_id)
-            //     ->where("employee_table_id", $item)
-            //     ->get();
-
-
-            // foreach ($previousTimezones as $key => $empTimezone) {
-
-            //     $jsonData = [
-            //         'personList' => [
-            //             [
-            //                 'userCode' => $empTimezone->employee["system_user_id"],
-            //                 'timeGroup' => 1, //reset to 1//full access
-            //             ]
-            //         ],
-            //         'snList' =>  [$empTimezone->device["device_id"],]
-            //     ];
-
-            //     (new SDKController())->processSDKTimeZoneONEJSONData(null, $jsonData);
-            // }
-
-
-            $employee  = Employee::where("company_id", $request->company_id)
+            $employee = Employee::where("company_id", $request->company_id)
                 ->where("id", $item)->first();
+            if (!$employee) {
+                continue;
+            }
 
-            //delete Employee data  from table 
+            // (a) Reset this employee's existing device groups back to Full Access on-device,
+            //     so a device they're being removed from stops enforcing the old window.
+            $previous = TimezoneEmployees::with(["device"])
+                ->where("company_id", $request->company_id)
+                ->where("employee_table_id", $item)
+                ->get();
+
+            foreach ($previous as $old) {
+                if (!$old->device) {
+                    continue;
+                }
+                $sdk->processSDKTimeZoneONEJSONData(null, [
+                    'personList' => [[
+                        'name' => $employee["display_name"],
+                        'userCode' => $employee["system_user_id"],
+                        'timeGroup' => 1, // Full Access
+                    ]],
+                    'snList' => [$old->device["device_id"]],
+                ]);
+            }
+
+            // (b) Clear DB rows, then (c) write new rows and (d) push the new groups to devices.
             TimezoneEmployees::where("company_id", $request->company_id)
                 ->where("employee_table_id", $item)
                 ->delete();
 
-            $record = [];
             foreach ($data["mappings"] as $timezone) {
-
-                $device_timezone_id = 1;
-                if (isset($timezone["device_timezone_id"])) {
-                    $device_timezone_id = $timezone["device_timezone_id"];
+                $deviceTableId = $timezone["id"] ?? '';
+                $timezoneTableId = $timezone["timezone_table_id"] ?? '';
+                if ($deviceTableId === '' || $timezoneTableId === '') {
+                    continue;
                 }
+                $deviceTimezoneId = $timezone["device_timezone_id"] ?? 1;
 
+                $results[] = TimezoneEmployees::create([
+                    "device_table_id" => $deviceTableId,
+                    "company_id" => $request->company_id,
+                    "timezone_table_id" => $timezoneTableId,
+                    "employee_table_id" => $item,
+                    "device_timezone_id" => $deviceTimezoneId,
+                ]);
 
-
-
-                if ($timezone["id"] != '' && $timezone["timezone_table_id"] != '') {
-                    $value = [
-                        "device_table_id" => $timezone["id"],
-                        "company_id" => $request->company_id,
-                        "timezone_table_id" => $timezone["timezone_table_id"],
-                        "employee_table_id" => $item,
-                        "device_timezone_id" => $device_timezone_id,
-
-                    ];
-
-                    $record[] = TimezoneEmployees::create($value);
-
-                    $jsonData = [
-                        'personList' => [
-                            [
-                                'name' => $employee["display_name"],
-                                'userCode' => $employee["system_user_id"],
-                                'timeGroup' => $device_timezone_id
-                            ]
-                        ],
-                        'snList' =>  [$timezone["serial_number"]]
-                    ];
-
-                    (new SDKController())->processSDKTimeZoneONEJSONData(null, $jsonData);
+                if (!empty($timezone["serial_number"])) {
+                    $sdk->processSDKTimeZoneONEJSONData(null, [
+                        'personList' => [[
+                            'name' => $employee["display_name"],
+                            'userCode' => $employee["system_user_id"],
+                            'timeGroup' => $deviceTimezoneId,
+                        ]],
+                        'snList' => [$timezone["serial_number"]],
+                    ]);
                 }
             }
 
-
-
-
-            return $this->response("Successfully Updated", $record, true);
-
-
-            // if (!$found) {
-            //     $arr[] = $value;
-            // }
+            // Keep the convenience column on the employee in sync (first mapping's group).
+            $firstGroup = $data["mappings"][0]["device_timezone_id"] ?? 1;
+            $employee->update(['timezone_id' => $firstGroup]);
         }
+
+        return $this->response("Successfully Updated", $results, true); // outside the loop
     }
 
     public function timezoneEmployeesUpdate(Request $request)

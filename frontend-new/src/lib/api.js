@@ -1026,6 +1026,72 @@ export const getAlarmSoundUrl = () => `${API_BASE.replace(/\/api\/?$/, "")}/alar
 // ===== Fire Alarm END =====
 
 
+// ---- Timezone Access Control ----
+export const getTimezones = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/timezone`, { params: await buildQueryParams(params) });
+    return data; // paginated: {data, current_page, total, ...}
+};
+
+export const getTimezoneDropdown = async (params = {}) => {
+    // Uses the /timezone index (Postgres-safe) instead of /timezone_list, whose
+    // FIELD() ordering is MySQL-only and 500s on the pgsql backend. We map + sort
+    // (Full Access, No Access first) client-side to keep the same return shape.
+    const { data } = await axios.get(`${API_BASE}/timezone`, { params: await buildQueryParams({ per_page: 200, ...params }) });
+    const list = Array.isArray(data?.data) ? data.data : (Array.isArray(data) ? data : []);
+    const rank = (n) => (n === "Full Access" ? 0 : n === "No Access" ? 1 : 2);
+    return list
+        .map((t) => ({ id: t.id, timezone_name: t.timezone_name, timezone_id: t.timezone_id }))
+        .sort((a, b) => rank(a.timezone_name) - rank(b.timezone_name) || String(a.timezone_name || "").localeCompare(String(b.timezone_name || ""))); // [{id, timezone_name, timezone_id}] Full/No Access first
+};
+
+export const createTimezone = async (payload = {}) => {
+    const { data } = await axios.post(`${API_BASE}/timezone`, { ...(await buildQueryParams(payload)) });
+    return data;
+};
+
+export const updateTimezone = async (id, payload = {}) => {
+    const { data } = await axios.put(`${API_BASE}/timezone/${id}`, { ...(await buildQueryParams(payload)) });
+    return data;
+};
+
+export const deleteTimezone = async (id) => {
+    const { data } = await axios.delete(`${API_BASE}/timezone/${id}`, { params: await buildQueryParams() });
+    return data;
+};
+
+export const seedDefaultTimezones = async () => {
+    const { data } = await axios.post(`${API_BASE}/create_default_timezones`, { ...(await buildQueryParams()) });
+    return data;
+};
+
+export const syncTimezonesAllDevices = async () => {
+    const { data } = await axios.post(`${API_BASE}/sync_timezones_all_devices`, { ...(await buildQueryParams()) });
+    return data; // {data:[{device_id, ok}], ...}
+};
+
+export const getTimezoneEmployees = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/employees_with_timezone_count`, { params: await buildQueryParams(params) });
+    return data; // paginated employees with timezones_mapped[].{device,timezone}
+};
+
+export const saveEmployeeDeviceTimezones = async (payload = {}) => {
+    // payload: { employee_ids:[id], mappings:[{id, serial_number, timezone_table_id, device_timezone_id}] }
+    const { data } = await axios.post(`${API_BASE}/timezones_device_employees_update`, { ...(await buildQueryParams(payload)) });
+    return data;
+};
+
+export const getTimezoneMappings = async (params = {}) => {
+    const { data } = await axios.get(`${API_BASE}/gettimezonesinfo`, { params: await buildQueryParams(params) });
+    return data;
+};
+
+export const bulkAssignTimezone = async (payload = {}) => {
+    // payload: { timezone_id, timezone_table_id, employee_id:[{id,display_name,system_user_id,...}], device_id:[{id,device_id,name}] }
+    const { data } = await axios.post(`${API_BASE}/employee_timezone_mapping`, { ...(await buildQueryParams(payload)) });
+    return data;
+};
+
+
 export const api = axios.create({
     baseURL: API_BASE,
     headers: {

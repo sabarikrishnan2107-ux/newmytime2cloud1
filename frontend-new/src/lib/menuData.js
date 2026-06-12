@@ -54,6 +54,9 @@ const attendanceMenu = [
 const accessControlMenu = [
   { href: "/access_control", icon: LayoutDashboard, label: "menu.dashboard" },
   { href: "/access_control_logs", icon: History, label: "menu.logs" },
+  { href: "/access_control/timezones", icon: Clock, label: "menu.timezones" },
+  { href: "/access_control/timezone-employees", icon: UserCheck, label: "menu.timezoneEmployees" },
+  { href: "/access_control/mapping-list", icon: Layers, label: "menu.mappingList" },
 ];
 
 const leaveMenu = [
@@ -175,6 +178,9 @@ export const leftNavLinks = {
   // "/access_control_logs": attendanceMenu,
   "/access_control": accessControlMenu,
   "/access_control_logs": accessControlMenu,
+  "/access_control/timezones": accessControlMenu,
+  "/access_control/timezone-employees": accessControlMenu,
+  "/access_control/mapping-list": accessControlMenu,
 
   "/setup": companyMenu,
   "/company": companyMenu,

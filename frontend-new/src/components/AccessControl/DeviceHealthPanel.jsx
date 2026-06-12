@@ -54,7 +54,7 @@ export function DeviceHealthPanel({
           {t("accessControl.devicePanel.noDevices")}
         </div>
       ) : (
-        <div className="space-y-3 p-4">
+        <div className="space-y-2 p-3 max-h-[calc(100vh-260px)] overflow-y-auto">
           {devices.map((d) => {
             const isOnline = d.status_id == 1;
             const isOpen = !!openedDoors[d.device_id];
@@ -63,7 +63,7 @@ export function DeviceHealthPanel({
               <div
                 key={d.device_id || d.id}
                 className={cn(
-                  "rounded-2xl border-2 bg-card px-4 py-4 transition-all duration-300",
+                  "rounded-xl border-2 bg-card px-3.5 py-3 transition-all duration-300",
                   isOpen
                     ? "border-destructive shadow-[0_0_18px_-2px_rgba(239,68,68,0.55)]"
                     : isOnline
@@ -75,7 +75,7 @@ export function DeviceHealthPanel({
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={cn("h-2.5 w-2.5 shrink-0 rounded-full pulse-dot", isOnline ? "bg-success" : "bg-destructive")} />
-                    <p className="truncate text-lg font-semibold text-foreground">{d.name || "—"}</p>
+                    <p className="truncate text-base font-semibold text-foreground">{d.name || "—"}</p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={cn(
@@ -89,7 +89,7 @@ export function DeviceHealthPanel({
                 </div>
 
                 {/* Branch / location */}
-                <p className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
                   <MapPin className="h-4 w-4" />
                   {d.branch?.branch_name || d.location || "—"}
                 </p>
@@ -105,7 +105,7 @@ export function DeviceHealthPanel({
                 {isOpen ? (
                   <button
                     onClick={() => onCloseDoor && onCloseDoor(d)}
-                    className="mt-4 h-11 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-destructive bg-destructive/15 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/25"
+                    className="mt-3 h-9 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-destructive bg-destructive/15 text-sm font-semibold text-destructive transition-colors hover:bg-destructive/25"
                   >
                     <DoorClosed className="h-4 w-4" /> {t("accessControl.devicePanel.closeDoor")}
                   </button>
@@ -114,7 +114,7 @@ export function DeviceHealthPanel({
                     onClick={() => onOpenDoor && onOpenDoor(d)}
                     disabled={!isOnline}
                     title={isOnline ? t("accessControl.devicePanel.sendOpenCommand") : t("accessControl.devicePanel.deviceOffline")}
-                    className="mt-4 h-11 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="mt-3 h-9 w-full inline-flex items-center justify-center gap-2 rounded-xl border border-border bg-muted/40 text-sm font-medium text-foreground transition-colors hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <DoorOpen className="h-4 w-4" /> {t("accessControl.devicePanel.openDoor")}
                   </button>

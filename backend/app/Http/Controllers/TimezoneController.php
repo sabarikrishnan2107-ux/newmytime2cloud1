@@ -24,7 +24,9 @@ class TimezoneController extends Controller
     public function timezonesList(Request $request)
     {
         return   Timezone::where('company_id', $request->company_id)
-            ->orderByRaw("FIELD(timezone_name, 'Full Access', 'No Access') DESC") // Prioritize "Full Access" and "No Access"
+            // Prioritize "Full Access" then "No Access". Uses a portable CASE (works on
+            // Postgres and MySQL) instead of MySQL-only FIELD(), which 500s on pgsql.
+            ->orderByRaw("CASE timezone_name WHEN 'Full Access' THEN 0 WHEN 'No Access' THEN 1 ELSE 2 END")
             ->orderBy('timezone_name') // Sort the rest alphabetically
             ->get(['id', 'timezone_name', 'timezone_id']);
     }
