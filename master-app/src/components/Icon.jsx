@@ -32,6 +32,8 @@ const ICONS = {
   payment:    'M3 10h18 M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z M7 15h2',
   download:   'M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4 M7 10l5 5 5-5 M12 15V3',
   send:       'M22 2L11 13 M22 2l-7 20-4-9-9-4z',
+  key:        'M21 2l-2 2m-7.61 7.61a5.5 5.5 0 11-7.778 7.778 5.5 5.5 0 017.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4',
+  copy:       'M9 9h10a2 2 0 012 2v10a2 2 0 01-2 2H9a2 2 0 01-2-2V11a2 2 0 012-2z M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1',
 }
 
 export default function Icon({ name, size = 16, color = 'currentColor', strokeWidth = 1.8, className = '' }) {

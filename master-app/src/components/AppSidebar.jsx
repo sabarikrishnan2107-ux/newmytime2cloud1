@@ -4,6 +4,7 @@ import Icon from './Icon'
 const NAV_ITEMS = [
   { icon: 'home',      label: 'Dashboard', to: '/dashboard' },
   { icon: 'companies', label: 'Companies', to: '/companies' },
+  { icon: 'lock',      label: 'Licenses',  to: '/licenses'  },
   // { icon: 'payment',   label: 'Payments',  to: '/payments'  },
   // { icon: 'invoice',   label: 'Invoices',  to: '/invoices'  },
 ]

@@ -9,6 +9,8 @@ import PaymentsList from './pages/payments/PaymentsList'
 import PaymentCreate from './pages/payments/PaymentCreate'
 import InvoicesList from './pages/invoices/InvoicesList'
 import InvoiceDetail from './pages/invoices/InvoiceDetail'
+import LicensesList from './pages/licenses/LicensesList'
+import LicenseGenerate from './pages/licenses/LicenseGenerate'
 
 export default function App() {
   return (
@@ -23,6 +25,11 @@ export default function App() {
         <Route path="/companies" element={<CompaniesList />} />
         <Route path="/companies/create" element={<CompanyCreate />} />
         <Route path="/companies/:id" element={<CompanyEdit />} />
+      </Route>
+
+      <Route element={<MainLayout title="Licenses" />}>
+        <Route path="/licenses" element={<LicensesList />} />
+        <Route path="/licenses/create" element={<LicenseGenerate />} />
       </Route>
 
       <Route element={<MainLayout title="Payments" />}>
