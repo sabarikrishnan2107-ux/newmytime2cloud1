@@ -20,3 +20,25 @@ camera-service/models/models/
 # OS
 .DS_Store
 Thumbs.db
+
+# Dependencies (installed via npm/composer, never committed)
+**/node_modules/
+**/vendor/
+
+# Build output
+**/.next/
+**/out/
+**/dist/
+**/.vite/
+
+# Bundled runtimes & binaries (present locally for packaging, not versioned)
+desktop/backend/php/
+nginx.exe
+**/*.exe
+**/*.dll
+
+# License signing keys — NEVER commit (private key must stay off git)
+**/storage/license/
+
+# Editor / local agent config
+.claude/settings.json
