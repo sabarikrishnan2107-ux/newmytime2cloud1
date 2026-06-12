@@ -45,7 +45,7 @@ class LicenseController extends Controller
     public function generate(Request $request, LicenseSigner $signer)
     {
         $data = $request->validate([
-            'company_id'        => ['nullable', 'integer'],
+            'company_id'        => ['required', 'integer', 'exists:companies,id'],
             'machine_fp'        => ['required', 'string', 'min:6'],
             'allowed_devices'   => ['nullable', 'array'],
             'allowed_devices.*' => ['string'],
