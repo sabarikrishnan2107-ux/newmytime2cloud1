@@ -73,5 +73,6 @@ include('ai_feeds.php');
 include('ai_trigger.php');
 
 include('reports_monthly_pdf.php');
+include('license.php');
 // Voice assistant (Grok) command interpreter
 Route::post('/voice/interpret', [\App\Http\Controllers\VoiceAssistantController::class, 'interpret']);

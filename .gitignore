@@ -20,3 +20,19 @@ camera-service/models/models/
 # OS
 .DS_Store
 Thumbs.db
+
+# desktop
+# Dependencies & build output (anywhere in the tree)
+**/node_modules/
+**/vendor/
+**/dist/
+**/build/
+**/.next/
+**/.nuxt/
+
+# Bundled runtimes / binaries / volatile dirs in the desktop bundle
+desktop/backend/php/
+desktop/nginx.exe
+desktop/logs/
+desktop/temp/
+desktop/sdk/
