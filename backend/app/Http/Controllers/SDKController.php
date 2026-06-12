@@ -384,10 +384,17 @@ class SDKController extends Controller
 
     public function processUploadPersons($url, $device_id, $person)
     {
-        $image = public_path() . "/media/employee/profile_picture/" . $person["profile_picture_raw"];
-        $imageData = file_get_contents($image);
-        $person["faceImage"] = base64_encode($imageData);
-        // return AddPerson::dispatch($url, $person);
+        // Refuse to push a face-less person. An empty faceImage does not enrol a
+        // usable face on OX face devices and, on re-upload, collapses the device's
+        // working set to a single blank record — which customers experience as
+        // "uploading the 2nd employee deleted the 1st". Surface it as an error
+        // instead of silently corrupting the enrolment.
+        $faceImage = $this->resolveFaceImageBase64($person);
+        if ($faceImage === null) {
+            return $this->noPhotoResult($person, $device_id);
+        }
+
+        $person["faceImage"] = $faceImage;
 
         try {
             // Send HTTP POST request
@@ -399,21 +406,106 @@ class SDKController extends Controller
                 ->post($url, $person);
 
             return [
-                "name" => $person["name"],
-                "userCode" => $person["userCode"],
+                "name" => $person["name"] ?? null,
+                "userCode" => $person["userCode"] ?? null,
                 "device_id" => $device_id,
                 'status' => $response->status(),
                 'sdk_response' => $response->json(),
             ];
         } catch (\Exception $e) {
             return [
-                "name" => $person["name"],
-                "userCode" => $person["userCode"],
+                "name" => $person["name"] ?? null,
+                "userCode" => $person["userCode"] ?? null,
                 "device_id" => $device_id,
                 'status' => 500,
                 'sdk_response' => $e->getMessage(),
             ];
         }
+    }
+
+    /**
+     * Structured "photo unavailable, did not push" result, shared by every
+     * device-upload path. Logs the skip so a missing photo is visible in the
+     * device_employee_upload channel instead of failing silently.
+     */
+    protected function noPhotoResult($person, $deviceId): array
+    {
+        Log::channel('device_employee_upload')->warning('DEVICE_EMPLOYEE_UPLOAD_NO_PHOTO', [
+            'name'                => $person['name'] ?? null,
+            'userCode'            => $person['userCode'] ?? null,
+            'device_id'           => $deviceId,
+            'profile_picture_raw' => $person['profile_picture_raw'] ?? null,
+        ]);
+
+        return [
+            "name"         => $person["name"] ?? null,
+            "userCode"     => $person["userCode"] ?? null,
+            "device_id"    => $deviceId,
+            'status'       => 422,
+            'sdk_response' => [
+                'status'  => 422,
+                'message' => 'Employee photo not found or not a supported image format on the device server — not pushed (would have sent an empty face).',
+            ],
+        ];
+    }
+
+    /**
+     * Resolve an employee's face photo to raw base64 (no `data:` prefix) from the
+     * local media folder (public/media/employee/profile_picture/<filename>).
+     *
+     * Security notes:
+     *  - `profile_picture_raw` is request-supplied, so we basename() it and verify
+     *    the resolved path stays inside the profile-picture directory — no path
+     *    traversal (e.g. "../../etc/passwd").
+     *  - We deliberately DO NOT fetch a caller-supplied URL here. Doing so would be
+     *    an SSRF vector (the request body could point at internal hosts / cloud
+     *    metadata). The photo must exist on the server that runs the push; if it
+     *    doesn't, callers get null and refuse to push (see noPhotoResult).
+     *
+     * Returns null when no real image bytes can be obtained, so callers can refuse
+     * to push an empty face instead of silently blanking the device enrolment.
+     */
+    protected function resolveFaceImageBase64(array $person): ?string
+    {
+        $raw = basename(trim((string) ($person['profile_picture_raw'] ?? '')));
+        if ($raw === '' || $raw === '.' || $raw === '..') {
+            return null;
+        }
+
+        $dir  = public_path('media/employee/profile_picture');
+        $path = $dir . DIRECTORY_SEPARATOR . $raw;
+
+        // Defence in depth on top of basename(): confirm the real path is contained.
+        $real    = realpath($path);
+        $realDir = realpath($dir);
+        if ($real === false || $realDir === false
+            || !str_starts_with($real, rtrim($realDir, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR)) {
+            return null;
+        }
+
+        $bytes = @file_get_contents($real);
+        if (!$this->isImageData($bytes)) {
+            return null;
+        }
+
+        return base64_encode($bytes);
+    }
+
+    /**
+     * Best-effort check that a byte string is a real image (JPEG/PNG/GIF/BMP/WebP)
+     * rather than an HTML error page returned with a 200.
+     */
+    protected function isImageData($bytes): bool
+    {
+        if (!is_string($bytes) || strlen($bytes) < 12) {
+            return false;
+        }
+        $sig = substr($bytes, 0, 12);
+        return str_starts_with($sig, "\xFF\xD8\xFF")                       // JPEG
+            || str_starts_with($sig, "\x89PNG\x0D\x0A\x1A\x0A")            // PNG
+            || str_starts_with($sig, "GIF87a") || str_starts_with($sig, "GIF89a") // GIF
+            || str_starts_with($sig, "BM")                                 // BMP
+            || (str_starts_with($sig, "RIFF") && substr($bytes, 8, 4) === 'WEBP'); // WebP
     }
     // public function PersonAddRange(Request $request)
     // {
@@ -521,15 +613,14 @@ class SDKController extends Controller
         foreach ($filteredCameraArray as  $value) {
 
             foreach ($request->personList as  $persons) {
-                if (isset($persons['faceImage'])) {
-
-                    $personProfilePic = $persons['faceImage'];
-                    if ($personProfilePic != '') {
-                        $imageData = file_get_contents($personProfilePic);
-                        $md5string = base64_encode($imageData);;
-                        $message[] = (new DeviceCameraController($value['camera_sdk_url']))->pushUserToCameraDevice($persons['name'],  $persons['userCode'], $md5string);
-                    }
+                // Read the photo from the local media folder (traversal-safe) and skip
+                // the push when it is missing/invalid — never send an empty face.
+                $md5string = $this->resolveFaceImageBase64($persons);
+                if ($md5string === null) {
+                    $message[] = $this->noPhotoResult($persons, $value['device_id']);
+                    continue;
                 }
+                $message[] = (new DeviceCameraController($value['camera_sdk_url']))->pushUserToCameraDevice($persons['name'],  $persons['userCode'], $md5string);
             }
         }
 
@@ -663,70 +754,35 @@ class SDKController extends Controller
 
 
             foreach ($request->personList as  $persons) {
-                if (isset($persons['profile_picture_raw'])) {
+                // Read the photo from the local media folder (traversal-safe) and skip
+                // the push when it is missing/invalid — never send an empty face (the
+                // old `else` branch pushed "" here, which blanked the enrolment).
+                $md5string = $this->resolveFaceImageBase64($persons);
+                if ($md5string === null) {
+                    $message[] = $this->noPhotoResult($persons, $value['device_id']);
+                    continue;
+                }
 
-                    //$personProfilePic = $persons['faceImage'];
-                    $personProfilePic = public_path('media/employee/profile_picture/' . $persons['profile_picture_raw']);
-                    //$personProfilePic = public_path('media/employee/profile_picture/' .  "1666962517.jpg");
+                $response = (new DeviceCameraModel2Controller($value['camera_sdk_url']))->pushUserToCameraDevice($persons['name'],  $persons['userCode'], $md5string, $value['device_id'], $persons, $sessionId);
 
-                    if ($personProfilePic != '') {
-                        //$imageData = file_get_contents($personProfilePic);
-                        $imageData = file_get_contents($personProfilePic);
-                        $md5string = base64_encode($imageData);;
-                        $response = (new DeviceCameraModel2Controller($value['camera_sdk_url']))->pushUserToCameraDevice($persons['name'],  $persons['userCode'], $md5string, $value['device_id'], $persons, $sessionId);
-
-
-
-                        if ($response != '') {
-                            $decoded = json_decode($response);
-                            if (isset($decoded->errors) && !empty($decoded->errors)) {
-                                $response = $decoded->errors[0]->detail ?? 'Error';
-                            } else {
-                                $response = 200;
-                            }
-                        } else {
-                            $response = 200;
-                        }
-
-                        $message[] =  [
-                            "name" => $persons['name'],
-                            "userCode" => $persons['userCode'],
-                            "device_id" => $value['device_id'],
-                            'status' => ($response === '' || $response === null) ? 200 : $response,
-                            'sdk_response' => ["message" => ($response === '' || $response === null) ? 200 : $response],
-                        ];
-
-
-
-                        continue;;
-                        try {
-                            if ($response != '') {
-                                $json = json_decode($response, true);
-                                if (!isset($json["id_number"])) {
-
-                                    if ($camera2Object->sxdmSn == '')
-                                        $camera2Object->sxdmSn = $value['device_id'];
-                                    // $sessionId = $camera2Object->getActiveSessionId();
-
-                                    $response = (new DeviceCameraModel2Controller($value['camera_sdk_url']))->pushUserToCameraDevice($persons['name'],  $persons['userCode'], $md5string, $value['device_id'], $persons, $sessionId);
-                                }
-                            }
-                        } catch (Exception $e) {
-                            if ($camera2Object->sxdmSn == '')
-                                $camera2Object->sxdmSn = $value['device_id'];
-                            //$sessionId = $camera2Object->getActiveSessionId();
-
-                            $response = (new DeviceCameraModel2Controller($value['camera_sdk_url']))->pushUserToCameraDevice($persons['name'],  $persons['userCode'], $md5string, $value['device_id'], $persons, $sessionId);
-                            //sleep(10);
-                        }
-                        //sleep(10);
-
-                        $message[] = $response;
+                if ($response != '') {
+                    $decoded = json_decode($response);
+                    if (isset($decoded->errors) && !empty($decoded->errors)) {
+                        $response = $decoded->errors[0]->detail ?? 'Error';
+                    } else {
+                        $response = 200;
                     }
                 } else {
-
-                    $message[] = (new DeviceCameraModel2Controller($value['camera_sdk_url']))->pushUserToCameraDevice($persons['name'],  $persons['userCode'], "", $value['device_id'], $persons);
+                    $response = 200;
                 }
+
+                $message[] =  [
+                    "name" => $persons['name'],
+                    "userCode" => $persons['userCode'],
+                    "device_id" => $value['device_id'],
+                    'status' => ($response === '' || $response === null) ? 200 : $response,
+                    'sdk_response' => ["message" => ($response === '' || $response === null) ? 200 : $response],
+                ];
             }
         } //
 

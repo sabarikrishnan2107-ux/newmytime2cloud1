@@ -1,13 +1,13 @@
 <?php
 
+namespace App\Console\Commands;
+
 use Illuminate\Console\Command;
 use App\Models\AITrigger;
 use Illuminate\Support\Facades\DB;
 
 class RunAITriggers extends Command
 {
-    // $schedule->command('ai:run-triggers')->everyMinute();
-
     protected $signature = 'ai:run-triggers';
 
     protected $description = 'Run AI Attendance Triggers';

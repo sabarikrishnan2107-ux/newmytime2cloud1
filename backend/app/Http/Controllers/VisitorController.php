@@ -566,10 +566,12 @@ class VisitorController extends Controller
                                 }
 
 
-                                $md5string = base64_encode($imageData);;
-
-
-                                $message[] = (new DeviceCameraController($device['camera_sdk_url']))->pushUserToCameraDevice($visitorData[0]["first_name"] . ' ' . $visitorData[0]["last_name"],  $visitorData[0]['system_user_id'], $md5string);
+                                // Only push when a real visitor photo was read — an empty
+                                // face blanks the camera device enrolment.
+                                if ($imageData !== false && $imageData !== '') {
+                                    $md5string = base64_encode($imageData);
+                                    $message[] = (new DeviceCameraController($device['camera_sdk_url']))->pushUserToCameraDevice($visitorData[0]["first_name"] . ' ' . $visitorData[0]["last_name"],  $visitorData[0]['system_user_id'], $md5string);
+                                }
                             } catch (\Throwable $th) {
                             }
                         } else if ($device['model_number'] == "OX-900") {
@@ -587,10 +589,12 @@ class VisitorController extends Controller
                                 } else {
                                     $imageData = file_get_contents($visitorData[0]['logo']);
                                 }
-                                $md5string = base64_encode($imageData);;
-
-
-                                $sdkResponse = (new DeviceCameraModel2Controller($device['camera_sdk_url']))->pushUserToCameraDevice($visitorData[0]["first_name"] . ' ' . $visitorData[0]["last_name"],  $request->system_user_id, $md5string, $device['device_id']);
+                                // Only push when a real visitor photo was read — an empty
+                                // face blanks the OX device enrolment.
+                                if ($imageData !== false && $imageData !== '') {
+                                    $md5string = base64_encode($imageData);
+                                    $sdkResponse = (new DeviceCameraModel2Controller($device['camera_sdk_url']))->pushUserToCameraDevice($visitorData[0]["first_name"] . ' ' . $visitorData[0]["last_name"],  $request->system_user_id, $md5string, $device['device_id']);
+                                }
 
                                 if ($request->qr_code_binary != '') {
                                     $base64Image = base64_decode(preg_replace('#^data:image/\w+;base64,#i', '', ($request->qr_code_binary)));
