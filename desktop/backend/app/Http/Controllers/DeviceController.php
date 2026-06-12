@@ -1047,7 +1047,9 @@ class DeviceController extends Controller
 
     public function update(Device $Device, UpdateRequest $request)
     {
-
+        // License requirement: devices are license-bound, so an existing device
+        // cannot be edited. Delete and re-add the device to make a change.
+        return $this->response('Devices cannot be edited.', null, false);
 
         try {
             $data = $request->validated();
