@@ -1065,8 +1065,34 @@ export const seedDefaultTimezones = async () => {
 };
 
 export const syncTimezonesAllDevices = async () => {
-    const { data } = await axios.post(`${API_BASE}/sync_timezones_all_devices`, { ...(await buildQueryParams()) });
-    return data; // {data:[{device_id, ok}], ...}
+    // Push timezone *definitions* (the weekly grids) to each device so it knows what each
+    // custom time-group means. Uses the existing per-device /{id}/WriteTimeGroup endpoint
+    // (already on the live backend) so this works without deploying the new wrapper.
+    const user = await getUser();
+    const company_id = user?.company_id ?? 0;
+
+    // Fetch the device list (try paginated /device, fall back to /device-list).
+    // Do NOT swallow errors — let them surface so the toast shows the real cause.
+    const r = await getDevices({ per_page: 500 });
+    let devList = Array.isArray(r?.data) ? r.data : (Array.isArray(r) ? r : []);
+    if (devList.length === 0) {
+        const alt = await getDeviceListNew({});
+        devList = Array.isArray(alt?.data) ? alt.data : (Array.isArray(alt) ? alt : []);
+    }
+
+    const results = await Promise.all(devList.map(async (d) => {
+        if (d.status_id != 1) {
+            return { device_id: d.device_id, name: d.name, ok: false, offline: true };
+        }
+        try {
+            await axios.post(`${API_BASE}/${d.device_id}/WriteTimeGroup`, { company_id }, { timeout: 60000 });
+            return { device_id: d.device_id, name: d.name, ok: true };
+        } catch (e) {
+            return { device_id: d.device_id, name: d.name, ok: false, error: e?.message };
+        }
+    }));
+
+    return { data: results }; // [{device_id, name, ok, offline?}]
 };
 
 export const getTimezoneEmployees = async (params = {}) => {

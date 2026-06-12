@@ -70,9 +70,9 @@ export default function AssignTimezoneModal({ open, employee, onClose, onSaved }
   return (
     <div className="fixed inset-0 z-[9999] flex items-start justify-center bg-black/65 px-6 pb-6 pt-20 overflow-auto">
       <div className="w-full max-w-[640px] rounded-xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
-        <div className="px-6 py-3 bg-violet-600 text-white flex items-center justify-between rounded-t-xl">
-          <h2 className="font-bold">Update Timezone Mapping(s){employee?.display_name ? ` · ${employee.display_name}` : ""}</h2>
-          <button onClick={onClose} className="size-7 rounded-full bg-white/15 hover:bg-white/25 flex items-center justify-center transition"><X size={16} /></button>
+        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between rounded-t-xl">
+          <h2 className="font-bold text-slate-800 dark:text-slate-100">Update Timezone Mapping(s){employee?.display_name ? ` · ${employee.display_name}` : ""}</h2>
+          <button onClick={onClose} className="size-7 rounded-full text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center transition"><X size={16} /></button>
         </div>
 
         <div className="p-6 space-y-3 max-h-[70vh] overflow-auto">

@@ -10,7 +10,6 @@ use App\Models\EmployeeTimezoneMapping;
 use App\Models\Timezone;
 use App\Models\TimezoneEmployees;
 
-use function PHPUnit\Framework\isJson;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -48,9 +47,11 @@ class EmployeeTimezoneMappingController extends Controller
     public function store(StoreRequest $request)
     {
 
-        $slots = Timezone::where("timezone_id", $request->timezone_id)->value("intervals_raw_data") ?? [];
+        $slots = Timezone::where("timezone_id", $request->timezone_id)->value("intervals_raw_data");
 
-        $slotsCount = count(json_decode($slots));
+        // Guard against null / non-string intervals_raw_data (count(null) is a fatal TypeError on PHP 8).
+        $decodedSlots = is_string($slots) ? json_decode($slots, true) : (is_array($slots) ? $slots : []);
+        $slotsCount = is_array($decodedSlots) ? count($decodedSlots) : 0;
 
         $payload = $request->validated();
 
@@ -151,10 +152,13 @@ class EmployeeTimezoneMappingController extends Controller
     {
 
         $finalArray = [];
-        if (!isJson($phpArray)) {
-            $phpArray = json_decode($phpArray, true);
-        } else {
-            $phpArray = $phpArray;
+        // Accept either a JSON string or an Eloquent model / array (no PHPUnit isJson()
+        // — that's a dev-only dependency and is undefined on production --no-dev installs).
+        if (is_string($phpArray)) {
+            $decoded = json_decode($phpArray, true);
+            if (is_array($decoded)) {
+                $phpArray = $decoded;
+            }
         }
 
         $personsListArray = [];
@@ -194,9 +198,11 @@ class EmployeeTimezoneMappingController extends Controller
     }
     public function update(UpdateRequest $request, EmployeeTimezoneMapping $EmployeeTimezoneMapping)
     {
-        $slots = Timezone::where("timezone_id", $request->timezone_id)->value("intervals_raw_data") ?? [];
+        $slots = Timezone::where("timezone_id", $request->timezone_id)->value("intervals_raw_data");
 
-        $slotsCount = count(json_decode($slots));
+        // Guard against null / non-string intervals_raw_data (count(null) is a fatal TypeError on PHP 8).
+        $decodedSlots = is_string($slots) ? json_decode($slots, true) : (is_array($slots) ? $slots : []);
+        $slotsCount = is_array($decodedSlots) ? count($decodedSlots) : 0;
 
         $payload = $request->all();
 
@@ -416,10 +422,13 @@ class EmployeeTimezoneMappingController extends Controller
     {
 
         $finalArray = [];
-        if (!isJson($phpArray)) {
-            $phpArray = json_decode($phpArray, true);
-        } else {
-            $phpArray = $phpArray;
+        // Accept either a JSON string or an Eloquent model / array (no PHPUnit isJson()
+        // — that's a dev-only dependency and is undefined on production --no-dev installs).
+        if (is_string($phpArray)) {
+            $decoded = json_decode($phpArray, true);
+            if (is_array($decoded)) {
+                $phpArray = $decoded;
+            }
         }
 
         $personsListArray = [];

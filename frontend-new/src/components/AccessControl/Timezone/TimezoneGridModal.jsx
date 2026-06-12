@@ -68,9 +68,9 @@ export default function TimezoneGridModal({ open, onClose, initial = null, onSub
          onMouseUp={() => setDragMode(null)} onMouseLeave={() => setDragMode(null)}>
       <div className="relative w-full max-w-[1400px] rounded-xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
         {/* Header */}
-        <div className="px-6 py-3 bg-violet-600 text-white flex items-center justify-between rounded-t-xl">
-          <h2 className="text-base font-bold">Timezone</h2>
-          <button onClick={onClose} className="size-7 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition"><X size={16} /></button>
+        <div className="px-6 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between rounded-t-xl">
+          <h2 className="text-base font-bold text-slate-800 dark:text-slate-100">Timezone</h2>
+          <button onClick={onClose} className="size-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><X size={16} /></button>
         </div>
 
         {/* Body */}
@@ -131,9 +131,9 @@ export default function TimezoneGridModal({ open, onClose, initial = null, onSub
         {rangeDay !== null && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/50" onClick={() => setRangeDay(null)}>
             <div className="w-[420px] max-w-[92vw] rounded-xl shadow-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <div className="px-5 py-3 bg-violet-600 text-white flex items-center justify-between">
-                <h3 className="text-sm font-bold">Select Hour Range · {DAY_LABELS[rangeDay]}</h3>
-                <button onClick={() => setRangeDay(null)} className="size-7 rounded-full flex items-center justify-center bg-white/15 hover:bg-white/25 transition"><X size={14} /></button>
+              <div className="px-5 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100">Select Hour Range · {DAY_LABELS[rangeDay]}</h3>
+                <button onClick={() => setRangeDay(null)} className="size-7 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition"><X size={14} /></button>
               </div>
               <div className="p-5 grid grid-cols-2 gap-4">
                 <div>

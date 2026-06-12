@@ -70,7 +70,13 @@ export default function TimezoneList() {
       const res = await syncTimezonesAllDevices();
       const r = Array.isArray(res?.data) ? res.data : [];
       const ok = r.filter((d) => d.ok).length;
-      notify("Sync complete", `${ok}/${r.length} devices updated.`, ok === r.length ? "success" : "error");
+      const offline = r.filter((d) => d.offline).length;
+      const failed = r.length - ok - offline;
+      let msg = `${ok} of ${r.length} device(s) updated.`;
+      if (offline) msg += ` ${offline} offline (skipped).`;
+      if (failed) msg += ` ${failed} failed.`;
+      // Offline devices aren't a failure — only flag an error if nothing synced or some genuinely failed.
+      notify("Sync complete", msg, ok > 0 && failed === 0 ? "success" : (ok > 0 ? "warning" : "error"));
     } catch (e) {
       notify("Error", parseApiError(e), "error");
     } finally {

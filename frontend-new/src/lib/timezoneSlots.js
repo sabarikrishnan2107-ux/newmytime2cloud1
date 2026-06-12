@@ -11,11 +11,21 @@ export const SLOT_LABELS = Array.from({ length: 48 }, (_, i) => {
   return `${String(h).padStart(2, "0")}:${m}`;
 });
 
-// selected: Array(7) of Set<slotIndex> → ["0-12","0-13",...]
+// Device weekday convention. Our grid is Monday-first (Mon=0 … Sun=6). The OX access
+// devices index weekdays Sunday-first (Sun=0 … Sat=6), so a window selected on our
+// "Friday" (4) must be sent as device day 5 or it lands on the wrong weekday and the
+// door blocks at the right time. Shift by +1. If a device turns out to be Monday-first,
+// set DEVICE_DAY_OFFSET = 0 to disable the shift.
+export const DEVICE_DAY_OFFSET = 1;
+const gridToDeviceDay = (d) => (d + DEVICE_DAY_OFFSET) % 7;
+const deviceToGridDay = (d) => (d - DEVICE_DAY_OFFSET + 7) % 7;
+
+// selected: Array(7) of Set<slotIndex> → ["1-12","1-13",...] (device-day keyed)
 export function slotsToRawData(selected) {
   const out = [];
   selected.forEach((set, day) => {
-    [...set].sort((a, b) => a - b).forEach((slot) => out.push(`${day}-${slot}`));
+    const dev = gridToDeviceDay(day);
+    [...set].sort((a, b) => a - b).forEach((slot) => out.push(`${dev}-${slot}`));
   });
   return out;
 }
@@ -48,8 +58,9 @@ export function rawDataToSlots(rawData) {
     try { arr = JSON.parse(arr); } catch { arr = []; }
   }
   (arr || []).forEach((key) => {
-    const [day, slot] = String(key).split("-").map(Number);
-    if (day >= 0 && day <= 6 && slot >= 0 && slot <= 47) selected[day].add(slot);
+    const [dev, slot] = String(key).split("-").map(Number);
+    // Stored keys are device-day indexed; convert back to the grid's Monday-first rows.
+    if (dev >= 0 && dev <= 6 && slot >= 0 && slot <= 47) selected[deviceToGridDay(dev)].add(slot);
   });
   return selected;
 }
