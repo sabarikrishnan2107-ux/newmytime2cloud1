@@ -2,9 +2,11 @@
 import "./globals.css";
 import LayoutShell from "@/components/LayoutShell";
 import LanguageProvider from "@/components/LanguageProvider";
+import LicenseGate from "@/components/LicenseGate";
 import { DarkModeProvider } from "@/context/DarkModeContext";
 import { AuthProvider } from "@/context/AuthContext";
 import { LiveAttendanceProvider } from "@/context/LiveAttendanceContext";
+import { Toaster } from "@/components/ui/sonner";
 
 export default function RootLayout({ children }) {
   return (
@@ -56,11 +58,14 @@ export default function RootLayout({ children }) {
           <DarkModeProvider>
             <AuthProvider>
               <LiveAttendanceProvider>
-                <LayoutShell>{children}</LayoutShell>
+                <LicenseGate>
+                  <LayoutShell>{children}</LayoutShell>
+                </LicenseGate>
               </LiveAttendanceProvider>
             </AuthProvider>
           </DarkModeProvider>
         </LanguageProvider>
+        <Toaster />
       </body>
     </html>
   );

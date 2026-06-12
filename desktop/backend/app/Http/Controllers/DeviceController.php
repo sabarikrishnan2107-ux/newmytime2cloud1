@@ -36,6 +36,14 @@ class DeviceController extends Controller
     const ONLINE_STATUS_ID = 1;
     const OFFLINE_STATUS_ID = 2;
 
+    public function __construct()
+    {
+        // License validity gate (activated + not expired + bound machine) for
+        // adding a device. The max-devices and serial-whitelist limits are
+        // enforced inside store() via LicenseService.
+        $this->middleware('licensed')->only('store');
+    }
+
     public function devicesJson($id)
     {
         return Device::where("company_id", $id)->get([
@@ -502,15 +510,15 @@ class DeviceController extends Controller
         try {
 
             $company = Company::find($request->company_id);
-            $maxDevices = $company->max_devices;
 
-            $totalAvailable = Device::where("company_id", $request->company_id)
-                ->where("model_number", "!=", "Manual")
-                ->where("model_number",  'not like', "%Mobile%")
-                ->count();
-
-            if ($maxDevices - $totalAvailable <= 0 && $company->account_type == "company") {
-                return $this->response('Device limit reached. Max Devices :' . $maxDevices, null, false);
+            // License enforcement: max devices, device-serial whitelist, expiry.
+            // The licensed serial is the device_id (stored as serial_number below).
+            if ($company && $company->account_type == "company") {
+                $licenseError = app(\App\Services\LicenseService::class)
+                    ->canAddDevice($request->company_id, $request->device_id);
+                if ($licenseError) {
+                    return $this->response($licenseError, null, false);
+                }
             }
 
             $model = Device::query();

@@ -464,7 +464,11 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     registerIpc();
     buildMenu();            // native menu: Settings → Database Connection…
-    startPhpCgiWorkers();   // API workers first…
+    try {
+      const fp = cfg.ensureMachineFp();   // bind license to THIS machine; write MACHINE_FP to backend/.env
+      log('machine fingerprint:', fp.slice(0, 16) + '…');
+    } catch (e) { log('machine fingerprint error:', e.message); }
+    startPhpCgiWorkers();   // API workers first… (read MACHINE_FP from .env at start)
     startNginx();           // …then the front door that proxies to them
     startDotnetSdk();
     startJavaSdk();

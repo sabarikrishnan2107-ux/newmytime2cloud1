@@ -103,11 +103,11 @@ class EmployeeController extends Controller
             $data['profile_picture'] = $fileName;
         }
 
-        $maximumEmployeeCount = Company::whereId($data["company_id"])->pluck("max_employee")[0];
-        $existEmployeeCount   = Employee::where("company_id", $data["company_id"])->count();
-
-        if ($maximumEmployeeCount - $existEmployeeCount <= 0) {
-            return $this->response("Account Maximum " . $maximumEmployeeCount . " Employee count is reached.", null, false);
+        // License enforcement: max employees + expiry (source of truth is the
+        // activated license, not the company row).
+        $licenseError = app(\App\Services\LicenseService::class)->canAddEmployee($data["company_id"]);
+        if ($licenseError) {
+            return $this->response($licenseError, null, false);
         }
 
         // DB::beginTransaction();

@@ -74,6 +74,12 @@ class EmployeeControllerNew extends Controller
 
             ]);
 
+            // License enforcement: max employees + expiry.
+            $licenseError = app(\App\Services\LicenseService::class)->canAddEmployee($validatedData["company_id"]);
+            if ($licenseError) {
+                return $controller->response($licenseError, null, false);
+            }
+
             $validatedData["joining_date"] = date("Y-m-d", strtotime($validatedData["joining_date"]));
             $validatedData["date_of_birth"] = date("Y-m-d", strtotime($validatedData["date_of_birth"]));
             $validatedData["password"] = Hash::make($validatedData["password"]);

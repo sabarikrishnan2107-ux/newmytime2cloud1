@@ -6,7 +6,9 @@
 // log-listener .env; the app then relaunches to pick them up.
 
 const fs = require('fs');
-const path = require('path');
+const os = require('os');
+const crypto = require('crypto');
+const { execFileSync } = require('child_process');
 const { app } = require('electron');
 
 const PACKAGED = !!(app && app.isPackaged);
@@ -83,4 +85,39 @@ function applyDb(db) {
 
 const LIVE_DB_HOST = '139.59.69.241';   // hard-blocked: live production DB
 
-module.exports = { load, save, applyDb, DEFAULT_PORTS, CONFIG_PATH, LIVE_DB_HOST };
+// ── Machine fingerprint (license binding) ────────────────────────────────────
+// A stable per-machine id derived from the Windows MachineGuid (falls back to
+// hostname). Hashed so the raw guid never leaves the device. The desktop's
+// license can only be activated on the machine whose fingerprint matches the one
+// embedded in the signed key — this is what binds "exactly one machine".
+function machineGuid() {
+  try {
+    // execFileSync (no shell) so the backslashes in the registry key survive.
+    const out = execFileSync('reg', ['query', 'HKLM\\SOFTWARE\\Microsoft\\Cryptography', '/v', 'MachineGuid'], { encoding: 'utf8' });
+    const m = out.match(/MachineGuid\s+REG_SZ\s+([\w-]+)/i);
+    if (m) return m[1].trim();
+  } catch { /* fall through */ }
+  return os.hostname();
+}
+
+function computeMachineFp() {
+  return crypto.createHash('sha256').update('m2c-license:' + machineGuid()).digest('hex');
+}
+
+// Compute the fingerprint and write it into backend/.env as MACHINE_FP so the
+// Laravel LicenseService can read it (config/license.php -> env('MACHINE_FP')).
+// Also mirror it into desktop-config.json for the Settings/diagnostics UI.
+// Call this on boot BEFORE the php-cgi workers start so env() picks it up.
+function ensureMachineFp() {
+  const fp = computeMachineFp();
+  updateEnvFile(BACKEND_ENV, { MACHINE_FP: fp });
+  try {
+    let cfg = {};
+    try { cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch { cfg = {}; }
+    cfg.machine_fp = fp;
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
+  } catch { /* non-fatal: .env is the source of truth */ }
+  return fp;
+}
+
+module.exports = { load, save, applyDb, ensureMachineFp, computeMachineFp, DEFAULT_PORTS, CONFIG_PATH, LIVE_DB_HOST };

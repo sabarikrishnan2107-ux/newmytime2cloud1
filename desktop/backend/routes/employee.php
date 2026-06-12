@@ -14,7 +14,7 @@ Route::get('/staff-stats', [\App\Http\Controllers\StaffStatsController::class, '
 Route::get('/staff-monthly-trend', [\App\Http\Controllers\StaffStatsController::class, 'monthlyTrend']);
 Route::get('/clear-attendance-cache', [EmployeeDashboard::class, 'clearEmployeeCache']);
 
-Route::post('employee-store', [EmployeeController::class, 'employeeStore']);
+Route::post('employee-store', [EmployeeController::class, 'employeeStore'])->middleware('licensed');
 Route::get('employee-single/{id}', [EmployeeController::class, 'employeeSingle']);
 Route::post('employee-update/{id}', [EmployeeController::class, 'employeeUpdate']);
 Route::post('employee-login-update/{id}', [EmployeeController::class, 'employeeLoginUpdate']);
@@ -38,7 +38,7 @@ Route::post('delete-employee-from-device', [EmployeeController::class, 'deleteEm
 
 Route::get('get-employee-device-details', [DeviceController::class, 'getDevicePersonDetails']);
 
-Route::post('employee-store-from-device', [EmployeeController::class, 'employeeStoreFromDevice']);
+Route::post('employee-store-from-device', [EmployeeController::class, 'employeeStoreFromDevice'])->middleware('licensed');
 Route::post('employee-update-from-device/{id}', [EmployeeController::class, 'employeeUpdateFromDevice']);
 
 Route::get('get-encoded-profile-picture/{url?}', [EmployeeController::class, 'getEncodedProfilePicture']);
@@ -46,7 +46,7 @@ Route::get('get-encoded-profile-picture/{url?}', [EmployeeController::class, 'ge
 Route::get('employee-attendance-summary', [EmployeeController::class, 'attendanceSummary']);
 Route::get('employee-avg-clock-in', [EmployeeController::class, 'avgClockIn']);
 
-Route::post('employee-store-new', [EmployeeControllerNew::class, 'storeNew']);
+Route::post('employee-store-new', [EmployeeControllerNew::class, 'storeNew'])->middleware('licensed');
 Route::post('employee-update-profile-picture', [EmployeeControllerNew::class, 'updateProfilePicture']);
 Route::post('employee-update-new/{id}', [EmployeeControllerNew::class, 'updateNew']);
 Route::post('employee-update-address-new/{id}', [EmployeeControllerNew::class, 'updateAddress']);
