@@ -229,7 +229,7 @@ export default function EmployeeDataTable() {
       </div>
 
       <DataTable
-        columns={Columns({ canDelete })}
+        columns={Columns(deleteItem, editItem, deviceSettings, setOpenDoor, setCloseDoor, setAlwaysOpenDevice, { canEdit, canDelete })}
         data={employees}
         isLoading={isLoading}
         error={error}

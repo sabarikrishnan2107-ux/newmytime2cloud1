@@ -238,7 +238,7 @@ const Profile = ({ action = "Add", payload }) => {
                         <SectionTitle icon={<User size={14} />} title="Personal Information" />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
                             <div className="lg:col-span-4">
-                                <Label>Title</Label>
+                                <Label required>Title</Label>
                                 <DropDown
                                     width="w-full"
                                     items={[
@@ -252,15 +252,15 @@ const Profile = ({ action = "Add", payload }) => {
                                 />
                             </div>
                             <div className="lg:col-span-4">
-                                <Label>First Name</Label>
+                                <Label required>First Name</Label>
                                 <Input value={form.first_name} onChange={(e) => setForm({ ...form, first_name: e.target.value })} placeholder="Jonathan" />
                             </div>
                             <div className="lg:col-span-4">
-                                <Label>Last Name</Label>
+                                <Label required>Last Name</Label>
                                 <Input value={form.last_name} onChange={(e) => setForm({ ...form, last_name: e.target.value })} placeholder="Doe" />
                             </div>
                             <div className="lg:col-span-4">
-                                <Label>Display</Label>
+                                <Label required>Display</Label>
                                 <Input value={form.display_name} onChange={(e) => setForm({ ...form, display_name: e.target.value })} placeholder="John D." />
                             </div>
                             <div className="lg:col-span-4">
@@ -371,7 +371,7 @@ const Profile = ({ action = "Add", payload }) => {
                         <SectionTitle icon={<Briefcase size={14} />} title="Employment Details" />
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4">
                             <div className="lg:col-span-3">
-                                <Label>Employee Type *</Label>
+                                <Label required>Employee Type</Label>
                                 <DropDown width="w-full"
                                     placeholder="Select Employee Type"
                                     value={form.employee_type}
@@ -384,7 +384,7 @@ const Profile = ({ action = "Add", payload }) => {
                                     ]} />
                             </div>
                             <div className="lg:col-span-3">
-                                <Label>Branch</Label>
+                                <Label required>Branch</Label>
                                 <DropDown
                                     placeholder="Select Branch"
                                     width="w-full"
@@ -394,7 +394,7 @@ const Profile = ({ action = "Add", payload }) => {
                                 />
                             </div>
                             <div className="lg:col-span-3">
-                                <Label>Dept</Label>
+                                <Label required>Dept</Label>
                                 <DropDown width="w-full"
                                     value={form.department_id}
                                     onChange={(e) => setForm({ ...form, department_id: e })}
@@ -402,7 +402,7 @@ const Profile = ({ action = "Add", payload }) => {
 
                             </div>
                             <div className="lg:col-span-3">
-                                <Label>Position</Label>
+                                <Label required>Position</Label>
 
                                 <DropDown width="w-full"
                                     value={form.designation_id}
@@ -410,16 +410,16 @@ const Profile = ({ action = "Add", payload }) => {
                                     items={designations} />
                             </div>
                             <div className="lg:col-span-4">
-                                <Label>Employee ID</Label>
+                                <Label required>Employee ID</Label>
                                 <Input maxLength={16} value={form.employee_id} onChange={(e) => setForm({ ...form, employee_id: e.target.value.slice(0, 16) })} placeholder="EMP-001" />
                             </div>
                             <div className="lg:col-span-4">
-                                <Label>Employee Device ID</Label>
+                                <Label required>Employee Device ID</Label>
                                 <Input maxLength={16} value={form.system_user_id} onChange={(e) => setForm({ ...form, system_user_id: e.target.value.slice(0, 16) })} placeholder="EMP-001" />
                             </div>
 
                             <div className="lg:col-span-4">
-                                <Label>Joined Date</Label>
+                                <Label required>Joined Date</Label>
                                 <DatePicker value={form.joining_date} onChange={(e) => setForm({ ...form, joining_date: e })} />
                             </div>
 

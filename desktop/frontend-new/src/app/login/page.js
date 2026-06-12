@@ -27,8 +27,8 @@ import {
 
 const isBrowser = typeof window !== 'undefined';
 
-const savedEmail = isBrowser ? localStorage.getItem('rememberedEmail') || 'admin' : 'admin';
-const savedPassword = isBrowser ? localStorage.getItem('rememberedPassword') || 'admin' : 'admin';
+const savedEmail = isBrowser ? localStorage.getItem('rememberedEmail') || 'demo@gmail.com' : 'demo@gmail.com';
+const savedPassword = isBrowser ? localStorage.getItem('rememberedPassword') || 'demo' : 'demo';
 const rememberPref = isBrowser ? localStorage.getItem('rememberMe') === 'true' : false;
 
 const easeOut = [0.16, 1, 0.3, 1];
@@ -77,9 +77,8 @@ const Login = () => {
             setMsg(t('login.errorRequired'));
             return false;
         }
-        // Allow username-style logins (e.g. "admin"); only validate format when
-        // an email address was actually entered (contains "@").
-        if (credentials.email.includes('@') && !/.+@.+\..+/.test(credentials.email)) {
+        // Simple email format check
+        if (!/.+@.+\..+/.test(credentials.email)) {
             setMsg(t('login.errorInvalidEmail'));
             return false;
         }
