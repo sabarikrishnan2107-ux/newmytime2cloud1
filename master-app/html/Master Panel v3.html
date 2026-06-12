@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>mytime2cloud – Master Panel</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body,#root{height:100%;background:#0d1117;font-family:'Inter',sans-serif;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#30363d;border-radius:4px;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideRight{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+  @keyframes slideUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  #tweaks-panel{display:none;position:fixed;bottom:24px;right:24px;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;z-index:9999;width:220px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+  #tweaks-panel.open{display:block;}
+  #tweaks-panel h4{color:#e6edf3;font-size:13px;font-weight:600;margin-bottom:14px;}
+  .tw-row{margin-bottom:10px;}
+  .tw-row label{display:block;color:#8b949e;font-size:11px;margin-bottom:4px;}
+  .tw-row select{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-size:12px;padding:5px 8px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="tweaks-panel">
+  <h4>Tweaks</h4>
+  <div class="tw-row"><label>Accent Color</label>
+    <select id="tw-accent">
+      <option value="#7c3aed">Violet</option>
+      <option value="#0ea5e9">Sky Blue</option>
+      <option value="#10b981">Emerald</option>
+      <option value="#f59e0b">Amber</option>
+    </select>
+  </div>
+  <div class="tw-row"><label>Default View</label>
+    <select id="tw-view">
+      <option value="table">Table (Long)</option>
+      <option value="split">Split Panel</option>
+    </select>
+  </div>
+</div>
+
+<script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{"accent":"#7c3aed","defaultView":"table"}/*EDITMODE-END*/;
+
+// ── Icons ─────────────────────────────────────────────────────
+const Ic = ({ d, size=16, color="currentColor", sw=1.8 }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+    stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+    {(Array.isArray(d)?d:[d]).map((p,i)=><path key={i} d={p}/>)}
+  </svg>
+);
+const I = {
+  home:    "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
+  grid:    ["M3 3h7v7H3z","M14 3h7v7h-7z","M3 14h7v7H3z","M14 14h7v7h-7z"],
+  list:    ["M8 6h13","M8 12h13","M8 18h13","M3 6h.01","M3 12h.01","M3 18h.01"],
+  users:   ["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2","M23 21v-2a4 4 0 0 0-3-3.87","M16 3.13a4 4 0 0 1 0 7.75","M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
+  device:  "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z M12 18h.01",
+  clock:   ["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z","M12 6v6l4 2"],
+  cal:     ["M8 2v4","M16 2v4","M3 10h18","M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"],
+  pin:     ["M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z","M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"],
+  mail:    ["M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z","M22 6l-10 7L2 6"],
+  build:   ["M3 21h18","M5 21V7l8-4v18","M19 21V11l-6-4","M9 9h1v1H9z","M9 13h1v1H9z","M9 17h1v1H9z"],
+  check:   "M20 6L9 17l-5-5",
+  plus:    "M12 5v14M5 12h14",
+  close:   "M18 6 6 18M6 6l12 12",
+  edit:    ["M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7","M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"],
+  search:  ["M11 17.25a6.25 6.25 0 1 1 0-12.5 6.25 6.25 0 0 1 0 12.5z","M16 16l3.5 3.5"],
+  back:    "M19 12H5M12 5l-7 7 7 7",
+  sort:    ["M3 6h18","M7 12h10","M11 18h2"],
+  eye:     ["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z","M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"],
+  save:    ["M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z","M17 21v-8H7v8","M7 3v5h8"],
+};
+
+// ── Data ─────────────────────────────────────────────────────
+const COMPANIES = [
+  { id:1,  code:"AE00074", name:"YELLOW BOX Delivery Services LLC",       email:"yellowboxdb@gmail.com",          city:"Dubai, UAE",               employees:9,  branches:3,  devices:5,  since:"08-Nov-2023", status:"Active"   },
+  { id:2,  code:"AE00073", name:"EES Model Building Contracting",          email:"info@ees-model.com",             city:"Abu Dhabi, UAE",            employees:7,  branches:2,  devices:4,  since:"12-Jan-2024", status:"Active"   },
+  { id:3,  code:"AE00072", name:"Akil Test",                               email:"mail@akilgroup.com",             city:"No location",               employees:6,  branches:1,  devices:2,  since:"18-Feb-2024", status:"Inactive" },
+  { id:4,  code:"AE00071", name:"Delhi Progressive School LLC",            email:"ltadmin@bftgroup.com",           city:"No location",               employees:7,  branches:2,  devices:3,  since:"22-Apr-2024", status:"Active"   },
+  { id:5,  code:"AE00070", name:"SHAWARMA MAP RESTAURANT LLC",             email:"Shawarmamap2024@gmail.com",      city:"Al Karama, Dubai",          employees:20, branches:4,  devices:8,  since:"15-May-2024", status:"Active"   },
+  { id:6,  code:"AE00069", name:"AXALAR EPC DMCC",                         email:"a.alzaza@axalargroup.com",       city:"Dubai, UAE",                employees:2,  branches:1,  devices:1,  since:"01-Jun-2024", status:"Active"   },
+  { id:7,  code:"AE00068", name:"Imperius Trading LLC",                    email:"sarin@imperiustrading.com",      city:"No location",               employees:9,  branches:2,  devices:3,  since:"10-Jul-2024", status:"Active"   },
+  { id:8,  code:"AE00067", name:"Five Tech",                               email:"info.fivetech@gmail.com",        city:"Dubai",                     employees:15, branches:3,  devices:6,  since:"05-Aug-2024", status:"Active"   },
+  { id:9,  code:"AE00066", name:"Icarus Dubai",                            email:"Accounts@icarusdubai.com",       city:"Souq Al Bahar, Dubai",      employees:57, branches:5,  devices:12, since:"19-Sep-2024", status:"Active"   },
+  { id:10, code:"AE00065", name:"Jovee Restaurant",                        email:"Accounts@joveedubai.com",        city:"Downtown Dubai",            employees:30, branches:3,  devices:7,  since:"02-Oct-2024", status:"Active"   },
+  { id:11, code:"AE00064", name:"Petrotek",                                email:"marketing@petrotek.de",          city:"No location",               employees:31, branches:4,  devices:9,  since:"15-Oct-2024", status:"Active"   },
+  { id:12, code:"AE00063", name:"BIFOLD TECHNOLOGIES LLC",                 email:"Ranjan@bifoldtech.com",          city:"No location",               employees:5,  branches:1,  devices:2,  since:"20-Nov-2024", status:"Inactive" },
+  { id:13, code:"AE00062", name:"Hilal Cleaning Company",                  email:"Hilalcleaning@gmail.com",        city:"No location",               employees:85, branches:6,  devices:14, since:"01-Dec-2024", status:"Active"   },
+  { id:14, code:"AE00061", name:"ONGROUND Hospitality",                    email:"anastasia@onground.com",         city:"Al Asmawi Building, Dubai", employees:24, branches:4,  devices:8,  since:"10-Jan-2025", status:"Active"   },
+  { id:15, code:"AE00060", name:"RAK PORTS",                               email:"jsatpal@rakports.ae",            city:"RAK, UAE",                  employees:9,  branches:2,  devices:4,  since:"18-Feb-2025", status:"Active"   },
+  { id:16, code:"AE00059", name:"Al Fayrouz Metal Mfg LLC",                email:"alfayrouz2005@gmail.com",        city:"Dubai",                     employees:29, branches:3,  devices:7,  since:"05-Mar-2025", status:"Active"   },
+  { id:17, code:"AE00058", name:"NOVA PETROLEUM INTL TRADING",             email:"nasim@novapetroleumintl.com",    city:"Business Bay, Dubai",       employees:8,  branches:2,  devices:3,  since:"22-Mar-2025", status:"Active"   },
+  { id:18, code:"AE00057", name:"UAE NATIONAL ANTI DOPING COMMITTEE",      email:"admin@uaenada.ae",               city:"Dubai",                     employees:3,  branches:1,  devices:2,  since:"01-Apr-2025", status:"Active"   },
+  { id:19, code:"AE00056", name:"Takdah Interior Solution",                email:"info@takdahinteriors.com",       city:"Sheikh Zayed Rd, Dubai",    employees:8,  branches:2,  devices:3,  since:"10-Apr-2025", status:"Active"   },
+  { id:20, code:"AE00055", name:"Zukti Trading LLC",                       email:"anish@zukti.ae",                 city:"Dubai Outlet Mall",         employees:14, branches:2,  devices:5,  since:"20-Apr-2025", status:"Active"   },
+];
+
+const MOCK_BRANCHES  = c => Array.from({length:c.branches},(_,i)=>({name:`Branch ${i+1}`,location:c.city,since:`${["Jan","Mar","Jun","Sep","Nov"][i%5]} 202${2+Math.floor(i/4)}`}));
+const MOCK_EMPLOYEES = c => Array.from({length:Math.min(c.employees,6)},(_,i)=>({name:["Ahmed Al Rashid","Sara Khaled","Mohammed Ali","Priya Nair","Carlos Medina","Reza Hosseini"][i],role:["Manager","Supervisor","Staff","Accountant","Developer","Designer"][i%6],dept:["Operations","HR","Logistics","Finance","IT","Creative"][i%6]}));
+
+// ── Helpers ───────────────────────────────────────────────────
+const PAL = ["#7c3aed","#0ea5e9","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899"];
+const avatarBg = name => { let h=0; for(let c of name) h=(h*31+c.charCodeAt(0))%PAL.length; return PAL[Math.abs(h)]; };
+
+function Avatar({ name, size=32 }) {
+  const bg = avatarBg(name);
+  return (
+    <div style={{
+      width:size,height:size,flexShrink:0,
+      borderRadius:size>42?12:8,
+      background:`${bg}28`,border:`1.5px solid ${bg}50`,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      fontSize:Math.round(size*.4),fontWeight:700,color:bg
+    }}>{name.charAt(0).toUpperCase()}</div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const c = status==="Active" ? "#10b981" : "#f59e0b";
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:4,
+      fontSize:11,fontWeight:500,color:c,background:`${c}18`,
+      padding:"3px 9px",borderRadius:20}}>
+      <span style={{width:5,height:5,borderRadius:"50%",background:c,display:"block"}}/>
+      {status}
+    </span>
+  );
+}
+
+// ── Nav rail ─────────────────────────────────────────────────
+const NAV = [
+  {icon:I.home,  title:"Dashboard"},
+  {icon:I.grid,  title:"Companies"},
+  {icon:I.users, title:"Employees"},
+  {icon:I.device,title:"Devices"},
+  {icon:I.clock, title:"Shifts"},
+  {icon:I.cal,   title:"Schedule"},
+];
+
+function NavRail({ accent }) {
+  return (
+    <aside style={{
+      width:60,background:"#161b22",borderRight:"1px solid #21262d",
+      display:"flex",flexDirection:"column",alignItems:"center",
+      padding:"16px 0",gap:4,flexShrink:0
+    }}>
+      <div style={{
+        width:34,height:34,borderRadius:9,background:accent,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:15,fontWeight:800,color:"#fff",marginBottom:18,flexShrink:0
+      }}>M</div>
+      {NAV.map((item,i)=>(
+        <button key={i} title={item.title} style={{
+          width:36,height:36,borderRadius:8,border:"none",cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          background:i===1?`${accent}22`:"transparent",
+          color:i===1?accent:"#6e7681",transition:"all .15s"
+        }}
+        onMouseEnter={e=>{if(i!==1){e.currentTarget.style.background="#21262d";e.currentTarget.style.color="#c9d1d9";}}}
+        onMouseLeave={e=>{if(i!==1){e.currentTarget.style.background="transparent";e.currentTarget.style.color="#6e7681";}}}>
+          <Ic d={item.icon} size={16} color="currentColor" sw={i===1?2.2:1.8}/>
+        </button>
+      ))}
+    </aside>
+  );
+}
+
+// ── Field (read-only) ─────────────────────────────────────────
+function Field({ label, value }) {
+  return (
+    <div style={{background:"#1c2128",border:"1px solid #30363d",borderRadius:9,padding:"12px 14px"}}>
+      <div style={{fontSize:10,color:"#6e7681",textTransform:"uppercase",letterSpacing:".8px",marginBottom:5}}>{label}</div>
+      <div style={{fontSize:13,color:"#e6edf3"}}>{value}</div>
+    </div>
+  );
+}
+
+// ── Input ─────────────────────────────────────────────────────
+function Input({ label, value, onChange, placeholder, type="text", accent }) {
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:6}}>
+      <label style={{fontSize:10.5,color:"#8b949e",letterSpacing:".4px"}}>{label}</label>
+      <input type={type} value={value} placeholder={placeholder}
+        onChange={e=>onChange(e.target.value)}
+        style={{
+          background:"#1c2128",border:"1px solid #30363d",borderRadius:8,
+          color:"#e6edf3",fontSize:13,padding:"10px 13px",outline:"none",
+          transition:"border-color .15s",width:"100%",colorScheme:"dark"
+        }}
+        onFocus={e=>e.target.style.borderColor=accent}
+        onBlur={e=>e.target.style.borderColor="#30363d"}
+      />
+    </div>
+  );
+}
+
+// ── Stat Card ─────────────────────────────────────────────────
+function StatCard({ label, value, icon, accent, sub }) {
+  return (
+    <div style={{
+      background:"#1c2128",border:"1px solid #30363d",borderRadius:12,
+      padding:"16px 18px",display:"flex",flexDirection:"column",gap:10
+    }}>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div style={{
+          width:34,height:34,borderRadius:9,background:`${accent}22`,
+          display:"flex",alignItems:"center",justifyContent:"center"
+        }}>
+          <Ic d={icon} size={16} color={accent} sw={2}/>
+        </div>
+        <span style={{fontSize:10,fontWeight:600,color:"#10b981",background:"#10b98118",padding:"2px 7px",borderRadius:20}}>Active</span>
+      </div>
+      <div>
+        <div style={{fontSize:24,fontWeight:700,color:"#e6edf3",lineHeight:1}}>{value}</div>
+        <div style={{fontSize:11,color:"#8b949e",marginTop:4}}>{label}</div>
+        {sub && <div style={{fontSize:10,color:"#6e7681",marginTop:2}}>{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
+// ── Tab Button ────────────────────────────────────────────────
+function TabBtn({ active, label, icon, onClick, accent }) {
+  return (
+    <button onClick={onClick} style={{
+      background:"none",border:"none",cursor:"pointer",
+      padding:"11px 16px",display:"flex",alignItems:"center",gap:7,
+      fontSize:12.5,fontWeight:active?600:400,
+      color:active?accent:"#8b949e",
+      borderBottom:active?`2px solid ${accent}`:"2px solid transparent",
+      transition:"all .15s",whiteSpace:"nowrap"
+    }}>
+      <Ic d={icon} size={13} color={active?accent:"#8b949e"} sw={2}/>
+      {label}
+    </button>
+  );
+}
+
+// ── Btn ───────────────────────────────────────────────────────
+function Btn({ children, onClick, accent, ghost, icon, disabled }) {
+  const base = {
+    padding:"9px 20px",borderRadius:8,fontSize:13,fontWeight:600,
+    cursor:disabled?"not-allowed":"pointer",display:"flex",alignItems:"center",gap:7,
+    transition:"opacity .15s",border:"none"
+  };
+  const style = ghost
+    ? {...base,background:"transparent",border:"1px solid #30363d",color:disabled?"#3d4451":"#8b949e"}
+    : {...base,background:accent,color:"#fff",boxShadow:`0 2px 10px ${accent}44`,opacity:disabled?.5:1};
+  return (
+    <button onClick={onClick} disabled={disabled} style={style}
+      onMouseEnter={e=>{if(!disabled)e.currentTarget.style.opacity=".85";}}
+      onMouseLeave={e=>{e.currentTarget.style.opacity="1";}}>
+      {icon && <Ic d={icon} size={13} color={ghost?"#8b949e":"#fff"} sw={2.5}/>}
+      {children}
+    </button>
+  );
+}
+
+// ── Create Company (3-step) ───────────────────────────────────
+function CreateCompany({ onCancel, accent }) {
+  const [step, setStep] = useState(1);
+  const [form, setForm] = useState({
+    code:"", name:"", email:"", molId:"", poBox:"",
+    memberFrom:"", expiryDate:"",
+    maxBranches:"1", maxEmployees:"10", maxDevices:"1",
+    contactName:"", contactNumber:"", contactPosition:"", contactWhatsapp:"",
+    location:"", lat:"", lon:""
+  });
+  const set = (k,v) => setForm(f=>({...f,[k]:v}));
+  const STEPS = [{n:1,label:"Profile"},{n:2,label:"Contact"},{n:3,label:"Location"}];
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",animation:"fadeIn .2s ease"}}>
+
+      {/* Header */}
+      <div style={{padding:"22px 28px 18px",borderBottom:"1px solid #21262d",background:"#161b22",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontSize:11,color:"#8b949e",letterSpacing:".5px",marginBottom:3}}>NEW COMPANY</div>
+          <h2 style={{fontSize:17,fontWeight:700,color:"#e6edf3"}}>Create Company</h2>
+        </div>
+        <Btn ghost accent={accent} icon={I.close} onClick={onCancel}>Cancel</Btn>
+      </div>
+
+      {/* Steps */}
+      <div style={{padding:"20px 28px 0",background:"#161b22",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"center"}}>
+          {STEPS.map((s,i) => (
+            <React.Fragment key={s.n}>
+              <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:6,cursor:"pointer"}}
+                onClick={()=>s.n<step&&setStep(s.n)}>
+                <div style={{
+                  width:32,height:32,borderRadius:"50%",
+                  background:step>=s.n?accent:"#21262d",
+                  border:step===s.n?`2px solid ${accent}`:step>s.n?"none":"2px solid #30363d",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  color:step>=s.n?"#fff":"#6e7681",fontSize:12,fontWeight:700,transition:"all .2s"
+                }}>
+                  {step>s.n ? <Ic d={I.check} size={13} color="#fff" sw={2.5}/> : s.n}
+                </div>
+                <span style={{fontSize:11,fontWeight:step===s.n?600:400,color:step===s.n?accent:step>s.n?"#c9d1d9":"#6e7681",whiteSpace:"nowrap"}}>
+                  Step {s.n}: {s.label}
+                </span>
+              </div>
+              {i<STEPS.length-1 && (
+                <div style={{flex:1,height:2,margin:"0 8px",marginBottom:20,background:step>s.n?accent:"#30363d",transition:"background .3s"}}/>
+              )}
+            </React.Fragment>
+          ))}
+        </div>
+      </div>
+
+      {/* Body */}
+      <div style={{flex:1,overflowY:"auto",padding:"24px 28px",background:"#0d1117"}}>
+
+        {step===1 && (
+          <div style={{display:"flex",flexDirection:"column",gap:16,animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+              <Input label="Company Code *"  value={form.code}  onChange={v=>set("code",v)}  placeholder="e.g. AE00074"      accent={accent}/>
+              <Input label="Company Name *"  value={form.name}  onChange={v=>set("name",v)}  placeholder="Enter company name" accent={accent}/>
+              <Input label="Company Email *" value={form.email} onChange={v=>set("email",v)} placeholder="email@company.com" type="email" accent={accent}/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:12}}>
+              <Input label="Mol ID *"      value={form.molId}      onChange={v=>set("molId",v)}      placeholder="Enter Mol ID"  accent={accent}/>
+              <Input label="P.O Box *"     value={form.poBox}      onChange={v=>set("poBox",v)}      placeholder="Enter P.O Box" accent={accent}/>
+              <Input label="Member From *" value={form.memberFrom} onChange={v=>set("memberFrom",v)} placeholder="dd/mm/yyyy" type="date" accent={accent}/>
+              <Input label="Expiry Date *" value={form.expiryDate} onChange={v=>set("expiryDate",v)} placeholder="dd/mm/yyyy" type="date" accent={accent}/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+              <Input label="Max Branches *"  value={form.maxBranches}  onChange={v=>set("maxBranches",v)}  placeholder="e.g. 1"  accent={accent}/>
+              <Input label="Max Employees *" value={form.maxEmployees} onChange={v=>set("maxEmployees",v)} placeholder="e.g. 10" accent={accent}/>
+              <Input label="Max Devices *"   value={form.maxDevices}   onChange={v=>set("maxDevices",v)}   placeholder="e.g. 1"  accent={accent}/>
+            </div>
+            <div>
+              <div style={{fontSize:10.5,color:"#8b949e",letterSpacing:".4px",marginBottom:6}}>Company Logo</div>
+              <div style={{width:180,background:"#1c2128",border:"1px solid #30363d",borderRadius:10,overflow:"hidden"}}>
+                <div style={{height:120,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:6,background:"#0d1117"}}>
+                  <Ic d={I.plus} size={28} color="#30363d" sw={1.5}/>
+                  <span style={{fontSize:10,color:"#6e7681"}}>No logo</span>
+                </div>
+                <button style={{
+                  width:"100%",padding:"9px",background:"transparent",border:"none",
+                  borderTop:"1px solid #30363d",color:"#8b949e",fontSize:11,fontWeight:600,
+                  cursor:"pointer",letterSpacing:".5px",textTransform:"uppercase",
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:6
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>Upload Logo
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step===2 && (
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,animation:"fadeIn .15s"}}>
+            <Input label="Contact Person Name *"                  value={form.contactName}     onChange={v=>set("contactName",v)}     placeholder="Full name"       accent={accent}/>
+            <Input label="Contact Person Number *"                value={form.contactNumber}   onChange={v=>set("contactNumber",v)}   placeholder="e.g. 971XXXXXXX" accent={accent}/>
+            <Input label="Contact Person Position *"              value={form.contactPosition} onChange={v=>set("contactPosition",v)} placeholder="Job title"       accent={accent}/>
+            <Input label="Contact Person Whatsapp (Ex. 371XXX) *" value={form.contactWhatsapp} onChange={v=>set("contactWhatsapp",v)} placeholder="e.g. 971XXXXXXX" accent={accent}/>
+          </div>
+        )}
+
+        {step===3 && (
+          <div style={{display:"flex",flexDirection:"column",gap:12,animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}>
+              <Input label="Location *"  value={form.location} onChange={v=>set("location",v)} placeholder="City, Country" accent={accent}/>
+              <Input label="Latitude *"  value={form.lat}      onChange={v=>set("lat",v)}      placeholder="e.g. 25.2048"  accent={accent}/>
+              <Input label="Longitude *" value={form.lon}      onChange={v=>set("lon",v)}      placeholder="e.g. 55.2708"  accent={accent}/>
+            </div>
+            <div style={{
+              background:"#1c2128",border:"1px solid #30363d",borderRadius:12,height:200,
+              display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:8,marginTop:4,
+              backgroundImage:"repeating-linear-gradient(0deg,#30363d 0,#30363d 1px,transparent 0,transparent 40px),repeating-linear-gradient(90deg,#30363d 0,#30363d 1px,transparent 0,transparent 40px)",
+              backgroundSize:"40px 40px"
+            }}>
+              <div style={{width:38,height:38,borderRadius:"50%",background:`${accent}33`,border:`2px solid ${accent}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <Ic d={I.pin} size={17} color={accent} sw={2}/>
+              </div>
+              <div style={{fontSize:11,color:"#8b949e",fontFamily:"monospace"}}>{form.lat||"—"}, {form.lon||"—"}</div>
+            </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Footer */}
+      <div style={{padding:"16px 28px",borderTop:"1px solid #21262d",background:"#161b22",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <Btn ghost accent={accent} disabled={step===1} onClick={()=>setStep(s=>Math.max(1,s-1))}>← Back</Btn>
+        <span style={{fontSize:11,color:"#6e7681"}}>Step {step} of {STEPS.length}</span>
+        {step<3
+          ? <Btn accent={accent} onClick={()=>setStep(s=>s+1)}>Next →</Btn>
+          : <Btn accent={accent} icon={I.check} onClick={onCancel}>Create Company</Btn>
+        }
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// TABLE VIEW (Long / Default)
+// ─────────────────────────────────────────────────────────────
+function TableView({ companies, onSelect, onCreate, accent }) {
+  const [creating, setCreating] = useState(false);
+  const [search, setSearch] = useState("");
+  const [sortCol, setSortCol] = useState(null);
+  const [sortDir, setSortDir] = useState("asc");
+  const [page, setPage] = useState(1);
+  const PER = 12;
+
+  const filtered = companies.filter(c=>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.email.toLowerCase().includes(search.toLowerCase()) ||
+    c.code.toLowerCase().includes(search.toLowerCase())
+  );
+  const sorted = sortCol ? [...filtered].sort((a,b)=>{
+    const av=String(a[sortCol]), bv=String(b[sortCol]);
+    return sortDir==="asc"?av.localeCompare(bv,undefined,{numeric:true}):bv.localeCompare(av,undefined,{numeric:true});
+  }) : filtered;
+
+  const totalPages = Math.ceil(sorted.length/PER);
+  const paged = sorted.slice((page-1)*PER, page*PER);
+
+  const handleSort = col => {
+    if(sortCol===col) setSortDir(d=>d==="asc"?"desc":"asc");
+    else { setSortCol(col); setSortDir("asc"); }
+  };
+
+  const SortIc = ({col}) => (
+    <span style={{marginLeft:4,color:sortCol===col?accent:"#3d4451",fontSize:10}}>
+      {sortCol===col ? (sortDir==="asc"?"↑":"↓") : "↕"}
+    </span>
+  );
+
+  const TH = ({label,col,w}) => (
+    <th onClick={()=>col&&handleSort(col)} style={{
+      padding:"10px 14px",textAlign:"left",fontSize:10.5,fontWeight:600,
+      color:"#8b949e",textTransform:"uppercase",letterSpacing:".8px",
+      borderBottom:"1px solid #21262d",userSelect:"none",
+      cursor:col?"pointer":"default",whiteSpace:"nowrap",width:w
+    }}>
+      {label}{col&&<SortIc col={col}/>}
+    </th>
+  );
+
+  if (creating) return <CreateCompany onCancel={()=>setCreating(false)} accent={accent}/>;
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",animation:"fadeIn .2s"}}>
+
+      {/* Top bar */}
+      <div style={{
+        padding:"22px 28px 16px",flexShrink:0,
+        display:"flex",alignItems:"center",justifyContent:"space-between"
+      }}>
+        <div>
+          <div style={{fontSize:11,color:"#8b949e",letterSpacing:".5px",marginBottom:3}}>MASTER PANEL</div>
+          <h1 style={{fontSize:22,fontWeight:700,color:"#e6edf3",letterSpacing:"-.3px"}}>Companies</h1>
+        </div>
+        <div style={{display:"flex",gap:12,alignItems:"center"}}>
+          {/* Search */}
+          <div style={{position:"relative"}}>
+            <span style={{position:"absolute",left:10,top:"50%",transform:"translateY(-50%)",display:"flex"}}>
+              <Ic d={I.search} size={13} color="#6e7681" sw={2}/>
+            </span>
+            <input value={search} onChange={e=>{setSearch(e.target.value);setPage(1);}}
+              placeholder="Search companies…"
+              style={{
+                background:"#161b22",border:"1px solid #21262d",borderRadius:8,
+                color:"#e6edf3",fontSize:13,padding:"8px 12px 8px 30px",
+                width:240,outline:"none",transition:"border-color .15s"
+              }}
+              onFocus={e=>e.target.style.borderColor=accent}
+              onBlur={e=>e.target.style.borderColor="#21262d"}
+            />
+          </div>
+          <Btn accent={accent} icon={I.plus} onClick={()=>setCreating(true)}>Add Company</Btn>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div style={{padding:"0 28px 16px",display:"flex",gap:12,flexShrink:0}}>
+        {[
+          {label:"Total Companies", value:companies.length,                                 icon:I.grid},
+          {label:"Active",          value:companies.filter(c=>c.status==="Active").length,  icon:I.check},
+          {label:"Inactive",        value:companies.filter(c=>c.status==="Inactive").length,icon:I.close},
+          {label:"Total Employees", value:companies.reduce((s,c)=>s+c.employees,0),         icon:I.users},
+        ].map(s=>(
+          <div key={s.label} style={{
+            background:"#161b22",border:"1px solid #21262d",borderRadius:10,
+            padding:"10px 16px",display:"flex",alignItems:"center",gap:10
+          }}>
+            <div style={{
+              width:30,height:30,borderRadius:8,background:`${accent}22`,
+              display:"flex",alignItems:"center",justifyContent:"center"
+            }}>
+              <Ic d={s.icon} size={14} color={accent} sw={2}/>
+            </div>
+            <div>
+              <div style={{fontSize:18,fontWeight:700,color:"#e6edf3"}}>{s.value}</div>
+              <div style={{fontSize:10,color:"#8b949e",letterSpacing:".3px"}}>{s.label}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div style={{flex:1,overflowY:"auto",padding:"0 28px 24px"}}>
+        <div style={{background:"#161b22",border:"1px solid #21262d",borderRadius:12,overflow:"hidden"}}>
+          <table style={{width:"100%",borderCollapse:"collapse"}}>
+            <thead>
+              <tr style={{background:"#0d1117"}}>
+                <TH label="Company"      col="name"       w="30%"/>
+                <TH label="Code"         col="code"       w="8%"/>
+                <TH label="Email"        col="email"      w="22%"/>
+                <TH label="Location"     col="city"       w="16%"/>
+                <TH label="Emp"          col="employees"  w="5%"/>
+                <TH label="Branches"     col="branches"   w="6%"/>
+                <TH label="Since"        col="since"      w="9%"/>
+                <TH label="Status"       col="status"     w="14%"/>
+              </tr>
+            </thead>
+            <tbody>
+              {paged.map(c=>(
+                <tr key={c.id}
+                  onClick={()=>onSelect(c)}
+                  style={{cursor:"pointer",transition:"background .1s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="#1c2128"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d"}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <Avatar name={c.name} size={30}/>
+                      <div style={{minWidth:0}}>
+                        <div style={{fontSize:13,fontWeight:500,color:"#e6edf3",
+                          overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:220}}>{c.name}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d",fontSize:12,color:"#8b949e",fontFamily:"monospace"}}>{c.code}</td>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d",fontSize:12,color:"#8b949e",
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:180}}>{c.email}</td>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d",fontSize:12,color:"#c9d1d9",
+                    overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",maxWidth:120}}>{c.city}</td>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d",fontSize:13,color:"#e6edf3",textAlign:"center",fontWeight:500}}>{c.employees}</td>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d",fontSize:13,color:"#e6edf3",textAlign:"center",fontWeight:500}}>{c.branches}</td>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d",fontSize:12,color:"#8b949e",whiteSpace:"nowrap"}}>{c.since}</td>
+                  <td style={{padding:"13px 14px",borderBottom:"1px solid #21262d"}}><StatusBadge status={c.status}/></td>
+
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          <div style={{
+            padding:"12px 20px",borderTop:"1px solid #21262d",background:"#0d1117",
+            display:"flex",alignItems:"center",justifyContent:"space-between"
+          }}>
+            <span style={{fontSize:12,color:"#8b949e"}}>
+              {sorted.length} result{sorted.length!==1?"s":""} · page {page} of {totalPages||1}
+            </span>
+            <div style={{display:"flex",gap:6,alignItems:"center"}}>
+              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{
+                width:28,height:28,borderRadius:6,background:"#161b22",
+                border:"1px solid #21262d",color:page===1?"#3d4451":"#8b949e",
+                cursor:page===1?"not-allowed":"pointer",fontSize:13,
+                display:"flex",alignItems:"center",justifyContent:"center"
+              }}>‹</button>
+              {Array.from({length:totalPages||1},(_,i)=>i+1).map(n=>(
+                <button key={n} onClick={()=>setPage(n)} style={{
+                  width:28,height:28,borderRadius:6,
+                  background:page===n?accent:"#161b22",
+                  border:`1px solid ${page===n?accent:"#21262d"}`,
+                  color:page===n?"#fff":"#8b949e",
+                  cursor:"pointer",fontSize:12,fontWeight:page===n?600:400
+                }}>{n}</button>
+              ))}
+              <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages||totalPages===0} style={{
+                width:28,height:28,borderRadius:6,background:"#161b22",
+                border:"1px solid #21262d",color:(page===totalPages||totalPages===0)?"#3d4451":"#8b949e",
+                cursor:(page===totalPages||totalPages===0)?"not-allowed":"pointer",fontSize:13,
+                display:"flex",alignItems:"center",justifyContent:"center"
+              }}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// SPLIT VIEW (Short / Detail)
+// ─────────────────────────────────────────────────────────────
+function CompanyDetail({ company, accent }) {
+  const [tab, setTab] = useState("profile");
+  const branches  = MOCK_BRANCHES(company);
+  const employees = MOCK_EMPLOYEES(company);
+
+  const TABS = [
+    {key:"profile",  label:"Profile",   icon:I.users},
+    {key:"contact",  label:"Contact",   icon:I.mail},
+    {key:"location", label:"Location",  icon:I.pin},
+    {key:"license",  label:"License",   icon:I.check},
+    {key:"branches", label:"Branches",  icon:I.build},
+  ];
+
+  const BtnRow = () => (
+    <div style={{display:"flex",justifyContent:"flex-end",gap:10,paddingTop:10,borderTop:"1px solid #21262d",marginTop:6}}>
+      <Btn ghost accent={accent}>Cancel</Btn>
+      <Btn accent={accent} icon={I.save}>Save Changes</Btn>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",animation:"slideRight .2s ease"}}>
+      {/* Header */}
+      <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262d",background:"#161b22",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:16}}>
+          <Avatar name={company.name} size={46}/>
+          <div style={{flex:1,minWidth:0}}>
+            <h2 style={{fontSize:16,fontWeight:700,color:"#e6edf3",lineHeight:1.35,marginBottom:4,
+              overflow:"hidden",textOverflow:"ellipsis",display:"-webkit-box",
+              WebkitLineClamp:2,WebkitBoxOrient:"vertical"}}>{company.name}</h2>
+            <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
+              <Ic d={I.mail} size={11} color="#8b949e" sw={2}/>
+              <span style={{fontSize:11.5,color:"#8b949e"}}>{company.email}</span>
+            </div>
+            <div style={{display:"flex",alignItems:"center",gap:5}}>
+              <Ic d={I.pin} size={11} color="#8b949e" sw={2}/>
+              <span style={{fontSize:11.5,color:"#8b949e"}}>{company.city}</span>
+            </div>
+          </div>
+          <div style={{display:"flex",gap:8,alignItems:"center",flexShrink:0}}>
+            <StatusBadge status={company.status}/>
+            <Btn accent={accent} icon={I.edit}>Edit</Btn>
+          </div>
+        </div>
+        {/* Stats */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10}}>
+          <StatCard label="Employees" value={company.employees} icon={I.users} accent={accent} sub={`${Math.round(company.employees*.8)} active`}/>
+          <StatCard label="Branches"  value={company.branches}  icon={I.build} accent={accent} sub="All operational"/>
+          <StatCard label="Devices"   value={company.devices}   icon={I.device} accent={accent} sub={`${Math.round(company.devices*.75)} online`}/>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",borderBottom:"1px solid #21262d",background:"#161b22",flexShrink:0,padding:"0 12px",overflowX:"auto"}}>
+        {TABS.map(t=><TabBtn key={t.key} active={tab===t.key} label={t.label} icon={t.icon} onClick={()=>setTab(t.key)} accent={accent}/>)}
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflowY:"auto",padding:"20px 24px",background:"#0d1117"}}>
+
+        {tab==="profile" && (
+          <div style={{display:"flex",flexDirection:"column",gap:16,animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+              <Field label="Company Code *"  value={company.code}/>
+              <Field label="Company Name *"  value={company.name}/>
+              <Field label="Company Email *" value={company.email}/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
+              <Field label="Mol ID *"       value="—"/>
+              <Field label="P.O Box *"      value="—"/>
+              <Field label="Member From *"  value="29/03/2025"/>
+              <Field label="Expiry Date *"  value="29/03/2026"/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+              <Field label="Max Branches *"  value={String(company.branches)}/>
+              <Field label="Max Employees *" value={String(company.employees)}/>
+              <Field label="Max Devices *"   value={String(company.devices)}/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"160px 1fr",gap:14,alignItems:"start"}}>
+              <div style={{background:"#1c2128",border:"1px solid #30363d",borderRadius:10,overflow:"hidden"}}>
+                <div style={{height:110,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:5,background:"#0d1117"}}>
+                  <div style={{
+                    width:50,height:50,borderRadius:9,
+                    background:`${avatarBg(company.name)}22`,
+                    border:`2px dashed ${avatarBg(company.name)}55`,
+                    display:"flex",alignItems:"center",justifyContent:"center",
+                    fontSize:20,fontWeight:800,color:avatarBg(company.name)
+                  }}>{company.name.charAt(0)}</div>
+                </div>
+                <button style={{
+                  width:"100%",padding:"8px",background:"transparent",
+                  border:"none",borderTop:"1px solid #30363d",
+                  color:"#8b949e",fontSize:10.5,fontWeight:600,
+                  letterSpacing:".5px",cursor:"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",gap:5,
+                  textTransform:"uppercase"
+                }}>
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                  </svg>Upload Logo
+                </button>
+              </div>
+              <div style={{fontSize:12,color:"#8b949e",lineHeight:1.8,paddingTop:6}}>
+                Recommended: <strong style={{color:"#c9d1d9"}}>200×200px</strong><br/>
+                Formats: <strong style={{color:"#c9d1d9"}}>PNG, JPG, SVG</strong> · Max <strong style={{color:"#c9d1d9"}}>2 MB</strong>
+              </div>
+            </div>
+            <BtnRow/>
+          </div>
+        )}
+
+        {tab==="contact" && (
+          <div style={{display:"flex",flexDirection:"column",gap:16,animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+              {[
+                {label:"Contact Person Name *",    value:"Ekram Hossain"},
+                {label:"Contact Person Number *",  value:"971542007954"},
+                {label:"Contact Person Position *",value:"Marketing Manager"},
+                {label:"Contact Person Whatsapp (Ex. 371XXX) *",value:"971542007954"},
+              ].map((f,i)=>(<Field key={i} label={f.label} value={f.value}/>))}
+            </div>
+            <BtnRow/>
+          </div>
+        )}
+
+        {tab==="location" && (
+          <div style={{display:"flex",flexDirection:"column",gap:14,animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+              <Field label="Location *"  value={company.city}/>
+              <Field label="Latitude *"  value="25.2048"/>
+              <Field label="Longitude *" value="55.2708"/>
+            </div>
+            <div style={{
+              background:"#1c2128",border:"1px solid #30363d",borderRadius:12,height:160,
+              display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:7,
+              backgroundImage:"repeating-linear-gradient(0deg,#30363d 0,#30363d 1px,transparent 0,transparent 40px),repeating-linear-gradient(90deg,#30363d 0,#30363d 1px,transparent 0,transparent 40px)",
+              backgroundSize:"40px 40px"
+            }}>
+              <div style={{width:34,height:34,borderRadius:"50%",background:`${accent}33`,border:`2px solid ${accent}`,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <Ic d={I.pin} size={15} color={accent} sw={2}/>
+              </div>
+              <div style={{fontSize:10.5,color:"#8b949e",fontFamily:"monospace"}}>25.2048, 55.2708</div>
+            </div>
+            <BtnRow/>
+          </div>
+        )}
+
+        {tab==="license" && (
+          <div style={{display:"flex",flexDirection:"column",gap:16,animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:10}}>
+              <Field label="License *"       value="—"/>
+              <Field label="License Type *"  value="Commercial"/>
+              <Field label="Emirate *"       value="Dubai"/>
+              <Field label="Manager *"       value="—"/>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
+              <Field label="Issue Date *"  value="—"/>
+              <Field label="Expiry Date *" value="—"/>
+              <Field label="Makani No *"   value="—"/>
+            </div>
+            <BtnRow/>
+          </div>
+        )}
+
+        {tab==="branches" && (
+          <div style={{animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              {branches.map((b,i)=>(
+                <div key={i} style={{
+                  background:"#1c2128",border:"1px solid #30363d",
+                  borderRadius:10,padding:"13px 15px",cursor:"pointer",transition:"border-color .15s"
+                }}
+                onMouseEnter={e=>e.currentTarget.style.borderColor=`${accent}66`}
+                onMouseLeave={e=>e.currentTarget.style.borderColor="#30363d"}>
+                  <div style={{width:30,height:30,borderRadius:8,background:`${accent}22`,display:"flex",alignItems:"center",justifyContent:"center",marginBottom:9}}>
+                    <Ic d={I.build} size={14} color={accent} sw={2}/>
+                  </div>
+                  <div style={{fontSize:13,fontWeight:600,color:"#e6edf3",marginBottom:4}}>{b.name}</div>
+                  <div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3}}>
+                    <Ic d={I.pin} size={10} color="#8b949e" sw={2}/>
+                    <span style={{fontSize:11,color:"#8b949e"}}>{b.location}</span>
+                  </div>
+                  <div style={{display:"flex",alignItems:"center",gap:5}}>
+                    <Ic d={I.cal} size={10} color="#8b949e" sw={2}/>
+                    <span style={{fontSize:11,color:"#8b949e"}}>Since {b.since}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+function SplitView({ companies, initialSelected, onBack, onCreate, accent }) {
+  const [selected, setSelected] = useState(initialSelected || companies[0]);
+  const [search, setSearch] = useState("");
+  const [creating, setCreating] = useState(false);
+
+  const filtered = companies.filter(c=>
+    c.name.toLowerCase().includes(search.toLowerCase()) ||
+    c.email.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const pick = c => { setSelected(c); setCreating(false); localStorage.setItem("mp3_sel",c.id); };
+
+  return (
+    <div style={{display:"flex",height:"100%",overflow:"hidden",animation:"fadeIn .18s"}}>
+      {/* List panel */}
+      <div style={{width:280,flexShrink:0,borderRight:"1px solid #21262d",display:"flex",flexDirection:"column",background:"#161b22"}}>
+        {/* Header */}
+        <div style={{padding:"16px 16px 12px",borderBottom:"1px solid #21262d",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:12}}>
+            <button onClick={onBack} style={{
+              width:28,height:28,borderRadius:7,border:"1px solid #30363d",
+              background:"transparent",color:"#8b949e",cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              transition:"all .15s",flexShrink:0
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#6e7681";e.currentTarget.style.color="#c9d1d9";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#30363d";e.currentTarget.style.color="#8b949e";}}>
+              <Ic d={I.back} size={13} color="currentColor" sw={2}/>
+            </button>
+            <span style={{fontSize:14,fontWeight:700,color:"#e6edf3",flex:1}}>Companies</span>
+            <button onClick={()=>{setCreating(true);setSelected(null);}} style={{
+              width:26,height:26,borderRadius:7,background:accent,
+              border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"
+            }}>
+              <Ic d={I.plus} size={14} color="#fff" sw={2.5}/>
+            </button>
+          </div>
+          <div style={{position:"relative"}}>
+            <span style={{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",display:"flex"}}>
+              <Ic d={I.search} size={12} color="#6e7681" sw={2}/>
+            </span>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search…"
+              style={{
+                width:"100%",background:"#0d1117",border:"1px solid #21262d",
+                borderRadius:7,color:"#e6edf3",fontSize:12,
+                padding:"7px 10px 7px 27px",outline:"none",transition:"border-color .15s"
+              }}
+              onFocus={e=>e.target.style.borderColor=accent}
+              onBlur={e=>e.target.style.borderColor="#21262d"}
+            />
+          </div>
+          <div style={{fontSize:10.5,color:"#6e7681",marginTop:7}}>{filtered.length} companies</div>
+        </div>
+        {/* List */}
+        <div style={{flex:1,overflowY:"auto"}}>
+          {filtered.map(c=>{
+            const active = selected?.id===c.id && !creating;
+            return (
+              <div key={c.id} onClick={()=>pick(c)} style={{
+                padding:"10px 16px",cursor:"pointer",
+                borderLeft:active?`3px solid ${accent}`:"3px solid transparent",
+                background:active?`${accent}12`:"transparent",
+                borderBottom:"1px solid #21262d18",transition:"all .1s"
+              }}
+              onMouseEnter={e=>{if(!active)e.currentTarget.style.background="#21262d44";}}
+              onMouseLeave={e=>{if(!active)e.currentTarget.style.background="transparent";}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <Avatar name={c.name} size={30}/>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{
+                      fontSize:12.5,fontWeight:active?600:400,
+                      color:active?"#e6edf3":"#c9d1d9",
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"
+                    }}>{c.name}</div>
+                    <div style={{fontSize:10.5,color:"#6e7681",marginTop:2}}>
+                      {c.employees} emp · {c.branches} branches
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Detail panel */}
+      <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column",minWidth:0}}>
+        {creating
+          ? <CreateCompany onCancel={()=>setCreating(false)} accent={accent}/>
+          : selected
+            ? <CompanyDetail key={selected.id} company={selected} accent={accent}/>
+            : (
+              <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,color:"#6e7681"}}>
+                <Ic d={I.build} size={40} color="#30363d" sw={1.5}/>
+                <span style={{fontSize:14}}>Select a company to view details</span>
+              </div>
+            )
+        }
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+// APP
+// ─────────────────────────────────────────────────────────────
+function App() {
+  const [view,    setView]    = useState("table"); // "table" | "split"
+  const [selected,setSelected]= useState(null);
+  const [accent,  setAccent]  = useState(TWEAK_DEFAULTS.accent);
+
+  useEffect(()=>{
+    const saved = localStorage.getItem("mp3_view");
+    if(saved) setView(saved);
+    window.addEventListener("message", e=>{
+      if(e.data?.type==="__activate_edit_mode")   document.getElementById("tweaks-panel").classList.add("open");
+      if(e.data?.type==="__deactivate_edit_mode") document.getElementById("tweaks-panel").classList.remove("open");
+    });
+    window.parent.postMessage({type:"__edit_mode_available"},"*");
+    document.getElementById("tw-accent").addEventListener("change",e=>{
+      setAccent(e.target.value);
+      window.parent.postMessage({type:"__edit_mode_set_keys",edits:{accent:e.target.value}},"*");
+    });
+  },[]);
+
+  const goToDetail = c => {
+    setSelected(c);
+    setView("split");
+    localStorage.setItem("mp3_view","split");
+    localStorage.setItem("mp3_sel",c.id);
+  };
+
+  const goToTable = () => {
+    setView("table");
+    localStorage.setItem("mp3_view","table");
+  };
+
+  return (
+    <div style={{display:"flex",height:"100vh",background:"#0d1117",color:"#e6edf3",overflow:"hidden"}}>
+      <NavRail accent={accent}/>
+      <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        {view==="table"
+          ? <TableView
+              companies={COMPANIES}
+              onSelect={goToDetail}
+              onCreate={()=>goToDetail(COMPANIES[0])}
+              accent={accent}
+            />
+          : <SplitView
+              companies={COMPANIES}
+              initialSelected={selected}
+              onBack={goToTable}
+              accent={accent}
+            />
+        }
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>

@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>mytime2cloud – Devices</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  html,body,#root{height:100%;background:#0d1117;font-family:'Inter',sans-serif;}
+  ::-webkit-scrollbar{width:4px;height:4px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#30363d;border-radius:4px;}
+  @keyframes fadeIn{from{opacity:0}to{opacity:1}}
+  @keyframes slideRight{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:translateX(0)}}
+  #tweaks-panel{display:none;position:fixed;bottom:24px;right:24px;background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;z-index:9999;width:220px;box-shadow:0 8px 32px rgba(0,0,0,.5);}
+  #tweaks-panel.open{display:block;}
+  #tweaks-panel h4{color:#e6edf3;font-size:13px;font-weight:600;margin-bottom:14px;}
+  .tw-row{margin-bottom:10px;}
+  .tw-row label{display:block;color:#8b949e;font-size:11px;margin-bottom:4px;}
+  .tw-row select{width:100%;background:#0d1117;border:1px solid #30363d;border-radius:6px;color:#e6edf3;font-size:12px;padding:5px 8px;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<div id="tweaks-panel">
+  <h4>Tweaks</h4>
+  <div class="tw-row"><label>Accent Color</label>
+    <select id="tw-accent">
+      <option value="#7c3aed">Violet</option>
+      <option value="#0ea5e9">Sky Blue</option>
+      <option value="#10b981">Emerald</option>
+      <option value="#f59e0b">Amber</option>
+    </select>
+  </div>
+</div>
+
+<script type="text/babel">
+const { useState, useEffect } = React;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{"accent":"#7c3aed"}/*EDITMODE-END*/;
+
+// ── SVG Icon helper ───────────────────────────────────────────
+const Ic = ({ d, size=16, color="currentColor", sw=1.8, fill="none" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill}
+    stroke={color} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round">
+    {(Array.isArray(d)?d:[d]).map((p,i)=><path key={i} d={p}/>)}
+  </svg>
+);
+
+const I = {
+  home:    "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10",
+  grid:    ["M3 3h7v7H3z","M14 3h7v7h-7z","M3 14h7v7H3z","M14 14h7v7h-7z"],
+  device:  "M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z M12 18h.01",
+  users:   ["M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2","M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
+  clock:   ["M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z","M12 6v6l4 2"],
+  cal:     ["M8 2v4","M16 2v4","M3 10h18","M3 6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6z"],
+  search:  ["M11 17.25a6.25 6.25 0 1 1 0-12.5 6.25 6.25 0 0 1 0 12.5z","M16 16l3.5 3.5"],
+  plus:    "M12 5v14M5 12h14",
+  back:    "M19 12H5M12 5l-7 7 7 7",
+  close:   "M18 6 6 18M6 6l12 12",
+  check:   "M20 6L9 17l-5-5",
+  build:   ["M3 21h18","M5 21V7l8-4v18","M19 21V11l-6-4"],
+  pin:     ["M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z","M12 7a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"],
+  mail:    ["M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z","M22 6l-10 7L2 6"],
+  wifi:    ["M5 12.55a11 11 0 0 1 14.08 0","M1.42 9a16 16 0 0 1 21.16 0","M8.53 16.11a6 6 0 0 1 6.95 0","M12 20h.01"],
+  // Device-specific
+  fingerprint: ["M12 1a9 9 0 0 1 9 9","M3 10a9 9 0 0 1 .63-3.34","M12 1C8.5 1 5.5 3 4 6","M12 19c-3.87 0-7-3.13-7-7v-1","M19 12v1a7 7 0 0 1-7 7","M12 7a3 3 0 0 1 3 3v1","M9 13a3 3 0 0 0 5.96.44"],
+  camera:  ["M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z","M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"],
+  lock:    ["M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z","M7 11V7a5 5 0 0 1 10 0v4"],
+  unlock:  ["M19 11H5a2 2 0 0 0-2 2v7a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7a2 2 0 0 0-2-2z","M7 11V7a5 5 0 0 1 9.9-1"],
+  bell:    ["M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9","M13.73 21a2 2 0 0 1-3.46 0"],
+  sync:    ["M23 4v6h-6","M1 20v-6h6","M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"],
+  qr:      ["M3 3h6v6H3z","M15 3h6v6h-6z","M3 15h6v6H3z","M15 15h.01","M21 15h.01","M15 21h.01","M21 21h.01","M21 18h.01","M18 15h.01","M18 21h.01","M18 18h.01"],
+  bolt:    "M13 2L3 14h9l-1 8 10-12h-9l1-8z",
+};
+
+// ── Data ─────────────────────────────────────────────────────
+const COMPANIES = ["All Companies","YELLOW BOX Delivery Services LLC","Demo Company","HYDERS PARK","EES Model Building Contracting","Akil Test","V PERFUMES","Delhi Progressive School LLC","SHAWARMA MAP RESTAURANT LLC","AXALAR EPC DMCC","Imperius Trading LLC","Five Tech","Icarus Dubai","Jovee Restaurant"];
+
+const DEVICES = [
+  { id:1,  company:"YELLOW BOX Delivery Services LLC", branch:"Branch1",  name:"Yellowbox",   shortName:"yellb",   location:"Dubai",        subLoc:"AksEZubr", serial:"OX-9452025011043", shortSerial:"OX-645",  func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+  { id:2,  company:"Demo Company",                     branch:"Branch1",  name:"Finger Print2",shortName:"test",   location:"Dubai",        subLoc:"AksEZubr", serial:"OX-9452025010030", shortSerial:"OX-745",  func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:false, alarm:false, timeSync:true,  status:"Online"  },
+  { id:3,  company:"Demo Company",                     branch:"Branch1",  name:"Finger Print", shortName:"test",   location:"Dubai",        subLoc:"AksEZubr", serial:"OX-7452025010015", shortSerial:"OX-745",  func:"fingerprint", type:"camera",    doorOpen:true,  doorClose:true,  alarm:false, timeSync:false, status:"Offline" },
+  { id:4,  company:"Demo Company",                     branch:"Al Fahidi",name:"TCST 1",       shortName:"TEST1",  location:"Dubai",        subLoc:"AksEZubr", serial:"M01420089210002592",shortSerial:"OX-460",  func:"option",      type:"biometric", doorOpen:false, doorClose:true,  alarm:true,  timeSync:true,  status:"Online"  },
+  { id:5,  company:"HYDERS PARK",                      branch:"Branch11", name:"Tangre",       shortName:"Tantra", location:"Titt",         subLoc:"Kolkata",  serial:"M01420089211000288", shortSerial:"Tric",   func:"option",      type:"biometric", doorOpen:true,  doorClose:false, alarm:false, timeSync:true,  status:"Warning" },
+  { id:6,  company:"EES Model Building Contracting",   branch:"Branch1",  name:"OXSAI",        shortName:"OX-740", location:"OFFICE",       subLoc:"AksEZubr", serial:"OX-7452025100028",  shortSerial:"OX-740", func:"fingerprint", type:"camera",    doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+  { id:7,  company:"Demo Company",                     branch:"test",     name:"280326",       shortName:"745",    location:"Dubai",        subLoc:"AksEZubr", serial:"OX-7452025010074",  shortSerial:"OX-745", func:"fingerprint", type:"biometric", doorOpen:false, doorClose:true,  alarm:true,  timeSync:false, status:"Offline" },
+  { id:8,  company:"Delhi Progressive School LLC",     branch:"Branch1",  name:"DPS",          shortName:"DPS",    location:"No location",  subLoc:"AksEZubr", serial:"M01420089210000645", shortSerial:"OX-462", func:"option",     type:"biometric", doorOpen:true,  doorClose:false, alarm:false, timeSync:true,  status:"Online"  },
+  { id:9,  company:"Akil Test",                        branch:"Head Office",name:"745",         shortName:"745",    location:"745",          subLoc:"AksEZubr", serial:"OX-7452025100028",  shortSerial:"OX-745", func:"fingerprint", type:"camera",    doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+  { id:10, company:"Demo Company",                     branch:"test",     name:"Akil Test 111",shortName:"test",   location:"Office",       subLoc:"EK-MMO",   serial:"FC-6200H25063566",  shortSerial:"EK-00",  func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:false, alarm:false, timeSync:true,  status:"Online"  },
+  { id:11, company:"V PERFUMES",                       branch:"AXKAL",    name:"AKIL",         shortName:"AKIL",   location:"AKIL",         subLoc:"AksEZubr", serial:"OX-7452025007411",  shortSerial:"OX-745", func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+  { id:12, company:"Demo Company",                     branch:"Bur Dubai",name:"Akil Device",  shortName:"AKIL",   location:"Test",         subLoc:"MYTIME",   serial:"2581860",           shortSerial:"MT-001", func:"fingerprint", type:"camera",    doorOpen:false, doorClose:false, alarm:false, timeSync:false, status:"Offline" },
+  { id:13, company:"Demo Company",                     branch:"test",     name:"Test",         shortName:"ShazRDG",location:"ShazRDG",      subLoc:"MY TIME",  serial:"1601116",           shortSerial:"MT-002", func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+  { id:14, company:"SHAWARMA MAP RESTAURANT LLC",      branch:"Branch1",  name:"SHAWARMA",     shortName:"SHAW",   location:"Al Karama",    subLoc:"MY-000",   serial:"OX-9662210080037",  shortSerial:"OX-000", func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:false, alarm:false, timeSync:true,  status:"Online"  },
+  { id:15, company:"AXALAR EPC DMCC",                  branch:"Branch1",  name:"OXSAI",        shortName:"SXS",    location:"MAIN DOOR",    subLoc:"AksEZubr", serial:"OX-9452025011053",  shortSerial:"OX-645", func:"fingerprint", type:"camera",    doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+  { id:16, company:"AXALAR EPC DMCC",                  branch:"Branch1",  name:"Oxsal",        shortName:"SXS",    location:"SIDE DOOR",    subLoc:"AksEZubr", serial:"OX-9452025011023",  shortSerial:"OX-645", func:"fingerprint", type:"biometric", doorOpen:false, doorClose:true,  alarm:true,  timeSync:true,  status:"Warning" },
+  { id:17, company:"Imperius Trading LLC",             branch:"Branch1",  name:"Al Fakhor",    shortName:"imp",    location:"Al Fakhor",    subLoc:"AksEZubr", serial:"OX-9662210080039",  shortSerial:"OX-000", func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:false, alarm:false, timeSync:true,  status:"Online"  },
+  { id:18, company:"Demo Company",                     branch:"test",     name:"MYTIME",       shortName:"MYTIME", location:"2221417",      subLoc:"AksEZubr", serial:"2221417",           shortSerial:"MT-003", func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:true,  alarm:false, timeSync:false, status:"Offline" },
+  { id:19, company:"Demo Company",                     branch:"test",     name:"MYTIME2",      shortName:"MY72",   location:"MYTIME1",      subLoc:"AksEZubr", serial:"1530728",           shortSerial:"MT-004", func:"fingerprint", type:"camera",    doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+  { id:20, company:"Jovee Restaurant",                 branch:"test",     name:"Souq Al Bahar",shortName:"Jovee",  location:"Souq Al Bahar",subLoc:"AksEZubr", serial:"OX-9452025011035",  shortSerial:"OX-645", func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:false, alarm:false, timeSync:true,  status:"Online"  },
+  { id:21, company:"Five Tech",                        branch:"Branch1",  name:"Oxsal",        shortName:"FT-01",  location:"Office",       subLoc:"AksEZubr", serial:"OX-7452025010049",  shortSerial:"OX-745", func:"fingerprint", type:"biometric", doorOpen:true,  doorClose:true,  alarm:false, timeSync:true,  status:"Online"  },
+];
+
+// ── Helpers ───────────────────────────────────────────────────
+const PAL = ["#7c3aed","#0ea5e9","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4","#ec4899"];
+const avatarBg = n => { let h=0; for(let c of n) h=(h*31+c.charCodeAt(0))%PAL.length; return PAL[Math.abs(h)]; };
+
+function Avatar({ name, size=28 }) {
+  const bg = avatarBg(name);
+  return (
+    <div style={{
+      width:size,height:size,flexShrink:0,borderRadius:6,
+      background:`${bg}28`,border:`1.5px solid ${bg}50`,
+      display:"flex",alignItems:"center",justifyContent:"center",
+      fontSize:Math.round(size*.4),fontWeight:700,color:bg
+    }}>{name.charAt(0).toUpperCase()}</div>
+  );
+}
+
+// ── Icon toggle cell ──────────────────────────────────────────
+function IconCell({ enabled, iconOn, iconOff, colorOn, colorOff="#ef4444", size=16 }) {
+  return (
+    <div style={{display:"flex",justifyContent:"center",alignItems:"center"}}>
+      <div style={{
+        width:26,height:26,borderRadius:6,
+        background:enabled?`${colorOn}18`:`${colorOff}18`,
+        display:"flex",alignItems:"center",justifyContent:"center"
+      }}>
+        <Ic d={enabled?iconOn:iconOff} size={size} color={enabled?colorOn:colorOff} sw={1.8}/>
+      </div>
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const map = {Online:["#10b981","Online"],Offline:["#ef4444","Offline"],Warning:["#f59e0b","Warning"]};
+  const [c,l] = map[status]||["#8b949e","—"];
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:4,
+      fontSize:10.5,fontWeight:500,color:c,background:`${c}18`,
+      padding:"3px 8px",borderRadius:20}}>
+      <span style={{width:5,height:5,borderRadius:"50%",background:c,display:"block"}}/>
+      {l}
+    </span>
+  );
+}
+
+// ── Nav rail ─────────────────────────────────────────────────
+const NAV_ITEMS = [
+  {icon:I.home,  title:"Home"},
+  {icon:I.grid,  title:"Companies"},
+  {icon:I.device,title:"Devices"},
+  {icon:I.users, title:"Communities"},
+  {icon:["M12 3v18","M5.636 5.636l12.728 12.728","M3 12h18","M5.636 18.364l12.728-12.728"],title:"Missing Logs"},
+  {icon:["M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z","M14 2v6h6","M16 13H8","M16 17H8","M10 9H8"],title:"Web Logs"},
+  {icon:["M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"],title:"Module"},
+  {icon:["M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3","M12 17h.01"],title:"FAQ"},
+  {icon:["M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z","M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 0 3-3h7z"],title:"Desktop"},
+];
+
+function NavRail({ accent }) {
+  return (
+    <aside style={{
+      width:60,background:"#161b22",borderRight:"1px solid #21262d",
+      display:"flex",flexDirection:"column",alignItems:"center",
+      padding:"14px 0",gap:3,flexShrink:0,overflowY:"auto"
+    }}>
+      <div style={{
+        width:34,height:34,borderRadius:9,background:accent,
+        display:"flex",alignItems:"center",justifyContent:"center",
+        fontSize:14,fontWeight:800,color:"#fff",marginBottom:16,flexShrink:0
+      }}>M</div>
+      {NAV_ITEMS.map((item,i)=>(
+        <button key={i} title={item.title} style={{
+          width:36,height:36,borderRadius:8,border:"none",cursor:"pointer",
+          display:"flex",alignItems:"center",justifyContent:"center",
+          background:i===2?`${accent}22`:"transparent",
+          color:i===2?accent:"#6e7681",transition:"all .15s",flexShrink:0
+        }}
+        onMouseEnter={e=>{if(i!==2){e.currentTarget.style.background="#21262d";e.currentTarget.style.color="#c9d1d9";}}}
+        onMouseLeave={e=>{if(i!==2){e.currentTarget.style.background="transparent";e.currentTarget.style.color="#6e7681";}}}>
+          <Ic d={item.icon} size={15} color="currentColor" sw={i===2?2.2:1.7}/>
+        </button>
+      ))}
+    </aside>
+  );
+}
+
+// ── Field (read-only) ─────────────────────────────────────────
+function Field({ label, value }) {
+  return (
+    <div style={{background:"#1c2128",border:"1px solid #30363d",borderRadius:9,padding:"11px 13px"}}>
+      <div style={{fontSize:9.5,color:"#6e7681",textTransform:"uppercase",letterSpacing:".8px",marginBottom:4}}>{label}</div>
+      <div style={{fontSize:13,color:"#e6edf3"}}>{value}</div>
+    </div>
+  );
+}
+
+// ── Device Detail Panel ───────────────────────────────────────
+function DeviceDetail({ device, accent }) {
+  const [tab, setTab] = useState("info");
+  const TABS = [
+    {key:"info",     label:"Device Info",  icon:I.device},
+    {key:"settings", label:"Settings",     icon:I.bolt},
+    {key:"logs",     label:"Logs",         icon:I.cal},
+  ];
+
+  const SettingRow = ({label, enabled, colorOn="#10b981"}) => (
+    <div style={{
+      display:"flex",alignItems:"center",justifyContent:"space-between",
+      background:"#1c2128",border:"1px solid #30363d",borderRadius:9,padding:"12px 14px"
+    }}>
+      <span style={{fontSize:13,color:"#c9d1d9"}}>{label}</span>
+      <div style={{
+        width:36,height:20,borderRadius:10,
+        background:enabled?colorOn:"#30363d",
+        position:"relative",transition:"background .2s",cursor:"pointer"
+      }}>
+        <div style={{
+          position:"absolute",top:2,left:enabled?18:2,
+          width:16,height:16,borderRadius:"50%",background:"#fff",
+          transition:"left .2s",boxShadow:"0 1px 4px rgba(0,0,0,.4)"
+        }}/>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",animation:"slideRight .2s ease"}}>
+      {/* Header */}
+      <div style={{padding:"20px 24px 16px",borderBottom:"1px solid #21262d",background:"#161b22",flexShrink:0}}>
+        <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:16}}>
+          <div style={{
+            width:46,height:46,borderRadius:10,flexShrink:0,
+            background:`${accent}22`,border:`1.5px solid ${accent}44`,
+            display:"flex",alignItems:"center",justifyContent:"center"
+          }}>
+            <Ic d={I.device} size={20} color={accent} sw={1.8}/>
+          </div>
+          <div style={{flex:1,minWidth:0}}>
+            <h2 style={{fontSize:16,fontWeight:700,color:"#e6edf3",marginBottom:3}}>{device.name}</h2>
+            <div style={{fontSize:11.5,color:"#8b949e",marginBottom:2}}>{device.company}</div>
+            <div style={{fontSize:11,color:"#6e7681",fontFamily:"monospace"}}>{device.serial}</div>
+          </div>
+          <StatusBadge status={device.status}/>
+        </div>
+
+        {/* Quick stat cards */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8}}>
+          {[
+            {label:"Door Open",  enabled:device.doorOpen,  iconOn:I.unlock, iconOff:I.lock, colorOn:"#10b981", colorOff:"#ef4444"},
+            {label:"Door Close", enabled:device.doorClose, iconOn:I.lock,   iconOff:I.unlock,colorOn:"#0ea5e9",colorOff:"#f59e0b"},
+            {label:"Alarm",      enabled:device.alarm,     iconOn:I.bell,   iconOff:I.bell,  colorOn:"#f59e0b",colorOff:"#6e7681"},
+            {label:"Time Sync",  enabled:device.timeSync,  iconOn:I.sync,   iconOff:I.sync,  colorOn:"#7c3aed",colorOff:"#6e7681"},
+          ].map(s=>(
+            <div key={s.label} style={{
+              background:"#0d1117",border:`1px solid ${s.enabled?s.colorOn+"44":"#21262d"}`,
+              borderRadius:10,padding:"11px 10px",textAlign:"center"
+            }}>
+              <div style={{
+                width:30,height:30,borderRadius:8,margin:"0 auto 7px",
+                background:s.enabled?`${s.colorOn}20`:"#21262d",
+                display:"flex",alignItems:"center",justifyContent:"center"
+              }}>
+                <Ic d={s.enabled?s.iconOn:s.iconOff} size={14} color={s.enabled?s.colorOn:s.colorOff} sw={2}/>
+              </div>
+              <div style={{fontSize:10,color:"#8b949e",letterSpacing:".3px"}}>{s.label}</div>
+              <div style={{fontSize:11,fontWeight:600,color:s.enabled?s.colorOn:s.colorOff,marginTop:2}}>
+                {s.enabled?"ON":"OFF"}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={{display:"flex",borderBottom:"1px solid #21262d",background:"#161b22",flexShrink:0,padding:"0 12px"}}>
+        {TABS.map(t=>(
+          <button key={t.key} onClick={()=>setTab(t.key)} style={{
+            background:"none",border:"none",cursor:"pointer",
+            padding:"11px 16px",display:"flex",alignItems:"center",gap:7,
+            fontSize:12.5,fontWeight:tab===t.key?600:400,
+            color:tab===t.key?accent:"#8b949e",
+            borderBottom:tab===t.key?`2px solid ${accent}`:"2px solid transparent",
+            transition:"all .15s",whiteSpace:"nowrap"
+          }}>
+            <Ic d={t.icon} size={13} color={tab===t.key?accent:"#8b949e"} sw={2}/>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={{flex:1,overflowY:"auto",padding:"18px 24px",background:"#0d1117"}}>
+
+        {tab==="info" && (
+          <div style={{display:"flex",flexDirection:"column",gap:10,animation:"fadeIn .15s"}}>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
+              <Field label="Device Name"    value={device.name}/>
+              <Field label="Short Name"     value={device.shortName}/>
+              <Field label="Serial Number"  value={device.serial}/>
+              <Field label="Short Serial"   value={device.shortSerial}/>
+              <Field label="Company"        value={device.company}/>
+              <Field label="Branch"         value={device.branch}/>
+              <Field label="Location"       value={device.location}/>
+              <Field label="Sub-Location"   value={device.subLoc}/>
+              <Field label="Function"       value={device.func==="fingerprint"?"Fingerprint":"Option"}/>
+              <Field label="Type"           value={device.type==="biometric"?"Biometric":"Camera"}/>
+              <Field label="Status"         value={<StatusBadge status={device.status}/>}/>
+              <Field label="Device ID"      value={`DEV-${String(device.id).padStart(4,"0")}`}/>
+            </div>
+          </div>
+        )}
+
+        {tab==="settings" && (
+          <div style={{display:"flex",flexDirection:"column",gap:8,animation:"fadeIn .15s"}}>
+            <SettingRow label="Door Open Control"  enabled={device.doorOpen}  colorOn="#10b981"/>
+            <SettingRow label="Door Close Control" enabled={device.doorClose} colorOn="#0ea5e9"/>
+            <SettingRow label="Alarm Enabled"      enabled={device.alarm}     colorOn="#f59e0b"/>
+            <SettingRow label="Time Sync"          enabled={device.timeSync}  colorOn="#7c3aed"/>
+            <SettingRow label="Remote Access"      enabled={true}             colorOn="#10b981"/>
+            <SettingRow label="Auto Restart"       enabled={false}            colorOn="#10b981"/>
+          </div>
+        )}
+
+        {tab==="logs" && (
+          <div style={{animation:"fadeIn .15s"}}>
+            <div style={{display:"flex",flexDirection:"column",gap:6}}>
+              {[
+                {time:"Today 09:14",  event:"Door opened",       type:"open"},
+                {time:"Today 09:02",  event:"Time sync completed",type:"sync"},
+                {time:"Today 08:55",  event:"Device online",      type:"online"},
+                {time:"Yesterday 23:59",event:"Device offline",   type:"offline"},
+                {time:"Yesterday 18:30",event:"Door closed",      type:"close"},
+                {time:"Yesterday 08:11",event:"Alarm triggered",  type:"alarm"},
+              ].map((l,i)=>{
+                const map = {open:["#10b981",I.unlock],sync:["#7c3aed",I.sync],online:["#10b981",I.wifi],offline:["#ef4444",I.close],close:["#0ea5e9",I.lock],alarm:["#f59e0b",I.bell]};
+                const [c,ico] = map[l.type]||["#8b949e",I.device];
+                return (
+                  <div key={i} style={{
+                    background:"#1c2128",border:"1px solid #30363d",
+                    borderRadius:9,padding:"11px 13px",
+                    display:"flex",alignItems:"center",gap:12
+                  }}>
+                    <div style={{width:28,height:28,borderRadius:7,background:`${c}18`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                      <Ic d={ico} size={13} color={c} sw={2}/>
+                    </div>
+                    <div style={{flex:1}}>
+                      <div style={{fontSize:12.5,color:"#e6edf3"}}>{l.event}</div>
+                      <div style={{fontSize:10.5,color:"#6e7681",marginTop:1}}>{l.time}</div>
+                    </div>
+                    <div style={{width:7,height:7,borderRadius:"50%",background:c,flexShrink:0}}/>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+// ── Split View ────────────────────────────────────────────────
+function SplitView({ devices, initialSelected, onBack, accent }) {
+  const [selected, setSelected] = useState(initialSelected||devices[0]);
+  const [search, setSearch] = useState("");
+
+  const filtered = devices.filter(d=>
+    d.name.toLowerCase().includes(search.toLowerCase()) ||
+    d.company.toLowerCase().includes(search.toLowerCase()) ||
+    d.serial.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const pick = d => { setSelected(d); localStorage.setItem("dev_sel",d.id); };
+
+  return (
+    <div style={{display:"flex",height:"100%",overflow:"hidden",animation:"fadeIn .18s"}}>
+      {/* List */}
+      <div style={{width:280,flexShrink:0,borderRight:"1px solid #21262d",display:"flex",flexDirection:"column",background:"#161b22"}}>
+        <div style={{padding:"16px 16px 12px",borderBottom:"1px solid #21262d",flexShrink:0}}>
+          <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
+            <button onClick={onBack} style={{
+              width:28,height:28,borderRadius:7,border:"1px solid #30363d",
+              background:"transparent",color:"#8b949e",cursor:"pointer",
+              display:"flex",alignItems:"center",justifyContent:"center",
+              transition:"all .15s"
+            }}
+            onMouseEnter={e=>{e.currentTarget.style.borderColor="#6e7681";e.currentTarget.style.color="#c9d1d9";}}
+            onMouseLeave={e=>{e.currentTarget.style.borderColor="#30363d";e.currentTarget.style.color="#8b949e";}}>
+              <Ic d={I.back} size={13} color="currentColor" sw={2}/>
+            </button>
+            <span style={{fontSize:14,fontWeight:700,color:"#e6edf3",flex:1}}>Devices</span>
+            <span style={{fontSize:10.5,color:"#6e7681"}}>{filtered.length}</span>
+          </div>
+          <div style={{position:"relative"}}>
+            <span style={{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",display:"flex"}}>
+              <Ic d={I.search} size={12} color="#6e7681" sw={2}/>
+            </span>
+            <input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Search devices…"
+              style={{
+                width:"100%",background:"#0d1117",border:"1px solid #21262d",
+                borderRadius:7,color:"#e6edf3",fontSize:12,
+                padding:"7px 10px 7px 27px",outline:"none",transition:"border-color .15s"
+              }}
+              onFocus={e=>e.target.style.borderColor=accent}
+              onBlur={e=>e.target.style.borderColor="#21262d"}
+            />
+          </div>
+        </div>
+        <div style={{flex:1,overflowY:"auto"}}>
+          {filtered.map(d=>{
+            const active = selected?.id===d.id;
+            const sc = d.status==="Online"?"#10b981":d.status==="Offline"?"#ef4444":"#f59e0b";
+            return (
+              <div key={d.id} onClick={()=>pick(d)} style={{
+                padding:"10px 16px",cursor:"pointer",
+                borderLeft:active?`3px solid ${accent}`:"3px solid transparent",
+                background:active?`${accent}12`:"transparent",
+                borderBottom:"1px solid #21262d18",transition:"all .1s"
+              }}
+              onMouseEnter={e=>{if(!active)e.currentTarget.style.background="#21262d44";}}
+              onMouseLeave={e=>{if(!active)e.currentTarget.style.background="transparent";}}>
+                <div style={{display:"flex",alignItems:"center",gap:10}}>
+                  <div style={{
+                    width:30,height:30,borderRadius:7,flexShrink:0,
+                    background:`${accent}22`,border:`1px solid ${accent}33`,
+                    display:"flex",alignItems:"center",justifyContent:"center"
+                  }}>
+                    <Ic d={I.device} size={14} color={accent} sw={1.8}/>
+                  </div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{
+                      fontSize:12.5,fontWeight:active?600:400,
+                      color:active?"#e6edf3":"#c9d1d9",
+                      overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"
+                    }}>{d.name}</div>
+                    <div style={{fontSize:10.5,color:"#6e7681",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.company}</div>
+                  </div>
+                  <span style={{width:6,height:6,borderRadius:"50%",background:sc,flexShrink:0}}/>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Detail */}
+      <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column",minWidth:0}}>
+        {selected
+          ? <DeviceDetail key={selected.id} device={selected} accent={accent}/>
+          : (
+            <div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12,color:"#6e7681"}}>
+              <Ic d={I.device} size={40} color="#30363d" sw={1.5}/>
+              <span style={{fontSize:14}}>Select a device</span>
+            </div>
+          )
+        }
+      </div>
+    </div>
+  );
+}
+
+// ── Table View ────────────────────────────────────────────────
+function TableView({ devices, onSelect, accent }) {
+  const [search, setSearch]         = useState("");
+  const [serialSearch, setSerial]   = useState("");
+  const [companyFilter, setCompany] = useState("All Companies");
+  const [statusFilter, setStatus]   = useState("All");
+  const [sortCol, setSortCol]       = useState(null);
+  const [sortDir, setSortDir]       = useState("asc");
+  const [page, setPage]             = useState(1);
+  const PER = 15;
+
+  const filtered = devices.filter(d=>{
+    const q = search.toLowerCase();
+    const sq = serialSearch.toLowerCase();
+    const compMatch = companyFilter==="All Companies" || d.company===companyFilter;
+    const statusMatch = statusFilter==="All" || d.status===statusFilter;
+    const textMatch = !q || d.name.toLowerCase().includes(q) || d.company.toLowerCase().includes(q) || d.location.toLowerCase().includes(q);
+    const serialMatch = !sq || d.serial.toLowerCase().includes(sq);
+    return compMatch && statusMatch && textMatch && serialMatch;
+  });
+
+  const sorted = sortCol ? [...filtered].sort((a,b)=>{
+    const av=String(a[sortCol]), bv=String(b[sortCol]);
+    return sortDir==="asc"?av.localeCompare(bv):bv.localeCompare(av);
+  }) : filtered;
+
+  const totalPages = Math.ceil(sorted.length/PER)||1;
+  const paged = sorted.slice((page-1)*PER, page*PER);
+
+  const handleSort = col => {
+    if(sortCol===col) setSortDir(d=>d==="asc"?"desc":"asc");
+    else { setSortCol(col); setSortDir("asc"); }
+    setPage(1);
+  };
+
+  const online  = devices.filter(d=>d.status==="Online").length;
+  const offline = devices.filter(d=>d.status==="Offline").length;
+  const warning = devices.filter(d=>d.status==="Warning").length;
+
+  const SortIc = ({col}) => (
+    <span style={{marginLeft:3,color:sortCol===col?accent:"#3d4451",fontSize:9}}>
+      {sortCol===col?(sortDir==="asc"?"↑":"↓"):"↕"}
+    </span>
+  );
+
+  const TH = ({label,col,center,w}) => (
+    <th onClick={()=>col&&handleSort(col)} style={{
+      padding:"9px 10px",textAlign:center?"center":"left",fontSize:10,fontWeight:600,
+      color:"#8b949e",textTransform:"uppercase",letterSpacing:".7px",
+      borderBottom:"1px solid #21262d",userSelect:"none",
+      cursor:col?"pointer":"default",whiteSpace:"nowrap",width:w
+    }}>
+      {label}{col&&<SortIc col={col}/>}
+    </th>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100%",overflow:"hidden",animation:"fadeIn .2s"}}>
+
+      {/* Top bar */}
+      <div style={{padding:"20px 24px 14px",flexShrink:0,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+        <div>
+          <div style={{fontSize:11,color:"#8b949e",letterSpacing:".5px",marginBottom:3}}>MASTER PANEL</div>
+          <h1 style={{fontSize:21,fontWeight:700,color:"#e6edf3",letterSpacing:"-.3px"}}>Devices List</h1>
+        </div>
+        {/* Online badge */}
+        <button style={{
+          background:`${accent}22`,border:`1px solid ${accent}44`,
+          borderRadius:8,color:accent,fontWeight:700,fontSize:12,
+          padding:"8px 16px",cursor:"pointer",letterSpacing:".5px",
+          display:"flex",alignItems:"center",gap:7
+        }}>
+          <span style={{width:7,height:7,borderRadius:"50%",background:accent,display:"block"}}/>
+          ONLINE DEVICES
+          <span style={{
+            background:accent,color:"#fff",borderRadius:12,
+            fontSize:10,fontWeight:700,padding:"1px 6px"
+          }}>{online}</span>
+        </button>
+      </div>
+
+      {/* Filters row */}
+      <div style={{padding:"0 24px 14px",display:"flex",gap:10,flexShrink:0,flexWrap:"wrap",alignItems:"center"}}>
+        {/* Company filter */}
+        <select value={companyFilter} onChange={e=>{setCompanyFilter&&setCompany(e.target.value);setPage(1);}} style={{
+          background:"#161b22",border:"1px solid #21262d",borderRadius:8,
+          color:"#c9d1d9",fontSize:12,padding:"8px 12px",outline:"none",
+          cursor:"pointer",minWidth:200
+        }}>
+          {COMPANIES.map(c=><option key={c}>{c}</option>)}
+        </select>
+
+        {/* Serial search */}
+        <div style={{position:"relative",flex:1,maxWidth:240}}>
+          <span style={{position:"absolute",left:9,top:"50%",transform:"translateY(-50%)",display:"flex"}}>
+            <Ic d={I.search} size={12} color="#6e7681" sw={2}/>
+          </span>
+          <input value={serialSearch} onChange={e=>{setSerial(e.target.value);setPage(1);}}
+            placeholder="Serial Number"
+            style={{
+              width:"100%",background:"#161b22",border:"1px solid #21262d",
+              borderRadius:8,color:"#e6edf3",fontSize:12,
+              padding:"8px 12px 8px 28px",outline:"none",transition:"border-color .15s"
+            }}
+            onFocus={e=>e.target.style.borderColor=accent}
+            onBlur={e=>e.target.style.borderColor="#21262d"}
+          />
+        </div>
+
+        {/* Status filter pills */}
+        <div style={{display:"flex",gap:6}}>
+          {["All","Online","Offline","Warning"].map(s=>{
+            const c = s==="Online"?"#10b981":s==="Offline"?"#ef4444":s==="Warning"?"#f59e0b":accent;
+            const active = statusFilter===s;
+            return (
+              <button key={s} onClick={()=>{setStatus(s);setPage(1);}} style={{
+                padding:"6px 12px",borderRadius:7,border:`1px solid ${active?c+"66":"#21262d"}`,
+                background:active?`${c}18`:"transparent",
+                color:active?c:"#8b949e",fontSize:11,fontWeight:active?600:400,cursor:"pointer",
+                transition:"all .15s"
+              }}>{s}{s!=="All"&&<span style={{marginLeft:5,fontSize:10,opacity:.7}}>
+                {s==="Online"?online:s==="Offline"?offline:warning}
+              </span>}</button>
+            );
+          })}
+        </div>
+
+        <div style={{marginLeft:"auto",fontSize:11,color:"#6e7681"}}>{filtered.length} devices</div>
+      </div>
+
+      {/* Table */}
+      <div style={{flex:1,overflowY:"auto",padding:"0 24px 20px"}}>
+        <div style={{background:"#161b22",border:"1px solid #21262d",borderRadius:12,overflow:"hidden"}}>
+          <table style={{width:"100%",borderCollapse:"collapse",tableLayout:"fixed"}}>
+            <colgroup>
+              <col style={{width:"3%"}}/>
+              <col style={{width:"19%"}}/>
+              <col style={{width:"13%"}}/>
+              <col style={{width:"9%"}}/>
+              <col style={{width:"15%"}}/>
+              <col style={{width:"6%"}}/>
+              <col style={{width:"5%"}}/>
+              <col style={{width:"6%"}}/>
+              <col style={{width:"6%"}}/>
+              <col style={{width:"5%"}}/>
+              <col style={{width:"6%"}}/>
+              <col style={{width:"7%"}}/>
+            </colgroup>
+            <thead>
+              <tr style={{background:"#0d1117"}}>
+                <TH label="#"                  col={null}           />
+                <TH label="Company"            col="company"        />
+                <TH label="Name"               col="name"           />
+                <TH label="Location"           col="location"       />
+                <TH label="Device Serial No."  col="serial"         />
+                <TH label="Function"           col={null} center    />
+                <TH label="Type"               col={null} center    />
+                <TH label="Door Open"          col={null} center    />
+                <TH label="Door Close"         col={null} center    />
+                <TH label="Alarm"              col={null} center    />
+                <TH label="Time Sync"          col={null} center    />
+                <TH label="Status"             col="status"         />
+              </tr>
+            </thead>
+            <tbody>
+              {paged.map((d,idx)=>(
+                <tr key={d.id}
+                  onClick={()=>onSelect(d)}
+                  style={{cursor:"pointer",transition:"background .1s"}}
+                  onMouseEnter={e=>e.currentTarget.style.background="#1c2128"}
+                  onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+                  {/* # */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d",fontSize:11,color:"#6e7681",textAlign:"left"}}>
+                    {(page-1)*PER+idx+1}
+                  </td>
+                  {/* Company */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d",overflow:"hidden"}}>
+                    <div style={{fontSize:11.5,fontWeight:500,color:"#e6edf3",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.company}</div>
+                    <div style={{fontSize:10,color:"#6e7681",marginTop:1}}>{d.branch}</div>
+                  </td>
+                  {/* Name */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d",overflow:"hidden"}}>
+                    <div style={{fontSize:11.5,fontWeight:500,color:"#e6edf3",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.name}</div>
+                    <div style={{fontSize:10,color:"#6e7681",marginTop:1}}>{d.shortName}</div>
+                  </td>
+                  {/* Location */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d",overflow:"hidden"}}>
+                    <div style={{fontSize:11.5,color:"#c9d1d9",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.location}</div>
+                    <div style={{fontSize:10,color:"#6e7681",marginTop:1}}>{d.subLoc}</div>
+                  </td>
+                  {/* Serial */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d",overflow:"hidden"}}>
+                    <div style={{fontSize:10.5,color:"#e6edf3",fontFamily:"monospace",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{d.serial}</div>
+                    <div style={{fontSize:9.5,color:"#6e7681",marginTop:1,fontFamily:"monospace"}}>{d.shortSerial}</div>
+                  </td>
+                  {/* Function */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d",textAlign:"center"}}>
+                    {d.func==="fingerprint"
+                      ? <div style={{display:"flex",justifyContent:"center"}}><div style={{width:22,height:22,borderRadius:5,background:"#7c3aed18",display:"flex",alignItems:"center",justifyContent:"center"}}><Ic d={I.fingerprint} size={13} color="#7c3aed" sw={1.8}/></div></div>
+                      : <span style={{fontSize:9,color:"#8b949e",background:"#21262d",padding:"2px 5px",borderRadius:4}}>Option</span>
+                    }
+                  </td>
+                  {/* Type */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d",textAlign:"center"}}>
+                    <div style={{display:"flex",justifyContent:"center"}}>
+                      <div style={{width:22,height:22,borderRadius:5,background:d.type==="biometric"?"#0ea5e918":"#f59e0b18",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                        <Ic d={d.type==="biometric"?I.users:I.camera} size={12} color={d.type==="biometric"?"#0ea5e9":"#f59e0b"} sw={1.8}/>
+                      </div>
+                    </div>
+                  </td>
+                  {/* Door Open */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d"}}>
+                    <IconCell enabled={d.doorOpen} iconOn={I.unlock} iconOff={I.lock} colorOn="#10b981" colorOff="#ef4444" size={13}/>
+                  </td>
+                  {/* Door Close */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d"}}>
+                    <IconCell enabled={d.doorClose} iconOn={I.lock} iconOff={I.unlock} colorOn="#0ea5e9" colorOff="#f59e0b" size={13}/>
+                  </td>
+                  {/* Alarm */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d"}}>
+                    <IconCell enabled={d.alarm} iconOn={I.bell} iconOff={I.bell} colorOn="#f59e0b" colorOff="#6e7681" size={13}/>
+                  </td>
+                  {/* Time Sync */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d"}}>
+                    <IconCell enabled={d.timeSync} iconOn={I.sync} iconOff={I.sync} colorOn="#10b981" colorOff="#6e7681" size={13}/>
+                  </td>
+                  {/* Status */}
+                  <td style={{padding:"9px 10px",borderBottom:"1px solid #21262d"}}><StatusBadge status={d.status}/></td>
+
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination */}
+          <div style={{
+            padding:"10px 16px",borderTop:"1px solid #21262d",background:"#0d1117",
+            display:"flex",alignItems:"center",justifyContent:"space-between"
+          }}>
+            <span style={{fontSize:11,color:"#8b949e"}}>
+              {sorted.length} results · page {page} of {totalPages}
+            </span>
+            <div style={{display:"flex",gap:5}}>
+              <button onClick={()=>setPage(p=>Math.max(1,p-1))} disabled={page===1} style={{
+                width:26,height:26,borderRadius:5,background:"#161b22",
+                border:"1px solid #21262d",color:page===1?"#3d4451":"#8b949e",
+                cursor:page===1?"not-allowed":"pointer",fontSize:12,
+                display:"flex",alignItems:"center",justifyContent:"center"
+              }}>‹</button>
+              {Array.from({length:totalPages},(_,i)=>i+1).slice(Math.max(0,page-3),page+2).map(n=>(
+                <button key={n} onClick={()=>setPage(n)} style={{
+                  width:26,height:26,borderRadius:5,
+                  background:page===n?accent:"#161b22",
+                  border:`1px solid ${page===n?accent:"#21262d"}`,
+                  color:page===n?"#fff":"#8b949e",cursor:"pointer",fontSize:11,fontWeight:page===n?600:400
+                }}>{n}</button>
+              ))}
+              <button onClick={()=>setPage(p=>Math.min(totalPages,p+1))} disabled={page===totalPages} style={{
+                width:26,height:26,borderRadius:5,background:"#161b22",
+                border:"1px solid #21262d",color:page===totalPages?"#3d4451":"#8b949e",
+                cursor:page===totalPages?"not-allowed":"pointer",fontSize:12,
+                display:"flex",alignItems:"center",justifyContent:"center"
+              }}>›</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── App ───────────────────────────────────────────────────────
+function App() {
+  const [view,     setView]     = useState("table");
+  const [selected, setSelected] = useState(null);
+  const [accent,   setAccent]   = useState(TWEAK_DEFAULTS.accent);
+
+  useEffect(()=>{
+    const sv = localStorage.getItem("dev_view");
+    const ss = localStorage.getItem("dev_sel");
+    if(sv) setView(sv);
+    if(ss) { const f=DEVICES.find(d=>d.id===+ss); if(f) setSelected(f); }
+    window.addEventListener("message",e=>{
+      if(e.data?.type==="__activate_edit_mode")   document.getElementById("tweaks-panel").classList.add("open");
+      if(e.data?.type==="__deactivate_edit_mode") document.getElementById("tweaks-panel").classList.remove("open");
+    });
+    window.parent.postMessage({type:"__edit_mode_available"},"*");
+    document.getElementById("tw-accent").addEventListener("change",e=>{
+      setAccent(e.target.value);
+      window.parent.postMessage({type:"__edit_mode_set_keys",edits:{accent:e.target.value}},"*");
+    });
+  },[]);
+
+  const goDetail = d => { setSelected(d); setView("split"); localStorage.setItem("dev_view","split"); localStorage.setItem("dev_sel",d.id); };
+  const goTable  = () => { setView("table"); localStorage.setItem("dev_view","table"); };
+
+  return (
+    <div style={{display:"flex",height:"100vh",background:"#0d1117",color:"#e6edf3",overflow:"hidden"}}>
+      <NavRail accent={accent}/>
+      <div style={{flex:1,overflow:"hidden",display:"flex",flexDirection:"column"}}>
+        {view==="table"
+          ? <TableView devices={DEVICES} onSelect={goDetail} accent={accent}/>
+          : <SplitView devices={DEVICES} initialSelected={selected} onBack={goTable} accent={accent}/>
+        }
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
