@@ -1,0 +1,126 @@
+:root {
+  --color-accent: #00e0ff;
+  --color-light: #00e0ff;
+  --color-dark-bg: #1a1a2e;
+}
+
+.react-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+
+.spinner-container {
+  position: relative;
+  width: 220px;
+  height: 500px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+  background: none;
+}
+
+/* 0. OUTER SPINNING BARS */
+.outer-spin-bars {
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  animation: spin-outer 10s linear infinite reverse;
+}
+
+.bar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 25px;
+  height: 5px;
+  margin-left: -12.5px;
+  border-radius: 2px;
+  background-color: var(--color-accent);
+  box-shadow: 0 0 10px var(--color-accent);
+  transform-origin: 50% 110px;
+  opacity: 0.8;
+}
+
+.bar-1 { transform: rotate(0deg); }
+.bar-2 { transform: rotate(120deg); }
+.bar-3 { transform: rotate(240deg); }
+
+/* 1. PROGRESS LAYER */
+.spinner-progress {
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color-accent) calc(var(--percent) * 3.6deg),
+    rgba(0, 224, 255, 0.15) 0%
+  );
+  box-shadow: 0 0 15px rgba(0, 224, 255, 0.5);
+}
+
+.spinner-progress::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 154px;
+  height: 154px;
+  border-radius: 50%;
+  background-color: var(--color-dark-bg);
+}
+
+/* 2. SPINNING WHEEL */
+.spinner-circle {
+  position: absolute;
+  width: 198px;
+  height: 198px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  border-top-color: var(--color-light);
+  border-right-color: var(--color-light);
+  animation: spin 0.7s linear infinite;
+  opacity: 0.7;
+}
+
+/* 3. INNER PERCENTAGE */
+.spinner-inner-circle {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 224, 255, 0.3) 0%, rgba(0, 100, 150, 0.6) 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: var(--color-light);
+  font-size: 2.5rem;
+  font-weight: 800;
+  box-shadow: 0 0 30px var(--color-accent), inset 0 0 10px rgba(0, 150, 200, 0.5);
+  opacity: 0.95;
+  z-index: 10;
+}
+
+.progress-loader {
+  position: absolute;
+  bottom: 85px;
+  color: rgba(0, 224, 255, 0.8);
+  letter-spacing: 1px;
+  animation: pulse 2s infinite alternate;
+  width: fit-content;
+  font-size: 1.2rem;
+}
+
+@keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes spin-outer { 100% { transform: rotate(360deg); } }
+@keyframes pulse { 0% { opacity: 0.6; } 100% { opacity: 1; } }

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Employees Sample Excel Preview</title>
+<style>
+  body { font-family: 'Segoe UI', Calibri, Arial, sans-serif; background: #f3f4f6; padding: 24px; color: #1f2937; }
+  h1 { font-size: 20px; margin-bottom: 6px; color: #0a3d62; }
+  .sub { color: #6b7280; font-size: 13px; margin-bottom: 18px; }
+  .file-tabs { display: flex; gap: 4px; margin-top: 18px; padding: 0 12px; }
+  .tab { background: #fff; padding: 6px 16px; border: 1px solid #d1d5db; border-bottom: none; border-radius: 4px 4px 0 0; font-size: 12px; font-weight: 600; color: #1e5f8e; }
+  .sheet { background: #fff; border: 1px solid #d1d5db; border-radius: 0 4px 4px 4px; overflow: auto; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { background: #1e5f8e; color: #fff; font-weight: 700; padding: 10px 12px; text-align: left; white-space: nowrap; border: 1px solid #0a3d62; font-size: 11px; }
+  td { padding: 8px 12px; border: 1px solid #e5e7eb; background: #fff; white-space: nowrap; }
+  tr:nth-child(odd) td { background: #fafbfc; }
+  .row-num { background: #f3f4f6 !important; color: #9ca3af; text-align: center; font-weight: 600; width: 32px; }
+  .col-letter { background: #f3f4f6; color: #6b7280; text-align: center; font-weight: 600; padding: 6px; border: 1px solid #d1d5db; font-size: 11px; }
+  .instructions { margin-top: 20px; background: #fff; padding: 16px 20px; border-left: 4px solid #1e5f8e; border-radius: 4px; font-size: 12px; line-height: 1.7; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+  .instructions .title { font-weight: 700; color: #0a3d62; margin-bottom: 6px; font-size: 13px; letter-spacing: 0.5px; }
+  .instructions p { color: #4b5563; margin-bottom: 4px; }
+  .legend { display: flex; gap: 16px; margin-bottom: 16px; font-size: 12px; flex-wrap: wrap; }
+  .legend span { padding: 4px 10px; border-radius: 12px; }
+  .req { background: #fee2e2; color: #b91c1c; font-weight: 600; }
+  .opt { background: #dbeafe; color: #1e40af; }
+  .note { background: #fef3c7; color: #92400e; padding: 10px 14px; border-radius: 6px; font-size: 12px; margin-bottom: 16px; }
+  .req-mark { color: #c0392b; font-weight: 800; margin-left: 2px; }
+</style>
+</head>
+<body>
+
+<h1>📊 Sample Excel — Employees Bulk Import Template</h1>
+<div class="sub">This is exactly what users will see when they click <strong>"Download Sample File"</strong>.</div>
+
+<div class="legend">
+  <span class="req">● Required field</span>
+  <span class="opt">○ Optional field</span>
+</div>
+
+<div class="note">
+  ℹ️ Profile photos are <strong>not</strong> in this template — bulk import creates employees with details only. Upload photos individually from each employee's profile after import.
+</div>
+
+<div class="file-tabs">
+  <div class="tab">Employees</div>
+</div>
+
+<div class="sheet">
+  <table>
+    <thead>
+      <tr>
+        <th class="col-letter"></th>
+        <th class="col-letter">A</th>
+        <th class="col-letter">B</th>
+        <th class="col-letter">C</th>
+        <th class="col-letter">D</th>
+        <th class="col-letter">E</th>
+        <th class="col-letter">F</th>
+        <th class="col-letter">G</th>
+        <th class="col-letter">H</th>
+        <th class="col-letter">I</th>
+        <th class="col-letter">J</th>
+        <th class="col-letter">K</th>
+        <th class="col-letter">L</th>
+        <th class="col-letter">M</th>
+      </tr>
+      <tr>
+        <th class="row-num">1</th>
+        <th>title<span class="req-mark">*</span></th>
+        <th>employee_id<span class="req-mark">*</span></th>
+        <th>employee_device_id<span class="req-mark">*</span></th>
+        <th>first_name<span class="req-mark">*</span></th>
+        <th>last_name<span class="req-mark">*</span></th>
+        <th>display_name<span class="req-mark">*</span></th>
+        <th>email</th>
+        <th>phone_number</th>
+        <th>whatsapp_number</th>
+        <th>joining_date</th>
+        <th>department<span class="req-mark">*</span></th>
+        <th>designation</th>
+        <th>branch</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="row-num">2</td>
+        <td>Mr</td>
+        <td>EMP001</td>
+        <td>1001</td>
+        <td>John</td>
+        <td>Doe</td>
+        <td>John</td>
+        <td>john.doe@example.com</td>
+        <td>9876543210</td>
+        <td>9876543210</td>
+        <td>2026-04-01</td>
+        <td>Front Office</td>
+        <td>Receptionist</td>
+        <td>TANJORE</td>
+      </tr>
+      <tr>
+        <td class="row-num">3</td>
+        <td>Mrs</td>
+        <td>EMP002</td>
+        <td>1002</td>
+        <td>Jane</td>
+        <td>Smith</td>
+        <td>Jane</td>
+        <td>jane.smith@example.com</td>
+        <td>9876543211</td>
+        <td></td>
+        <td>2026-04-15</td>
+        <td>Housekeeping</td>
+        <td>HouseKeeping</td>
+        <td>KODAI</td>
+      </tr>
+      <tr><td class="row-num">4</td><td colspan="13" style="color:#9ca3af;font-style:italic">— add your own rows here —</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="instructions">
+  <div class="title">📋 INSTRUCTIONS (printed at the bottom of the actual Excel file)</div>
+  <p>1. <strong>Required fields:</strong> title, employee_id, employee_device_id, first_name, last_name, display_name, department</p>
+  <p>2. <strong>title</strong> must be one of: Mr, Mrs, Miss, Ms, Dr</p>
+  <p>3. <strong>display_name</strong> must be 3–10 characters</p>
+  <p>4. <strong>employee_id</strong> and <strong>employee_device_id</strong> must be unique per company</p>
+  <p>5. <strong>department</strong>, <strong>designation</strong>, and <strong>branch</strong> can be matched by name (case-insensitive) — or by ID</p>
+  <p>6. <strong>joining_date</strong> format: YYYY-MM-DD (e.g. 2026-04-01)</p>
+  <p>7. <strong>Profile photo is NOT included</strong> in bulk import — upload it later from each employee profile</p>
+  <p>8. Delete the example rows before uploading your data</p>
+</div>
+
+<div class="instructions" style="border-left-color:#16a34a;margin-top:16px">
+  <div class="title" style="color:#15803d">✅ EXPORT OUTPUT (when user clicks "Export Employees")</div>
+  <p>Same column structure — but populated with your actual employee data.</p>
+  <p>Filename: <code style="background:#f3f4f6;padding:2px 6px;border-radius:3px">employees_2026-04-28_143052.xlsx</code></p>
+  <p>Filters from the page (branch, department, search) are applied to the export.</p>
+</div>
+
+</body>
+</html>

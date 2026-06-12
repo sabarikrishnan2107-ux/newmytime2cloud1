@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Daily Report — Format C blocks, multi per page</title>
+    <style>
+        @page { size: A4 landscape; margin: 0 0 65px 0; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #334155;
+            line-height: 1.4;
+            background: #f8fafc;
+        }
+
+        .report-container {
+            background: #fff;
+            border-top: 4px solid #4f46e5;
+            padding: 18px 28px 12px 28px;
+        }
+
+        /* HEADER */
+        .header-row { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+        .header-row td { border: none; padding: 0; vertical-align: middle; }
+        .report-title { font-size: 14pt; font-weight: bold; color: #1e293b; text-transform: uppercase; letter-spacing: 0.3px; }
+        .report-meta { font-size: 7.5pt; color: #64748b; margin-top: 3px; }
+        .report-meta-icon { display: inline-block; width: 8px; height: 8px; border: 1.2px solid #64748b; border-radius: 1px; border-top: 2.5px solid #64748b; vertical-align: middle; margin-right: 3px; }
+        .company-card { display: inline-block; border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 10px; }
+        .company-card table { border: none; border-collapse: collapse; }
+        .company-card td { border: none; padding: 0; vertical-align: middle; }
+        .company-icon { width: 28px; height: 28px; background: #4f46e5; border-radius: 5px; margin-right: 8px; text-align: center; color: #fff; font-weight: bold; font-size: 8pt; line-height: 28px; }
+        .company-name { font-size: 8pt; font-weight: bold; color: #1e293b; text-transform: uppercase; }
+        .company-branch { font-size: 6pt; color: #64748b; }
+
+        /* STATS ROW */
+        .stats-row { width: 100%; border-collapse: separate; border-spacing: 6px 0; margin-bottom: 10px; margin-left: -6px; }
+        .stats-row td { border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 6px; vertical-align: middle; background: #fff; }
+        .emp-cell { width: 24%; padding: 8px 10px !important; }
+        .emp-table { width: 100%; border: none; border-collapse: collapse; }
+        .emp-table td { border: none; padding: 0; vertical-align: middle; }
+        .emp-avatar-placeholder { width: 36px; height: 36px; background: #e2e8f0; border-radius: 6px; text-align: center; line-height: 36px; font-size: 11pt; font-weight: bold; color: #94a3b8; overflow: hidden; }
+        .emp-name { font-size: 8pt; font-weight: bold; color: #1e293b; text-transform: uppercase; line-height: 1.2; }
+        .emp-id { font-size: 6.5pt; font-weight: bold; color: #4f46e5; line-height: 1.2; }
+        .emp-dept { font-size: 5.5pt; color: #94a3b8; line-height: 1.2; }
+        .stat-cell { text-align: center; }
+        .stat-label { font-size: 5pt; font-weight: bold; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.4px; }
+        .stat-value { font-size: 13pt; font-weight: bold; color: #1e293b; }
+        .stat-unit { font-size: 6pt; color: #94a3b8; }
+        .stat-ot .stat-label { color: #4f46e5; }
+        .stat-ot .stat-value { color: #312e81; }
+
+        /* SUMMARY TILES */
+        .summary-row { width: 100%; border-collapse: separate; border-spacing: 5px 0; margin-bottom: 10px; margin-left: -5px; }
+        .summary-row td { border: 1px solid #e2e8f0; border-radius: 5px; padding: 4px 6px; background: #fff; vertical-align: middle; }
+        .sum-inner { width: 100%; border: none; border-collapse: collapse; }
+        .sum-inner td { border: none; padding: 0; vertical-align: middle; background: none; }
+        .sum-label { font-size: 5.5pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.3px; text-align: left; }
+        .sum-value { font-size: 11pt; font-weight: bold; color: #1e293b; text-align: right; }
+        .lbl-present { color: #10b981; }
+        .lbl-absent { color: #ef4444; }
+        .lbl-weekoff { color: #94a3b8; }
+        .lbl-leave { color: #f59e0b; }
+        .lbl-holiday { color: #a78bfa; }
+        .lbl-missing { color: #c2410c; }
+        .lbl-manual { color: #94a3b8; }
+
+        /* DATA TABLE */
+        .data-table { width: 100%; border-collapse: collapse; margin-bottom: 4px; }
+        .data-table thead th { background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; color: #1e293b; padding: 6px 8px; font-weight: 700; font-size: 6.5pt; text-transform: uppercase; letter-spacing: 0.4px; text-align: center; }
+        .data-table thead th:first-child { text-align: left; }
+        .data-table thead th:last-child { text-align: right; }
+        .data-table tbody td { padding: 8px 8px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; text-align: center; font-size: 7.5pt; }
+        .data-table tbody td:first-child { text-align: left; }
+        .data-table tbody td:last-child { text-align: right; }
+        .td-date { font-weight: bold; color: #1e293b; font-size: 8pt; }
+        .td-day { font-size: 5.5pt; color: #94a3b8; }
+        .td-shift { font-weight: bold; color: #475569; font-size: 7pt; }
+        .td-shift-type { font-size: 5pt; color: #64748b; text-transform: uppercase; }
+        .td-time { font-weight: bold; color: #1e293b; font-size: 7.5pt; }
+        .td-device { font-size: 4.5pt; color: #475569; text-transform: uppercase; }
+        .td-dash { color: #cbd5e1; font-size: 7.5pt; }
+        .td-late { color: #e11d48; font-weight: bold; }
+        .td-early { color: #d97706; font-weight: bold; }
+        .td-ot { color: #4f46e5; font-weight: bold; }
+        .td-hrs { color: #475569; font-weight: 600; }
+        .td-zero { color: #cbd5e1; }
+        .st-present { font-weight: bold; font-size: 7pt; color: #059669; }
+        .st-absent { font-weight: bold; font-size: 7pt; color: #ef4444; }
+        .row-absent td { background: #fff5f5 !important; }
+
+        /* Browser preview helper */
+        @media screen {
+            body { background: #cbd5e1; padding: 20px; }
+            .page-preview {
+                background: #fff;
+                width: 1100px;
+                margin: 0 auto 30px auto;
+                box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+                position: relative;
+                min-height: 760px;
+            }
+            .page-preview::after {
+                content: 'PAGE ' attr(data-page);
+                position: absolute;
+                bottom: 10px;
+                right: 20px;
+                font-size: 7pt;
+                color: #94a3b8;
+                font-weight: bold;
+                letter-spacing: 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============= PAGE 1 ============= -->
+<div class="page-preview" data-page="1 OF 2">
+
+@php
+    // (same Format C block — repeated for each employee, no forced page-break between them)
+@endphp
+
+    <!-- EMPLOYEE 1: Gunal -->
+    <div class="report-container">
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;">
+                    <div class="report-title">Daily Attendance Report</div>
+                    <div class="report-meta"><span class="report-meta-icon"></span>01 Apr 2026 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Report</div>
+                </td>
+                <td style="text-align: right;">
+                    <div class="company-card"><table><tr><td><div class="company-icon">TA</div></td><td><div class="company-name">HYDERS PARK</div><div class="company-branch">TANJORE</div></td></tr></table></div>
+                </td>
+            </tr>
+        </table>
+        <table class="stats-row">
+            <tr>
+                <td class="emp-cell"><table class="emp-table"><tr><td style="width: 42px; padding-right: 8px;"><div class="emp-avatar-placeholder">G</div></td><td><div class="emp-name">Gunal Gunal</div><div class="emp-id">ID: 48</div><div class="emp-dept">Housekeeping</div></td></tr></table></td>
+                <td class="stat-cell"><div class="stat-label">Score</div><div class="stat-value">0%</div></td>
+                <td class="stat-cell"><div class="stat-label">Worked Hours</div><div class="stat-value">0 <span class="stat-unit">h</span></div></td>
+                <td class="stat-cell stat-ot"><div class="stat-label">Overtime</div><div class="stat-value">0:00</div></td>
+            </tr>
+        </table>
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-manual">Manual</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <thead><tr><th style="text-align: left; width: 90px;">Date</th><th style="text-align: left;">Shift Details</th><th>In Time</th><th>Out Time</th><th>Late In</th><th>Early Go</th><th>Overtime</th><th>Work Hrs</th><th style="text-align: right;">Status</th></tr></thead>
+            <tbody><tr class="row-absent"><td><div class="td-date">01 Apr</div><div class="td-day">Wednesday</div></td><td><div class="td-shift">Night Shift</div><div class="td-shift-type">NIGHT</div></td><td><span class="td-dash">— : —</span></td><td><span class="td-dash">— : —</span></td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">--:--</td><td><span class="st-absent">ABSENT</span></td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- EMPLOYEE 2: SUDHA -->
+    <div class="report-container">
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;"><div class="report-title">Daily Attendance Report</div><div class="report-meta"><span class="report-meta-icon"></span>01 Apr 2026 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Report</div></td>
+                <td style="text-align: right;"><div class="company-card"><table><tr><td><div class="company-icon">BR</div></td><td><div class="company-name">HYDERS PARK</div><div class="company-branch">KODAI</div></td></tr></table></div></td>
+            </tr>
+        </table>
+        <table class="stats-row">
+            <tr>
+                <td class="emp-cell"><table class="emp-table"><tr><td style="width: 42px; padding-right: 8px;"><div class="emp-avatar-placeholder">S</div></td><td><div class="emp-name">SUDHA SUDHA.D</div><div class="emp-id">ID: 3031</div><div class="emp-dept">Housekeeping</div></td></tr></table></td>
+                <td class="stat-cell"><div class="stat-label">Score</div><div class="stat-value">0%</div></td>
+                <td class="stat-cell"><div class="stat-label">Worked Hours</div><div class="stat-value">0 <span class="stat-unit">h</span></div></td>
+                <td class="stat-cell stat-ot"><div class="stat-label">Overtime</div><div class="stat-value">0:00</div></td>
+            </tr>
+        </table>
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-manual">Manual</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <thead><tr><th style="text-align: left; width: 90px;">Date</th><th style="text-align: left;">Shift Details</th><th>In Time</th><th>Out Time</th><th>Late In</th><th>Early Go</th><th>Overtime</th><th>Work Hrs</th><th style="text-align: right;">Status</th></tr></thead>
+            <tbody><tr class="row-absent"><td><div class="td-date">01 Apr</div><div class="td-day">Wednesday</div></td><td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td><td><span class="td-dash">— : —</span></td><td><span class="td-dash">— : —</span></td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">--:--</td><td><span class="st-absent">ABSENT</span></td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- EMPLOYEE 3: selva -->
+    <div class="report-container">
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;"><div class="report-title">Daily Attendance Report</div><div class="report-meta"><span class="report-meta-icon"></span>01 Apr 2026 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Report</div></td>
+                <td style="text-align: right;"><div class="company-card"><table><tr><td><div class="company-icon">BR</div></td><td><div class="company-name">HYDERS PARK</div><div class="company-branch">KODAI</div></td></tr></table></div></td>
+            </tr>
+        </table>
+        <table class="stats-row">
+            <tr>
+                <td class="emp-cell"><table class="emp-table"><tr><td style="width: 42px; padding-right: 8px;"><div class="emp-avatar-placeholder">s</div></td><td><div class="emp-name">selva kaviyan</div><div class="emp-id">ID: 3025</div><div class="emp-dept">Front Office</div></td></tr></table></td>
+                <td class="stat-cell"><div class="stat-label">Score</div><div class="stat-value">0%</div></td>
+                <td class="stat-cell"><div class="stat-label">Worked Hours</div><div class="stat-value">0 <span class="stat-unit">h</span></div></td>
+                <td class="stat-cell stat-ot"><div class="stat-label">Overtime</div><div class="stat-value">0:00</div></td>
+            </tr>
+        </table>
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-manual">Manual</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <thead><tr><th style="text-align: left; width: 90px;">Date</th><th style="text-align: left;">Shift Details</th><th>In Time</th><th>Out Time</th><th>Late In</th><th>Early Go</th><th>Overtime</th><th>Work Hrs</th><th style="text-align: right;">Status</th></tr></thead>
+            <tbody><tr class="row-absent"><td><div class="td-date">01 Apr</div><div class="td-day">Wednesday</div></td><td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td><td><span class="td-dash">— : —</span></td><td><span class="td-dash">— : —</span></td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">--:--</td><td><span class="st-absent">ABSENT</span></td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- EMPLOYEE 4: Samynathan -->
+    <div class="report-container">
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;"><div class="report-title">Daily Attendance Report</div><div class="report-meta"><span class="report-meta-icon"></span>01 Apr 2026 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Report</div></td>
+                <td style="text-align: right;"><div class="company-card"><table><tr><td><div class="company-icon">BR</div></td><td><div class="company-name">HYDERS PARK</div><div class="company-branch">KODAI</div></td></tr></table></div></td>
+            </tr>
+        </table>
+        <table class="stats-row">
+            <tr>
+                <td class="emp-cell"><table class="emp-table"><tr><td style="width: 42px; padding-right: 8px;"><div class="emp-avatar-placeholder">S</div></td><td><div class="emp-name">Samynathan Samy</div><div class="emp-id">ID: 3026</div><div class="emp-dept">Housekeeping</div></td></tr></table></td>
+                <td class="stat-cell"><div class="stat-label">Score</div><div class="stat-value">0%</div></td>
+                <td class="stat-cell"><div class="stat-label">Worked Hours</div><div class="stat-value">0 <span class="stat-unit">h</span></div></td>
+                <td class="stat-cell stat-ot"><div class="stat-label">Overtime</div><div class="stat-value">0:00</div></td>
+            </tr>
+        </table>
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-manual">Manual</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <thead><tr><th style="text-align: left; width: 90px;">Date</th><th style="text-align: left;">Shift Details</th><th>In Time</th><th>Out Time</th><th>Late In</th><th>Early Go</th><th>Overtime</th><th>Work Hrs</th><th style="text-align: right;">Status</th></tr></thead>
+            <tbody><tr class="row-absent"><td><div class="td-date">01 Apr</div><div class="td-day">Wednesday</div></td><td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td><td><span class="td-dash">— : —</span></td><td><span class="td-dash">— : —</span></td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">--:--</td><td><span class="st-absent">ABSENT</span></td></tr></tbody>
+        </table>
+    </div>
+
+</div>
+
+<!-- ============= PAGE 2 ============= -->
+<div class="page-preview" data-page="2 OF 2">
+
+    <!-- EMPLOYEE 5: SATHISH -->
+    <div class="report-container">
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;"><div class="report-title">Daily Attendance Report</div><div class="report-meta"><span class="report-meta-icon"></span>01 Apr 2026 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Report</div></td>
+                <td style="text-align: right;"><div class="company-card"><table><tr><td><div class="company-icon">TA</div></td><td><div class="company-name">HYDERS PARK</div><div class="company-branch">TANJORE</div></td></tr></table></div></td>
+            </tr>
+        </table>
+        <table class="stats-row">
+            <tr>
+                <td class="emp-cell"><table class="emp-table"><tr><td style="width: 42px; padding-right: 8px;"><div class="emp-avatar-placeholder">S</div></td><td><div class="emp-name">SATHISH KUMAR.P</div><div class="emp-id">ID: 31</div><div class="emp-dept">Maintenance</div></td></tr></table></td>
+                <td class="stat-cell"><div class="stat-label">Score</div><div class="stat-value">0%</div></td>
+                <td class="stat-cell"><div class="stat-label">Worked Hours</div><div class="stat-value">0 <span class="stat-unit">h</span></div></td>
+                <td class="stat-cell stat-ot"><div class="stat-label">Overtime</div><div class="stat-value">0:00</div></td>
+            </tr>
+        </table>
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-manual">Manual</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <thead><tr><th style="text-align: left; width: 90px;">Date</th><th style="text-align: left;">Shift Details</th><th>In Time</th><th>Out Time</th><th>Late In</th><th>Early Go</th><th>Overtime</th><th>Work Hrs</th><th style="text-align: right;">Status</th></tr></thead>
+            <tbody><tr class="row-absent"><td><div class="td-date">01 Apr</div><div class="td-day">Wednesday</div></td><td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td><td><span class="td-dash">— : —</span></td><td><span class="td-dash">— : —</span></td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">--:--</td><td><span class="st-absent">ABSENT</span></td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- EMPLOYEE 6: HAJA -->
+    <div class="report-container">
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;"><div class="report-title">Daily Attendance Report</div><div class="report-meta"><span class="report-meta-icon"></span>01 Apr 2026 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Report</div></td>
+                <td style="text-align: right;"><div class="company-card"><table><tr><td><div class="company-icon">TA</div></td><td><div class="company-name">HYDERS PARK</div><div class="company-branch">TANJORE</div></td></tr></table></div></td>
+            </tr>
+        </table>
+        <table class="stats-row">
+            <tr>
+                <td class="emp-cell"><table class="emp-table"><tr><td style="width: 42px; padding-right: 8px;"><div class="emp-avatar-placeholder">H</div></td><td><div class="emp-name">HAJA NAJMUDEEN</div><div class="emp-id">ID: 17</div><div class="emp-dept">Front Office</div></td></tr></table></td>
+                <td class="stat-cell"><div class="stat-label">Score</div><div class="stat-value">0%</div></td>
+                <td class="stat-cell"><div class="stat-label">Worked Hours</div><div class="stat-value">0 <span class="stat-unit">h</span></div></td>
+                <td class="stat-cell stat-ot"><div class="stat-label">Overtime</div><div class="stat-value">0:00</div></td>
+            </tr>
+        </table>
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-manual">Manual</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <thead><tr><th style="text-align: left; width: 90px;">Date</th><th style="text-align: left;">Shift Details</th><th>In Time</th><th>Out Time</th><th>Late In</th><th>Early Go</th><th>Overtime</th><th>Work Hrs</th><th style="text-align: right;">Status</th></tr></thead>
+            <tbody><tr class="row-absent"><td><div class="td-date">01 Apr</div><div class="td-day">Wednesday</div></td><td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td><td><span class="td-dash">— : —</span></td><td><span class="td-dash">— : —</span></td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">--:--</td><td><span class="st-absent">ABSENT</span></td></tr></tbody>
+        </table>
+    </div>
+
+    <!-- EMPLOYEE 7: Mohamed (Present) -->
+    <div class="report-container">
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;"><div class="report-title">Daily Attendance Report</div><div class="report-meta"><span class="report-meta-icon"></span>01 Apr 2026 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Report</div></td>
+                <td style="text-align: right;"><div class="company-card"><table><tr><td><div class="company-icon">TA</div></td><td><div class="company-name">HYDERS PARK</div><div class="company-branch">TANJORE</div></td></tr></table></div></td>
+            </tr>
+        </table>
+        <table class="stats-row">
+            <tr>
+                <td class="emp-cell"><table class="emp-table"><tr><td style="width: 42px; padding-right: 8px;"><div class="emp-avatar-placeholder">M</div></td><td><div class="emp-name">Mohamed Ilyas</div><div class="emp-id">ID: 22</div><div class="emp-dept">Front Office</div></td></tr></table></td>
+                <td class="stat-cell"><div class="stat-label">Score</div><div class="stat-value">100%</div></td>
+                <td class="stat-cell"><div class="stat-label">Worked Hours</div><div class="stat-value">15 <span class="stat-unit">h</span></div></td>
+                <td class="stat-cell stat-ot"><div class="stat-label">Overtime</div><div class="stat-value">0:00</div></td>
+            </tr>
+        </table>
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-manual">Manual</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+        <table class="data-table">
+            <thead><tr><th style="text-align: left; width: 90px;">Date</th><th style="text-align: left;">Shift Details</th><th>In Time</th><th>Out Time</th><th>Late In</th><th>Early Go</th><th>Overtime</th><th>Work Hrs</th><th style="text-align: right;">Status</th></tr></thead>
+            <tbody><tr><td><div class="td-date">01 Apr</div><div class="td-day">Wednesday</div></td><td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td><td><div class="td-time">08:51</div><div class="td-device">TNJ</div></td><td><div class="td-time">23:58</div><div class="td-device">TNJ</div></td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-zero">-</td><td class="td-hrs">15:07</td><td><span class="st-present">PRESENT</span></td></tr></tbody>
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>

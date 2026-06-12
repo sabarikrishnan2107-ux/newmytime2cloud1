@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Preview - All Shift Types (Single / Multi / Split)</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { font-weight: 500 !important; background: #f3f4f6; padding: 20px; }
+    body * { font-weight: 500 !important; }
+
+    @page { size: A4 landscape; margin: 10mm; }
+
+    .page {
+      background: white; width: 297mm; min-height: 190mm;
+      margin: 0 auto 24px; padding: 10mm;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      display: flex; flex-direction: column;
+    }
+
+    .section-label {
+      max-width: 297mm; margin: 30px auto 8px;
+      font-size: 12px; font-weight: 600 !important; letter-spacing: 2px;
+      color: #374151; padding: 4px 8px;
+      border-left: 3px solid #3b82f6;
+    }
+
+    .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .title { font-size: 18px; color: #000; }
+    .subtitle { font-size: 11px; color: #1f2937; margin-top: 2px; }
+
+    .branch-badge { border: 1px solid #d1d5db; border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
+    .branch-badge .icon { width: 26px; height: 26px; background: #e0e7ff; border-radius: 6px; }
+    .branch-badge .name { font-size: 12px; color: #000; }
+    .branch-badge .loc { font-size: 10px; color: #1f2937; }
+
+    .summary-cards { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; margin-bottom: 6px; }
+    .summary-cards-5 { grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr !important; }
+    .card { border: 1px solid #d1d5db; border-radius: 10px; padding: 6px 10px; min-height: 0; display: flex; align-items: center; gap: 10px; }
+    .card-label { font-size: 10px; letter-spacing: 1px; color: #374151; margin-bottom: 2px; }
+    .card-value { font-size: 22px; line-height: 1.1; color: #000; }
+    .card.employee img { width: 36px; height: 36px; border-radius: 50%; background: #e5e7eb; }
+    .card.employee .name { font-size: 13px; color: #000; }
+    .card.employee .id { font-size: 10px; color: #1f2937; }
+    .card.employee .dept { font-size: 10px; color: #374151; }
+
+    .stats-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 6px; }
+    .stat { border: 1px solid #e5e7eb; border-radius: 10px; padding: 4px 8px; display: flex; justify-content: space-between; align-items: center; }
+    .stat-label { font-size: 9px; letter-spacing: 1px; }
+    .stat-value { font-size: 15px; color: #111; }
+
+    .present .stat-label { color: #047857; }
+    .absent .stat-label { color: #be123c; }
+    .weekoff .stat-label { color: #6b7280; }
+    .leave .stat-label { color: #d97706; }
+    .holiday .stat-label { color: #7c3aed; }
+    .missing .stat-label { color: #ea580c; }
+    .manual .stat-label { color: #6b7280; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    thead { background: #f3f4f6; }
+    th { padding: 6px 8px; text-align: center; color: #000; font-size: 11px; border-bottom: 1px solid #9ca3af; white-space: nowrap; }
+    td { padding: 6px 8px; text-align: center; border-bottom: 1px solid #e5e7eb; color: #000; }
+    td:first-child, th:first-child, td:nth-child(2), th:nth-child(2) { text-align: left; }
+
+    .date-cell .date { font-size: 11px; color: #000; }
+    .date-cell .day { font-size: 9px; color: #374151; }
+    .shift-cell .shift { font-size: 11px; color: #000; }
+    .shift-cell .type { font-size: 9px; color: #374151; letter-spacing: 1px; }
+
+    .time { font-size: 13px; font-weight: 600 !important; color: #000; letter-spacing: 0.3px; }
+    .time .dev { display: block; font-size: 10px; color: #374151; font-weight: 500 !important; margin-top: 2px; letter-spacing: 0.5px; }
+    .time .time-row-2 { margin-top: 6px; padding-top: 4px; font-size: 13px; font-weight: 600 !important; color: #000; letter-spacing: 0.3px; }
+
+    .multi-table td { vertical-align: middle; padding: 8px 6px !important; }
+    .multi-table th { font-size: 10px; padding: 8px 6px !important; }
+    .io { text-align: center; }
+    .io-pair { display: block; font-size: 13px; font-weight: 600 !important; color: #000; letter-spacing: 0.3px; }
+    .dev-pair { display: block; font-size: 10px; font-weight: 500 !important; color: #374151; margin-top: 2px; letter-spacing: 0.5px; }
+
+    .weekoff-cell { font-style: italic; color: #6b7280; text-align: center !important; font-weight: 500 !important; }
+    .weekoff-row { background: #f9fafb; }
+
+    .dim { color: #9ca3af; }
+    .dim-time { color: #9ca3af; font-weight: 500 !important; }
+
+    .th-late { color: #dc2626 !important; }
+    .th-early { color: #d97706 !important; }
+    .th-lost { color: #ea580c !important; }
+    .th-ot { color: #7c3aed !important; }
+
+    .status-missing { color: #ea580c; font-weight: 600 !important; }
+    .status-weekoff { color: #6b7280; font-weight: 500 !important; }
+    .status-present { color: #047857; }
+    .status-absent { color: #be123c; background: #fef2f2; }
+    .late { color: #dc2626; }
+    tr.absent-row { background: #fef2f2; }
+
+    .footer { margin-top: auto; display: flex; justify-content: space-between; padding-top: 8px; border-top: 1px solid #9ca3af; font-size: 9px; color: #1f2937; }
+  </style>
+</head>
+<body>
+
+  <!-- ================================================================ -->
+  <!-- SINGLE / FILO SHIFT -->
+  <!-- ================================================================ -->
+  <div class="section-label">SINGLE / FILO SHIFT — PAGE 1 of 2</div>
+
+  <div class="page">
+    <div class="header-row">
+      <div>
+        <div class="title">MONTHLY ATTENDANCE REPORT</div>
+        <div class="subtitle">□ 01 Apr 2026 - 30 Apr 2026 • Monthly Exact</div>
+      </div>
+      <div class="branch-badge">
+        <div class="icon"></div>
+        <div><div class="name">HYDERS PARK</div><div class="loc">TANJORE</div></div>
+      </div>
+    </div>
+
+    <div class="summary-cards">
+      <div class="card employee"><img src="" alt="" /><div><div class="name">HAJA NAJMUDEEN</div><div class="id">ID: 17</div><div class="dept">Front Office</div></div></div>
+      <div class="card"><div><div class="card-label">SCORE</div><div class="card-value">57%</div></div></div>
+      <div class="card"><div><div class="card-label">WORKED HOURS</div><div class="card-value">155 h</div></div></div>
+      <div class="card"><div><div class="card-label">OVERTIME</div><div class="card-value">0:00</div></div></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat present"><span class="stat-label">PRESENT</span><span class="stat-value">17</span></div>
+      <div class="stat absent"><span class="stat-label">ABSENT</span><span class="stat-value">11</span></div>
+      <div class="stat weekoff"><span class="stat-label">WEEKOFF</span><span class="stat-value">02</span></div>
+      <div class="stat leave"><span class="stat-label">LEAVE</span><span class="stat-value">00</span></div>
+      <div class="stat holiday"><span class="stat-label">HOLIDAY</span><span class="stat-value">00</span></div>
+      <div class="stat missing"><span class="stat-label">MISSING</span><span class="stat-value">00</span></div>
+      <div class="stat manual"><span class="stat-label">MANUAL</span><span class="stat-value">00</span></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>DATE</th><th>SHIFT DETAILS</th><th>IN TIME</th><th>OUT TIME</th><th>LATE IN</th><th>EARLY GO</th><th>OVERTIME</th><th>WORK HRS</th><th>STATUS</th></tr>
+      </thead>
+      <tbody>
+        <tr class="absent-row"><td class="date-cell"><div class="date">01 Apr 26</div><div class="day">Wednesday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">—</td><td class="time">—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="status-absent">ABSENT</td></tr>
+        <tr><td class="date-cell"><div class="date">02 Apr 26</div><div class="day">Thursday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:40<span class="dev">TNJ</span></td><td class="time">18:56<span class="dev">TNJ</span></td><td class="late">00:40</td><td>—</td><td>—</td><td>09:16</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">03 Apr 26</div><div class="day">Friday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:44<span class="dev">TNJ</span></td><td class="time">19:58<span class="dev">—</span></td><td class="late">00:44</td><td>—</td><td>—</td><td>10:14</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">04 Apr 26</div><div class="day">Saturday</div></td><td class="shift-cell"><div class="shift">Night Shift</div><div class="type">NIGHT</div></td><td class="time">19:41<span class="dev">—</span></td><td class="time">20:22<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>00:41</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">05 Apr 26</div><div class="day">Sunday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:06<span class="dev">TNJ</span></td><td class="time">23:44<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>14:38</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">06 Apr 26</div><div class="day">Monday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:31<span class="dev">TNJ</span></td><td class="time">22:12<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>13:41</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">07 Apr 26</div><div class="day">Tuesday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:07<span class="dev">TNJ</span></td><td class="time">23:19<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>15:12</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">08 Apr 26</div><div class="day">Wednesday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:02<span class="dev">TNJ</span></td><td class="time">23:01<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>14:59</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">09 Apr 26</div><div class="day">Thursday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:31<span class="dev">TNJ</span></td><td class="time">23:34<span class="dev">—</span></td><td class="late">00:31</td><td>—</td><td>—</td><td>14:03</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">10 Apr 26</div><div class="day">Friday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:45<span class="dev">TNJ</span></td><td class="time">17:30<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>08:45</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">11 Apr 26</div><div class="day">Saturday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:15<span class="dev">TNJ</span></td><td class="time">18:20<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>09:05</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">12 Apr 26</div><div class="day">Sunday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">10:00<span class="dev">TNJ</span></td><td class="time">19:15<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>09:15</td><td class="status-present">PRESENT</td></tr>
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <span>GENERATED ON: 20 Apr 2026, 11:44</span>
+      <span>CONFIDENTIAL REPORT . MYTIME2CLOUD.COM</span>
+      <span>PAGE 1 OF 3</span>
+    </div>
+  </div>
+
+  <div class="section-label">SINGLE / FILO SHIFT — PAGE 2 of 2 (continuation, no header)</div>
+
+  <div class="page">
+    <table>
+      <thead>
+        <tr><th>DATE</th><th>SHIFT DETAILS</th><th>IN TIME</th><th>OUT TIME</th><th>LATE IN</th><th>EARLY GO</th><th>OVERTIME</th><th>WORK HRS</th><th>STATUS</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="date-cell"><div class="date">13 Apr 26</div><div class="day">Monday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:36<span class="dev">TNJ</span></td><td class="time">18:33<span class="dev">TNJ</span></td><td>—</td><td>—</td><td>—</td><td>09:57</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">14 Apr 26</div><div class="day">Tuesday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:12<span class="dev">TNJ</span></td><td class="time">19:45<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>10:33</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">15 Apr 26</div><div class="day">Wednesday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:55<span class="dev">TNJ</span></td><td class="time">18:20<span class="dev">TNJ</span></td><td>—</td><td>—</td><td>—</td><td>09:25</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">16 Apr 26</div><div class="day">Thursday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:00<span class="dev">TNJ</span></td><td class="time">17:50<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>08:50</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">17 Apr 26</div><div class="day">Friday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:51<span class="dev">TNJ</span></td><td class="time">19:47<span class="dev">—</span></td><td class="late">00:51</td><td>—</td><td>—</td><td>09:56</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">18 Apr 26</div><div class="day">Saturday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">10:04<span class="dev">TNJ</span></td><td class="time">19:48<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>09:44</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">19 Apr 26</div><div class="day">Sunday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:32<span class="dev">TNJ</span></td><td class="time">19:22<span class="dev">—</span></td><td class="late">00:32</td><td>—</td><td>—</td><td>09:50</td><td class="status-present">PRESENT</td></tr>
+        <tr class="absent-row"><td class="date-cell"><div class="date">20 Apr 26</div><div class="day">Monday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">—</td><td class="time">—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="status-absent">ABSENT</td></tr>
+        <tr class="absent-row"><td class="date-cell"><div class="date">21 Apr 26</div><div class="day">Tuesday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">—</td><td class="time">—</td><td>—</td><td>—</td><td>—</td><td>—</td><td class="status-absent">ABSENT</td></tr>
+        <tr><td class="date-cell"><div class="date">22 Apr 26</div><div class="day">Wednesday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:45<span class="dev">TNJ</span></td><td class="time">18:00<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>09:15</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">23 Apr 26</div><div class="day">Thursday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">09:05<span class="dev">TNJ</span></td><td class="time">18:15<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>09:10</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">24 Apr 26</div><div class="day">Friday</div></td><td class="shift-cell"><div class="shift">Day Time</div><div class="type">SINGLE</div></td><td class="time">08:40<span class="dev">TNJ</span></td><td class="time">17:55<span class="dev">—</span></td><td>—</td><td>—</td><td>—</td><td>09:15</td><td class="status-present">PRESENT</td></tr>
+      </tbody>
+    </table>
+    <div class="footer">
+      <span>GENERATED ON: 20 Apr 2026, 11:44</span>
+      <span>CONFIDENTIAL REPORT . MYTIME2CLOUD.COM</span>
+      <span>PAGE 2 OF 3</span>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- MULTI SHIFT -->
+  <!-- ================================================================ -->
+  <div class="section-label">MULTI SHIFT — PAGE 1 of 2</div>
+
+  <div class="page">
+    <div class="header-row">
+      <div>
+        <div class="title">MONTHLY ATTENDANCE REPORT - MULTI SHIFT</div>
+        <div class="subtitle">□ 01 Feb 2026 - 28 Feb 2026 • Multi Shift</div>
+      </div>
+      <div class="branch-badge">
+        <div class="icon"></div>
+        <div><div class="name">V PERFUMES</div><div class="loc">FRAGRANCE DEIRA</div></div>
+      </div>
+    </div>
+
+    <div class="summary-cards">
+      <div class="card employee"><img src="" alt="" /><div><div class="name">RASHAD NULL</div><div class="id">ID: 114</div><div class="dept">FRAGRANCE DEIRA</div></div></div>
+      <div class="card"><div><div class="card-label">SCORE</div><div class="card-value">46%</div></div></div>
+      <div class="card"><div><div class="card-label">WORKED HOURS</div><div class="card-value">93 h</div></div></div>
+      <div class="card"><div><div class="card-label">OVERTIME</div><div class="card-value">0:00</div></div></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat present"><span class="stat-label">PRESENT</span><span class="stat-value">13</span></div>
+      <div class="stat absent"><span class="stat-label">ABSENT</span><span class="stat-value">03</span></div>
+      <div class="stat weekoff"><span class="stat-label">WEEKOFF</span><span class="stat-value">04</span></div>
+      <div class="stat leave"><span class="stat-label">LEAVE</span><span class="stat-value">00</span></div>
+      <div class="stat holiday"><span class="stat-label">HOLIDAY</span><span class="stat-value">00</span></div>
+      <div class="stat missing"><span class="stat-label">MISSING</span><span class="stat-value">08</span></div>
+      <div class="stat manual"><span class="stat-label">MANUAL</span><span class="stat-value">00</span></div>
+    </div>
+
+    <table class="multi-table">
+      <thead>
+        <tr><th>DATE</th><th>IN/OUT1</th><th>IN/OUT2</th><th>IN/OUT3</th><th>IN/OUT4</th><th>IN/OUT5</th><th>OT</th><th>TOTAL</th><th>STATUS</th></tr>
+      </thead>
+      <tbody>
+        <tr class="weekoff-row"><td class="date-cell"><div class="date">01 Feb</div><div class="day">Sunday</div></td><td colspan="5" class="weekoff-cell">Weekoff</td><td class="dim">00:00</td><td class="dim">00:00</td><td class="status-weekoff">WEEKOFF</td></tr>
+        <tr><td class="date-cell"><div class="date">02 Feb</div><div class="day">Monday</div></td><td class="io"><span class="io-pair">09:54 - 10:15</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">11:17 - 11:46</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">14:40 - 14:54</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">14:55 - 15:34</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">16:22 - 16:50</span><span class="dev-pair">auto / auto</span></td><td class="dim">00:00</td><td>03:15</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">03 Feb</div><div class="day">Tuesday</div></td><td class="io"><span class="io-pair">10:49 - 14:40</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">15:08 - 18:09</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">19:05 - —</span><span class="dev-pair">auto / —</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>06:52</td><td class="status-missing">MISSING</td></tr>
+        <tr><td class="date-cell"><div class="date">04 Feb</div><div class="day">Wednesday</div></td><td class="io"><span class="io-pair">09:50 - 10:40</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">10:54 - 14:17</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">15:22 - 15:41</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">18:39 - 19:22</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>05:15</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">05 Feb</div><div class="day">Thursday</div></td><td class="io"><span class="io-pair">10:01 - 10:31</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">10:47 - 14:10</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>03:53</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">06 Feb</div><div class="day">Friday</div></td><td class="io"><span class="io-pair">10:02 - 11:01</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">11:19 - 12:46</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">13:12 - 15:09</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">16:21 - 16:46</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">19:01 - 19:05</span><span class="dev-pair">auto / auto</span></td><td class="dim">00:00</td><td>04:52</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">07 Feb</div><div class="day">Saturday</div></td><td class="io"><span class="io-pair">10:40 - 10:43</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">11:18 - 11:36</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">13:47 - 14:13</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">15:20 - 18:06</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">18:38 - 20:00</span><span class="dev-pair">auto / auto</span></td><td class="dim">00:00</td><td>04:55</td><td class="status-missing">MISSING</td></tr>
+        <tr><td class="date-cell"><div class="date">08 Feb</div><div class="day">Sunday</div></td><td class="io"><span class="io-pair">10:01 - 10:54</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">11:12 - 14:14</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">14:24 - 14:26</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">15:40 - 16:13</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>04:30</td><td class="status-present">PRESENT</td></tr>
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <span>GENERATED ON: 10 Apr 2026, 19:49</span>
+      <span>CONFIDENTIAL REPORT . MYTIME2CLOUD.COM</span>
+      <span>PAGE 1 OF 3</span>
+    </div>
+  </div>
+
+  <div class="section-label">MULTI SHIFT — PAGE 2 of 2 (continuation, no header)</div>
+
+  <div class="page">
+    <table class="multi-table">
+      <thead>
+        <tr><th>DATE</th><th>IN/OUT1</th><th>IN/OUT2</th><th>IN/OUT3</th><th>IN/OUT4</th><th>IN/OUT5</th><th>OT</th><th>TOTAL</th><th>STATUS</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="date-cell"><div class="date">09 Feb</div><div class="day">Monday</div></td><td class="io"><span class="io-pair">09:15 - 11:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">11:30 - 14:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">15:00 - 17:30</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>06:45</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">10 Feb</div><div class="day">Tuesday</div></td><td class="io"><span class="io-pair">09:30 - 12:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">13:00 - 16:45</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>06:15</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">11 Feb</div><div class="day">Wednesday</div></td><td class="io"><span class="io-pair">10:15 - 12:30</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">13:30 - 15:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">16:00 - 18:30</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">19:00 - 20:15</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>07:30</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">12 Feb</div><div class="day">Thursday</div></td><td class="io"><span class="io-pair">09:45 - 11:15</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">12:00 - 14:30</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">15:30 - 17:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">17:30 - 19:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">19:30 - 20:45</span><span class="dev-pair">auto / auto</span></td><td class="dim">00:00</td><td>07:15</td><td class="status-present">PRESENT</td></tr>
+        <tr class="absent-row"><td class="date-cell"><div class="date">13 Feb</div><div class="day">Friday</div></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td class="dim">00:00</td><td class="status-absent">ABSENT</td></tr>
+        <tr class="weekoff-row"><td class="date-cell"><div class="date">14 Feb</div><div class="day">Saturday</div></td><td colspan="5" class="weekoff-cell">Weekoff</td><td class="dim">00:00</td><td class="dim">00:00</td><td class="status-weekoff">WEEKOFF</td></tr>
+        <tr><td class="date-cell"><div class="date">15 Feb</div><div class="day">Sunday</div></td><td class="io"><span class="io-pair">09:00 - 11:30</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">12:00 - 15:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">16:00 - 18:30</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>07:30</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">16 Feb</div><div class="day">Monday</div></td><td class="io"><span class="io-pair">09:30 - 12:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">13:00 - 15:45</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">16:15 - 19:00</span><span class="dev-pair">auto / auto</span></td><td class="io"><span class="io-pair">—</span></td><td class="io"><span class="io-pair">—</span></td><td class="dim">00:00</td><td>07:45</td><td class="status-present">PRESENT</td></tr>
+      </tbody>
+    </table>
+    <div class="footer">
+      <span>GENERATED ON: 10 Apr 2026, 19:49</span>
+      <span>CONFIDENTIAL REPORT . MYTIME2CLOUD.COM</span>
+      <span>PAGE 2 OF 3</span>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- SPLIT DUTY -->
+  <!-- ================================================================ -->
+  <div class="section-label">SPLIT DUTY — PAGE 1 of 2</div>
+
+  <div class="page">
+    <div class="header-row">
+      <div>
+        <div class="title">MONTHLY ATTENDANCE REPORT - SPLIT DUTY</div>
+        <div class="subtitle">□ 01 Mar 2026 - 31 Mar 2026 • Split Duty</div>
+      </div>
+      <div class="branch-badge">
+        <div class="icon"></div>
+        <div><div class="name">HILAL CLEANING COMPANY</div><div class="loc">Nakheel</div></div>
+      </div>
+    </div>
+
+    <div class="summary-cards summary-cards-5">
+      <div class="card employee"><img src="" alt="" /><div><div class="name">FARSEEN FARSEEN</div><div class="id">ID: 1000013</div><div class="dept">Sales department (Nakheel)</div></div></div>
+      <div class="card"><div><div class="card-label">SCORE</div><div class="card-value">10%</div></div></div>
+      <div class="card"><div><div class="card-label">WORKED HOURS</div><div class="card-value">58 h</div></div></div>
+      <div class="card"><div><div class="card-label" style="color:#be123c;">LOST HOURS</div><div class="card-value" style="color:#be123c;">0:00</div></div></div>
+      <div class="card"><div><div class="card-label">OVERTIME</div><div class="card-value">0:00</div></div></div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat present"><span class="stat-label">PRESENT</span><span class="stat-value">03</span></div>
+      <div class="stat absent"><span class="stat-label">ABSENT</span><span class="stat-value">09</span></div>
+      <div class="stat weekoff"><span class="stat-label">WEEKOFF</span><span class="stat-value">01</span></div>
+      <div class="stat leave"><span class="stat-label">LEAVE</span><span class="stat-value">00</span></div>
+      <div class="stat holiday"><span class="stat-label">HOLIDAY</span><span class="stat-value">00</span></div>
+      <div class="stat missing"><span class="stat-label">MISSING</span><span class="stat-value">18</span></div>
+      <div class="stat manual"><span class="stat-label">MANUAL</span><span class="stat-value">00</span></div>
+    </div>
+
+    <table>
+      <thead>
+        <tr><th>DATE</th><th>SHIFT DETAILS</th><th>IN TIME</th><th>OUT TIME</th><th class="th-late">LATE IN</th><th class="th-early">EARLY GO</th><th class="th-lost">LOST HRS</th><th class="th-ot">OVERTIME</th><th>WORK HRS</th><th>STATUS</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="date-cell"><div class="date">01 Mar</div><div class="day">Sunday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time"><span class="dim-time">-- : --</span><span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">-- : --</span><span class="dev">—</span></div></td><td class="time">12:17<span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">-- : --</span><span class="dev">—</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td class="dim">00:00</td><td class="status-missing">MISSING</td></tr>
+        <tr><td class="date-cell"><div class="date">02 Mar</div><div class="day">Monday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time"><span class="dim-time">-- : --</span><span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">-- : --</span><span class="dev">—</span></div></td><td class="time">12:17<span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">-- : --</span><span class="dev">—</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td class="dim">00:00</td><td class="status-missing">MISSING</td></tr>
+        <tr><td class="date-cell"><div class="date">03 Mar</div><div class="day">Tuesday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time">08:49<span class="dev">NAKHEEL</span><div class="time-row-2">19:19<span class="dev">NAKHEEL</span></div></td><td class="time">13:43<span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">—</span><span class="dev">—</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td>04:53</td><td class="status-missing">MISSING</td></tr>
+        <tr><td class="date-cell"><div class="date">04 Mar</div><div class="day">Wednesday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time">08:57<span class="dev">NAKHEEL</span><div class="time-row-2">19:23<span class="dev">NAKHEEL</span></div></td><td class="time">13:39<span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">—</span><span class="dev">—</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td>04:42</td><td class="status-missing">MISSING</td></tr>
+        <tr class="absent-row"><td class="date-cell"><div class="date">05 Mar</div><div class="day">Thursday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time"><span class="dim-time">—</span></td><td class="time"><span class="dim-time">—</span></td><td>-</td><td>-</td><td>-</td><td>-</td><td class="dim">00:00</td><td class="status-absent">ABSENT</td></tr>
+        <tr><td class="date-cell"><div class="date">06 Mar</div><div class="day">Friday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time">08:49<span class="dev">NAKHEEL</span><div class="time-row-2">19:17<span class="dev">NAKHEEL</span></div></td><td class="time">13:13<span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">—</span><span class="dev">—</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td>04:23</td><td class="status-missing">MISSING</td></tr>
+      </tbody>
+    </table>
+
+    <div class="footer">
+      <span>GENERATED ON: 10 Apr 2026, 19:34</span>
+      <span>CONFIDENTIAL REPORT . MYTIME2CLOUD.COM</span>
+      <span>PAGE 1 OF 3</span>
+    </div>
+  </div>
+
+  <div class="section-label">SPLIT DUTY — PAGE 2 of 2 (continuation, no header)</div>
+
+  <div class="page">
+    <table>
+      <thead>
+        <tr><th>DATE</th><th>SHIFT DETAILS</th><th>IN TIME</th><th>OUT TIME</th><th class="th-late">LATE IN</th><th class="th-early">EARLY GO</th><th class="th-lost">LOST HRS</th><th class="th-ot">OVERTIME</th><th>WORK HRS</th><th>STATUS</th></tr>
+      </thead>
+      <tbody>
+        <tr class="weekoff-row"><td class="date-cell"><div class="date">07 Mar</div><div class="day">Saturday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td colspan="2" class="weekoff-cell">Weekoff</td><td>-</td><td>-</td><td>-</td><td>-</td><td class="dim">00:00</td><td class="status-weekoff">WEEKOFF</td></tr>
+        <tr><td class="date-cell"><div class="date">08 Mar</div><div class="day">Sunday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time">09:02<span class="dev">NAKHEEL</span><div class="time-row-2">19:05<span class="dev">NAKHEEL</span></div></td><td class="time">13:28<span class="dev">NAKHEEL</span><div class="time-row-2">21:15<span class="dev">NAKHEEL</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td>06:36</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">09 Mar</div><div class="day">Monday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time">08:55<span class="dev">NAKHEEL</span><div class="time-row-2">19:10<span class="dev">NAKHEEL</span></div></td><td class="time">13:30<span class="dev">NAKHEEL</span><div class="time-row-2">21:00<span class="dev">NAKHEEL</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td>06:25</td><td class="status-present">PRESENT</td></tr>
+        <tr><td class="date-cell"><div class="date">10 Mar</div><div class="day">Tuesday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time">08:48<span class="dev">NAKHEEL</span><div class="time-row-2">19:22<span class="dev">NAKHEEL</span></div></td><td class="time">13:40<span class="dev">NAKHEEL</span><div class="time-row-2"><span class="dim-time">—</span><span class="dev">—</span></div></td><td>-</td><td>-</td><td>-</td><td>-</td><td>04:52</td><td class="status-missing">MISSING</td></tr>
+        <tr class="absent-row"><td class="date-cell"><div class="date">11 Mar</div><div class="day">Wednesday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time"><span class="dim-time">—</span></td><td class="time"><span class="dim-time">—</span></td><td>-</td><td>-</td><td>-</td><td>-</td><td class="dim">00:00</td><td class="status-absent">ABSENT</td></tr>
+        <tr><td class="date-cell"><div class="date">12 Mar</div><div class="day">Thursday</div></td><td class="shift-cell"><div class="shift">NAKHEEL</div><div class="type">SPLIT</div></td><td class="time">09:15<span class="dev">NAKHEEL</span><div class="time-row-2">19:05<span class="dev">NAKHEEL</span></div></td><td class="time">13:00<span class="dev">NAKHEEL</span><div class="time-row-2">21:30<span class="dev">NAKHEEL</span></div></td><td class="late">00:15</td><td>-</td><td>-</td><td>-</td><td>06:10</td><td class="status-present">PRESENT</td></tr>
+      </tbody>
+    </table>
+    <div class="footer">
+      <span>GENERATED ON: 10 Apr 2026, 19:34</span>
+      <span>CONFIDENTIAL REPORT . MYTIME2CLOUD.COM</span>
+      <span>PAGE 2 OF 3</span>
+    </div>
+  </div>
+
+</body>
+</html>

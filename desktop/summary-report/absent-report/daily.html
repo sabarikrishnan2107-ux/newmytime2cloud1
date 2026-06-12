@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+  <title>Daily Absent Report</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: white; color: #111827; }
+    @page { size: A4 landscape; margin: 10mm 10mm 22mm 10mm; }
+    @media print {
+      body { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+      tr { page-break-inside: avoid !important; }
+    }
+
+    .wrap { padding: 4mm 2mm; }
+
+    .header-row { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+    .title { font-size: 22px; font-weight: 800; letter-spacing: -0.3px; text-transform: uppercase; }
+    .subtitle { font-size: 11px; color: #6b7280; margin-top: 4px; }
+    .subtitle .sep { color: #d1d5db; margin: 0 8px; }
+    .status-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 10px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase;
+      color: #be123c; margin-top: 8px;
+    }
+    .status-pill .dot { width: 6px; height: 6px; border-radius: 50%; background: #be123c; }
+
+    .company-badge {
+      border: 1px solid #e5e7eb; border-radius: 10px; padding: 8px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .company-badge .icon {
+      width: 34px; height: 34px; background: #f3f4f6; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      color: #374151; font-size: 12px; font-weight: 700;
+    }
+    .company-badge .name { font-size: 12px; font-weight: 700; }
+    .company-badge .branch { font-size: 10px; color: #6b7280; }
+
+    .cards { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .card { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 14px; }
+    .card-label { font-size: 9px; letter-spacing: 1px; color: #6b7280; font-weight: 600; text-transform: uppercase; }
+    .card-value { font-size: 22px; font-weight: 700; margin-top: 4px; line-height: 1.1; }
+    .card-value.red { color: #be123c; }
+    .card-sub { font-size: 9px; color: #6b7280; margin-top: 4px; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 10px; margin-top: 4px; }
+    thead { background: #f9fafb; }
+    th {
+      padding: 8px 6px; text-align: left; font-size: 9px; font-weight: 600;
+      color: #374151; text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid #d1d5db;
+    }
+    td { padding: 8px 6px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+
+    .emp-cell { display: flex; align-items: center; gap: 8px; }
+    .emp-avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: #fde68a; color: #92400e;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; flex: 0 0 28px;
+    }
+    .emp-avatar.c1 { background: #fde68a; color: #92400e; }
+    .emp-avatar.c2 { background: #bfdbfe; color: #1e40af; }
+    .emp-avatar.c3 { background: #fbcfe8; color: #9d174d; }
+    .emp-avatar.c4 { background: #c7d2fe; color: #3730a3; }
+    .emp-avatar.c5 { background: #bbf7d0; color: #166534; }
+    .emp-name { font-weight: 600; font-size: 11px; }
+    .emp-id { color: #6b7280; font-size: 9px; }
+
+    .bds .b { font-weight: 600; }
+    .bds .d { color: #6b7280; font-size: 9px; margin-top: 2px; }
+    .bds .s { color: #6b7280; font-size: 9px; }
+
+    .contact .p { font-size: 10px; }
+    .contact .e { font-size: 9px; color: #6b7280; }
+
+    .pill {
+      display: inline-block; padding: 3px 8px; border-radius: 10px;
+      font-size: 9px; font-weight: 600; letter-spacing: 0.4px;
+    }
+    .pill.NOSHOW { background: #fef2f2; color: #b91c1c; }
+    .pill.LOP { background: #fff7ed; color: #c2410c; }
+    .pill.SICK { background: #fef3c7; color: #92400e; }
+    .pill.CASUAL { background: #fefce8; color: #854d0e; }
+    .pill.PERMISSION { background: #eff6ff; color: #1d4ed8; }
+    .pill.APPROVED { background: #ecfdf5; color: #047857; }
+
+    .streak { font-weight: 700; }
+    .streak.high { color: #be123c; }
+    .streak.mid { color: #c2410c; }
+    .streak.low { color: #6b7280; }
+
+    .legend {
+      margin-top: 14px; padding-top: 10px; border-top: 1px solid #e5e7eb;
+      display: flex; justify-content: center; gap: 18px; flex-wrap: wrap;
+      font-size: 9px; color: #6b7280; font-weight: 600;
+    }
+    .legend .dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+    .foot-meta { display: flex; justify-content: space-between; font-size: 9px; color: #6b7280; margin-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="header-row">
+      <div>
+        <div class="title" id="title">DAILY ABSENT REPORT</div>
+        <div class="subtitle">
+          <span id="date-label">—</span>
+          <span class="sep">·</span>
+          <span id="branches-label">—</span>
+          <span class="sep">·</span>
+          <span>Generated <span id="gen-time">—</span></span>
+        </div>
+        <div class="status-pill"><span class="dot"></span><span id="status-text">— ABSENT OUT OF — EMPLOYEES</span></div>
+      </div>
+      <div class="company-badge">
+        <div class="icon" id="company-initials">—</div>
+        <div>
+          <div class="name" id="company-name">—</div>
+          <div class="branch" id="company-branch">—</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <div class="card-label">Total Employees</div>
+        <div class="card-value" id="c-total">—</div>
+        <div class="card-sub" id="c-total-sub">—</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Absent Today</div>
+        <div class="card-value red" id="c-absent">—</div>
+        <div class="card-sub">Includes leave + no-show</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Approved Leave</div>
+        <div class="card-value" id="c-approved">—</div>
+        <div class="card-sub">Authorised</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Unapproved / No-Show</div>
+        <div class="card-value" id="c-unapproved">—</div>
+        <div class="card-sub">Needs follow-up</div>
+      </div>
+    </div>
+
+    <table id="tbl">
+      <thead>
+        <tr>
+          <th style="width: 24px;">#</th>
+          <th>Employee</th>
+          <th>Designation</th>
+          <th>Branch / Dept / Shift</th>
+          <th>Contact</th>
+          <th>Absent Type</th>
+          <th style="width: 50px;">Streak</th>
+          <th style="width: 70px;">Last Present</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+
+  </div>
+
+  <script>
+    function qs(name) { return new URLSearchParams(window.location.search).get(name); }
+    function esc(s) { return (s == null ? '' : String(s)).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'})[c]); }
+    function pillClass(type) {
+      const t = (type || '').toUpperCase();
+      if (t.includes('NO-SHOW') || t === 'NOSHOW') return 'NOSHOW';
+      if (t.includes('LOP') || t.includes('LOSS')) return 'LOP';
+      if (t.includes('SICK')) return 'SICK';
+      if (t.includes('CASUAL')) return 'CASUAL';
+      if (t.includes('PERMISSION')) return 'PERMISSION';
+      return 'APPROVED';
+    }
+    function avatarColor(i) { return 'c' + ((i % 5) + 1); }
+    function streakClass(n) { return n >= 3 ? 'high' : (n >= 2 ? 'mid' : 'low'); }
+
+    const apiBase = qs('api_base') || 'http://127.0.0.1:8000/api';
+    const payload = {
+      mode: 'daily',
+      from_date: qs('from_date'),
+      to_date: qs('to_date'),
+      company_id: parseInt(qs('company_id') || '0', 10),
+      branch_ids: qs('branch_ids') ? qs('branch_ids').split(',') : [],
+      department_ids: qs('department_ids') ? qs('department_ids').split(',') : [],
+      employee_ids: qs('employee_ids') ? qs('employee_ids').split(',') : [],
+      employee_types: qs('employee_types') ? qs('employee_types').split(',') : [],
+      company_name: qs('company_name') || '',
+    };
+
+    fetch(apiBase + '/absent-report-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload),
+    })
+    .then(r => r.json())
+    .then(render)
+    .catch(err => { document.getElementById('tbody').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:20px;color:#b91c1c">Failed to load: ' + esc(err.message) + '</td></tr>'; });
+
+    function render(data) {
+      const c = data.company || {}, p = data.period || {}, s = data.summary || {}, rows = data.rows || [];
+
+      document.getElementById('company-initials').textContent = c.initials || '—';
+      document.getElementById('company-name').textContent = c.name || '—';
+      document.getElementById('company-branch').textContent = c.branch_name || '';
+
+      document.getElementById('date-label').textContent = (p.date_label || p.date || '—') + ' (' + (p.day_name || '') + ')';
+      document.getElementById('branches-label').textContent = p.branches_label || 'All Branches';
+      document.getElementById('gen-time').textContent = p.generated_at || '';
+      document.getElementById('status-text').textContent = (s.absent_count || 0) + ' ABSENT OUT OF ' + (s.total_employees || 0) + ' EMPLOYEES';
+
+      document.body.dataset.totalCount = String(s.absent_count ?? 0);
+      document.body.dataset.totalEmployees = String(s.total_employees ?? 0);
+      document.getElementById('c-total').textContent = s.total_employees ?? '—';
+      document.getElementById('c-total-sub').textContent = 'Active across ' + (s.branches_count || 0) + ' branches';
+      document.getElementById('c-absent').textContent = (s.absent_count ?? '—') + (s.absent_pct != null ? ' (' + s.absent_pct + '%)' : '');
+      document.getElementById('c-approved').textContent = s.approved_count ?? '—';
+      document.getElementById('c-unapproved').textContent = s.unapproved_count ?? '—';
+
+      const tbody = document.getElementById('tbody');
+      if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:30px;color:#6b7280">No absences for this date.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = rows.map((r, i) => `
+        <tr>
+          <td>${i + 1}</td>
+          <td>
+            <div class="emp-cell">
+              <div class="emp-avatar ${avatarColor(i)}">${esc(r.initials)}</div>
+              <div>
+                <div class="emp-name">${esc(r.name)}</div>
+                <div class="emp-id">${esc(r.emp_id)}</div>
+              </div>
+            </div>
+          </td>
+          <td>${esc(r.designation)}</td>
+          <td class="bds">
+            <div class="b">${esc(r.branch)}</div>
+            <div class="d">${esc(r.dept)}</div>
+            <div class="s">${esc(r.shift_name)} · ${esc(r.shift_time)}</div>
+          </td>
+          <td class="contact">
+            <div class="p">${esc(r.phone)}</div>
+            <div class="e">${esc(r.email)}</div>
+          </td>
+          <td><span class="pill ${pillClass(r.absent_type)}">${esc(r.absent_type)}</span></td>
+          <td><span class="streak ${streakClass(r.streak)}">${r.streak ?? 0}</span></td>
+          <td>${r.last_present ? esc(r.last_present) : '—'}</td>
+        </tr>
+      `).join('');
+    }
+  </script>
+</body>
+</html>

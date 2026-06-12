@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Attendance Report</title>
+<style>
+    @page { size: A4 landscape; margin: 10mm 10mm 18mm 10mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: Roboto, "Segoe UI", -apple-system, BlinkMacSystemFont, "Liberation Sans", "Helvetica Neue", Arial, sans-serif; }
+
+    body { font-size: 9pt; color: #1f2937; line-height: 1.4; background: #fff; font-weight: normal; }
+
+    .page {
+        page-break-after: always;
+        page-break-before: always;
+    }
+    .page:first-child { page-break-before: auto; }
+    .page:last-child { page-break-after: auto; }
+
+    /* ============== HEADER ============== */
+    .page-header { width: 100%; border-collapse: collapse; margin-bottom: 14px; }
+    .page-header td { border: none; padding: 0; vertical-align: middle; }
+    .header-top { padding: 4px 0 14px 0; }
+
+    .brand-row { display: inline-table; }
+    .brand-row .brand-cell { display: table-cell; vertical-align: middle; }
+    .brand-mark {
+        width: 56px; height: 56px;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        border-radius: 12px; text-align: center; line-height: 56px;
+        color: #fff; font-weight: 400; font-size: 16pt; letter-spacing: 0.5px;
+        box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+    }
+    /* When real logo image present: clean white frame, subtle ring, soft shadow */
+    .brand-mark.has-img {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+        padding: 4px;
+        line-height: normal;
+    }
+    .brand-mark.has-img img {
+        width: 100%; height: 100%;
+        border-radius: 6px;
+        object-fit: contain;
+        display: block;
+    }
+    .brand-cell.brand-text { padding-left: 14px; }
+    .company-name { font-weight: 400; font-size: 14pt; color: #0f172a; letter-spacing: 0.3px; line-height: 1.15; }
+    .company-tagline { font-size: 7pt; color: #475569; font-weight: 400; text-transform: uppercase; letter-spacing: 1.2px; margin-top: 2px; }
+    .company-meta { font-size: 7.5pt; color: #64748b; line-height: 1.4; margin-top: 4px; }
+
+    .header-meta { text-align: right; border-left: 1px solid #e2e8f0; padding-left: 16px; }
+    .header-meta .meta-row { font-size: 7.5pt; color: #64748b; line-height: 1.7; }
+    .header-meta .meta-row .meta-label { color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px; font-size: 6.5pt; font-weight: 400; margin-right: 8px; }
+    .header-meta .meta-row .meta-value { color: #0f172a; font-weight: 400; font-size: 8pt; }
+
+    .header-divider { height: 1px; background: #94a3b8; margin: 0 0 12px 0; }
+
+    .report-title-band {
+        background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+        border-radius: 6px;
+        padding: 10px 16px 12px 16px;
+        text-align: center;
+    }
+    .report-title-band .title { font-size: 13pt; font-weight: 400; color: #1e1b4b; text-transform: uppercase; letter-spacing: 2px; }
+    .report-title-band .subtitle { font-size: 9pt; color: #475569; margin-top: 6px; font-weight: 400; }
+    .report-title-band .subtitle .shift-tag { color: #4338ca; font-weight: 400; }
+    .report-title-band .subtitle .dot { color: #c4b5fd; margin: 0 8px; }
+    .report-title-band .subtitle .day-pill {
+        color: #475569; font-weight: 400; font-size: 9pt;
+    }
+
+    /* ============== SUMMARY CARDS ============== */
+    .summary-cards { width: 100%; border-collapse: separate; border-spacing: 6px 0; margin: 10px 0 12px 0; }
+    .summary-cards td { border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; background: #fff; vertical-align: middle; overflow: hidden; }
+    .summary-cards .label { display: inline-block; font-size: 7.5pt; font-weight: 400; letter-spacing: 0.5px; margin-right: 10px; }
+    .summary-cards .count { display: inline-block; float: right; font-size: 13pt; font-weight: 400; color: #0f172a; line-height: 1; }
+    .summary-cards .lbl-P { color: #16a34a; }
+    .summary-cards .lbl-A { color: #dc2626; }
+    .summary-cards .lbl-O { color: #64748b; }
+    .summary-cards .lbl-L { color: #ca8a04; }
+    .summary-cards .lbl-H { color: #7c3aed; }
+    .summary-cards .lbl-M { color: #ea580c; }
+    .summary-cards .lbl-U { color: #64748b; }
+
+    /* ============== TABLE ============== */
+    .data-table { width: 100%; border-collapse: collapse; margin-top: 4px; table-layout: fixed; }
+    .data-table thead { display: table-header-group; }
+    .data-table tbody td, .data-table thead th { word-wrap: break-word; overflow-wrap: break-word; }
+    .data-table thead th {
+        background: #f8fafc;
+        border-top: 1px solid #cbd5e1;
+        border-bottom: 1px solid #cbd5e1;
+        color: #0f172a;
+        padding: 6px 5px;
+        font-weight: 400;
+        font-size: 8.5pt;
+        text-align: center;
+    }
+    .data-table thead th.col-emp,
+    .data-table thead th.col-shift { text-align: left; }
+    .data-table thead th.col-emp { padding-left: 42px; } /* align with name (after 36px avatar + gap) */
+    /* All headers black — no colored emphasis */
+
+    .data-table tbody td {
+        padding: 5px 5px;
+        border-bottom: 1px solid #e5e7eb;
+        vertical-align: middle;
+        text-align: center;
+        font-size: 8.5pt;
+        color: #374151;
+    }
+    .data-table tbody td.col-emp,
+    .data-table tbody td.col-shift { text-align: left; }
+    .data-table tbody tr { page-break-inside: avoid; }
+
+    .emp-inner { border: none; border-collapse: collapse; }
+    .emp-inner td { border: none; padding: 0; vertical-align: middle; background: none; }
+    .emp-photo {
+        width: 26px; height: 26px; border-radius: 13px; background: #e5e7eb;
+        text-align: center; line-height: 26px; color: #6b7280; font-size: 9pt; overflow: hidden;
+    }
+    .emp-photo img { width: 26px; height: 26px; border-radius: 13px; object-fit: cover; }
+    .emp-name { font-size: 8.5pt; font-weight: 400; color: #0f172a; line-height: 1.2; }
+    .emp-dept { font-size: 7.5pt; color: #475569; line-height: 1.2; display: inline; }
+    .emp-dept::after { content: " | "; color: #cbd5e1; }
+    .emp-id { font-size: 7.5pt; color: #6b7280; line-height: 1.2; display: inline; }
+
+    .shift-time { font-size: 8.5pt; color: #0f172a; line-height: 1.2; font-weight: 400; }
+    .shift-name { font-size: 7.5pt; color: #6b7280; line-height: 1.2; }
+
+    .punch-time { font-size: 8.5pt; color: #0f172a; line-height: 1.2; font-weight: 400; }
+    .punch-dev  { font-size: 7pt;   color: #94a3b8; line-height: 1.2; margin-bottom: 4px; }
+    .punch-dev-last { font-size: 7pt; color: #94a3b8; line-height: 1.2; }
+
+    .pair-time { font-size: 8.5pt; color: #0f172a; line-height: 1.2; font-weight: 400; }
+    .pair-type { font-size: 7pt;   color: #94a3b8; line-height: 1.2; }
+
+    .dash { color: #9ca3af; }
+
+    .st-P  { color: #16a34a; font-weight: 400; font-size: 8pt; }
+    .st-A  { color: #dc2626; font-weight: 400; font-size: 8pt; }
+    .st-O  { color: #2563eb; font-weight: 400; font-size: 8pt; }
+    .st-L  { color: #ca8a04; font-weight: 400; font-size: 8pt; }
+    .st-H  { color: #7c3aed; font-weight: 400; font-size: 8pt; }
+    .st-M  { color: #ea580c; font-weight: 400; font-size: 8pt; }
+    .st-MS { color: #ea580c; font-weight: 400; font-size: 8pt; }
+
+    .page-footer { width: 100%; border-collapse: collapse; border-top: 1px solid #cbd5e1; padding-top: 8px; margin-top: 18px; }
+    .page-footer td { border: none; padding: 0; vertical-align: middle; font-size: 8pt; color: #6b7280; }
+    .page-footer .left { text-align: left; }
+    .page-footer .center { text-align: center; }
+    .page-footer .right { text-align: right; }
+
+    .loading, .error { padding: 60px; text-align: center; font-size: 14pt; color: #64748b; }
+    .error { color: #dc2626; }
+</style>
+</head>
+<body>
+<div id="root">
+    <div class="loading">Loading daily report…</div>
+</div>
+
+<script>
+(function() {
+    "use strict";
+
+    // ---- Parse URL params ----
+    var params = new URLSearchParams(window.location.search);
+    var apiBase      = params.get("api_base") || "";
+    var companyId    = params.get("company_id") || "";
+    var fromDate     = params.get("from_date") || params.get("date") || "";
+    var branchIds    = params.get("branch_ids") || "";
+    var departmentIds= params.get("department_ids") || "";
+    var employeeIds  = params.get("employee_ids") || "";
+    var companyName  = params.get("company_name") || "Company";
+
+    if (!apiBase || !companyId || !fromDate) {
+        showError("Missing required parameters (api_base, company_id, from_date).");
+        return;
+    }
+
+    // ---- Fetch data ----
+    var url = apiBase.replace(/\/$/, "") + "/report/daily_json" +
+        "?company_id=" + encodeURIComponent(companyId) +
+        "&from_date="  + encodeURIComponent(fromDate)  +
+        "&to_date="    + encodeURIComponent(fromDate)  +
+        (branchIds     ? "&branch_ids="     + encodeURIComponent(branchIds)     : "") +
+        (departmentIds ? "&department_ids=" + encodeURIComponent(departmentIds) : "") +
+        (employeeIds   ? "&employee_ids="   + encodeURIComponent(employeeIds)   : "");
+
+    fetch(url, { method: "GET", headers: { "Accept": "application/json" } })
+        .then(function(res) {
+            if (!res.ok) throw new Error("API " + res.status);
+            return res.json();
+        })
+        .then(function(data) {
+            if (!data || !Array.isArray(data.branches) || data.branches.length === 0) {
+                showError("No data for the selected date/filters.");
+                return;
+            }
+            render(data);
+        })
+        .catch(function(err) { showError("Failed to load: " + err.message); });
+
+    // ---- Helpers ----
+    function esc(s) {
+        return String(s == null ? "" : s).replace(/[&<>"']/g, function(c) {
+            return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+        });
+    }
+    function pad2(n) { return String(n).padStart(2, "0"); }
+
+    function statusLetter(s) {
+        switch (s) {
+            case "P": case "LC": case "EG": return "PRESENT";
+            case "A": return "ABSENT";
+            case "O": return "WEEKOFF";
+            case "L": return "LEAVE";
+            case "V": return "VACATION";
+            case "H": return "HOLIDAY";
+            case "M": return "MISSING";
+            case "ME": return "MANUAL";
+            default: return s || "---";
+        }
+    }
+    function statusClass(s) {
+        switch (s) {
+            case "P": case "LC": case "EG": return "st-P";
+            case "A": return "st-A"; case "O": return "st-O";
+            case "L": case "V": return "st-L"; case "H": return "st-H";
+            case "M": return "st-MS";
+            default: return "st-O";
+        }
+    }
+
+    // Helpers for the "worked less than scheduled" indicator.
+    // Applies to single/night shifts only — only renderSingleTable uses this.
+    function toMin(t) {
+        if (!t) return NaN;
+        var parts = String(t).split(":").map(function(n) { return parseInt(n, 10); });
+        if (isNaN(parts[0])) return NaN;
+        return (parts[0] || 0) * 60 + (parts[1] || 0);
+    }
+    function shiftWorkingHours(e) {
+        if (e && e.shift && e.shift.working_hours) return e.shift.working_hours;
+        if (e && e.working_hours) return e.working_hours;
+        // Fall back: derive duration from "HH:MM - HH:MM" shift_time.
+        if (e && e.shift_time) {
+            var parts = String(e.shift_time).split("-");
+            if (parts.length === 2) {
+                var startM = toMin(parts[0].trim());
+                var endM = toMin(parts[1].trim());
+                if (!isNaN(startM) && !isNaN(endM)) {
+                    var diff = endM >= startM ? endM - startM : (24 * 60 - startM) + endM;
+                    var h = Math.floor(diff / 60), m = diff % 60;
+                    return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+                }
+            }
+        }
+        return null;
+    }
+    function isShortOfShift(e) {
+        var s = e && e.status;
+        if (s !== "P" && s !== "LC" && s !== "EG") return false;
+        var worked = e && e.total_hrs;
+        var sched = shiftWorkingHours(e);
+        if (!worked || !sched) return false;
+        var wM = toMin(worked), sM = toMin(sched);
+        if (isNaN(wM) || isNaN(sM)) return false;
+        return wM < sM;
+    }
+    function shortStar(e) {
+        return isShortOfShift(e) ? ' <span style="color:#dc2626;font-weight:700;margin-left:2px;">&#9733;</span>' : '';
+    }
+
+    var sectionLabel = {
+        single_night: "Single, Night &amp; Flexible Shift",
+        split:        "Split Shift",
+        multi:        "Multi Shift"
+    };
+
+    // ---- Renderer ----
+    function render(data) {
+        var html = "";
+        var pageNum = 0;
+        var totalPages = 0;
+
+        // First count total pages
+        data.branches.forEach(function(b) {
+            ["single_night", "split", "multi"].forEach(function(key) {
+                if (b.sections[key] && b.sections[key].count > 0) totalPages++;
+            });
+        });
+
+        data.branches.forEach(function(branch) {
+            ["single_night", "split", "multi"].forEach(function(key) {
+                var sec = branch.sections[key];
+                if (!sec || sec.count === 0) return;
+                pageNum++;
+                html += renderPage(data, branch, key, sec, pageNum, totalPages);
+            });
+        });
+
+        document.getElementById("root").innerHTML = html;
+    }
+
+    function renderPage(data, branch, sectionKey, sec, pageNum, totalPages) {
+        var company = data.company || {};
+        var period  = data.period  || {};
+        var hasLogo = !!company.logo;
+
+        var header =
+            '<table class="page-header">' +
+              '<tr>' +
+                '<td class="header-top" style="width: 60%;">' +
+                  '<table class="brand-row"><tr>' +
+                    '<td class="brand-cell">' +
+                      (hasLogo
+                        ? '<div class="brand-mark has-img"><img src="' + esc(company.logo) + '"></div>'
+                        : '<div class="brand-mark">' + esc((company.name || "C").substr(0, 2).toUpperCase()) + '</div>') +
+                    '</td>' +
+                    '<td class="brand-cell brand-text">' +
+                      '<div class="company-name">' + esc((company.name || "Company").toUpperCase()) + '</div>' +
+                      '<div class="company-tagline">Workforce Management System</div>' +
+                      '<div class="company-meta">' + esc(branch.branch_name) + '</div>' +
+                    '</td>' +
+                  '</tr></table>' +
+                '</td>' +
+                '<td class="header-top header-meta" style="width: 40%;">' +
+                  '<div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">' + esc(period.date) + '</span></div>' +
+                  '<div class="meta-row"><span class="meta-label">Branch</span><span class="meta-value">' + esc(branch.branch_name) + '</span></div>' +
+                  '<div class="meta-row"><span class="meta-label">Generated</span><span class="meta-value">' + esc(data.generated_at || "") + '</span></div>' +
+                '</td>' +
+              '</tr>' +
+              '<tr><td colspan="2"><div class="header-divider"></div></td></tr>' +
+              '<tr><td colspan="2">' +
+                '<div class="report-title-band">' +
+                  '<div class="title">Daily Attendance Report</div>' +
+                  '<div class="subtitle">' +
+                    esc(period.date) +
+                    '<span class="dot">&bull;</span>' +
+                    '<span class="day-pill">' + esc(period.day) + '</span>' +
+                  '</div>' +
+                '</div>' +
+              '</td></tr>' +
+            '</table>';
+
+        var s = sec.summary || {};
+        var summaryCards =
+            '<table class="summary-cards"><tr>' +
+              '<td><span class="label lbl-P">PRESENT</span><span class="count">' + pad2(s.present || 0) + '</span></td>' +
+              '<td><span class="label lbl-A">ABSENT</span><span class="count">'  + pad2(s.absent  || 0) + '</span></td>' +
+              '<td><span class="label lbl-O">WEEKOFF</span><span class="count">' + pad2(s.weekoff || 0) + '</span></td>' +
+              '<td><span class="label lbl-L">LEAVE</span><span class="count">'   + pad2(s.leave   || 0) + '</span></td>' +
+              '<td><span class="label lbl-H">HOLIDAY</span><span class="count">' + pad2(s.holiday || 0) + '</span></td>' +
+              '<td><span class="label lbl-M">MISSING</span><span class="count">' + pad2(s.missing || 0) + '</span></td>' +
+              '<td><span class="label lbl-U">MANUAL</span><span class="count">'  + pad2(s.manual  || 0) + '</span></td>' +
+            '</tr></table>';
+
+        var table;
+        if (sectionKey === "single_night")  table = renderSingleTable(sec.employees);
+        else if (sectionKey === "split")    table = renderSplitTable(sec.employees);
+        else                                table = renderMultiTable(sec.employees);
+
+        // No inline footer — Puppeteer adds a running footer on every physical page
+        return '<div class="page">' + header + summaryCards + table + '</div>';
+    }
+
+    function empCell(e) {
+        var initial = (e.name || "?").charAt(0).toUpperCase();
+        return '<td class="col-emp"><table class="emp-inner"><tr>' +
+                 '<td style="width: 36px;">' +
+                   (e.profile
+                     ? '<div class="emp-photo"><img src="' + esc(e.profile) + '"></div>'
+                     : '<div class="emp-photo">' + esc(initial) + '</div>') +
+                 '</td>' +
+                 '<td>' +
+                   '<div class="emp-name">' + esc(e.name) + '</div>' +
+                   '<div>' +
+                     (e.department ? '<span class="emp-dept">' + esc(e.department) + '</span>' : '') +
+                     '<span class="emp-id">' + esc(e.employee_id) + '</span>' +
+                   '</div>' +
+                 '</td>' +
+               '</tr></table></td>';
+    }
+
+    function shiftCell(e) {
+        // Top line: shift time "HH:MM - HH:MM" (fall back to shift name if no time)
+        var top    = e.shift_time || e.shift_name || '---';
+        // Bottom line: combined shift name + type, e.g. "Day Duty single", "Night Shift"
+        var bottom = e.shift_label || e.shift_type || '';
+        return '<td class="col-shift">' +
+                 '<div class="shift-time">' + esc(top) + '</div>' +
+                 '<div class="shift-name">' + esc(bottom) + '</div>' +
+               '</td>';
+    }
+
+    function renderSingleTable(emps) {
+        var rows = emps.map(function(e) {
+            var inCell  = e.in  ? '<div class="punch-time">' + esc(e.in)  + '</div>' + (e.device_in  ? '<div class="punch-dev-last">' + esc(e.device_in)  + '</div>' : '') : '<span class="dash">---</span>';
+            var outCell = e.out ? '<div class="punch-time">' + esc(e.out) + '</div>' + (e.device_out ? '<div class="punch-dev-last">' + esc(e.device_out) + '</div>' : '') : '<span class="dash">---</span>';
+            return '<tr>' +
+                empCell(e) + shiftCell(e) +
+                '<td>' + inCell + '</td>' +
+                '<td>' + outCell + '</td>' +
+                '<td>' + (e.late  || '---') + '</td>' +
+                '<td>' + (e.early || '---') + '</td>' +
+                '<td>' + (e.ot    || '---') + '</td>' +
+                '<td>' + (e.total_hrs || '---') + '</td>' +
+                '<td><span class="' + statusClass(e.status) + '">' + statusLetter(e.status) + '</span>' + shortStar(e) + '</td>' +
+              '</tr>';
+        }).join("");
+
+        return '<table class="data-table"><thead><tr>' +
+                 '<th class="col-emp" style="width: 18%;">EMPLOYEE</th>' +
+                 '<th class="col-shift" style="width: 18%;">SHIFT DETAILS</th>' +
+                 '<th style="width: 9%;">IN TIME</th>' +
+                 '<th style="width: 9%;">OUT TIME</th>' +
+                 '<th class="h-late"  style="width: 9%;">LATE IN</th>' +
+                 '<th class="h-early" style="width: 9%;">EARLY GO</th>' +
+                 '<th class="h-ot"    style="width: 9%;">OVERTIME</th>' +
+                 '<th style="width: 9%;">WORK HRS</th>' +
+                 '<th style="width: 10%;">STATUS</th>' +
+               '</tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function renderSplitTable(emps) {
+        var rows = emps.map(function(e) {
+            var insArr = [], outsArr = [];
+            (e.logs || []).forEach(function(l) {
+                if (l.in)  insArr.push({ t: l.in,  d: l.device_in  || e.device_in  || "" });
+                if (l.out) outsArr.push({ t: l.out, d: l.device_out || e.device_out || "" });
+            });
+            if (!insArr.length && !outsArr.length) {
+                if (e.in)  insArr.push({ t: e.in,  d: e.device_in  || "" });
+                if (e.out) outsArr.push({ t: e.out, d: e.device_out || "" });
+            }
+            function renderStack(arr) {
+                if (!arr.length) return '<span class="dash">---</span>';
+                return arr.map(function(p, i) {
+                    var cls = (i === arr.length - 1) ? 'punch-dev-last' : 'punch-dev';
+                    return '<div class="punch-time">' + esc(p.t) + '</div>' +
+                           '<div class="' + cls + '">' + esc(p.d) + '</div>';
+                }).join("");
+            }
+            return '<tr>' +
+                empCell(e) + shiftCell(e) +
+                '<td>' + renderStack(insArr)  + '</td>' +
+                '<td>' + renderStack(outsArr) + '</td>' +
+                '<td>' + (e.late  || '---') + '</td>' +
+                '<td>' + (e.early || '---') + '</td>' +
+                '<td>---</td>' +
+                '<td>' + (e.ot    || '---') + '</td>' +
+                '<td>' + (e.total_hrs || '---') + '</td>' +
+                '<td><span class="' + statusClass(e.status) + '">' + statusLetter(e.status) + '</span></td>' +
+              '</tr>';
+        }).join("");
+
+        return '<table class="data-table"><thead><tr>' +
+                 '<th class="col-emp" style="width: 16%;">EMPLOYEE</th>' +
+                 '<th class="col-shift" style="width: 11%;">SHIFT DETAILS</th>' +
+                 '<th style="width: 9%;">IN TIME</th>' +
+                 '<th style="width: 9%;">OUT TIME</th>' +
+                 '<th class="h-late"  style="width: 8%;">LATE IN</th>' +
+                 '<th class="h-early" style="width: 8%;">EARLY GO</th>' +
+                 '<th class="h-lost"  style="width: 8%;">LOST HRS</th>' +
+                 '<th class="h-ot"    style="width: 8%;">OVERTIME</th>' +
+                 '<th style="width: 8%;">WORK HRS</th>' +
+                 '<th style="width: 8%;">STATUS</th>' +
+               '</tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function renderMultiTable(emps) {
+        var rows = emps.map(function(e) {
+            var pairs = [];
+            (e.logs || []).forEach(function(l) {
+                if (!l.in && !l.out) return;
+                pairs.push({ in: l.in, out: l.out, din: l.device_in || e.device_in || "", dout: l.device_out || e.device_out || "" });
+            });
+            while (pairs.length < 5) pairs.push(null);
+            pairs = pairs.slice(0, 5);
+
+            var pairCells = pairs.map(function(p) {
+                if (!p || (!p.in && !p.out)) return '<td><span class="dash">---</span></td>';
+                return '<td>' +
+                         '<div class="pair-time">' + esc(p.in || '--:--') + ' - ' + esc(p.out || '--:--') + '</div>' +
+                         '<div class="pair-type">' + esc(p.din || '---') + ' / ' + esc(p.dout || '---') + '</div>' +
+                       '</td>';
+            }).join("");
+
+            return '<tr>' + empCell(e) + shiftCell(e) + pairCells +
+                '<td>' + (e.ot || '---') + '</td>' +
+                '<td>' + (e.total_hrs || '---') + '</td>' +
+                '<td><span class="' + statusClass(e.status) + '">' + statusLetter(e.status) + '</span></td>' +
+              '</tr>';
+        }).join("");
+
+        return '<table class="data-table"><thead><tr>' +
+                 '<th class="col-emp" style="width: 16%;">EMPLOYEE</th>' +
+                 '<th class="col-shift" style="width: 12%;">SHIFT DETAILS</th>' +
+                 '<th style="width: 11%;">IN/OUT1</th>' +
+                 '<th style="width: 11%;">IN/OUT2</th>' +
+                 '<th style="width: 11%;">IN/OUT3</th>' +
+                 '<th style="width: 11%;">IN/OUT4</th>' +
+                 '<th style="width: 11%;">IN/OUT5</th>' +
+                 '<th class="h-ot" style="width: 6%;">OT</th>' +
+                 '<th style="width: 6%;">TOTAL</th>' +
+                 '<th style="width: 5%;">STATUS</th>' +
+               '</tr></thead><tbody>' + rows + '</tbody></table>';
+    }
+
+    function showError(msg) {
+        document.getElementById("root").innerHTML = '<div class="error">' + esc(msg) + '</div>';
+    }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,484 @@
+﻿<!DOCTYPE html
+	PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+	<title>WebSocket客户端</title>
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta http-equiv="Content-Language" content="zh-CN" />
+	<meta name="renderer" content="webkit">
+	<!--  <script type="text/javascript" src="jquery-3.1.0.min.js"></script>  -->
+	<script type="text/javascript" src="spark-md5.min.js"></script>
+</head>
+
+<body>
+	<h3>SDK Live Logs from Devices </h3>
+	<table>
+
+		<tr>
+			<td>
+				<label>Filter Text</label>
+			</td>
+			<td>
+				<input style="width:500px" placeholder="Enter Serial Number or UserId or Any Text To Filter" type="text"
+					id="filter" value />
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<label>SDK Address</label>
+			</td>
+			<td>
+				<input id="weburl" style="width:300px" type="text" value="wss://sdk.mytime2cloud.com/WebSocket" />
+			</td>
+		</tr>
+		<tr>
+			<td>
+
+			</td>
+			<td>
+
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<button onclick="ConnectWebSocket()">Click to Connect Web Socket</button>
+			</td>
+			<td>
+				<button onclick="CloseWebSocket()">Click to Close Web Socket
+				</button><br />
+			</td>
+		</tr>
+		<tr>
+			<td>
+				<label>WebSocket Connection Status：</label>
+			</td>
+			<td style="color:red">
+				<label id="state">未连接</label>
+			</td>
+		</tr>
+	</table>
+
+	<!-- <button onclick="SendMessage()">发消息</button><br /> -->
+
+	<br />
+
+	<!--  <label>发送消息：</label>  <input id="message" style="width:300px" type="text"/><br/>
+    <button onclick="SendMessage()">发消息</button><br/>
+	
+	<button onclick="SendBigMessage()">发送大数据包</button><label>循环次数：</label>  <input id="txtMsgCount" style="width:300px" type="text" value = "10" /><br/><br/>
+	<button onclick="SendFile()">发送文件</button><button onclick="GetFileDetail()">文件信息</button><label>选择文件：</label>  <input type="file" id="SelectFile" /><br/><br/>
+	
+	 -->
+
+	<label>接收消息：</label><button onclick="ClearText()">Clear Log</button><br />
+	<input type="checkbox" id="chkShowLog" value="显示日志" onclick="chanageShowLogFunc()" checked="checked" />显示日志<br />
+	<textarea id="debug" rows="300" cols="23000"></textarea>
+	<script type="text/javascript">
+		var socket = null;
+		var socketState = 0;
+		var textarea = document.getElementById("debug");
+		var txtMessage = document.getElementById("message");
+		var txtUrl = document.getElementById("weburl");
+		var bShowLog = true;
+
+		document.addEventListener("DOMContentLoaded", function (event) {
+			ConnectWebSocket();
+		});
+
+		function chanageShowLogFunc() {
+			var chkShowLog = document.getElementById("chkShowLog");
+			bShowLog = chkShowLog.checked;
+		}
+
+
+		function ClearText() {
+			textarea.value = "";
+		}
+		function ConnectWebSocket() {
+			try {
+				if (socketState != 0) {
+					return;
+				}
+				socketState = 2;
+				ShowWebSocketState();
+				// 创建一个Socket实例
+				socket = new WebSocket(txtUrl.value);
+
+			}
+			catch (e) {
+				socketState = 0;
+				textarea.value = "打开websocket失败!" + e;
+				ShowWebSocketState();
+				return;
+			}
+
+			socket.onerror = function (event) {
+				socketState = 0;
+				textarea.value = "连接服务器失败!";
+				socket.close();
+				socket = null;
+				ShowWebSocketState();
+			}
+
+			// 打开Socket 
+			socket.onopen = function (event) {
+				socketState = 1;
+
+				// 发送一个初始化消息
+				//socket.send('我是Html客户端'); 
+				ShowWebSocketState();
+			}
+
+			// 监听Socket的关闭
+			socket.onclose = function (event) {
+				socketState = 0
+				textarea.value = "已关闭连接" + event + "\n" + textarea.value;
+				closesocket();
+				ShowWebSocketState();
+			};
+
+			// 监听消息
+			socket.onmessage = function (event) {
+				// if(bShowLog)
+				// 	textarea.value = "接收：" + event.data + "\n" + textarea.value; 
+				if (bShowLog) {
+
+
+					var filter = document.getElementById("filter").value;
+
+					const mainString = event.data;
+					const searchString = filter;
+					console.log("searchString", searchString);
+
+					if (searchString != '') {
+						const position = mainString.indexOf(searchString);
+						if (position !== -1) {
+							console.log(`"${searchString}" found at position ${position}`);
+							textarea.value = "接收：" + event.data + "\n" + textarea.value;
+							if (event.data.indexOf('Photo') !== -1) {
+
+								const jsonData = JSON.parse(event.data).Data;
+
+								const { UserCode, SN, RecordDate, RecordNumber, RecordCode } = jsonData;
+								textarea.value = " \n ---------------------------------------------- \n Photo Recorded : Device " + SN + ", User Id " + UserCode + ", Time " + RecordDate + "\n------------------------------ \n\n\n" + textarea.value;
+							}
+
+						} else {
+							//console.log(`"${searchString}" not found in the string`);
+						}
+					}
+					else {
+
+						if (event.data.indexOf('Photo') !== -1) {
+
+							const jsonData = JSON.parse(event.data).Data;
+
+							const { UserCode, SN, RecordDate, RecordNumber, RecordCode } = jsonData;
+							textarea.value = " \n ---------------------------------------------- \n Photo Recorded : Device " + SN + ", User Id " + UserCode + ", Time " + RecordDate + "\n------------------------------ \n\n\n" + textarea.value;
+						}
+						textarea.value = "接收：" + event.data + "\n" + textarea.value;
+					}
+
+				}
+			};
+
+
+			// 关闭Socket.... 
+			//socket.close() 
+		};
+
+
+		function SendMessage() {
+			var v = txtMessage.value;
+			if (v.length == 0) {
+				return;
+			}
+			if (socket == null) {
+				return;
+			}
+			// 发送一个初始化消息
+			socket.send(v);
+		}
+
+		function SendBigMessage() {
+			var txtMsgCount = document.getElementById("txtMsgCount");
+
+			var v = "AAAAACQAAAD8AAAAIAAAAPwAAAAYAAAAQAAAAGwAAABQAAAAAAAAAAAAAAAIAAAAyAAAAMgAAAB4AAAAeAAAAHgAAAB4AAAAeAAAAHgAAAH8AAABmAAAAgAAAAAABAAAAAAAAAAAAAH8AAAACAg8PAQFAASwBQAEsAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABRApQACAAAAAAAAAAAAAAAAAAAAAAAAAAAAjQIAAE4BAAAKAAAAAAAAAAkAAAACAAAAHgAAAB4AAAAABQMCBgEHBAABWkAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAR0AZE4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIyMqKnJwdABBdXRvAAAjIyMjCgAAAK7IMwEBAAEAAQAAAAAAAAAAAAAAAAAAAKUAAAD/////////////////////////////////////////////////////////////////////////////////////SFVBV0VJAABJSSoACAAAAAQAAAAEAAEAAAA+AAAAAAEEAAEAAABQAAAAAAIEAAEAAAAXAAAAAgIEAAEAAAAAAAAAAAAAAAEAAQAEAAEAAAAAAQBIAAAAAAgAAQEEAAEAAAAAAQBIAgEEAAEAAAABAAAAAwEHAAEAAABkAAAABAEHAAEAAAAAAAAABQEHAAgAAAC2AAAABgEHAAQAAAARBcgGBwEHAAQAAABhBr0GCAEHAAQAAACxBUEIAAAAAHsEEwY1B8wIAAAAhwAAAGQAAABfAAAAZAAAAKAAAABkAAAAhwAAAGQyMDIwOjAzOjAzIDE3OjA0OjMwADIwMjA6MDM6MDMgMTc6MDQ6MzAANDEzOTAwAAA0MTM5MDAAADQxMzkwMAAAAAIAAQACAAAABFI5OAAAAgAHAAAABDAxMDAAAAAAAAkBAAADAAAAAQGAAAABAQADAAAAAQIAAAABAwADAAAAAQAGAAABEgADAAAAAQAAAAABGgAFAAAAAQAAIggBGwAFAAAAAQAAIhABKAADAAAAAQACAAACAQAEAAAAAQAAIhgCAgAEAAAAAQAASeoAAAAAAAAASAAAAAEAAABIAAAAAf/Y/+AAEEpGSUYAAQEAAAEAAQAA/9sAQwAKBwcIBwYKCAgICwoKCw4YEA4NDQ4dFRYRGCMfJSQiHyI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";
+			var iMsgCount = parseInt(txtMsgCount.value);
+			var lst = [];
+			for (var i = 0; i < iMsgCount; i++) {
+				socket.send(v);
+				//lst[i]=v;
+			}
+
+			// 发送一个初始化消息
+			//socket.send(lst.join()); 
+		}
+		function GetFileDetail() {
+			var txtfile = document.getElementById("SelectFile");
+			var file = txtfile.files[0];
+			if (!file) {
+				return;
+			}
+			console.log("文件名：" + file.name);
+			console.log("文件长度：" + file.size);
+
+
+
+			var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
+				chunkSize = 2097152, // read in chunks of 2MB
+				chunks = Math.ceil(file.size / chunkSize),
+				currentChunk = 0,
+				spark = new SparkMD5.ArrayBuffer(),
+				frOnload = function (e) {
+					console.log("\nread chunk number " + parseInt(currentChunk + 1) + " of " + chunks);
+					spark.append(e.target.result); // append array buffer
+					currentChunk++;
+					if (currentChunk < chunks)
+						loadNext();
+					else
+						console.log("\nfinished loading :)\n\ncomputed hash:\n" + spark.end() + "\n\nyou can select another file now!\n");
+				},
+				frOnerror = function () {
+					console.log("\noops, something went wrong.");
+				};
+			function loadNext() {
+				var fileReader = new FileReader();
+				fileReader.onload = frOnload;
+				fileReader.onerror = frOnerror;
+				var start = currentChunk * chunkSize,
+					end = ((start + chunkSize) >= file.size) ? file.size : start + chunkSize;
+				fileReader.readAsArrayBuffer(blobSlice.call(file, start, end));
+			};
+			loadNext();
+
+		}
+
+		function GetFileMd5(arrayBuffer) {
+			var iFileSize = arrayBuffer.byteLength;
+
+
+
+			var chunkSize = 2097152, // read in chunks of 2MB
+				chunks = Math.ceil(iFileSize / chunkSize),
+				currentChunk = 0,
+				spark = new SparkMD5.ArrayBuffer(),
+
+				frOnload = function (e) {
+					console.log("\nread chunk number " + parseInt(currentChunk + 1) + " of " + chunks);
+					spark.append(e); // append array buffer
+					currentChunk++;
+					if (currentChunk < chunks)
+						return loadNext();
+					else
+						return spark.end();
+				};
+
+			function loadNext() {
+				var start = currentChunk * chunkSize,
+					end = ((start + chunkSize) >= iFileSize) ? iFileSize : start + chunkSize;
+				return frOnload(arrayBuffer.slice(start, end));
+			};
+			return loadNext();
+
+
+		}
+
+
+
+
+
+
+		function CloseWebSocket() {
+			closesocket();
+			socketState = 0;
+			ShowWebSocketState();
+		}
+		function closesocket() {
+			if (socket != null) {
+				socket.close();
+				socket = null;
+
+			}
+		}
+
+		function ShowWebSocketState() {
+			var lbl = document.getElementById("state");
+			var s = "";
+			switch (socketState) {
+				case 0:
+					s = "未连接"; break;
+				case 1:
+					s = "已连接"; break;
+				case 2:
+					s = "连接中..."; break;
+			}
+			lbl.innerText = s;
+
+		}
+
+		function SendFile() {
+			var txtfile = document.getElementById("SelectFile");
+			var file = txtfile.files[0];
+			if (!file) {
+				return;
+			}
+			if (socket == null) {
+				return;
+			}
+			sendBinary(file);
+		}
+
+
+
+		//合并类型化数组。
+		function concatenate(resultConstructor, ...arrays) {
+			let totalLength = 0;
+			for (let arr of arrays) {
+				totalLength += arr.byteLength;
+			}
+			let result = new resultConstructor(totalLength);
+			let offset = 0;
+			for (let arr of arrays) {
+				result.set(arr, offset);
+				offset += arr.byteLength;
+			}
+			return result;
+		}
+		//生成从minNum到maxNum的随机数
+		function randomNum(minNum, maxNum) {
+			switch (arguments.length) {
+				case 1:
+					return parseInt(Math.random() * minNum + 1, 10);
+					break;
+				case 2:
+					return parseInt(Math.random() * (maxNum - minNum + 1) + minNum, 10);
+					//或者 Math.floor(Math.random()*( maxNum - minNum + 1 ) + minNum );
+					break;
+				default:
+					return 0;
+					break;
+			}
+		}
+
+		function sendBinary(file) {
+
+
+			var fileReader = new FileReader();
+			fileReader.readAsArrayBuffer(file);
+			fileReader.onload = function () {
+				//文件内容的ArrayBuffer对象。
+				var arrayBuffer = fileReader.result;
+				//获取文件视图，用于读取文件内容。
+				var array = new Uint8Array(arrayBuffer);
+
+				var fileLen = array.byteLength;
+				console.log("文件长度：" + fileLen);
+
+				var sMD5 = GetFileMd5(arrayBuffer);
+				console.info("文件MD5", sMD5); // compute hash
+
+
+				//通讯标识
+				var oCMD = { "Method": "uploadFile", "fileMd5": sMD5 };
+				var strJson = JSON.stringify(oCMD);
+				var cmdLen = strJson.length;
+
+				//起始标记。
+				var packetBeginFlagArr = new Uint8Array(2);
+				packetBeginFlagArr[0] = 0x00;
+				packetBeginFlagArr[1] = 0x80;
+				//文件代码
+				var iFileCodeNum = randomNum(100, 1000000);
+				var fileCodeArr = UInt16ToBytes(iFileCodeNum);
+				console.info("文件代码", iFileCodeNum);
+				//包号
+				var packetNumArr = UInt16ToBytes(0);
+				//文件总长度
+				var fileLenArr = UInt32ToBytes(fileLen);
+				//控制命令长度
+				var cmdLenArr = UInt16ToBytes(cmdLen);
+				//控制命令
+				var cmdarr = new Uint8Array(cmdLen);
+				for (let i = 0; i < cmdLen; i++) {
+					cmdarr[i] = strJson.charCodeAt(i);
+				}
+
+				var packetFileLenMax = 122880;//5KB
+				var fileDataIndex = 0;
+
+				if (fileLen > packetFileLenMax) {
+					var packetBuf = array.slice(fileDataIndex, packetFileLenMax);
+					var PacketFileLenArr = UInt32ToBytes(packetFileLenMax);
+					fileDataIndex = packetFileLenMax;
+					//发送第一个数据包
+					var sendBuf = concatenate(Uint8Array, packetBeginFlagArr, fileCodeArr, packetNumArr, fileLenArr, cmdLenArr, cmdarr, PacketFileLenArr, packetBuf).buffer;
+					console.log("首包包长度：" + sendBuf.byteLength);
+					socket.send(sendBuf);
+					//发送后续数据包
+
+					var packetNum = 1;
+					while (1) {
+						var iSendFileLen = fileLen - fileDataIndex;
+						if (iSendFileLen > packetFileLenMax) iSendFileLen = packetFileLenMax;
+						if (iSendFileLen == 0) break;
+						PacketFileLenArr = UInt32ToBytes(iSendFileLen);
+						packetBuf = array.slice(fileDataIndex, fileDataIndex + iSendFileLen);
+						packetNumArr = UInt16ToBytes(packetNum);
+						sendBuf = concatenate(Uint8Array, packetBeginFlagArr, fileCodeArr, packetNumArr, PacketFileLenArr, packetBuf).buffer;
+						socket.send(sendBuf);
+						console.log("后续包: 包号：" + packetNum + "  包长度：" + sendBuf.byteLength);
+						fileDataIndex += iSendFileLen;
+						packetNum++;
+					}
+
+
+				}
+				else {
+					var PacketFileLenArr = UInt32ToBytes(fileLen);
+					var sendBuf = concatenate(Uint8Array, packetBeginFlagArr, fileCodeArr, packetNumArr, fileLenArr, cmdLenArr, cmdarr, PacketFileLenArr, array).buffer;
+					console.log("首包包长度：" + sendBuf.byteLength);
+
+					socket.send(sendBuf);
+				}
+			};
+
+			return true;
+		}
+
+		function UInt16ToBytes(val) {
+			var bytes = new Uint8Array(2);
+			bytes[0] = (val >> 8) & 0xff;//parseInt(val / 256);
+			bytes[1] = val & 0xff;
+			return bytes;
+		};
+
+
+		function UInt32ToBytes(val) {
+			var bytes = new Uint8Array(4);
+			bytes[0] = (val >> 24) & 0xff;
+			bytes[1] = (val >> 16) & 0xff;
+			bytes[2] = (val >> 8) & 0xff;
+			bytes[3] = val & 0xff;
+			return bytes;
+		};
+
+		//十进制数值数组转十六进制字符串
+		function ByteToHEX(bytes) {
+			var uintbytes = new Uint8Array(bytes);
+			var ilen = uintbytes.length;
+			var sHEXList = new Array(ilen);
+			var chr = "";
+			for (var i = 0; i < ilen; i++) {
+				chr = uintbytes[i].toString(16);
+				if (chr.length == 1) chr = '0' + chr;
+				sHEXList[i] = chr;
+			};
+			return sHEXList.join('');
+		};
+
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Daily Summary Report — Preview</title>
+    <style>
+        @page { size: A4 landscape; margin: 50px 40px 50px 40px; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            font-size: 9pt;
+            color: #1f2937;
+            line-height: 1.4;
+            background: #fff;
+            font-weight: normal;
+        }
+
+        /* ============== HEADER ============== */
+        .page-header {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 14px;
+        }
+        .page-header td { border: none; padding: 0; vertical-align: middle; }
+
+        .header-top { padding: 4px 0 14px 0; }
+
+        /* Brand block: logo + company info side by side */
+        .brand-row { display: inline-table; }
+        .brand-row .brand-cell { display: table-cell; vertical-align: middle; }
+        .brand-mark {
+            width: 56px; height: 56px;
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+            border-radius: 12px; text-align: center; line-height: 56px;
+            color: #fff; font-weight: 700; font-size: 16pt; letter-spacing: 0.5px;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.25);
+        }
+        .brand-cell.brand-text { padding-left: 14px; }
+        .company-name {
+            font-weight: 700; font-size: 14pt; color: #0f172a;
+            letter-spacing: 0.3px; line-height: 1.15;
+        }
+        .company-tagline {
+            font-size: 7pt; color: #7c3aed; font-weight: 600;
+            text-transform: uppercase; letter-spacing: 1.2px;
+            margin-top: 2px;
+        }
+        .company-meta { font-size: 7.5pt; color: #64748b; line-height: 1.4; margin-top: 4px; }
+        .company-meta .sep { color: #cbd5e1; margin: 0 5px; }
+
+        /* Right-side meta block — vertical divider + structured rows */
+        .header-meta { text-align: right; border-left: 1px solid #e2e8f0; padding-left: 16px; }
+        .header-meta .meta-row { font-size: 7.5pt; color: #64748b; line-height: 1.7; display: block; }
+        .header-meta .meta-row .meta-label {
+            color: #94a3b8; text-transform: uppercase; letter-spacing: 0.6px;
+            font-size: 6.5pt; font-weight: 600; margin-right: 8px;
+        }
+        .header-meta .meta-row .meta-value { color: #0f172a; font-weight: 600; font-size: 8pt; }
+
+        /* Accent divider */
+        .header-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, #e2e8f0 15%, #e2e8f0 85%, transparent 100%);
+            margin: 0 0 12px 0;
+        }
+
+        /* Title band — soft tinted card with left accent */
+        .report-title-band {
+            position: relative;
+            background: linear-gradient(135deg, #f5f3ff 0%, #faf5ff 100%);
+            border-left: 4px solid #7c3aed;
+            border-radius: 0 6px 6px 0;
+            padding: 10px 16px 12px 18px;
+            text-align: center;
+        }
+        .report-title-band .title {
+            font-size: 13pt; font-weight: 700; color: #1e1b4b;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+        .report-title-band .subtitle {
+            font-size: 9pt; color: #475569; margin-top: 6px; font-weight: 500;
+        }
+        .report-title-band .subtitle .shift-tag {
+            color: #4338ca; font-weight: 700;
+        }
+        .report-title-band .subtitle .dot { color: #c4b5fd; margin: 0 10px; }
+        .report-title-band .subtitle .day-pill {
+            display: inline-block; background: #4338ca; color: #fff;
+            padding: 2px 10px; border-radius: 10px;
+            font-weight: 600; font-size: 8pt; letter-spacing: 0.3px;
+        }
+
+        /* ============== TABLE ============== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+        }
+        .data-table thead th {
+            background: #f8fafc;
+            border-top: 1px solid #cbd5e1;
+            border-bottom: 1px solid #cbd5e1;
+            color: #0f172a;
+            padding: 6px 5px;
+            font-weight: 600;
+            font-size: 8.5pt;
+            text-align: center;
+        }
+        .data-table thead th.col-emp,
+        .data-table thead th.col-branch,
+        .data-table thead th.col-shift { text-align: left; }
+
+        .data-table tbody td {
+            padding: 4px 5px;
+            border-bottom: 1px solid #e5e7eb;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 8.5pt;
+            color: #374151;
+        }
+        .data-table tbody td.col-emp,
+        .data-table tbody td.col-branch,
+        .data-table tbody td.col-shift { text-align: left; }
+
+        /* Employee cell: photo + name/ID inline */
+        .emp-inner { border: none; border-collapse: collapse; }
+        .emp-inner td { border: none; padding: 0; vertical-align: middle; background: none; }
+        .emp-photo {
+            width: 26px; height: 26px;
+            border-radius: 13px;
+            background: #e5e7eb;
+            text-align: center; line-height: 26px;
+            font-weight: normal; color: #6b7280;
+            font-size: 9pt;
+            overflow: hidden;
+            margin-right: 8px;
+        }
+        .emp-photo img { width: 26px; height: 26px; border-radius: 13px; object-fit: cover; }
+        .emp-name { font-size: 8.5pt; font-weight: 600; color: #0f172a; line-height: 1.2; }
+        .emp-dept { font-size: 7.5pt; color: #475569; line-height: 1.2; display: inline; }
+        .emp-dept::after { content: " | "; color: #cbd5e1; }
+        .emp-id { font-size: 7.5pt; color: #6b7280; line-height: 1.2; display: inline; }
+
+        .shift-time { font-size: 8.5pt; color: #0f172a; line-height: 1.2; font-weight: 600; }
+        .shift-name { font-size: 7.5pt; color: #6b7280; line-height: 1.2; }
+
+        .pair-time { font-size: 8.5pt; color: #0f172a; line-height: 1.2; font-weight: 600; }
+        .pair-type { font-size: 7pt; color: #94a3b8; line-height: 1.2; }
+
+        .punch-time { font-size: 8.5pt; color: #0f172a; line-height: 1.2; font-weight: 600; }
+        .punch-dev { font-size: 7pt; color: #94a3b8; line-height: 1.2; margin-bottom: 4px; }
+        .punch-dev:last-child { margin-bottom: 0; }
+
+        /* Coloured column headers */
+        .data-table thead th.h-late { color: #dc2626; }
+        .data-table thead th.h-early { color: #ea580c; }
+        .data-table thead th.h-lost { color: #64748b; }
+        .data-table thead th.h-ot { color: #7c3aed; }
+
+        /* Status colours not yet defined */
+        .st-MS { color: #ea580c; font-weight: normal; font-size: 10pt; }  /* Missing */
+
+        .dash { color: #9ca3af; }
+
+        /* Status letters — plain coloured text, regular weight, slightly bigger */
+        .st-P { color: #16a34a; font-weight: normal; font-size: 10pt; }   /* Present — green */
+        .st-A { color: #dc2626; font-weight: normal; font-size: 10pt; }   /* Absent — red */
+        .st-O { color: #2563eb; font-weight: normal; font-size: 10pt; }   /* WeekOff — blue */
+        .st-L { color: #ca8a04; font-weight: normal; font-size: 10pt; }   /* Leave — amber */
+        .st-H { color: #7c3aed; font-weight: normal; font-size: 10pt; }   /* Holiday — purple */
+        .st-M { color: #ea580c; font-weight: normal; font-size: 10pt; }   /* Missing — orange */
+        .st-Q { color: #dc2626; font-weight: normal; font-size: 10pt; }   /* Unknown "?" — red */
+
+        /* ============== SUMMARY CARDS ============== */
+        .summary-cards {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 6px 0;
+            margin-top: 6px;
+            margin-bottom: 12px;
+        }
+        .summary-cards td {
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            padding: 8px 12px;
+            background: #fff;
+            vertical-align: middle;
+        }
+        .summary-cards .label {
+            display: inline-block;
+            font-size: 7.5pt;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            margin-right: 10px;
+        }
+        .summary-cards .count {
+            display: inline-block;
+            float: right;
+            font-size: 12pt;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .summary-cards .lbl-P { color: #16a34a; }
+        .summary-cards .lbl-A { color: #dc2626; }
+        .summary-cards .lbl-O { color: #64748b; }
+        .summary-cards .lbl-L { color: #ca8a04; }
+        .summary-cards .lbl-H { color: #7c3aed; }
+        .summary-cards .lbl-M { color: #ea580c; }
+        .summary-cards .lbl-U { color: #64748b; }
+
+        /* ============== FOOTER ============== */
+        .page-footer {
+            width: 100%;
+            border-collapse: collapse;
+            border-top: 1px solid #cbd5e1;
+            padding-top: 8px;
+            position: absolute;
+            left: 30px;
+            right: 30px;
+            bottom: 20px;
+            width: calc(100% - 60px);
+        }
+        .page-footer td { border: none; padding: 0; vertical-align: middle; font-size: 8pt; color: #6b7280; }
+        .page-footer .left { text-align: left; }
+        .page-footer .center { text-align: center; }
+        .page-footer .right { text-align: right; }
+        .page-footer .leg-P { color: #16a34a; font-weight: normal; }
+        .page-footer .leg-A { color: #dc2626; font-weight: normal; }
+        .page-footer .leg-O { color: #2563eb; font-weight: normal; }
+        .page-footer .leg-L { color: #ca8a04; font-weight: normal; }
+
+        /* Preview helper — simulate A4 pages in browser */
+        @media screen {
+            body { background: #d1d5db; padding: 20px; }
+            /* A4 landscape real dimensions at 96dpi: ~1123 x 794 px.
+               Using exact dimensions so the preview matches the actual PDF page. */
+            .page-preview {
+                background: #fff;
+                width: 1123px;
+                height: 794px;
+                padding: 30px 30px 20px 30px;
+                margin: 0 auto 30px auto;
+                box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+                position: relative;
+                overflow: hidden;
+            }
+            .page-preview::after {
+                content: 'PAGE ' attr(data-page);
+                position: absolute;
+                bottom: 8px;
+                right: 20px;
+                font-size: 7pt;
+                color: #9ca3af;
+                font-weight: bold;
+                letter-spacing: 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- PAGE 1 — SINGLE + NIGHT SHIFT -->
+<!-- ============================================================ -->
+<div class="page-preview" data-page="1 OF 3">
+
+    <!-- HEADER -->
+    <table class="page-header">
+        <tr>
+            <td class="header-top" style="width: 60%;">
+                <table class="brand-row"><tr>
+                    <td class="brand-cell"><div class="brand-mark">HY</div></td>
+                    <td class="brand-cell brand-text">
+                        <div class="company-name">HYDERS PARK</div>
+                        <div class="company-tagline">Workforce Management System</div>
+                        <div class="company-meta">
+                            Tanjore, Tamil Nadu
+                            <span class="sep">|</span> info@hyderspark.com
+                            <span class="sep">|</span> +91 98400 00000
+                        </div>
+                    </td>
+                </tr></table>
+            </td>
+            <td class="header-top header-meta" style="width: 40%;">
+                <div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">01-Apr-2026</span></div>
+                <div class="meta-row"><span class="meta-label">Branch</span><span class="meta-value">All Branches</span></div>
+                <div class="meta-row"><span class="meta-label">Generated</span><span class="meta-value">22-Apr-2026 14:35</span></div>
+            </td>
+        </tr>
+        <tr><td colspan="2"><div class="header-divider"></div></td></tr>
+        <tr>
+            <td colspan="2" class="report-title-band">
+                <div class="title">Daily Attendance Report</div>
+                <div class="subtitle">
+                    <span class="shift-tag">Single &amp; Night Shift</span>
+                    <span class="dot">&bull;</span>
+                    01-Apr-2026
+                    <span class="dot">&bull;</span>
+                    <span class="day-pill">Wednesday</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SUMMARY CARDS -->
+    <table class="summary-cards">
+        <tr>
+            <td><span class="label lbl-P">PRESENT</span><span class="count">13</span></td>
+            <td><span class="label lbl-A">ABSENT</span><span class="count">03</span></td>
+            <td><span class="label lbl-O">WEEKOFF</span><span class="count">04</span></td>
+            <td><span class="label lbl-L">LEAVE</span><span class="count">00</span></td>
+            <td><span class="label lbl-H">HOLIDAY</span><span class="count">00</span></td>
+            <td><span class="label lbl-M">MISSING</span><span class="count">08</span></td>
+            <td><span class="label lbl-U">MANUAL</span><span class="count">00</span></td>
+        </tr>
+    </table>
+
+    <!-- TABLE -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="col-emp" style="width: 18%;">EMPLOYEE</th>
+                <th class="col-shift" style="width: 18%;">SHIFT DETAILS</th>
+                <th style="width: 9%;">IN TIME</th>
+                <th style="width: 9%;">OUT TIME</th>
+                <th style="width: 9%;">LATE IN</th>
+                <th style="width: 9%;">EARLY GO</th>
+                <th style="width: 9%;">OVERTIME</th>
+                <th style="width: 9%;">WORK HRS</th>
+                <th style="width: 10%;">STATUS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">G</div></td><td><div class="emp-name">Gunal Gunal</div><div class="emp-dept">Security</div><div class="emp-id">48</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">17:00 - 22:00</div><div class="shift-name">Night Shift</div></td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td><span class="st-A">A</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">R</div></td><td><div class="emp-name">Ramesh Kumar</div><div class="emp-dept">Security</div><div class="emp-id">50</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">17:00 - 22:00</div><div class="shift-name">Night Shift</div></td>
+                <td><div class="punch-time">17:05</div><div class="punch-dev">NAKHEEL</div></td>
+                <td><div class="punch-time">22:15</div><div class="punch-dev">NAKHEEL</div></td>
+                <td>00:05</td><td>00:00</td>
+                <td>00:10</td><td>05:10</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">S</div></td><td><div class="emp-name">SUDHA SUDHA.D</div><div class="emp-dept">Housekeeping</div><div class="emp-id">3031</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">08:00 - 17:00</div><div class="shift-name">Day Duty single</div></td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td><span class="st-A">A</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">s</div></td><td><div class="emp-name">selva kaviyan</div><div class="emp-dept">Maintenance</div><div class="emp-id">3025</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">08:00 - 17:00</div><div class="shift-name">Day Duty single</div></td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td><span class="st-A">A</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">S</div></td><td><div class="emp-name">Samynathan Samy</div><div class="emp-dept">Maintenance</div><div class="emp-id">3026</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">08:00 - 17:00</div><div class="shift-name">Day Duty single</div></td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td><span class="st-A">A</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">S</div></td><td><div class="emp-name">SATHISH KUMAR.P</div><div class="emp-dept">Operations</div><div class="emp-id">31</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">08:00 - 17:00</div><div class="shift-name">Day Duty single</div></td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td><span class="st-A">A</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">H</div></td><td><div class="emp-name">HAJA NAJMUDEEN</div><div class="emp-dept">Operations</div><div class="emp-id">17</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">08:00 - 17:00</div><div class="shift-name">Day Time single</div></td>
+                <td><div class="punch-time">08:45</div><div class="punch-dev">NAKHEEL</div></td>
+                <td><div class="punch-time">17:10</div><div class="punch-dev">NAKHEEL</div></td>
+                <td>00:45</td><td>00:00</td>
+                <td>00:10</td><td>08:25</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">M</div></td><td><div class="emp-name">Mohamed Ilyas</div><div class="emp-dept">Operations</div><div class="emp-id">22</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">08:00 - 17:00</div><div class="shift-name">Day Time single</div></td>
+                <td><div class="punch-time">08:51</div><div class="punch-dev">NAKHEEL</div></td>
+                <td><div class="punch-time">17:30</div><div class="punch-dev">NAKHEEL</div></td>
+                <td>00:51</td><td>00:00</td>
+                <td>00:30</td><td>08:39</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">R</div></td><td><div class="emp-name">RANJITHA</div><div class="emp-dept">Housekeeping</div><div class="emp-id">3109</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">08:00 - 17:00</div><div class="shift-name">Day Duty single</div></td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td class="dash">---</td><td class="dash">---</td>
+                <td><span class="st-O">O</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">K</div></td><td><div class="emp-name">Karthik Raja</div><div class="emp-dept">Operations</div><div class="emp-id">41</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">09:00 - 18:00</div><div class="shift-name">Day single</div></td>
+                <td><div class="punch-time">09:02</div><div class="punch-dev">MARINA</div></td>
+                <td><div class="punch-time">18:05</div><div class="punch-dev">MARINA</div></td>
+                <td>00:02</td><td>00:00</td>
+                <td>00:05</td><td>09:03</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">A</div></td><td><div class="emp-name">Arun Prakash</div><div class="emp-dept">Security</div><div class="emp-id">42</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">22:00 - 06:00</div><div class="shift-name">Night Shift</div></td>
+                <td><div class="punch-time">21:55</div><div class="punch-dev">NAKHEEL</div></td>
+                <td><div class="punch-time">06:10</div><div class="punch-dev">NAKHEEL</div></td>
+                <td>00:00</td><td>00:00</td>
+                <td>00:15</td><td>08:15</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <table class="page-footer">
+        <tr>
+            <td class="left" style="width: 40%;">
+                <span class="leg-P">P</span> = Present,
+                <span class="leg-A">A</span> = Absent,
+                <span class="leg-O">O</span> = WeekOff,
+                <span class="leg-L">L</span> = Leave
+            </td>
+            <td class="center" style="width: 30%;">Powered by: <strong>MyTime2Cloud</strong></td>
+            <td class="right" style="width: 30%;">Printed on: 22-Apr-2026 &nbsp;&nbsp; Page: 1</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 2 — SPLIT SHIFT -->
+<!-- ============================================================ -->
+<div class="page-preview" data-page="2 OF 3">
+
+    <!-- HEADER -->
+    <table class="page-header">
+        <tr>
+            <td class="header-top" style="width: 60%;">
+                <table class="brand-row"><tr>
+                    <td class="brand-cell"><div class="brand-mark">HY</div></td>
+                    <td class="brand-cell brand-text">
+                        <div class="company-name">HYDERS PARK</div>
+                        <div class="company-tagline">Workforce Management System</div>
+                        <div class="company-meta">
+                            Tanjore, Tamil Nadu
+                            <span class="sep">|</span> info@hyderspark.com
+                            <span class="sep">|</span> +91 98400 00000
+                        </div>
+                    </td>
+                </tr></table>
+            </td>
+            <td class="header-top header-meta" style="width: 40%;">
+                <div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">01-Apr-2026</span></div>
+                <div class="meta-row"><span class="meta-label">Branch</span><span class="meta-value">All Branches</span></div>
+                <div class="meta-row"><span class="meta-label">Generated</span><span class="meta-value">22-Apr-2026 14:35</span></div>
+            </td>
+        </tr>
+        <tr><td colspan="2"><div class="header-divider"></div></td></tr>
+        <tr>
+            <td colspan="2" class="report-title-band">
+                <div class="title">Daily Attendance Report</div>
+                <div class="subtitle">
+                    <span class="shift-tag">Split Shift</span>
+                    <span class="dot">&bull;</span>
+                    01-Apr-2026
+                    <span class="dot">&bull;</span>
+                    <span class="day-pill">Wednesday</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SUMMARY CARDS -->
+    <table class="summary-cards">
+        <tr>
+            <td><span class="label lbl-P">PRESENT</span><span class="count">04</span></td>
+            <td><span class="label lbl-A">ABSENT</span><span class="count">01</span></td>
+            <td><span class="label lbl-O">WEEKOFF</span><span class="count">00</span></td>
+            <td><span class="label lbl-L">LEAVE</span><span class="count">00</span></td>
+            <td><span class="label lbl-H">HOLIDAY</span><span class="count">00</span></td>
+            <td><span class="label lbl-M">MISSING</span><span class="count">01</span></td>
+            <td><span class="label lbl-U">MANUAL</span><span class="count">00</span></td>
+        </tr>
+    </table>
+
+    <!-- TABLE -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="col-emp" style="width: 16%;">EMPLOYEE</th>
+                <th class="col-shift" style="width: 11%;">SHIFT DETAILS</th>
+                <th style="width: 9%;">IN TIME</th>
+                <th style="width: 9%;">OUT TIME</th>
+                <th class="h-late" style="width: 8%;">LATE IN</th>
+                <th class="h-early" style="width: 8%;">EARLY GO</th>
+                <th class="h-lost" style="width: 8%;">LOST HRS</th>
+                <th class="h-ot" style="width: 8%;">OVERTIME</th>
+                <th style="width: 8%;">WORK HRS</th>
+                <th style="width: 8%;">STATUS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">P</div></td><td><div class="emp-name">PURATCHI PUYAL</div><div class="emp-dept">Operations</div><div class="emp-id">25</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">NAKHEEL</div><div class="shift-name">SPLIT</div></td>
+                <td>
+                    <div class="punch-time">08:51</div><div class="punch-dev">NAKHEEL</div>
+                    <div class="dash">---</div>
+                </td>
+                <td>
+                    <div class="punch-time">13:42</div><div class="punch-dev">NAKHEEL</div>
+                    <div class="punch-time">19:21</div><div class="punch-dev">NAKHEEL</div>
+                </td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td>04:51</td>
+                <td><span class="st-MS">MISSING</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">D</div></td><td><div class="emp-name">Dinesh Kumar</div><div class="emp-dept">Sales</div><div class="emp-id">52</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">NAKHEEL</div><div class="shift-name">SPLIT</div></td>
+                <td>
+                    <div class="punch-time">09:05</div><div class="punch-dev">NAKHEEL</div>
+                    <div class="punch-time">14:10</div><div class="punch-dev">NAKHEEL</div>
+                </td>
+                <td>
+                    <div class="punch-time">13:15</div><div class="punch-dev">NAKHEEL</div>
+                    <div class="punch-time">18:05</div><div class="punch-dev">NAKHEEL</div>
+                </td>
+                <td>00:05</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td>00:05</td>
+                <td>08:05</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">P</div></td><td><div class="emp-name">Priya Ramesh</div><div class="emp-dept">HR</div><div class="emp-id">53</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">MARINA</div><div class="shift-name">SPLIT</div></td>
+                <td>
+                    <div class="punch-time">10:02</div><div class="punch-dev">MARINA</div>
+                    <div class="punch-time">15:00</div><div class="punch-dev">MARINA</div>
+                </td>
+                <td>
+                    <div class="punch-time">14:00</div><div class="punch-dev">MARINA</div>
+                    <div class="punch-time">19:10</div><div class="punch-dev">MARINA</div>
+                </td>
+                <td>00:02</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td>00:10</td>
+                <td>08:08</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">V</div></td><td><div class="emp-name">Vignesh Raj</div><div class="emp-dept">Sales</div><div class="emp-id">54</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">NAKHEEL</div><div class="shift-name">SPLIT</div></td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td><span class="st-A">A</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">L</div></td><td><div class="emp-name">Lakshmi Devi</div><div class="emp-dept">HR</div><div class="emp-id">55</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">MARINA</div><div class="shift-name">SPLIT</div></td>
+                <td>
+                    <div class="punch-time">10:00</div><div class="punch-dev">MARINA</div>
+                    <div class="punch-time">15:30</div><div class="punch-dev">MARINA</div>
+                </td>
+                <td>
+                    <div class="punch-time">14:30</div><div class="punch-dev">MARINA</div>
+                    <div class="punch-time">20:00</div><div class="punch-dev">MARINA</div>
+                </td>
+                <td>00:00</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td>09:00</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <table class="page-footer">
+        <tr>
+            <td class="left" style="width: 40%;">
+                <span class="leg-P">P</span> = Present,
+                <span class="leg-A">A</span> = Absent,
+                <span class="leg-O">O</span> = WeekOff,
+                <span class="leg-L">L</span> = Leave
+            </td>
+            <td class="center" style="width: 30%;">Powered by: <strong>MyTime2Cloud</strong></td>
+            <td class="right" style="width: 30%;">Printed on: 22-Apr-2026 &nbsp;&nbsp; Page: 2</td>
+        </tr>
+    </table>
+</div>
+
+<!-- ============================================================ -->
+<!-- PAGE 3 — MULTI SHIFT -->
+<!-- ============================================================ -->
+<div class="page-preview" data-page="3 OF 3">
+
+    <!-- HEADER -->
+    <table class="page-header">
+        <tr>
+            <td class="header-top" style="width: 60%;">
+                <table class="brand-row"><tr>
+                    <td class="brand-cell"><div class="brand-mark">HY</div></td>
+                    <td class="brand-cell brand-text">
+                        <div class="company-name">HYDERS PARK</div>
+                        <div class="company-tagline">Workforce Management System</div>
+                        <div class="company-meta">
+                            Tanjore, Tamil Nadu
+                            <span class="sep">|</span> info@hyderspark.com
+                            <span class="sep">|</span> +91 98400 00000
+                        </div>
+                    </td>
+                </tr></table>
+            </td>
+            <td class="header-top header-meta" style="width: 40%;">
+                <div class="meta-row"><span class="meta-label">Period</span><span class="meta-value">01-Apr-2026</span></div>
+                <div class="meta-row"><span class="meta-label">Branch</span><span class="meta-value">All Branches</span></div>
+                <div class="meta-row"><span class="meta-label">Generated</span><span class="meta-value">22-Apr-2026 14:35</span></div>
+            </td>
+        </tr>
+        <tr><td colspan="2"><div class="header-divider"></div></td></tr>
+        <tr>
+            <td colspan="2" class="report-title-band">
+                <div class="title">Daily Attendance Report</div>
+                <div class="subtitle">
+                    <span class="shift-tag">Multi Shift</span>
+                    <span class="dot">&bull;</span>
+                    01-Apr-2026
+                    <span class="dot">&bull;</span>
+                    <span class="day-pill">Wednesday</span>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <!-- SUMMARY CARDS -->
+    <table class="summary-cards">
+        <tr>
+            <td><span class="label lbl-P">PRESENT</span><span class="count">03</span></td>
+            <td><span class="label lbl-A">ABSENT</span><span class="count">01</span></td>
+            <td><span class="label lbl-O">WEEKOFF</span><span class="count">00</span></td>
+            <td><span class="label lbl-L">LEAVE</span><span class="count">00</span></td>
+            <td><span class="label lbl-H">HOLIDAY</span><span class="count">00</span></td>
+            <td><span class="label lbl-M">MISSING</span><span class="count">00</span></td>
+            <td><span class="label lbl-U">MANUAL</span><span class="count">00</span></td>
+        </tr>
+    </table>
+
+    <!-- TABLE -->
+    <table class="data-table">
+        <thead>
+            <tr>
+                <th class="col-emp" style="width: 16%;">EMPLOYEE</th>
+                <th class="col-shift" style="width: 12%;">SHIFT DETAILS</th>
+                <th style="width: 11%;">IN/OUT1</th>
+                <th style="width: 11%;">IN/OUT2</th>
+                <th style="width: 11%;">IN/OUT3</th>
+                <th style="width: 11%;">IN/OUT4</th>
+                <th style="width: 11%;">IN/OUT5</th>
+                <th style="width: 6%;">OT</th>
+                <th style="width: 6%;">TOTAL</th>
+                <th style="width: 5%;">STATUS</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">V</div></td><td><div class="emp-name">VELAKANNI</div><div class="emp-dept">Production</div><div class="emp-id">34</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">06:00 - 21:00</div><div class="shift-name">Multi Shift</div></td>
+                <td><div class="pair-time">06:00 - 09:00</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">12:00 - 14:00</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">16:00 - 19:00</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td>00:00</td>
+                <td>08:00</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">R</div></td><td><div class="emp-name">Raj Kumar</div><div class="emp-dept">Production</div><div class="emp-id">60</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">06:00 - 21:00</div><div class="shift-name">Multi Shift</div></td>
+                <td><div class="pair-time">07:00 - 10:00</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">11:00 - 13:30</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">14:30 - 17:00</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">18:00 - 20:30</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td class="dash">---</td>
+                <td>00:00</td>
+                <td>10:30</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">S</div></td><td><div class="emp-name">Suresh Babu</div><div class="emp-dept">Production</div><div class="emp-id">61</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">06:00 - 21:00</div><div class="shift-name">Multi Shift</div></td>
+                <td><div class="pair-time">06:30 - 09:15</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">10:00 - 12:30</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">13:15 - 15:45</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">16:30 - 18:45</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td><div class="pair-time">19:30 - 21:00</div><div class="pair-type">NAKHEEL / NAKHEEL</div></td>
+                <td>00:00</td>
+                <td>12:15</td>
+                <td><span class="st-P">P</span></td>
+            </tr>
+            <tr>
+                <td class="col-emp"><table class="emp-inner"><tr><td style="width: 36px;"><div class="emp-photo">A</div></td><td><div class="emp-name">Anitha Rani</div><div class="emp-dept">Production</div><div class="emp-id">62</div></td></tr></table></td>
+                <td class="col-shift"><div class="shift-time">06:00 - 21:00</div><div class="shift-name">Multi Shift</div></td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td class="dash">---</td>
+                <td><span class="st-A">A</span></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- FOOTER -->
+    <table class="page-footer">
+        <tr>
+            <td class="left" style="width: 40%;">
+                <span class="leg-P">P</span> = Present,
+                <span class="leg-A">A</span> = Absent,
+                <span class="leg-O">O</span> = WeekOff,
+                <span class="leg-L">L</span> = Leave
+            </td>
+            <td class="center" style="width: 30%;">Powered by: <strong>MyTime2Cloud</strong></td>
+            <td class="right" style="width: 30%;">Printed on: 22-Apr-2026 &nbsp;&nbsp; Page: 3</td>
+        </tr>
+    </table>
+</div>
+
+</body>
+</html>

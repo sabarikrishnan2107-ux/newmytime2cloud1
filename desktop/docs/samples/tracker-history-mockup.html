@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Tracker History — Mockup</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { background:#0b1220; color:#e2e8f0; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    .pill-in   { background:rgba(16,185,129,.10); color:#34d399; border:1px solid rgba(16,185,129,.25); }
+    .pill-out  { background:rgba(244, 63, 94,.10); color:#fb7185; border:1px solid rgba(244, 63, 94,.25); }
+    .pill-extra{ background:rgba(245,158,11,.10); color:#fbbf24; border:1px solid rgba(245,158,11,.30); }
+    .play-btn  { background:#7c3aed; }
+    .play-btn:hover { background:#6d28d9; }
+    [data-tip] { position:relative; }
+    [data-tip]:hover::after {
+      content: attr(data-tip);
+      position:absolute; left:0; top:calc(100% + 6px);
+      white-space: pre;
+      background:#0f172a; color:#e2e8f0;
+      border:1px solid #334155;
+      padding:6px 8px; border-radius:6px; font-size:11px; line-height:1.4;
+      box-shadow: 0 6px 24px rgba(0,0,0,.35);
+      z-index:10;
+    }
+  </style>
+</head>
+<body class="p-8">
+
+<h1 class="text-xl font-bold mb-2 text-slate-100">Tracker History — Proposed Design</h1>
+<p class="text-sm text-slate-400 mb-6">Same employee data as the screenshot, grouped by shift type. Hover the amber <span class="pill-extra px-1.5 py-0.5 rounded text-[10px]">+N punches</span> badge to see intermediate punches.</p>
+
+<!-- ============================================================== -->
+<h2 class="text-sm uppercase tracking-wider text-slate-400 font-semibold mb-2">Single / Night / FILO / Flexible — 1 row per day</h2>
+<p class="text-xs text-slate-500 mb-3">Ariff clocked in 10:12, then in 11:09 → out 11:14 → in 13:30 → out 18:00. All consolidated into one row.</p>
+
+<div class="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden mb-10">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-800">
+      <tr class="text-left text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+        <th class="px-3.5 py-3">Personnel</th>
+        <th class="px-3.5 py-3">Branch / Department</th>
+        <th class="px-3.5 py-3">Date</th>
+        <th class="px-3.5 py-3">Login</th>
+        <th class="px-3.5 py-3">Logout</th>
+        <th class="px-3.5 py-3">Shift</th>
+        <th class="px-3.5 py-3">Mode</th>
+        <th class="px-3.5 py-3">Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="border-t border-slate-800 align-top">
+        <td class="px-3.5 py-3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">AA</div>
+            <div>
+              <div class="text-slate-200 font-medium">Ariff akil</div>
+              <div class="text-[11px] text-slate-400">ID: 0001</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-3.5 py-3 text-slate-300">KODAI / Front office</td>
+        <td class="px-3.5 py-3 text-slate-300">25-Apr-26</td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-in inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">10:12</span>
+            <span class="pill-extra inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[10px] font-semibold cursor-help"
+              data-tip="11:09 IN&#10;11:14 OUT&#10;13:30 IN">+3 punches</span>
+            <span class="text-[10px] text-slate-400">Location not available</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-out inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">18:00</span>
+            <span class="text-[10px] text-slate-400 max-w-[200px] truncate" title="Al Nahda Street, Bur Dubai, Al So…">Al Nahda Street, Bur Dubai, Al So…</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Single</span>
+        </td>
+        <td class="px-3.5 py-3 text-slate-400">📱</td>
+        <td class="px-3.5 py-3">
+          <button class="play-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white">
+            ▶ Play
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================== -->
+<h2 class="text-sm uppercase tracking-wider text-slate-400 font-semibold mb-2">Split shift — 2 rows (pair 1, pair 2) in same table</h2>
+<p class="text-xs text-slate-500 mb-3">Largest gap between OUT and next IN splits the day into morning + evening pairs.</p>
+
+<div class="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden mb-10">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-800">
+      <tr class="text-left text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+        <th class="px-3.5 py-3">Personnel</th>
+        <th class="px-3.5 py-3">Branch / Department</th>
+        <th class="px-3.5 py-3">Date</th>
+        <th class="px-3.5 py-3">Login</th>
+        <th class="px-3.5 py-3">Logout</th>
+        <th class="px-3.5 py-3">Shift</th>
+        <th class="px-3.5 py-3">Mode</th>
+        <th class="px-3.5 py-3">Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="border-t border-slate-800 align-top">
+        <td class="px-3.5 py-3" rowspan="2">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">RS</div>
+            <div>
+              <div class="text-slate-200 font-medium">Ramesh S</div>
+              <div class="text-[11px] text-slate-400">ID: 0042</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-3.5 py-3 text-slate-300" rowspan="2">KODAI / Kitchen</td>
+        <td class="px-3.5 py-3 text-slate-300" rowspan="2">25-Apr-26</td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-in inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">08:00</span>
+            <span class="text-[10px] text-slate-400 max-w-[200px] truncate">Hotel kitchen entrance</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-out inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">12:30</span>
+            <span class="text-[10px] text-slate-400 max-w-[200px] truncate">Hotel kitchen entrance</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Split · 1/2</span>
+        </td>
+        <td class="px-3.5 py-3 text-slate-400">📱</td>
+        <td class="px-3.5 py-3">
+          <button class="play-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white">▶ Play</button>
+        </td>
+      </tr>
+      <tr class="align-top">
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-in inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">17:00</span>
+            <span class="text-[10px] text-slate-400 max-w-[200px] truncate">Hotel kitchen entrance</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-out inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">22:30</span>
+            <span class="text-[10px] text-slate-400 max-w-[200px] truncate">Hotel kitchen entrance</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Split · 2/2</span>
+        </td>
+        <td class="px-3.5 py-3 text-slate-400">📱</td>
+        <td class="px-3.5 py-3">
+          <button class="play-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white">▶ Play</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ============================================================== -->
+<h2 class="text-sm uppercase tracking-wider text-slate-400 font-semibold mb-2">Multi / Auto shift — N rows (one per in/out pair, current behavior)</h2>
+<p class="text-xs text-slate-500 mb-3">Each work session stays separate.</p>
+
+<div class="bg-slate-900 border border-slate-700 rounded-lg overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-slate-800">
+      <tr class="text-left text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+        <th class="px-3.5 py-3">Personnel</th>
+        <th class="px-3.5 py-3">Branch / Department</th>
+        <th class="px-3.5 py-3">Date</th>
+        <th class="px-3.5 py-3">Login</th>
+        <th class="px-3.5 py-3">Logout</th>
+        <th class="px-3.5 py-3">Shift</th>
+        <th class="px-3.5 py-3">Mode</th>
+        <th class="px-3.5 py-3">Location</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="border-t border-slate-800 align-top">
+        <td class="px-3.5 py-3" rowspan="3">
+          <div class="flex items-center gap-2.5">
+            <div class="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold">SK</div>
+            <div>
+              <div class="text-slate-200 font-medium">Sundar K</div>
+              <div class="text-[11px] text-slate-400">ID: 0099</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-3.5 py-3 text-slate-300" rowspan="3">KODAI / Sales</td>
+        <td class="px-3.5 py-3 text-slate-300" rowspan="3">25-Apr-26</td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-in inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">09:00</span>
+            <span class="text-[10px] text-slate-400">Showroom A</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-out inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">11:30</span>
+            <span class="text-[10px] text-slate-400">Showroom A</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Multi · 1/3</span>
+        </td>
+        <td class="px-3.5 py-3 text-slate-400">📱</td>
+        <td class="px-3.5 py-3">
+          <button class="play-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white">▶ Play</button>
+        </td>
+      </tr>
+      <tr class="align-top">
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-in inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">12:30</span>
+            <span class="text-[10px] text-slate-400">Showroom B</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-out inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">15:00</span>
+            <span class="text-[10px] text-slate-400">Showroom B</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Multi · 2/3</span>
+        </td>
+        <td class="px-3.5 py-3 text-slate-400">📱</td>
+        <td class="px-3.5 py-3">
+          <button class="play-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white">▶ Play</button>
+        </td>
+      </tr>
+      <tr class="align-top">
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-in inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">16:00</span>
+            <span class="text-[10px] text-slate-400">Showroom C</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <div class="flex flex-col gap-1">
+            <span class="pill-out inline-flex w-fit items-center px-2 py-0.5 rounded-full text-[11px] font-semibold">19:30</span>
+            <span class="text-[10px] text-slate-400">Showroom C</span>
+          </div>
+        </td>
+        <td class="px-3.5 py-3">
+          <span class="text-[11px] px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-slate-300">Multi · 3/3</span>
+        </td>
+        <td class="px-3.5 py-3 text-slate-400">📱</td>
+        <td class="px-3.5 py-3">
+          <button class="play-btn inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg text-white">▶ Play</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<p class="text-xs text-slate-500 mt-6">Open in browser to inspect the hover tooltip on the <span class="pill-extra px-1.5 py-0.5 rounded text-[10px]">+3 punches</span> badge in the first table.</p>
+
+</body>
+</html>

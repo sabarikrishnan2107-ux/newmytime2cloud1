@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Daily Report — Format C text style, compact list</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0 0 65px 0;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #334155;
+            line-height: 1.4;
+            background: #f8fafc;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .report-container {
+            background: #fff;
+            border-top: 4px solid #4f46e5;
+            padding: 24px 28px 16px 28px;
+        }
+
+        /* ===== HEADER (matches Format C) ===== */
+        .header-row { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .header-row td { border: none; padding: 0; vertical-align: middle; }
+        .report-title {
+            font-size: 18pt; font-weight: bold; color: #1e293b;
+            text-transform: uppercase; letter-spacing: 0.3px;
+        }
+        .report-meta { font-size: 8pt; color: #64748b; margin-top: 4px; }
+        .report-meta-icon {
+            display: inline-block; width: 10px; height: 10px;
+            border: 1.5px solid #64748b; border-radius: 1.5px;
+            border-top: 3px solid #64748b; vertical-align: middle; margin-right: 4px;
+        }
+        .company-card {
+            display: inline-block; border: 1px solid #e2e8f0;
+            border-radius: 8px; padding: 10px 14px;
+        }
+        .company-card table { border: none; border-collapse: collapse; }
+        .company-card td { border: none; padding: 0; vertical-align: middle; }
+        .company-icon {
+            width: 36px; height: 36px; background: #4f46e5;
+            border-radius: 6px; margin-right: 10px; text-align: center;
+            color: #fff; font-weight: bold; font-size: 11pt; line-height: 36px;
+        }
+        .company-name { font-size: 9pt; font-weight: bold; color: #1e293b; text-transform: uppercase; }
+        .company-branch { font-size: 6.5pt; color: #64748b; }
+
+        /* ===== SUMMARY TILES (exact Format C style) ===== */
+        .summary-row {
+            width: 100%; border-collapse: separate;
+            border-spacing: 8px 0; margin-bottom: 20px; margin-left: -8px;
+        }
+        .summary-row td {
+            border: 1px solid #e2e8f0; border-radius: 8px;
+            padding: 6px 8px; background: #fff; vertical-align: middle;
+        }
+        .sum-inner { width: 100%; border: none; border-collapse: collapse; }
+        .sum-inner td { border: none; padding: 0; vertical-align: middle; background: none; }
+        .sum-label {
+            font-size: 6.5pt; font-weight: bold; text-transform: uppercase;
+            letter-spacing: 0.3px; text-align: left;
+        }
+        .sum-value { font-size: 14pt; font-weight: bold; color: #1e293b; text-align: right; }
+        .lbl-total   { color: #4f46e5; }
+        .lbl-present { color: #10b981; }
+        .lbl-absent  { color: #ef4444; }
+        .lbl-weekoff { color: #94a3b8; }
+        .lbl-leave   { color: #f59e0b; }
+        .lbl-holiday { color: #a78bfa; }
+        .lbl-missing { color: #c2410c; }
+
+        /* ===== EMPLOYEES TABLE (Format C data-table styling) ===== */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .data-table thead th {
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            border-bottom: 1px solid #e2e8f0;
+            color: #1e293b;
+            padding: 10px 12px;
+            font-weight: 700;
+            font-size: 7pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+        .data-table thead th:first-child { text-align: left; }
+        .data-table thead th:last-child  { text-align: right; }
+
+        .data-table tbody td {
+            padding: 12px 12px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 8pt;
+        }
+        .data-table tbody td:first-child { text-align: left; }
+        .data-table tbody td:last-child  { text-align: right; }
+
+        /* Employee cell — photo + meta inline, Format C style */
+        .emp-inner-table { border: none; border-collapse: collapse; }
+        .emp-inner-table td { border: none; padding: 0; vertical-align: middle; background: none; }
+        .emp-photo {
+            width: 36px; height: 36px;
+            border-radius: 6px;
+            background: #e2e8f0;
+            text-align: center; line-height: 36px;
+            font-weight: bold; color: #94a3b8;
+            font-size: 11pt;
+            overflow: hidden;
+            margin-right: 10px;
+        }
+        .emp-name { font-size: 9pt; font-weight: bold; color: #1e293b; text-transform: uppercase; line-height: 1.25; }
+        .emp-id   { font-size: 7pt;  font-weight: bold; color: #4f46e5; line-height: 1.25; }
+        .emp-dept { font-size: 6pt;  color: #94a3b8; line-height: 1.25; }
+
+        .branch-cell { font-size: 7.5pt; color: #475569; line-height: 1.3; }
+        .branch-cell .branch-name { font-weight: bold; color: #1e293b; font-size: 8pt; }
+
+        .td-shift      { font-weight: bold; color: #475569; font-size: 7.5pt; }
+        .td-shift-type { font-size: 5.5pt; color: #64748b; text-transform: uppercase; }
+        .td-time   { font-weight: bold; color: #1e293b; font-size: 8.5pt; }
+        .td-device { font-size: 5pt;    color: #475569; text-transform: uppercase; }
+        .td-dash   { color: #cbd5e1; font-size: 8.5pt; }
+        .td-late   { color: #e11d48; font-weight: bold; }
+        .td-early  { color: #d97706; font-weight: bold; }
+        .td-ot     { color: #4f46e5; font-weight: bold; }
+        .td-hrs    { color: #475569; font-weight: 600; }
+        .td-zero   { color: #cbd5e1; }
+
+        /* Status — Format C style: PLAIN coloured TEXT, no pill background */
+        .st-present { font-weight: bold; font-size: 8pt; color: #059669; }
+        .st-absent  { font-weight: bold; font-size: 8pt; color: #ef4444; }
+        .st-weekoff { font-weight: bold; font-size: 8pt; color: #6366f1; }
+        .st-holiday { font-weight: bold; font-size: 8pt; color: #8b5cf6; }
+        .st-leave   { font-weight: bold; font-size: 8pt; color: #7c3aed; }
+        .st-missing { font-weight: bold; font-size: 8pt; color: #f97316; }
+
+        /* Row tints (matches Format C) */
+        .row-absent  td { background: #fff5f5 !important; }
+        .row-weekoff td { background: #f1f5f9 !important; }
+        .row-holiday td { background: #faf5ff !important; }
+
+        /* Browser preview helper — show A4 page boundaries */
+        @media screen {
+            body { background: #cbd5e1; padding: 20px; }
+            .page-preview {
+                background: #fff;
+                width: 1200px;
+                margin: 0 auto 30px auto;
+                box-shadow: 0 4px 24px rgba(0, 0, 0, 0.15);
+                position: relative;
+                min-height: 800px;
+            }
+            .page-preview::after {
+                content: 'PAGE ' attr(data-page);
+                position: absolute;
+                bottom: 10px;
+                right: 20px;
+                font-size: 7pt;
+                color: #94a3b8;
+                font-weight: bold;
+                letter-spacing: 1px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div class="page-preview" data-page="1 OF 1">
+    <div class="report-container">
+
+        <!-- HEADER -->
+        <table class="header-row">
+            <tr>
+                <td style="width: 65%;">
+                    <div class="report-title">Daily Attendance Report</div>
+                    <div class="report-meta">
+                        <span class="report-meta-icon"></span>
+                        2026-04-01 &nbsp;&bull;&nbsp; Wednesday &nbsp;&bull;&nbsp; Daily Exact
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    <div class="company-card">
+                        <table>
+                            <tr>
+                                <td><div class="company-icon">HY</div></td>
+                                <td>
+                                    <div class="company-name">HYDERS PARK</div>
+                                    <div class="company-branch">7 EMPLOYEES</div>
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                </td>
+            </tr>
+        </table>
+
+        <!-- SUMMARY TILES (totals) -->
+        <table class="summary-row">
+            <tr>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-total">Total</td><td class="sum-value">07</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-present">Present</td><td class="sum-value">01</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-absent">Absent</td><td class="sum-value">06</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-weekoff">Weekoff</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-leave">Leave</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-holiday">Holiday</td><td class="sum-value">00</td></tr></table></td>
+                <td><table class="sum-inner"><tr><td class="sum-label lbl-missing">Missing</td><td class="sum-value">00</td></tr></table></td>
+            </tr>
+        </table>
+
+        <!-- EMPLOYEES TABLE -->
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th style="width: 22%;">Employee</th>
+                    <th style="width: 12%;">Branch / Dept</th>
+                    <th style="width: 11%;">Shift</th>
+                    <th style="width: 8%;">In Time</th>
+                    <th style="width: 8%;">Out Time</th>
+                    <th style="width: 6%;">Late</th>
+                    <th style="width: 6%;">Early</th>
+                    <th style="width: 6%;">OT</th>
+                    <th style="width: 8%;">Work Hrs</th>
+                    <th style="width: 9%;">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+
+                <tr class="row-absent">
+                    <td>
+                        <table class="emp-inner-table"><tr>
+                            <td style="width: 46px;"><div class="emp-photo">G</div></td>
+                            <td>
+                                <div class="emp-name">Gunal Gunal</div>
+                                <div class="emp-id">ID: 48</div>
+                                <div class="emp-dept">Housekeeping</div>
+                            </td>
+                        </tr></table>
+                    </td>
+                    <td class="branch-cell"><div class="branch-name">TANJORE</div><div>Housekeeping</div></td>
+                    <td><div class="td-shift">Night Shift</div><div class="td-shift-type">NIGHT</div></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">--:--</td>
+                    <td><span class="st-absent">ABSENT</span></td>
+                </tr>
+
+                <tr class="row-absent">
+                    <td>
+                        <table class="emp-inner-table"><tr>
+                            <td style="width: 46px;"><div class="emp-photo">S</div></td>
+                            <td>
+                                <div class="emp-name">SUDHA SUDHA.D</div>
+                                <div class="emp-id">ID: 3031</div>
+                                <div class="emp-dept">Housekeeping</div>
+                            </td>
+                        </tr></table>
+                    </td>
+                    <td class="branch-cell"><div class="branch-name">KODAI</div><div>Housekeeping</div></td>
+                    <td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">--:--</td>
+                    <td><span class="st-absent">ABSENT</span></td>
+                </tr>
+
+                <tr class="row-absent">
+                    <td>
+                        <table class="emp-inner-table"><tr>
+                            <td style="width: 46px;"><div class="emp-photo">s</div></td>
+                            <td>
+                                <div class="emp-name">selva kaviyan</div>
+                                <div class="emp-id">ID: 3025</div>
+                                <div class="emp-dept">Front Office</div>
+                            </td>
+                        </tr></table>
+                    </td>
+                    <td class="branch-cell"><div class="branch-name">KODAI</div><div>Front Office</div></td>
+                    <td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">--:--</td>
+                    <td><span class="st-absent">ABSENT</span></td>
+                </tr>
+
+                <tr class="row-absent">
+                    <td>
+                        <table class="emp-inner-table"><tr>
+                            <td style="width: 46px;"><div class="emp-photo">S</div></td>
+                            <td>
+                                <div class="emp-name">Samynathan Samy</div>
+                                <div class="emp-id">ID: 3026</div>
+                                <div class="emp-dept">Housekeeping</div>
+                            </td>
+                        </tr></table>
+                    </td>
+                    <td class="branch-cell"><div class="branch-name">KODAI</div><div>Housekeeping</div></td>
+                    <td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">--:--</td>
+                    <td><span class="st-absent">ABSENT</span></td>
+                </tr>
+
+                <tr class="row-absent">
+                    <td>
+                        <table class="emp-inner-table"><tr>
+                            <td style="width: 46px;"><div class="emp-photo">S</div></td>
+                            <td>
+                                <div class="emp-name">SATHISH KUMAR.P</div>
+                                <div class="emp-id">ID: 31</div>
+                                <div class="emp-dept">Maintenance</div>
+                            </td>
+                        </tr></table>
+                    </td>
+                    <td class="branch-cell"><div class="branch-name">TANJORE</div><div>Maintenance</div></td>
+                    <td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">--:--</td>
+                    <td><span class="st-absent">ABSENT</span></td>
+                </tr>
+
+                <tr class="row-absent">
+                    <td>
+                        <table class="emp-inner-table"><tr>
+                            <td style="width: 46px;"><div class="emp-photo">H</div></td>
+                            <td>
+                                <div class="emp-name">HAJA NAJMUDEEN</div>
+                                <div class="emp-id">ID: 17</div>
+                                <div class="emp-dept">Front Office</div>
+                            </td>
+                        </tr></table>
+                    </td>
+                    <td class="branch-cell"><div class="branch-name">TANJORE</div><div>Front Office</div></td>
+                    <td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td><span class="td-dash">— : —</span></td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">--:--</td>
+                    <td><span class="st-absent">ABSENT</span></td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <table class="emp-inner-table"><tr>
+                            <td style="width: 46px;"><div class="emp-photo">M</div></td>
+                            <td>
+                                <div class="emp-name">Mohamed Ilyas</div>
+                                <div class="emp-id">ID: 22</div>
+                                <div class="emp-dept">Front Office</div>
+                            </td>
+                        </tr></table>
+                    </td>
+                    <td class="branch-cell"><div class="branch-name">TANJORE</div><div>Front Office</div></td>
+                    <td><div class="td-shift">Single Shift</div><div class="td-shift-type">SINGLE</div></td>
+                    <td><div class="td-time">08:51</div><div class="td-device">TNJ</div></td>
+                    <td><div class="td-time">23:58</div><div class="td-device">TNJ</div></td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-zero">-</td>
+                    <td class="td-hrs">15:07</td>
+                    <td><span class="st-present">PRESENT</span></td>
+                </tr>
+
+            </tbody>
+        </table>
+    </div>
+</div>
+
+</body>
+</html>
