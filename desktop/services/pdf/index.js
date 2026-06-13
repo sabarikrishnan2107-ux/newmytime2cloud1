@@ -37,8 +37,9 @@ const BROWSER_LAUNCH_OPTS = {
     "--disable-web-security",
     "--disable-dev-shm-usage",
     "--disable-gpu",
-    "--no-zygote",
-    "--single-process",           // keeps the process count flat; helps on low-RAM VMs
+    // NOTE: --single-process / --no-zygote were removed — on Windows desktop they
+    // make Chromium crash during Page.printToPDF ("Target closed"), even for tiny
+    // reports. A normal multi-process renderer is stable and the machine has RAM.
     "--disable-background-timer-throttling",
     "--disable-backgrounding-occluded-windows",
     "--disable-renderer-backgrounding",
@@ -185,14 +186,39 @@ app.post("/pdf", async (req, res) => {
       await page.addStyleTag({ content: "@page { size: A4 landscape !important; }" });
     }
 
+    // Wait for the report's data to actually render before printing.
+    // The React-less templates (format-b/c) show a ".loading" placeholder
+    // ("Loading report…") inside #root until their fetch resolves, then swap in
+    // the table (or an ".error" div on failure). Relying on networkidle2 alone
+    // RACES: the page can be network-idle for a beat BEFORE the fetch fires,
+    // so we'd capture the placeholder and emit a blank "Loading report…" PDF.
+    // Prefer the explicit placeholder signal; fall back to waiting for table
+    // rows for templates that don't use it.
+    const READY_TIMEOUT = Number(process.env.PDF_READY_TIMEOUT || 120000);
+    const usesLoadingPlaceholder = await page.evaluate(() => !!document.querySelector(".loading"));
     try {
-      await page.waitForSelector("table tbody tr", { timeout: 30000 });
-      console.log("Table rows found");
+      if (usesLoadingPlaceholder) {
+        await page.waitForFunction(() => !document.querySelector(".loading"), { timeout: READY_TIMEOUT, polling: 250 });
+        console.log("Loading placeholder cleared");
+      } else {
+        await page.waitForSelector("table tbody tr", { timeout: 30000 });
+        console.log("Table rows found");
+      }
     } catch (e) {
+      if (usesLoadingPlaceholder) {
+        throw new Error(`Report did not finish loading within ${READY_TIMEOUT}ms — the dataset may be too large or the API too slow.`);
+      }
       console.log("No table rows found, waiting extra time...");
     }
 
-    await new Promise((r) => setTimeout(r, 2000));
+    // Surface a template-rendered error instead of silently printing it to PDF.
+    const renderError = await page.evaluate(() => {
+      const el = document.querySelector(".error");
+      return el ? (el.innerText || "").trim() : null;
+    });
+    if (renderError) throw new Error("Report failed to load: " + renderError);
+
+    await new Promise((r) => setTimeout(r, 1500));
 
     const info = await page.evaluate(() => {
       const tables = document.querySelectorAll("table");
