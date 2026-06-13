@@ -322,10 +322,14 @@ function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
-    title: 'MyTime2Cloud',
+    title: 'MyTime2Desktop',
     show: true,
     webPreferences: { contextIsolation: true },
   });
+
+  // Keep the OS window/taskbar title fixed to the product name — don't let the
+  // loaded web page's <title> override it.
+  mainWindow.on('page-title-updated', (e) => e.preventDefault());
 
   // Recover from any transient main-frame load failure (also covers refresh).
   let retries = 0;

@@ -1,6 +1,6 @@
 {
   "name": "mytime2cloud-desktop",
-  "version": "0.1.0",
+  "version": "13.06.2026",
   "private": true,
   "description": "Electron desktop shell for MyTime2Cloud",
   "author": "MyTime2Cloud",
@@ -15,8 +15,10 @@
   },
   "build": {
     "appId": "com.mytime2cloud.desktop",
-    "productName": "MyTime2Cloud",
-    "directories": { "output": "dist" },
+    "productName": "MyTime2Desktop",
+    "directories": {
+      "output": "dist"
+    },
     "asar": true,
     "files": [
       "main.js",
@@ -28,21 +30,50 @@
       "package.json"
     ],
     "extraResources": [
-      { "from": "../pgsql", "to": "pgsql" },
-      { "from": "../backend", "to": "backend" },
-      { "from": "../sdk", "to": "sdk" },
-      { "from": "../services", "to": "services" },
-      { "from": "../conf", "to": "conf" },
-      { "from": "../nginx.exe", "to": "nginx.exe" },
-      { "from": "../frontend-new/out", "to": "frontend-new/out" },
-      { "from": "../allow-lan-access.bat", "to": "allow-lan-access.bat" }
+      {
+        "from": "../pgsql",
+        "to": "pgsql"
+      },
+      {
+        "from": "../backend",
+        "to": "backend"
+      },
+      {
+        "from": "../sdk",
+        "to": "sdk"
+      },
+      {
+        "from": "../services",
+        "to": "services"
+      },
+      {
+        "from": "../conf",
+        "to": "conf"
+      },
+      {
+        "from": "../nginx.exe",
+        "to": "nginx.exe"
+      },
+      {
+        "from": "../frontend-new/out",
+        "to": "frontend-new/out"
+      },
+      {
+        "from": "../allow-lan-access.bat",
+        "to": "allow-lan-access.bat"
+      }
     ],
-    "win": { "target": ["nsis"] },
+    "win": {
+      "icon": "icon.png",
+      "target": [
+        "nsis"
+      ]
+    },
     "nsis": {
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "MyTime2Cloud-Setup-${version}.${ext}"
+      "artifactName": "MyTime2Desktop-Setup-13.06.2026.${ext}"
     }
   }
 }
