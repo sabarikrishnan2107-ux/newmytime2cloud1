@@ -50,8 +50,30 @@ export default function LicenseGate({ children }) {
   };
 
   const copyFp = async () => {
-    try { await navigator.clipboard.writeText(status?.machine_fp || ""); toast.success("Activation code copied"); }
-    catch { toast.error("Copy failed"); }
+    const text = status?.machine_fp || "";
+    if (!text) return;
+    try {
+      // navigator.clipboard only works in a secure context (https/localhost).
+      // The desktop app is served over the LAN address (http://<ip>:3001), which
+      // is NOT secure, so fall back to a hidden textarea + execCommand there.
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        if (!ok) throw new Error("execCommand copy failed");
+      }
+      toast.success("Activation code copied");
+    } catch {
+      toast.error("Copy failed — click the code, press Ctrl+A then Ctrl+C");
+    }
   };
 
   const activate = async () => {
@@ -118,9 +140,15 @@ export default function LicenseGate({ children }) {
               Activation Code (send this to your provider)
             </div>
             <div className="flex items-center gap-2">
-              <code className="flex-1 truncate rounded-md bg-slate-100 px-3 py-2 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                {fp || "unavailable — restart the app"}
-              </code>
+              <input
+                type="text"
+                readOnly
+                value={fp || "unavailable — restart the app"}
+                onFocus={(e) => e.target.select()}
+                onClick={(e) => e.target.select()}
+                title={fp || ""}
+                className="flex-1 cursor-text select-all rounded-md bg-slate-100 px-3 py-2 font-mono text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              />
               <Button type="button" variant="outline" size="sm" onClick={copyFp} disabled={!fp}>
                 Copy
               </Button>
