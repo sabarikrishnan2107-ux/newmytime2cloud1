@@ -27,8 +27,8 @@ import {
 
 const isBrowser = typeof window !== 'undefined';
 
-const savedEmail = isBrowser ? localStorage.getItem('rememberedEmail') || 'demo@gmail.com' : 'demo@gmail.com';
-const savedPassword = isBrowser ? localStorage.getItem('rememberedPassword') || 'demo' : 'demo';
+const savedEmail = isBrowser ? localStorage.getItem('rememberedEmail') || 'admin' : 'admin';
+const savedPassword = isBrowser ? localStorage.getItem('rememberedPassword') || 'admin' : 'admin';
 const rememberPref = isBrowser ? localStorage.getItem('rememberMe') === 'true' : false;
 
 const easeOut = [0.16, 1, 0.3, 1];
@@ -72,14 +72,11 @@ const Login = () => {
     };
 
     const validateForm = () => {
-        // Basic validation
+        // Require both fields. The login identifier may be an email OR a plain
+        // username (e.g. "admin"), so we do NOT enforce an email format here —
+        // the backend authenticates against the users.email column either way.
         if (!credentials.email || !credentials.password) {
             setMsg(t('login.errorRequired'));
-            return false;
-        }
-        // Simple email format check
-        if (!/.+@.+\..+/.test(credentials.email)) {
-            setMsg(t('login.errorInvalidEmail'));
             return false;
         }
         return true;
