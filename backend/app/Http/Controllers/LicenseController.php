@@ -45,7 +45,10 @@ class LicenseController extends Controller
     public function generate(Request $request, LicenseSigner $signer)
     {
         $data = $request->validate([
-            'company_id'        => ['required', 'integer', 'exists:companies,id'],
+            // company_name is a free-text label for the license (admin reference);
+            // it is NOT tied to a real company record. company_id is optional.
+            'company_name'      => ['required', 'string', 'max:191'],
+            'company_id'        => ['nullable', 'integer'],
             'machine_fp'        => ['required', 'string', 'min:6'],
             'allowed_devices'   => ['nullable', 'array'],
             'allowed_devices.*' => ['string'],
@@ -54,8 +57,6 @@ class LicenseController extends Controller
             'expiry'            => ['required', 'date'],
         ]);
 
-        $company = $request->filled('company_id') ? Company::find($request->company_id) : null;
-
         $allowed = array_values(array_filter(array_map('trim', $data['allowed_devices'] ?? [])));
 
         $licenseId = 'LIC-' . date('Ymd') . '-' . strtoupper(Str::random(6));
@@ -63,7 +64,7 @@ class LicenseController extends Controller
         $signed = $signer->generate([
             'license_id'      => $licenseId,
             'company_id'      => $data['company_id'] ?? null,
-            'company_name'    => $company->name ?? ($request->company_name ?? null),
+            'company_name'    => $data['company_name'],
             'machine_fp'      => $data['machine_fp'],
             'allowed_devices' => $allowed,
             'max_devices'     => $data['max_devices'],
