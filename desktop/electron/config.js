@@ -6,6 +6,7 @@
 // log-listener .env; the app then relaunches to pick them up.
 
 const fs = require('fs');
+const path = require('path');
 const os = require('os');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
