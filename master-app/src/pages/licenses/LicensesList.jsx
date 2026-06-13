@@ -50,6 +50,19 @@ export default function LicensesList() {
     catch { error('Copy failed') }
   }
 
+  const [deletingId, setDeletingId] = useState(null)
+
+  const deleteLicense = async (l) => {
+    if (!window.confirm(`Delete license ${l.license_id}? This cannot be undone.`)) return
+    setDeletingId(l.id)
+    try {
+      await api.delete(`licenses/${l.id}`)
+      success('License deleted')
+      fetchLicenses(search, page)
+    } catch { error('Failed to delete license') }
+    finally { setDeletingId(null) }
+  }
+
   return (
     <div>
       <div className="page-header">
@@ -90,7 +103,7 @@ export default function LicensesList() {
                 <th>Max Dev</th>
                 <th>Expiry</th>
                 <th>Status</th>
-                <th style={{ width: 60, textAlign: 'center' }}>Key</th>
+                <th style={{ width: 90, textAlign: 'center' }}>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -126,9 +139,14 @@ export default function LicensesList() {
                           : <span className="badge badge-success"><span className="badge-dot" />Active</span>}
                     </td>
                     <td className="text-center">
-                      <button className="btn-icon" title="Copy license key" onClick={() => copyToken(l.token)}>
-                        <Icon name="copy" size={14} />
-                      </button>
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button className="btn-icon" title="Copy license key" onClick={() => copyToken(l.token)}>
+                          <Icon name="copy" size={14} />
+                        </button>
+                        <button className="btn-icon" title="Delete license" disabled={deletingId === l.id} onClick={() => deleteLicense(l)}>
+                          {deletingId === l.id ? <span className="spinner" /> : <Icon name="trash" size={14} />}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 )
