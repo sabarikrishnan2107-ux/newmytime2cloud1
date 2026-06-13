@@ -42,6 +42,19 @@ class LicenseController extends Controller
         return $this->response(null, $record, (bool) $record);
     }
 
+    public function destroy($id)
+    {
+        $record = License::where('id', $id)->orWhere('license_id', $id)->first();
+
+        if (! $record) {
+            return response()->json(['status' => false, 'message' => 'License not found.'], 404);
+        }
+
+        $record->delete();
+
+        return response()->json(['status' => true, 'message' => 'License deleted successfully.'], 200);
+    }
+
     public function generate(Request $request, LicenseSigner $signer)
     {
         $data = $request->validate([

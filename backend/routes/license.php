@@ -8,3 +8,4 @@ use Illuminate\Support\Facades\Route;
 Route::post('licenses/generate', [LicenseController::class, 'generate']);
 Route::get('licenses', [LicenseController::class, 'index']);
 Route::get('licenses/{id}', [LicenseController::class, 'show']);
+Route::delete('licenses/{id}', [LicenseController::class, 'destroy']);
