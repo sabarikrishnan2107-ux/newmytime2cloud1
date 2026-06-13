@@ -5,7 +5,7 @@
 // needed. Also spawns the SSE push relay and the .NET/Java device SDKs.
 // All paths are repo-relative; all runtimes are bundled. No global drive paths.
 
-const { app, BrowserWindow, Menu, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, clipboard } = require('electron');
 const { spawn, exec } = require('child_process');
 const http = require('http');
 const fs = require('fs');
@@ -73,6 +73,7 @@ const phpRestartTimers = new Set();
 let mainWindow = null;
 let settingsWindow = null;
 let logsWindow = null;
+let licenseWindow = null;
 
 // ── In-memory log feed for the in-app Logs window ───────────────────────────
 // Every service's stdout/stderr is already written as "[label] text"; we tee
@@ -385,6 +386,45 @@ function openLogsWindow() {
   logsWindow.on('closed', () => { logsWindow = null; });
 }
 
+// ── License (update / re-activate anytime) ───────────────────────────────────
+// Lets an admin paste a new key without waiting for the current one to expire —
+// e.g. to raise the device/employee limit or extend the date.
+function openLicenseWindow() {
+  if (licenseWindow && !licenseWindow.isDestroyed()) { licenseWindow.focus(); return; }
+  licenseWindow = new BrowserWindow({
+    width: 620, height: 680, title: 'License', parent: mainWindow || undefined,
+    modal: false, autoHideMenuBar: true, resizable: true,
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true },
+  });
+  licenseWindow.loadFile(path.join(__dirname, 'license.html'));
+  licenseWindow.on('closed', () => { licenseWindow = null; });
+}
+
+// Minimal JSON call to the local Laravel API (main process → no CORS, works
+// pre-login since the license routes are public).
+function apiRequest(method, apiPath, body) {
+  return new Promise((resolve) => {
+    const data = body ? JSON.stringify(body) : null;
+    const req = http.request({
+      host: '127.0.0.1', port: API_PORT, path: '/api' + apiPath, method,
+      headers: {
+        Accept: 'application/json',
+        ...(data ? { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(data) } : {}),
+      },
+    }, (res) => {
+      let buf = '';
+      res.on('data', (c) => (buf += c));
+      res.on('end', () => {
+        let parsed; try { parsed = JSON.parse(buf || '{}'); } catch { parsed = { message: buf }; }
+        resolve({ ok: res.statusCode >= 200 && res.statusCode < 300, status: res.statusCode, data: parsed });
+      });
+    });
+    req.on('error', (e) => resolve({ ok: false, status: 0, data: { message: e.message } }));
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
 // Test a DB connection using the pg client bundled with the log-listener service
 // (so we don't add a dependency to the electron shell itself).
 async function testDbConnection(db) {
@@ -422,6 +462,11 @@ function registerIpc() {
   ipcMain.handle('settings:close', () => { if (settingsWindow && !settingsWindow.isDestroyed()) settingsWindow.close(); });
   ipcMain.handle('logs:get', () => LOG_BUFFER.slice(-1500));
   ipcMain.handle('logs:clear', () => { LOG_BUFFER.length = 0; return true; });
+  // License window: proxy the public license endpoints + clipboard.
+  ipcMain.handle('license:status', () => apiRequest('GET', '/license/status'));
+  ipcMain.handle('license:activate', (_e, token) => apiRequest('POST', '/license/activate', { token }));
+  ipcMain.handle('license:close', () => { if (licenseWindow && !licenseWindow.isDestroyed()) licenseWindow.close(); });
+  ipcMain.handle('clip:write', (_e, text) => { clipboard.writeText(String(text ?? '')); return true; });
 }
 
 function buildMenu() {
@@ -430,6 +475,9 @@ function buildMenu() {
       { label: 'Database Connection…', accelerator: 'CmdOrCtrl+,', click: openSettingsWindow },
       { type: 'separator' },
       { role: 'quit' },
+    ] },
+    { label: 'License', submenu: [
+      { label: 'Update License…', click: openLicenseWindow },
     ] },
     { label: 'Logs', submenu: [
       { label: 'View Logs…', accelerator: 'CmdOrCtrl+L', click: openLogsWindow },

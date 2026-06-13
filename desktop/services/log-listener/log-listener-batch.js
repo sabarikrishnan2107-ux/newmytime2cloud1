@@ -65,6 +65,12 @@ const dbPool = new Pool({
   idleTimeoutMillis: 0,
 });
 
+// An idle client can emit 'error' when the DB connection drops — most commonly
+// when the app shuts down and stops the bundled PostgreSQL. Without a handler
+// node-postgres rethrows it as an uncaught exception (a noisy crash dump on
+// quit). Log it quietly instead; the pool reconnects on the next query.
+dbPool.on("error", (err) => logError("PostgreSQL pool error (likely shutdown): " + err.message));
+
 dbPool.connect()
   .then(c => { console.log("✅ PostgreSQL connected"); c.release(); })
   .catch(err => logError("PostgreSQL connection error: " + err.message));

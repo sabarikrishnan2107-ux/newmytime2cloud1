@@ -27,6 +27,7 @@
       "preload.js",
       "settings.html",
       "logs.html",
+      "license.html",
       "package.json"
     ],
     "extraResources": [
