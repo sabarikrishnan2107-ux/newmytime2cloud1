@@ -21,12 +21,14 @@
     "files": [
       "main.js",
       "config.js",
+      "postgres.js",
       "preload.js",
       "settings.html",
       "logs.html",
       "package.json"
     ],
     "extraResources": [
+      { "from": "../pgsql", "to": "pgsql" },
       { "from": "../backend", "to": "backend" },
       { "from": "../sdk", "to": "sdk" },
       { "from": "../services", "to": "services" },

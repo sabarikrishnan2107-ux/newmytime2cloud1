@@ -12,6 +12,8 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const cfg = require('./config');
+const pg = require('./postgres');   // bundled PostgreSQL (auto init + start, no install/import)
+const { spawnSync } = require('child_process');
 
 // Dev: repo root is electron/..  Packaged: the bundled trees (backend, sdk,
 // services, conf, nginx.exe, frontend-new/out) are copied to resources/ via
@@ -447,6 +449,7 @@ function cleanup() {
     // only ever kill what this app spawned — not the user's other nginx/php/java.
     if (c.pid) { try { exec(`taskkill /pid ${c.pid} /T /F`); } catch (_) {} }
   }
+  try { pg.stopPostgres(); } catch (_) {}   // stop the bundled DB last
 }
 
 // This machine's GPU process errors (seen as "Gpu Cache Creation failed"); the
@@ -468,6 +471,27 @@ if (!app.requestSingleInstanceLock()) {
       const fp = cfg.ensureMachineFp();   // bind license to THIS machine; write MACHINE_FP to backend/.env
       log('machine fingerprint:', fp.slice(0, 16) + '…');
     } catch (e) { log('machine fingerprint error:', e.message); }
+
+    // Bundled database: init + start the local PostgreSQL BEFORE the API workers
+    // (they connect to it on boot). First launch creates the cluster and restores
+    // the starter data — no install, no import. On app updates, apply any new
+    // Laravel migrations so the existing user database stays in sync.
+    try {
+      const { firstRun } = pg.ensurePostgres();
+      if (!firstRun) {
+        log('Applying any pending database migrations…');
+        const m = spawnSync(PHP_CLI, ['artisan', 'migrate', '--force'],
+          { cwd: BACKEND, env: process.env, windowsHide: true });
+        if (m.status !== 0) log('migrate returned', m.status, '(continuing)');
+      }
+    } catch (e) {
+      log('FATAL: database init failed:', e.message);
+      try { require('electron').dialog.showErrorBox('Database error',
+        'MyTime2Cloud could not start its database:\n\n' + e.message); } catch (_) {}
+      app.quit();
+      return;
+    }
+
     startPhpCgiWorkers();   // API workers first… (read MACHINE_FP from .env at start)
     startNginx();           // …then the front door that proxies to them
     startDotnetSdk();
