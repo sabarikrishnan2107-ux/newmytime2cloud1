@@ -22,11 +22,9 @@ export default function LicenseGenerate() {
   const navigate = useNavigate()
   const { toasts, success, error } = useToast()
 
-  const [companyQuery, setCompanyQuery] = useState('')
-  const [companyResults, setCompanyResults] = useState([])
-  const [companyOpen, setCompanyOpen] = useState(false)
-  const [company, setCompany] = useState(null)        // { id, name }
-  const debounceRef = useRef(null)
+  // Free-text label only — shown on the license for admin reference. It is NOT
+  // linked to a real company record.
+  const [companyName, setCompanyName] = useState('')
 
   const [machineFp, setMachineFp] = useState('')
   const [serials, setSerials] = useState([])
@@ -38,26 +36,6 @@ export default function LicenseGenerate() {
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState(null)          // { token, license_id, download_name }
   const [errors, setErrors] = useState({})
-
-  const searchCompanies = (val) => {
-    setCompanyQuery(val)
-    setCompany(null)
-    clearTimeout(debounceRef.current)
-    if (val.trim().length < 2) { setCompanyResults([]); setCompanyOpen(false); return }
-    debounceRef.current = setTimeout(async () => {
-      try {
-        const { data } = await api.get(`company/search/${val}`, { params: { per_page: 20 } })
-        setCompanyResults(data.data || data.record || [])
-        setCompanyOpen(true)
-      } catch { /* silent */ }
-    }, 400)
-  }
-
-  const pickCompany = (c) => {
-    setCompany({ id: c.id, name: c.name })
-    setCompanyQuery(c.name)
-    setCompanyOpen(false)
-  }
 
   const addSerial = () => {
     const v = serialInput.trim()
@@ -74,7 +52,7 @@ export default function LicenseGenerate() {
 
   const validate = () => {
     const e = {}
-    if (!company?.id) e.company = 'Company is required'
+    if (!companyName.trim()) e.company = 'Company is required'
     if (!machineFp.trim()) e.machine_fp = 'Machine fingerprint is required'
     if (maxEmployees === '' || Number(maxEmployees) < 0) e.max_employees = 'Enter max employees'
     if (maxDevices === '' || Number(maxDevices) < 0) e.max_devices = 'Enter max devices'
@@ -89,8 +67,8 @@ export default function LicenseGenerate() {
     setResult(null)
     try {
       const { data } = await api.post('licenses/generate', {
-        company_id: company?.id ?? null,
-        company_name: company?.name ?? null,
+        company_id: null,
+        company_name: companyName.trim(),
         machine_fp: machineFp.trim(),
         allowed_devices: serials,
         max_devices: Number(maxDevices),
@@ -145,29 +123,16 @@ export default function LicenseGenerate() {
           <SectionHeader icon="key" title="License Details" subtitle="The customer reads the Activation Code off their desktop app" />
 
           <div className="grid-2 mb-[14px]">
-            {/* Company picker */}
-            <div className="field relative">
+            {/* Company label (free text — admin reference only) */}
+            <div className="field">
               <label>Company *</label>
               <input
                 className={`input ${errors.company ? 'input-error' : ''}`}
-                placeholder="Search company by name…"
-                value={companyQuery}
-                onChange={e => searchCompanies(e.target.value)}
-                onFocus={() => companyResults.length && setCompanyOpen(true)}
+                placeholder="Company / customer name for this license"
+                value={companyName}
+                onChange={e => setCompanyName(e.target.value)}
               />
-              {company
-                ? <span className="field-error" style={{ color: '#10b981' }}>Selected: {company.name} (#{company.id})</span>
-                : <FE field="company" />}
-              {companyOpen && companyResults.length > 0 && (
-                <div className="absolute left-0 right-0 top-[calc(100%+4px)] bg-surface border border-border-2 rounded-md p-1.5 max-h-[220px] overflow-y-auto z-30 shadow-[0_8px_24px_rgba(0,0,0,.5)]">
-                  {companyResults.map(c => (
-                    <button key={c.id} onClick={() => pickCompany(c)}
-                      className="w-full text-left px-2.5 py-2 rounded-[6px] text-sm text-content-secondary hover:bg-surface-2">
-                      {c.name} <span className="text-content-muted">#{c.id}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+              <FE field="company" />
             </div>
 
             {/* Machine fingerprint */}
