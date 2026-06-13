@@ -1047,12 +1047,13 @@ class DeviceController extends Controller
 
     public function update(Device $Device, UpdateRequest $request)
     {
-        // License requirement: devices are license-bound, so an existing device
-        // cannot be edited. Delete and re-add the device to make a change.
-        return $this->response('Devices cannot be edited.', null, false);
-
         try {
             $data = $request->validated();
+            // License requirement: the device serial (device_id / serial_number)
+            // is license-bound and must NOT change on update — otherwise a
+            // licensed device could be swapped for a non-whitelisted serial.
+            // All other fields (name, location, function, etc.) remain editable.
+            unset($data['device_id'], $data['serial_number']);
             if (!empty($data['camera_rtsp_ip']) && empty($data['camera_rtsp_port'])) {
                 $data['camera_rtsp_port'] = 554;
             }

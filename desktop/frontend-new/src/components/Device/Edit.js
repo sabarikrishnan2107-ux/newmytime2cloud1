@@ -283,11 +283,14 @@ const DeviceEdit = ({ open, setOpen, defaultPayload, onSuccess = () => { } }) =>
                                     <div className="space-y-1.5">
                                         <label className="block text-sm font-medium text-slate-400">
                                             Serial Number <span className="text-red-400">*</span>
+                                            <span className="ml-1 text-[11px] text-slate-500">(locked — license-bound)</span>
                                         </label>
                                         <Input
                                             placeholder=""
                                             value={form.device_id}
-                                            onChange={(e) => handleChange("device_id", e.target.value)}
+                                            readOnly
+                                            disabled
+                                            className="opacity-60 cursor-not-allowed"
                                         />
                                     </div>
                                 ) : (
