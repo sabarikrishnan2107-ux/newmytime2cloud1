@@ -35,7 +35,7 @@ export default function StaffLayout({ children }) {
       <aside className="group/sidebar fixed left-0 top-0 z-50 flex h-screen w-14 hover:w-52 flex-col border-r border-white/5 bg-[#050B18]/95 backdrop-blur-xl transition-all duration-300 ease-in-out staff-sidebar-glow overflow-hidden">
         {/* Logo */}
         <div className="flex items-center px-2 py-4 shrink-0 overflow-hidden">
-          <img src="/logo22.png" alt="M" className="h-8 w-8 group-hover/sidebar:h-8 group-hover/sidebar:w-auto object-contain shrink-0 transition-all duration-300" onError={(e) => { e.target.src = "https://mytime2cloud.com/logo22.png"; }} />
+          <img src="/logo22.png" alt="M" className="h-8 w-8 group-hover/sidebar:h-8 group-hover/sidebar:w-auto object-contain shrink-0 transition-all duration-300" />
         </div>
 
         {/* Nav */}

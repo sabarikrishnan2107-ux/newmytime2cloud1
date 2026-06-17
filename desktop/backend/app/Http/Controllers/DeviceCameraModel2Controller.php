@@ -26,7 +26,7 @@ class DeviceCameraModel2Controller extends Controller
 
     public function __construct($camera_sdk_url, $sxdmSn = '', $adminUsername = null, $adminPassword = null)
     {
-        $url = $camera_sdk_url ?: (gethostbyname(gethostname()) . ':8888');
+        $url = $camera_sdk_url ?: (gethostbyname(gethostname()) . ':' . env('JAVA_PORT', '8888'));
         if (!preg_match('#^https?://#', $url)) {
             $url = 'http://' . $url;
         }
@@ -644,7 +644,7 @@ class DeviceCameraModel2Controller extends Controller
         foreach ($devices->get() as $device) {
 
             $this->sxdmSn = $device->device_id;
-            $url = $device->camera_sdk_url ?? gethostbyname(gethostname()) . ':8888';
+            $url = $device->camera_sdk_url ?? gethostbyname(gethostname()) . ':' . env('JAVA_PORT', '8888');
             if (!preg_match('#^https?://#', $url)) {
                 $url = 'http://' . $url;
             }

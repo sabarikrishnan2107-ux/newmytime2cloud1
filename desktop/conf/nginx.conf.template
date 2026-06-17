@@ -1,0 +1,97 @@
+# MyTime2Cloud desktop — nginx front door (TEMPLATE).
+# electron/main.js renders this to conf/nginx.runtime.conf at launch, substituting
+# {{TOKENS}} with the configured ports (desktop-config.json -> DEFAULT_PORTS). Do
+# not edit nginx.runtime.conf by hand — it is regenerated every start. Relative
+# paths resolve under the repo root because nginx is started with `-p <root>`.
+#
+#   {{API_PORT}}  Laravel API + media   -> backend/public/index.php via php-cgi pool
+#   {{WEB_PORT}}  Next.js static export -> frontend/out, with __M2C_HOST__ and the
+#                 __*_PORT__ tokens rewritten per-request so the web build needs no
+#                 rebuild when a port changes.
+
+worker_processes 1;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    include       mime.types;
+    default_type  application/octet-stream;
+
+    access_log  logs/access.log;
+    error_log   logs/error.log;
+
+    # Keep all scratch dirs under temp/ so the repo root stays clean (gitignored).
+    client_body_temp_path temp/client_body;
+    fastcgi_temp_path     temp/fastcgi;
+    proxy_temp_path       temp/proxy;
+    uwsgi_temp_path       temp/uwsgi;
+    scgi_temp_path        temp/scgi;
+
+    sendfile           on;
+    keepalive_timeout  65;
+    server_tokens      off;
+    client_max_body_size 100M;   # photo / bulk-import uploads
+
+    # PHP-CGI worker pool — round-robin. Rendered from PHP_PORTS in electron/main.js.
+    upstream php_workers {
+{{PHP_UPSTREAM}}
+    }
+
+    # ── Laravel API (system of record) + media ──────────────────────────────
+    server {
+        listen      {{API_PORT}};
+        server_name _;
+        root        backend/public;
+        index       index.php index.html;
+
+        location / {
+            try_files $uri $uri/ /index.php?$query_string;
+        }
+
+        location ~ \.php$ {
+            include      fastcgi_params;
+            fastcgi_pass php_workers;
+            fastcgi_index index.php;
+            # $realpath_root => absolute, symlink-resolved path, so SCRIPT_FILENAME
+            # is correct no matter what cwd php-cgi was started in.
+            fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+            fastcgi_read_timeout 300;   # long report generation
+        }
+
+        location ~ /\.ht { deny all; }
+    }
+
+    # ── Next.js static export (the web UI) ───────────────────────────────────
+    server {
+        listen      {{WEB_PORT}};
+        server_name _;
+        root        frontend/out;
+        index       index.html;
+
+        # The production build bakes literal tokens into every service URL (see
+        # frontend/.env.production.local). Rewrite them per-request: __M2C_HOST__ to
+        # the host the client used (so no static IP), and each __*_PORT__ to the
+        # configured port (so no rebuild when a port changes). Applies to all
+        # response types (tokens live in .js/.json, not just html).
+        sub_filter_once  off;
+        sub_filter_types *;
+        sub_filter        __M2C_HOST__    $host;
+        sub_filter        __API_PORT__    "{{API_PORT}}";
+        sub_filter        __PUSH_PORT__   "{{PUSH_PORT}}";
+        sub_filter        __FACE_PORT__   "{{FACE_PORT}}";
+        sub_filter        __DOTNET_PORT__ "{{DOTNET_PORT}}";
+        sub_filter        __PDF_PORT__    "{{PDF_PORT}}";
+        sub_filter        __SYNC_PORT__   "{{SYNC_PORT}}";
+        sub_filter        __MQTT_WS_PORT__ "{{MQTT_WS_PORT}}";
+
+        # trailingSlash export: /login/ -> /login/index.html. Fall back to .html
+        # and finally the root document for client-routed paths.
+        location / {
+            try_files $uri $uri/ $uri.html /index.html;
+        }
+
+        location ~ /\.ht { deny all; }
+    }
+}

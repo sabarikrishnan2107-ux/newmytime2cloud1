@@ -53,7 +53,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/" . "{$id}/WriteTimeGroup";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/$id/WriteTimeGroup";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/$id/WriteTimeGroup";
         }
 
         $sdkResponse = $this->processSDKRequestBulk($url, $data);
@@ -102,7 +102,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/" . "{$id}/WriteTimeGroup";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/$id/WriteTimeGroup";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/$id/WriteTimeGroup";
         }
 
         $sdkResponse = $this->processSDKRequestBulk($url, $data);
@@ -162,7 +162,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/Person/AddRange";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/Person/AddRange";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/Person/AddRange";
         }
         $cameraResponse1 = [];
         $cameraResponse2 = [];
@@ -297,7 +297,7 @@ class SDKController extends Controller
         foreach ($Devices as $device_id) {
             $url = env('SDK_URL') . "/$device_id/AddPerson";
             if (env('APP_ENV') == 'desktop') {
-                $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/$device_id/AddPerson";
+                $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/$device_id/AddPerson";
             }
 
             // $url = "https://sdk.mytime2cloud.com/OX-9662210080054/AddPerson";
@@ -740,7 +740,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/getDevices";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/getDevices";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/getDevices";
         }
 
 
@@ -752,7 +752,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/Person/AddRange";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/Person/AddRange";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/Person/AddRange";
         }
 
         $return = TimezonePhotoUploadJob::dispatch($json, $url);
@@ -762,7 +762,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/Person/AddRange";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/Person/AddRange";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/Person/AddRange";
         }
 
         return $this->processSDKRequestBulk($url, $data);
@@ -772,7 +772,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/Person/AddRange";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/Person/AddRange";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/Person/AddRange";
         }
 
         info("Visitor Upload:", [$json, $url]);
@@ -784,7 +784,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/" . $device_id . "/DeletePerson";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/" . $device_id . "/DeletePerson";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/" . $device_id . "/DeletePerson";
         }
 
         $return = TimezonePhotoUploadJob::dispatch($json, $url);
@@ -825,7 +825,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/" . $device_id . "/SetWorkParam";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/" . $device_id . "/SetWorkParam";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/" . $device_id . "/SetWorkParam";
         }
 
 
@@ -838,7 +838,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/" . $device_id . "/CloseAlarm";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/" . $device_id . "/CloseAlarm";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/" . $device_id . "/CloseAlarm";
         }
 
 
@@ -937,7 +937,7 @@ class SDKController extends Controller
             $url = env('SDK_URL') . "/" . "{$device_id}/GetWorkParam";
 
             if (env('APP_ENV') == 'desktop') {
-                $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/" . $device_id . "/GetWorkParam";
+                $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/" . $device_id . "/GetWorkParam";
             }
 
             $data =   null;
@@ -1031,7 +1031,7 @@ class SDKController extends Controller
             $url = env('SDK_URL') . "/" . "{$device_id}/GetPersonDetail";
 
             if (env('APP_ENV') == 'desktop') {
-                $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/" . "{$device_id}/GetPersonDetail";
+                $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/" . "{$device_id}/GetPersonDetail";
             }
 
             try {
@@ -1234,7 +1234,7 @@ class SDKController extends Controller
         $url = env('SDK_URL') . "/$id/$command";
 
         if (env('APP_ENV') == 'desktop') {
-            $url = "http://" . gethostbyname(gethostname()) . ":8080" . "/" . "/$id/$command";
+            $url = "http://" . gethostbyname(gethostname()) . ":" . env('SDK_PORT', '8080') . "/" . "/$id/$command";
         }
 
         try {

@@ -25,10 +25,12 @@ class FaceDeviceController extends Controller
 
 
             // Desktop is self-contained: the MQTT device gateway
-            // (mqtt-mytime-device-sdk.js) always runs on this same machine on
-            // :8001, spawned by electron/main.js. Hardcoded on purpose — no env
-            // var to set, so device health works out of the box on every install.
-            $url = 'http://127.0.0.1:8001/' . ltrim($path, '/');
+            // (mqtt-mytime-device-sdk.js) runs on this same machine. The port is
+            // configurable (desktop-config.json), and the desktop writes the
+            // resolved URL into backend/.env on boot, so this is never hand-set.
+            // Default :8001 is correct out of the box.
+            $base = rtrim(env('MQTT_GATEWAY_URL', 'http://127.0.0.1:8001'), '/');
+            $url = $base . '/' . ltrim($path, '/');
 
             $client = Http::withoutVerifying()->acceptJson()->timeout(60);
 

@@ -173,7 +173,7 @@ const Login = () => {
 
             {/* Top bar */}
             <header className="relative z-10 flex items-center justify-between px-6 py-6 lg:px-14">
-                <img src="https://mytime2cloud.com/logo22.png" alt="MyTime2Cloud" className="h-11 w-auto object-contain dark:brightness-110" />
+                <img src="/logo-wide.png" alt="MyTime2Cloud" className="h-11 w-auto object-contain dark:brightness-110" />
                 <div className="flex items-center gap-2">
                     <button
                         type="button"
@@ -245,7 +245,7 @@ const Login = () => {
                     >
                         {/* Mobile logo */}
                         <div className="mb-7 lg:hidden">
-                            <img src="https://mytime2cloud.com/logo22.png" alt="Logo" className="h-8 w-auto" />
+                            <img src="/logo-wide.png" alt="Logo" className="h-8 w-auto" />
                         </div>
 
                         <h2 className="text-3xl! font-bold text-slate-900 dark:text-white">{t('login.welcomeBack')}</h2>

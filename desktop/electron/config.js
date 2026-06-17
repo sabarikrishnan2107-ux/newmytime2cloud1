@@ -21,11 +21,19 @@ const CONFIG_PATH = path.join(PACKAGED ? app.getPath('userData') : __dirname, 'd
 const BACKEND_ENV = path.join(ROOT, 'backend', '.env');
 const LISTENER_ENV = path.join(ROOT, 'services', 'log-listener', '.env');
 
-// Defaults. Keep in sync with conf/nginx.conf + the frontend port tokens.
+// Defaults. Single source of truth for every service port. main.js threads these
+// into the services it spawns, renders conf/nginx.conf.template with them, and
+// nginx rewrites the matching __*_PORT__ tokens in the static frontend per-request
+// (so the web build needs no rebuild when a port changes). Override any of them in
+// desktop-config.json ("ports": { ... }); defaults work out of the box.
+// NOTE: the Postgres port is configured separately via the DB settings (db.port /
+// backend .env DB_PORT), not here.
 const DEFAULT_PORTS = {
   api: 8000, web: 3001, push: 8077, face: 8500,
   dotnet: 8080, java: 8888, pdf: 3002, sync: 4000,
-  mqttTcp: 1883, mqttWs: 8083,
+  mqttTcp: 1883, mqttWs: 8083, gateway: 8001,
+  php: [9000, 9001, 9002, 9003],          // php-cgi FastCGI pool (internal)
+  deviceUdp: 7001, deviceTcp: 7002, deviceUdp2: 8101,  // .NET SDK device ports
 };
 
 function readEnvValue(file, key) {
@@ -84,6 +92,31 @@ function applyDb(db) {
   updateEnvFile(LISTENER_ENV, kv);
 }
 
+// Write the configured service ports the BACKEND needs to reach into backend/.env.
+// The Laravel code can't read desktop-config.json, so the desktop mirrors the
+// derived local-service URLs into its .env on every boot (same managed pattern as
+// MACHINE_FP / DB settings — the user never sets these by hand). Keeps backend ->
+// local SDK / gateway calls pointed at the right port when a port is overridden.
+function applyServicePorts(ports) {
+  const p = { ...DEFAULT_PORTS, ...(ports || {}) };
+  updateEnvFile(BACKEND_ENV, {
+    SDK_URL: `http://127.0.0.1:${p.dotnet}`,
+    SDK_PORT: p.dotnet,
+    JAVA_PORT: p.java,
+    OX900_SDK_URL: `127.0.0.1:${p.java}`,
+    MQTT_GATEWAY_URL: `http://127.0.0.1:${p.gateway}`,
+  });
+}
+
+// Persist service-port overrides into desktop-config.json (merging, so machine_fp
+// and db are preserved). main.js relaunches afterwards to apply them.
+function applyPorts(ports) {
+  let cfg = {};
+  try { cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch { cfg = {}; }
+  cfg.ports = { ...(cfg.ports || {}), ...ports };
+  fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
+}
+
 const LIVE_DB_HOST = '139.59.69.241';   // hard-blocked: live production DB
 
 // ── Machine fingerprint (license binding) ────────────────────────────────────
@@ -121,4 +154,4 @@ function ensureMachineFp() {
   return fp;
 }
 
-module.exports = { load, save, applyDb, ensureMachineFp, computeMachineFp, DEFAULT_PORTS, CONFIG_PATH, LIVE_DB_HOST };
+module.exports = { load, save, applyDb, applyPorts, applyServicePorts, ensureMachineFp, computeMachineFp, DEFAULT_PORTS, CONFIG_PATH, LIVE_DB_HOST };

@@ -64,6 +64,23 @@
 
   <div id="status"></div>
 
+  <hr style="border:0; border-top:1px solid #243049; margin:28px 0 20px" />
+
+  <h1>Service Ports</h1>
+  <p class="sub">Change a port if it clashes with other software on this PC. Saving restarts the app to apply — no reinstall or rebuild needed.</p>
+
+  <div class="grid" id="portsGrid"></div>
+
+  <div class="warn" style="display:block">⚠ Changing the MQTT broker or device ports (broker, device TCP/UDP) means your physical devices must be reconfigured to match. The web/API/service ports need nothing on the device side.</div>
+
+  <div class="row">
+    <button class="ghost" id="btnPortsReset">Reset to defaults</button>
+    <div class="spacer"></div>
+    <button class="primary" id="btnPortsSave">Save &amp; Restart</button>
+  </div>
+
+  <div id="portsStatus"></div>
+
   <script>
     const $ = (id) => document.getElementById(id);
     const fields = ["host", "port", "database", "username", "password"];
@@ -81,6 +98,33 @@
     function setStatus(msg, cls) { const s = $("status"); s.textContent = msg; s.className = cls || ""; }
     function checkLive() { $("warn").style.display = $("host").value.trim() === LIVE ? "block" : "none"; }
 
+    // ── Service ports ─────────────────────────────────────────────────────
+    const PORTS_META = [
+      ["api", "API (nginx)"], ["web", "Web UI"], ["push", "SSE push"], ["face", "Face validator"],
+      ["dotnet", ".NET device SDK"], ["java", "Java device SDK"], ["pdf", "PDF service"], ["sync", "Calendar API"],
+      ["gateway", "MQTT device gateway"], ["mqttTcp", "MQTT broker"], ["mqttWs", "MQTT WebSocket"],
+      ["deviceTcp", "Device TCP (inbound)"], ["deviceUdp", "Device UDP (discovery)"], ["deviceUdp2", "Device UDP (alt)"],
+    ];
+    let DEFAULT_PORTS = {};
+    function buildPortsGrid(ports) {
+      const g = $("portsGrid"); g.innerHTML = "";
+      for (const [key, label] of PORTS_META) {
+        const wrap = document.createElement("div");
+        const inp = document.createElement("input");
+        inp.id = "port_" + key; inp.type = "number"; inp.min = "1"; inp.max = "65535";
+        inp.value = ports[key] != null ? ports[key] : "";
+        const lab = document.createElement("label");
+        lab.setAttribute("for", inp.id); lab.textContent = label;
+        wrap.appendChild(lab); wrap.appendChild(inp); g.appendChild(wrap);
+      }
+    }
+    function readPorts() {
+      const p = {};
+      for (const [key] of PORTS_META) { const v = Number($("port_" + key).value); if (v) p[key] = v; }
+      return p;
+    }
+    function setPortsStatus(msg, cls) { const s = $("portsStatus"); s.textContent = msg; s.className = cls || ""; }
+
     (async () => {
       const cfg = await window.m2c.getConfig();
       const db = cfg.db || {};
@@ -90,7 +134,21 @@
       $("username").value = db.username || "";
       $("password").value = db.password || "";
       checkLive();
+      DEFAULT_PORTS = cfg.defaultPorts || {};
+      buildPortsGrid(cfg.ports || {});
     })();
+
+    $("btnPortsReset").addEventListener("click", () => { buildPortsGrid(DEFAULT_PORTS); setPortsStatus("Reset to defaults — not saved yet.", "muted"); });
+
+    $("btnPortsSave").addEventListener("click", async () => {
+      const ports = readPorts();
+      const vals = Object.values(ports);
+      if (vals.some(v => v < 1 || v > 65535)) { setPortsStatus("✗ Ports must be between 1 and 65535.", "err"); return; }
+      if (new Set(vals).size !== vals.length) { setPortsStatus("✗ Two services cannot share the same port.", "err"); return; }
+      setPortsStatus("Saving and restarting…", "muted");
+      const r = await window.m2c.savePorts(ports);
+      if (!r.ok) setPortsStatus("✗ " + r.message, "err");
+    });
 
     $("host").addEventListener("input", checkLive);
 

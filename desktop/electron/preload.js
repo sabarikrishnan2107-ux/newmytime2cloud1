@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('m2c', {
   getConfig: () => ipcRenderer.invoke('config:get'),
   testDb: (db) => ipcRenderer.invoke('config:testDb', db),
   saveDb: (db) => ipcRenderer.invoke('config:saveDb', db),
+  savePorts: (ports) => ipcRenderer.invoke('config:savePorts', ports),
   close: () => ipcRenderer.invoke('settings:close'),
   // Logs
   getLogs: () => ipcRenderer.invoke('logs:get'),

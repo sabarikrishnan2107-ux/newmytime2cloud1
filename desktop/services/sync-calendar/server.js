@@ -5,7 +5,7 @@ const axios = require('axios');
 
 const app = express();
 const HOST = "0.0.0.0";
-const PORT = 4000;   // must match frontend NEXT_PUBLIC_SYNC_CALENDAR_URL (:4000)
+const PORT = Number(process.env.SYNC_PORT) || 4000;   // frontend uses the configured sync port
 
 app.use(cors());
 

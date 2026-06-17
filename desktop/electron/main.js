@@ -8,6 +8,7 @@
 const { app, BrowserWindow, Menu, ipcMain, clipboard } = require('electron');
 const { spawn, exec } = require('child_process');
 const http = require('http');
+const net = require('net');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
@@ -56,14 +57,28 @@ function lanIp() {
 }
 
 const HOST = lanIp();
-const API_PORT = 8000;
-const WEB_PORT = 3001;
-const PUSH_PORT = 8077;
-const FACE_PORT = 8500;   // face validator — frontend FACE_VALIDATOR_URL points here
-// php-cgi FastCGI worker pool — must match the `php_workers` upstream in
-// conf/nginx.conf. Each php-cgi -b instance serves one request at a time on
+// All service ports come from desktop-config.json (DEFAULT_PORTS + any overrides).
+// Changing a port there is enough — nginx is rendered from a template with these
+// values and rewrites the matching tokens into the static frontend per-request.
+const PORTS = cfg.load().ports;
+const API_PORT = PORTS.api;
+const WEB_PORT = PORTS.web;
+const PUSH_PORT = PORTS.push;
+const FACE_PORT = PORTS.face;   // face validator — frontend FACE_VALIDATOR_URL points here
+const GATEWAY_PORT = PORTS.gateway;  // MQTT device gateway HTTP API
+const PDF_PORT = PORTS.pdf;
+const SYNC_PORT = PORTS.sync;
+const DOTNET_PORT = PORTS.dotnet;
+const JAVA_PORT = PORTS.java;
+const MQTT_TCP_PORT = PORTS.mqttTcp;
+const MQTT_WS_PORT = PORTS.mqttWs;
+const DEVICE_UDP = PORTS.deviceUdp;
+const DEVICE_TCP = PORTS.deviceTcp;
+const DEVICE_UDP2 = PORTS.deviceUdp2;
+// php-cgi FastCGI worker pool — must match the `php_workers` upstream rendered
+// into nginx.conf. Each php-cgi -b instance serves one request at a time on
 // Windows, so the pool is what gives the API concurrency.
-const PHP_PORTS = [9000, 9001, 9002, 9003];
+const PHP_PORTS = PORTS.php;
 const LOGIN_URL = `http://${HOST}:${WEB_PORT}/login/`;
 const API_PROBE = `http://${HOST}:${API_PORT}/`;   // Laravel redirects / -> api/test (cheap, no DB)
 
@@ -101,6 +116,68 @@ for (const stream of [process.stdout, process.stderr]) {
 
 function log(...a) { console.log('[mytime2cloud]', ...a); }
 
+// ── Port preflight ───────────────────────────────────────────────────────────
+// On another PC some of the fixed ports the app binds may already be taken by
+// other software. Binding then silently fails and the app breaks with no obvious
+// cause. We check the externally-facing ports up front and, on a clash, tell the
+// user exactly which port and which process — instead of a white screen. Port
+// numbers honor any overrides in desktop-config.json (ports: {...}). Postgres
+// (54329) and the php-cgi pool (9000-9003) are excluded: they self-manage / are
+// uncommon, and a lingering instance of our own would be a false positive.
+function requiredPorts() {
+  return [
+    { label: 'API (nginx)',         port: API_PORT },
+    { label: 'Web UI (nginx)',      port: WEB_PORT },
+    { label: 'MQTT device gateway', port: GATEWAY_PORT },
+    { label: 'SSE push relay',      port: PUSH_PORT },
+    { label: '.NET device SDK',     port: DOTNET_PORT },
+    { label: 'device inbound TCP',  port: DEVICE_TCP },
+    { label: 'Java device SDK',     port: JAVA_PORT },
+    { label: 'face validator',      port: FACE_PORT },
+    { label: 'PDF service',         port: PDF_PORT },
+    { label: 'sync-calendar',       port: SYNC_PORT },
+    { label: 'MQTT broker',         port: MQTT_TCP_PORT },
+    { label: 'MQTT WebSocket',      port: MQTT_WS_PORT },
+  ];
+}
+
+// True if we can bind the TCP port (i.e. it is free). Tests 0.0.0.0 since the
+// services bind all interfaces.
+function isPortFree(port) {
+  return new Promise((resolve) => {
+    const srv = net.createServer();
+    srv.once('error', () => resolve(false));
+    srv.once('listening', () => srv.close(() => resolve(true)));
+    srv.listen(port, '0.0.0.0');
+  });
+}
+
+// Best-effort: which process holds a listening port (Windows netstat + tasklist).
+function processOnPort(port) {
+  try {
+    const ns = spawnSync('netstat', ['-ano', '-p', 'TCP'], { encoding: 'utf8', windowsHide: true });
+    const line = (ns.stdout || '').split(/\r?\n/).find(
+      (l) => /LISTENING/i.test(l) && new RegExp(`[:.]${port}\\b`).test(l.split(/\s+/)[2] || ''));
+    if (!line) return null;
+    const pid = line.trim().split(/\s+/).pop();
+    const tl = spawnSync('tasklist', ['/fi', `PID eq ${pid}`, '/fo', 'csv', '/nh'],
+      { encoding: 'utf8', windowsHide: true });
+    const name = ((tl.stdout || '').split(',')[0] || '').replace(/"/g, '').trim();
+    return { pid, name: name || 'unknown' };
+  } catch (_) { return null; }
+}
+
+// Returns the list of conflicting ports (empty = all clear).
+async function preflightPorts() {
+  const conflicts = [];
+  for (const { label, port } of requiredPorts()) {
+    if (!(await isPortFree(port))) {
+      conflicts.push({ label, port, owner: processOnPort(port) });
+    }
+  }
+  return conflicts;
+}
+
 // ── PHP-CGI worker pool (the API, behind nginx) ──────────────────────────────
 // Each worker is a FastCGI listener on 127.0.0.1:<port>; nginx load-balances
 // across them (conf/nginx.conf `php_workers`). PHP_FCGI_MAX_REQUESTS=0 stops a
@@ -130,16 +207,37 @@ function startPhpCgiWorkers() {
 }
 
 // ── nginx front door ─────────────────────────────────────────────────────────
-// Serves the Laravel API (:8000, via the php-cgi pool) and the static Next
-// build (:3001, rewriting the __M2C_HOST__ token to the client's host). `-p ROOT`
-// makes every relative path in conf/nginx.conf resolve under the repo root.
+// Serves the Laravel API + the static Next build. `-p ROOT` makes every relative
+// path in the conf resolve under the repo root. The conf is RENDERED from
+// conf/nginx.conf.template with the configured ports (so api/web/php ports and the
+// frontend __*_PORT__ token rewrites all track desktop-config.json). Falls back to
+// the static conf/nginx.conf if the template is missing.
+function renderNginxConf() {
+  const tplPath = path.join(ROOT, 'conf', 'nginx.conf.template');
+  if (!fs.existsSync(tplPath)) return path.join('conf', 'nginx.conf');
+  const phpUpstream = PHP_PORTS.map(p => `        server 127.0.0.1:${p};`).join('\n');
+  const repl = {
+    API_PORT, WEB_PORT, PUSH_PORT, FACE_PORT,
+    DOTNET_PORT, PDF_PORT, SYNC_PORT, MQTT_WS_PORT,
+  };
+  let tpl = fs.readFileSync(tplPath, 'utf8');
+  for (const [k, v] of Object.entries(repl)) tpl = tpl.split(`{{${k}}}`).join(String(v));
+  tpl = tpl.split('{{PHP_UPSTREAM}}').join(phpUpstream);
+  const outPath = path.join(ROOT, 'conf', 'nginx.runtime.conf');
+  fs.writeFileSync(outPath, tpl);
+  return path.join('conf', 'nginx.runtime.conf');
+}
+
 function startNginx() {
   // nginx fails to start if logs/ doesn't exist; temp/ holds its scratch dirs.
   for (const d of ['logs', 'temp']) {
     try { fs.mkdirSync(path.join(ROOT, d), { recursive: true }); } catch (_) {}
   }
-  log('Starting nginx (:8000 API, :3001 web)');
-  const p = spawn(NGINX, ['-p', ROOT, '-c', path.join('conf', 'nginx.conf')], {
+  let confRel;
+  try { confRel = renderNginxConf(); }
+  catch (e) { log('nginx render error, using static conf:', e.message); confRel = path.join('conf', 'nginx.conf'); }
+  log(`Starting nginx (:${API_PORT} API, :${WEB_PORT} web)`);
+  const p = spawn(NGINX, ['-p', ROOT, '-c', confRel], {
     cwd: ROOT,
     windowsHide: true,
   });
@@ -154,8 +252,18 @@ function startNginx() {
 // it does not depend on a system .NET install.
 function startDotnetSdk() {
   const dotnetExe = path.join(DOTNET_SDK, 'dotnet', 'dotnet.exe');
-  log('Starting .NET device SDK (FCardProtocolAPI) on :8080');
-  const p = spawn(dotnetExe, ['FCardProtocolAPI.dll'], { cwd: DOTNET_SDK, env: process.env, windowsHide: true });
+  log('Starting .NET device SDK (FCardProtocolAPI) on :' + DOTNET_PORT);
+  // Kestrel honors ASPNETCORE_URLS; the device ports live in appsettings "Options"
+  // and .NET binds them from Options__<key> env vars (double-underscore = section).
+  const p = spawn(dotnetExe, ['FCardProtocolAPI.dll'], {
+    cwd: DOTNET_SDK,
+    env: { ...process.env,
+      ASPNETCORE_URLS: `http://0.0.0.0:${DOTNET_PORT}`,
+      Options__UDPServerPort: String(DEVICE_UDP),
+      Options__TCPServerPort: String(DEVICE_TCP),
+      Options__UDPPort: String(DEVICE_UDP2),
+    },
+    windowsHide: true });
   p.stdout.on('data', d => process.stdout.write('[sdk-dotnet] ' + d));
   p.stderr.on('data', d => process.stderr.write('[sdk-dotnet] ' + d));
   children.push(p);
@@ -164,8 +272,9 @@ function startDotnetSdk() {
 // Java SxDeviceManager (Suprema/SX devices), bundled JRE.
 function startJavaSdk() {
   const javaExe = path.join(JAVA_SDK, 'bin', 'java.exe');
-  log('Starting Java device SDK (SxDeviceManager)');
-  const p = spawn(javaExe, ['-jar', 'SxDeviceManager.jar'], { cwd: JAVA_SDK, env: process.env, windowsHide: true });
+  log('Starting Java device SDK (SxDeviceManager) on :' + JAVA_PORT);
+  // Spring Boot maps --server.port to the embedded Tomcat port.
+  const p = spawn(javaExe, ['-jar', 'SxDeviceManager.jar', `--server.port=${JAVA_PORT}`], { cwd: JAVA_SDK, env: process.env, windowsHide: true });
   p.stdout.on('data', d => process.stdout.write('[sdk-java] ' + d));
   p.stderr.on('data', d => process.stderr.write('[sdk-java] ' + d));
   children.push(p);
@@ -229,7 +338,8 @@ function startLogListener() {
   log('Starting log listener (SDK WebSocket -> Postgres)');
   const p = spawn(process.execPath, [path.join(LOG_LISTENER, 'log-listener-batch.js')], {
     cwd: LOG_LISTENER,
-    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' },
+    // SOCKET_ENDPOINT follows the configured .NET SDK port so it survives a port change.
+    env: { ...process.env, ELECTRON_RUN_AS_NODE: '1', SOCKET_ENDPOINT: `ws://127.0.0.1:${DOTNET_PORT}/WebSocket` },
     windowsHide: true,
   });
   p.stdout.on('data', d => process.stdout.write('[listener] ' + d));
@@ -256,19 +366,19 @@ function startNodeService(label, dir, script, extraEnv) {
 // broker (:1883 + :8083 — accepts MQTT-device publishes and forwards punch
 // events to the local API). The WebSocket log listener stays the primary punch
 // path; the broker only matters if MQTT-based devices are in use.
-function startPdfService()  { startNodeService('pdf', PDF_SERVICE, 'index.js'); }
-function startSyncCalendar(){ startNodeService('sync-calendar', SYNC_CALENDAR, 'server.js'); }
-function startMqttBroker()  { startNodeService('mqtt-broker', LOG_LISTENER, 'mqtt-broker.js'); }
+function startPdfService()  { startNodeService('pdf', PDF_SERVICE, 'index.js', { PDF_PORT: String(PDF_PORT) }); }
+function startSyncCalendar(){ startNodeService('sync-calendar', SYNC_CALENDAR, 'server.js', { SYNC_PORT: String(SYNC_PORT) }); }
+function startMqttBroker()  { startNodeService('mqtt-broker', LOG_LISTENER, 'mqtt-broker.js', { MQTT_TCP_PORT: String(MQTT_TCP_PORT), MQTT_WS_PORT: String(MQTT_WS_PORT) }); }
 // MQTT device gateway (MYTIME/FRT MQTT devices): subscribes to the broker, tracks
 // per-device Online/Offline + heartbeats, and serves the device status/command
 // HTTP API on :8001 — which the backend device-health check queries for MQTT
 // (model_number=MYTIME1) devices. Without it, MQTT devices never report online.
-function startMqttDeviceGateway(){ startNodeService('mqtt-device-sdk', LOG_LISTENER, 'mqtt-mytime-device-sdk.js'); }
+function startMqttDeviceGateway(){ startNodeService('mqtt-device-sdk', LOG_LISTENER, 'mqtt-mytime-device-sdk.js', { HTTP_PORT: String(GATEWAY_PORT), MQTT_PORT: String(MQTT_TCP_PORT) }); }
 // MQTT punch ingestion for MYTIME devices: subscribes to mqtt/face/+/Rec (RecPush
 // records) + mqtt/face/heartbeat, and batch-inserts punches into the local
 // attendance_logs. This is the MQTT-device counterpart of startLogListener()
 // (which handles the .NET SDK WebSocket feed for FCard/TCP devices).
-function startMytimeMqttListener(){ startNodeService('mqtt-listener', LOG_LISTENER, 'log-listener-mytime-mqtt-batch.js'); }
+function startMytimeMqttListener(){ startNodeService('mqtt-listener', LOG_LISTENER, 'log-listener-mytime-mqtt-batch.js', { MQTT_PORT: String(MQTT_TCP_PORT) }); }
 
 // ── Local SSE push relay ─────────────────────────────────────────────────────
 // Replaces the live external push server (v2push.mytime2cloud.com) for the
@@ -376,8 +486,8 @@ function createWindow() {
 function openSettingsWindow() {
   if (settingsWindow && !settingsWindow.isDestroyed()) { settingsWindow.focus(); return; }
   settingsWindow = new BrowserWindow({
-    width: 640, height: 520, title: 'Settings', parent: mainWindow || undefined,
-    modal: false, autoHideMenuBar: true, resizable: false,
+    width: 660, height: 820, title: 'Settings', parent: mainWindow || undefined,
+    modal: false, autoHideMenuBar: true, resizable: true,
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true },
   });
   settingsWindow.loadFile(path.join(__dirname, 'settings.html'));
@@ -459,13 +569,26 @@ async function testDbConnection(db) {
 const SERVICES_PG = path.join(ROOT, 'services', 'log-listener', 'node_modules', 'pg');
 
 function registerIpc() {
-  ipcMain.handle('config:get', () => cfg.load());
+  ipcMain.handle('config:get', () => ({ ...cfg.load(), defaultPorts: cfg.DEFAULT_PORTS }));
   ipcMain.handle('config:testDb', (_e, db) => testDbConnection(db));
   ipcMain.handle('config:saveDb', (_e, db) => {
     if (db.host === cfg.LIVE_DB_HOST) return { ok: false, message: 'live host blocked' };
     cfg.applyDb(db);
     log('DB config saved — relaunching to apply');
     cleanup();   // kill spawned services first so the relaunched instance gets free ports
+    setTimeout(() => { app.relaunch(); app.exit(0); }, 2000);
+    return { ok: true };
+  });
+  ipcMain.handle('config:savePorts', (_e, ports) => {
+    // Validate: every value a port in 1..65535, no duplicates.
+    const vals = Object.values(ports || {});
+    if (!vals.length || vals.some(v => !Number.isInteger(v) || v < 1 || v > 65535))
+      return { ok: false, message: 'Ports must be whole numbers between 1 and 65535.' };
+    if (new Set(vals).size !== vals.length)
+      return { ok: false, message: 'Two services cannot share the same port.' };
+    cfg.applyPorts(ports);
+    log('Service ports saved — relaunching to apply');
+    cleanup();   // free the old ports before the relaunched instance binds the new ones
     setTimeout(() => { app.relaunch(); app.exit(0); }, 2000);
     return { ok: true };
   });
@@ -482,7 +605,7 @@ function registerIpc() {
 function buildMenu() {
   const template = [
     { label: 'Settings', submenu: [
-      { label: 'Database Connection…', accelerator: 'CmdOrCtrl+,', click: openSettingsWindow },
+      { label: 'Database && Service Ports…', accelerator: 'CmdOrCtrl+,', click: openSettingsWindow },
       { type: 'separator' },
       { role: 'quit' },
     ] },
@@ -526,13 +649,43 @@ if (!app.requestSingleInstanceLock()) {
     if (mainWindow) { if (mainWindow.isMinimized()) mainWindow.restore(); mainWindow.focus(); }
   });
 
-  app.whenReady().then(() => {
+  app.whenReady().then(async () => {
     registerIpc();
     buildMenu();            // native menu: Settings → Database Connection…
+
+    // Port preflight: if another program already holds a port we need, say so
+    // clearly (which port + which process) instead of failing with a blank window.
+    try {
+      const conflicts = await preflightPorts();
+      if (conflicts.length) {
+        const { dialog } = require('electron');
+        const lines = conflicts.map(c =>
+          `  • ${c.port}  ${c.label}` +
+          (c.owner ? `  — in use by ${c.owner.name} (PID ${c.owner.pid})` : '  — already in use'));
+        log('PORT CONFLICT:', conflicts.map(c => c.port).join(', '));
+        const choice = dialog.showMessageBoxSync({
+          type: 'warning',
+          title: 'Ports already in use',
+          message: 'Some ports MyTime2Cloud needs are already in use by other programs:',
+          detail: lines.join('\n') +
+            '\n\nClose the program using that port, then restart MyTime2Cloud.' +
+            '\n\nIf you continue, the services on the busy ports will not work.',
+          buttons: ['Quit', 'Continue anyway'],
+          defaultId: 0, cancelId: 0, noLink: true,
+        });
+        if (choice === 0) { app.quit(); return; }
+        // else → continue and let the user see which services fail
+      }
+    } catch (e) { log('port preflight error:', e.message); }
+
     try {
       const fp = cfg.ensureMachineFp();   // bind license to THIS machine; write MACHINE_FP to backend/.env
       log('machine fingerprint:', fp.slice(0, 16) + '…');
     } catch (e) { log('machine fingerprint error:', e.message); }
+
+    // Mirror the configured service ports into backend/.env so the Laravel backend
+    // reaches the local SDK / gateway on the right ports (managed, not hand-set).
+    try { cfg.applyServicePorts(PORTS); } catch (e) { log('applyServicePorts error:', e.message); }
 
     // Bundled database: init + start the local PostgreSQL BEFORE the API workers
     // (they connect to it on boot). First launch creates the cluster and restores

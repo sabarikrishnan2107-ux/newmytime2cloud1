@@ -50,7 +50,7 @@ const { AsyncLocalStorage } = require("async_hooks");
 
 
 const MQTT_HOST = `mqtt://${localIp}`;
-const MQTT_PORT = 1883;
+const MQTT_PORT = Number(process.env.MQTT_PORT) || 1883;
 
 // Topic prefix: e.g. "mqtt/face"
 // Desktop default: devices publish under mqtt/face (see live traffic + the other

@@ -3,8 +3,8 @@ const net = require('net');
 const http = require('http');
 const websocketStream = require('websocket-stream');
 
-const PORT = 1883;
-const WS_PORT = 8083;
+const PORT = Number(process.env.MQTT_TCP_PORT) || 1883;
+const WS_PORT = Number(process.env.MQTT_WS_PORT) || 8083;
 
 function forwardToAPI(path, data) {
   const postData = JSON.stringify(data);

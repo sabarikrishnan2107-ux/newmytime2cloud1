@@ -433,5 +433,5 @@ async function shutdown(sig) {
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("SIGINT", () => shutdown("SIGINT"));
 
-const PORT = 3002;
+const PORT = Number(process.env.PDF_PORT) || 3002;
 app.listen(PORT, () => console.log(`PDF service running on http://localhost:${PORT}`));
