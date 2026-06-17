@@ -36,3 +36,5 @@ desktop/nginx.exe
 desktop/logs/
 desktop/temp/
 desktop/sdk/
+desktop/pgsql/
+desktop/runtime/

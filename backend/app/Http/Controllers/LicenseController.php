@@ -63,14 +63,23 @@ class LicenseController extends Controller
             'company_name'      => ['required', 'string', 'max:191'],
             'company_id'        => ['nullable', 'integer'],
             'machine_fp'        => ['required', 'string', 'min:6'],
-            'allowed_devices'   => ['nullable', 'array'],
+            // At least one whitelisted device serial is required.
+            'allowed_devices'   => ['required', 'array', 'min:1'],
             'allowed_devices.*' => ['string'],
-            'max_devices'       => ['required', 'integer', 'min:0'],
+            'max_devices'       => ['required', 'integer', 'min:1'],
             'max_employees'     => ['required', 'integer', 'min:0'],
             'expiry'            => ['required', 'date'],
         ]);
 
         $allowed = array_values(array_filter(array_map('trim', $data['allowed_devices'] ?? [])));
+
+        if (empty($allowed)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'At least one device serial is required.',
+                'errors'  => ['allowed_devices' => ['At least one device serial is required.']],
+            ], 422);
+        }
 
         $licenseId = 'LIC-' . date('Ymd') . '-' . strtoupper(Str::random(6));
 
@@ -117,6 +126,77 @@ class LicenseController extends Controller
             'token'         => $signed['token'],
             'license_id'    => $licenseId,
             'download_name' => $licenseId . '.lic',
+        ], 200);
+    }
+
+    /**
+     * Edit an existing license. Because the token is RSA-signed, any change to a
+     * signed field means re-issuing the token. We keep the same license_id and
+     * issued_at, re-sign with the new values, and replace the stored token. The
+     * customer must re-paste the new key into their desktop.
+     */
+    public function update(Request $request, $id, LicenseSigner $signer)
+    {
+        $record = License::where('id', $id)->orWhere('license_id', $id)->first();
+
+        if (! $record) {
+            return response()->json(['status' => false, 'message' => 'License not found.'], 404);
+        }
+
+        $data = $request->validate([
+            'company_name'      => ['required', 'string', 'max:191'],
+            'company_id'        => ['nullable', 'integer'],
+            'machine_fp'        => ['required', 'string', 'min:6'],
+            'allowed_devices'   => ['required', 'array', 'min:1'],
+            'allowed_devices.*' => ['string'],
+            'max_devices'       => ['required', 'integer', 'min:1'],
+            'max_employees'     => ['required', 'integer', 'min:0'],
+            'expiry'            => ['required', 'date'],
+        ]);
+
+        $allowed = array_values(array_filter(array_map('trim', $data['allowed_devices'] ?? [])));
+
+        if (empty($allowed)) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'At least one device serial is required.',
+                'errors'  => ['allowed_devices' => ['At least one device serial is required.']],
+            ], 422);
+        }
+
+        $issuedAt = $record->issued_at ? $record->issued_at->format('Y-m-d') : date('Y-m-d');
+
+        $signed = $signer->generate([
+            'license_id'      => $record->license_id,
+            'company_id'      => $data['company_id'] ?? null,
+            'company_name'    => $data['company_name'],
+            'machine_fp'      => $data['machine_fp'],
+            'allowed_devices' => $allowed,
+            'max_devices'     => $data['max_devices'],
+            'max_employees'   => $data['max_employees'],
+            'issued_at'       => $issuedAt,
+            'expiry'          => date('Y-m-d', strtotime($data['expiry'])),
+        ]);
+
+        $record->update([
+            'company_id'      => $data['company_id'] ?? null,
+            'company_name'    => $signed['payload']['company_name'],
+            'machine_fp'      => $data['machine_fp'],
+            'allowed_devices' => $allowed,
+            'max_devices'     => $data['max_devices'],
+            'max_employees'   => $data['max_employees'],
+            'issued_at'       => $signed['payload']['issued_at'],
+            'expiry'          => $signed['payload']['expiry'],
+            'token'           => $signed['token'],
+        ]);
+
+        return response()->json([
+            'status'        => true,
+            'message'       => 'License updated successfully.',
+            'record'        => $record,
+            'token'         => $signed['token'],
+            'license_id'    => $record->license_id,
+            'download_name' => $record->license_id . '.lic',
         ], 200);
     }
 }
