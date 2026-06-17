@@ -1,2 +1,0 @@
-{"timestamp":"2025-11-24T11:10:19.359Z","eventType":"HTTP_REQUEST","correlationId":"af7386e9-ee54-483d-a375-63d454cc4381","method":"GET","path":"/api/device/1601116/status","query":{}}
-{"timestamp":"2025-11-24T11:10:19.360Z","eventType":"HTTP_RESPONSE","correlationId":"af7386e9-ee54-483d-a375-63d454cc4381","route":"status","deviceId":"1601116","result":{"deviceId":"1601116","online":true,"lastOnline":1763982590075,"lastOffline":null,"lastHeartbeat":1763982590216}}
