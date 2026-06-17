@@ -24,10 +24,11 @@ class FaceDeviceController extends Controller
         try {
 
 
-            $url = rtrim(
-                config('services.mqtt_gateway.url', env('MQTT_GATEWAY_URL', 'http://127.0.0.1:4000')),
-                '/'
-            ) . '/' . ltrim($path, '/');
+            // Desktop is self-contained: the MQTT device gateway
+            // (mqtt-mytime-device-sdk.js) always runs on this same machine on
+            // :8001, spawned by electron/main.js. Hardcoded on purpose — no env
+            // var to set, so device health works out of the box on every install.
+            $url = 'http://127.0.0.1:8001/' . ltrim($path, '/');
 
             $client = Http::withoutVerifying()->acceptJson()->timeout(60);
 
