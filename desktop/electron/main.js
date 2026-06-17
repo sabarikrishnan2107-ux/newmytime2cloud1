@@ -16,7 +16,7 @@ const pg = require('./postgres');   // bundled PostgreSQL (auto init + start, no
 const { spawnSync } = require('child_process');
 
 // Dev: repo root is electron/..  Packaged: the bundled trees (backend, sdk,
-// services, conf, nginx.exe, frontend-new/out) are copied to resources/ via
+// services, conf, nginx.exe, frontend/out) are copied to resources/ via
 // electron-builder extraResources, so ROOT = process.resourcesPath.
 const ROOT = app.isPackaged ? process.resourcesPath : path.resolve(__dirname, '..');
 const NGINX = path.join(ROOT, 'nginx.exe');                       // front door :8000 + :3001

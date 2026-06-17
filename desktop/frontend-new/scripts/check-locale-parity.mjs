@@ -1,4 +1,4 @@
-// frontend-new/scripts/check-locale-parity.mjs
+// frontend/scripts/check-locale-parity.mjs
 // Verifies every key in en/common.json exists in ar, fr, hi (and vice-versa).
 // Run: node scripts/check-locale-parity.mjs
 import { readFileSync } from "node:fs";

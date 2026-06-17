@@ -56,8 +56,8 @@
         "to": "nginx.exe"
       },
       {
-        "from": "../frontend-new/out",
-        "to": "frontend-new/out"
+        "from": "../frontend/out",
+        "to": "frontend/out"
       },
       {
         "from": "../allow-lan-access.bat",

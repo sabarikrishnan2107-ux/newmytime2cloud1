@@ -1,5 +1,5 @@
-// Shift type IDs — must stay in sync with frontend-new/src/lib/dropdowns.js
-// and frontend-new/src/app/report/columns.js
+// Shift type IDs — must stay in sync with frontend/src/lib/dropdowns.js
+// and frontend/src/app/report/columns.js
 export const SHIFT_TYPE = {
   FLEXIBLE: 1, // also FILO in some report contexts
   MULTI: 2,
