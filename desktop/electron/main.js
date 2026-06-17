@@ -239,6 +239,9 @@ function renderNginxConf() {
   const inc = f => `"${fwdslash(path.join(confDir, f))}"`;
   const rt  = (...p) => `"${fwdslash(path.join(NGINX_RUNTIME, ...p))}"`;
   tpl = tpl
+    // The PID file defaults to <prefix>/logs/nginx.pid, which is inside the
+    // (possibly read-only) install dir — point it at the writable runtime dir.
+    .replace(/worker_processes\s+1;/, `worker_processes 1;\npid ${rt('logs', 'nginx.pid')};`)
     .replace(/include\s+mime\.types;/, `include       ${inc('mime.types')};`)
     .replace(/include\s+fastcgi_params;/, `include      ${inc('fastcgi_params')};`)
     .replace(/access_log\s+logs\/access\.log;/, `access_log  ${rt('logs', 'access.log')};`)
@@ -258,7 +261,11 @@ function startNginx() {
   try { confPath = renderNginxConf(); }
   catch (e) { log('nginx render error, using static conf:', e.message); confPath = path.join('conf', 'nginx.conf'); }
   log(`Starting nginx (:${API_PORT} API, :${WEB_PORT} web)`);
-  const p = spawn(NGINX, ['-p', ROOT, '-c', confPath], {
+  // -e sets the global error log used during startup/config-parse (before the
+  // error_log directive applies); its default is <prefix>/logs/error.log, which is
+  // inside the read-only install dir. Point it at the writable runtime dir.
+  const errLog = path.join(NGINX_RUNTIME, 'logs', 'error.log');
+  const p = spawn(NGINX, ['-p', ROOT, '-e', errLog, '-c', confPath], {
     cwd: ROOT,
     windowsHide: true,
   });
