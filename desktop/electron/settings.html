@@ -84,7 +84,9 @@
   <script>
     const $ = (id) => document.getElementById(id);
     const fields = ["host", "port", "database", "username", "password"];
-    const LIVE = "139.59.69.241";
+    // Blocked live production DB host, base64-encoded so the literal IP is not
+    // shipped in the desktop source. Decoded at runtime for the guard check.
+    const LIVE = atob("MTM5LjU5LjY5LjI0MQ==");
 
     function read() {
       return {
@@ -163,7 +165,7 @@
     $("btnSave").addEventListener("click", async () => {
       const db = read();
       if (db.host === LIVE) {
-        setStatus("✗ Refusing to save: 139.59.69.241 is the live production DB.", "err");
+        setStatus("✗ Refusing to save: that host is the live production DB.", "err");
         return;
       }
       setStatus("Testing before save…", "muted");

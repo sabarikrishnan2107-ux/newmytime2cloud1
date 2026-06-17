@@ -394,7 +394,7 @@ class VisitorController extends Controller
 
             // $data = $request->all();
             // $preparedJson = $this->prepareJsonForSDK($data);
-            // return $this->SDKCommand( "http://139.59.69.241:5000/Person/AddRange", $preparedJson);
+            // return $this->SDKCommand( env('SDK_URL') . "/Person/AddRange", $preparedJson);
             // // env('SDK_URL');
             // $data['url'] = env("APP_URL") . "/media/visitor/logo/" . $data['logo'];
 
@@ -674,7 +674,7 @@ class VisitorController extends Controller
 
             // $data = $request->all();
             // $preparedJson = $this->prepareJsonForSDK($data);
-            // return $this->SDKCommand( "http://139.59.69.241:5000/Person/AddRange", $preparedJson);
+            // return $this->SDKCommand( env('SDK_URL') . "/Person/AddRange", $preparedJson);
             // // env('SDK_URL');
             // $data['url'] = env("APP_URL") . "/media/visitor/logo/" . $data['logo'];
 

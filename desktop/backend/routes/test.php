@@ -92,7 +92,7 @@ Route::get("test900device1", function (Request $request) {
 
     try {
         // Create a WebSocket client
-        $client = new Client("wss://139.59.69.241:7779", [
+        $client = new Client(env('WHATSAPP_SOCKET_URL', ''), [
             'timeout' => 5, // Timeout in seconds
             'context' => stream_context_create([
                 'ssl' => [
@@ -589,7 +589,7 @@ Route::get('/open_door_old', function (Request $request) {
     // $device_id = 'OX-8862021010076';
 
     curl_setopt_array($curl, array(
-        CURLOPT_URL => "http://139.59.69.241:5000/$device_id/OpenDoor",
+        CURLOPT_URL => env('SDK_URL', 'http://127.0.0.1:8080') . "/$device_id/OpenDoor",
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -652,7 +652,7 @@ Route::get('/open_door_always_old', function (Request $request) {
     // $device_id = 'OX-8862021010076';
 
     curl_setopt_array($curl, array(
-        CURLOPT_URL => "http://139.59.69.241:5000/$device_id/HoldDoor",
+        CURLOPT_URL => env('SDK_URL', 'http://127.0.0.1:8080') . "/$device_id/HoldDoor",
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_ENCODING => '',
         CURLOPT_MAXREDIRS => 10,
@@ -878,8 +878,6 @@ Route::get('/check_device_health_old', function (Request $request) {
 
         curl_setopt_array($curl, array(
 
-            // CURLOPT_URL => "https://sdk.ideahrms.com/CheckDeviceHealth/$device_id",
-            // CURLOPT_URL => "http://139.59.69.241:5000/CheckDeviceHealth/$device_id",
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_ENCODING => '',
             CURLOPT_MAXREDIRS => 10,
@@ -938,7 +936,7 @@ Route::get('/check_device_health_old', function (Request $request) {
 //     // $device_id = 'OX-8862021010076';
 
 //     curl_setopt_array($curl, array(
-//         CURLOPT_URL => "http://139.59.69.241:5000/$device_id/CloseDoor",
+//         CURLOPT_URL => env('SDK_URL') . "/$device_id/CloseDoor",
 //         CURLOPT_RETURNTRANSFER => true,
 //         CURLOPT_ENCODING => '',
 //         CURLOPT_MAXREDIRS => 10,

@@ -1229,7 +1229,6 @@ class SDKController extends Controller
 
     public function handleCommand($id, $command)
     {
-        // http://139.59.69.241:5000/CheckDeviceHealth/$device_id"
 
         $url = env('SDK_URL') . "/$id/$command";
 

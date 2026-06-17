@@ -1719,7 +1719,7 @@ class DeviceController extends Controller
             } catch (\Exception $e) {
             }
             try {
-                //139.59.69.241:8888 //OX-900
+                //OX-900
 
 
                 $count = (new DeviceCameraModel2Controller(''))->getCameraDeviceLiveStatus($company_id);
@@ -1735,7 +1735,6 @@ class DeviceController extends Controller
 
 
 
-                //139.59.69.241:8888
                 $online_devices_count_mytime = 0;
                 $devices = Device::where('company_id', $company_id)->where('model_number', "MYTIME1");
 
@@ -1830,7 +1829,6 @@ class DeviceController extends Controller
     //         curl_setopt_array($curl, array(
 
     //             // CURLOPT_URL => "https://sdk.ideahrms.com/CheckDeviceHealth/$device_id",
-    //             // CURLOPT_URL => "http://139.59.69.241:5000/CheckDeviceHealth/$device_id",
     //             CURLOPT_URL => "$sdk_url/CheckDeviceHealth/$device_id",
     //             CURLOPT_RETURNTRANSFER => true,
     //             CURLOPT_ENCODING => '',

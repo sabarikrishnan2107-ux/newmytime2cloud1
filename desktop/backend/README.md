@@ -65,10 +65,8 @@ sudo systemctl restart nginx
 
 $ sudo systemctl restart nginx
 
-SDK Live IP : 139.59.69.241
-               PORT 7001
-SDK Live port : 9001
-SDK Live port : 9001
+SDK PORT 7001
+SDK port : 9001
 
 laravel Commands
 php artisan task:attendance_seeder --company_id=8 --employee_id=5656 --day_count=10

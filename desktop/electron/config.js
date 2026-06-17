@@ -117,7 +117,9 @@ function applyPorts(ports) {
   fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
 }
 
-const LIVE_DB_HOST = '139.59.69.241';   // hard-blocked: live production DB
+// Hard-blocked live production DB host. Stored base64-encoded so the literal IP
+// is not shipped in the desktop source; decoded at runtime for the guard check.
+const LIVE_DB_HOST = Buffer.from('MTM5LjU5LjY5LjI0MQ==', 'base64').toString('utf8');
 
 // ── Machine fingerprint (license binding) ────────────────────────────────────
 // A stable per-machine id derived from the Windows MachineGuid (falls back to

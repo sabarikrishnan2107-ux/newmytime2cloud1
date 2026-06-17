@@ -157,20 +157,25 @@ class WhatsappNotificationsLogController extends Controller
 
 
                     try {
-                        // Create a WebSocket client
-                        $client = new Client("wss://139.59.69.241:7779", [
-                            'timeout' => 5, // Timeout in seconds
-                            'context' => stream_context_create([
-                                'ssl' => [
-                                    'verify_peer' => false,
-                                    'verify_peer_name' => false,
-                                ],
-                            ]),
-                        ]);
+                        // Notify the WhatsApp gateway, if one is configured. URL comes
+                        // from env (WHATSAPP_SOCKET_URL) so no host is hardcoded; when
+                        // unset (e.g. the local desktop build) the notify is skipped.
+                        $wsUrl = env('WHATSAPP_SOCKET_URL', '');
+                        if ($wsUrl !== '') {
+                            $client = new Client($wsUrl, [
+                                'timeout' => 5, // Timeout in seconds
+                                'context' => stream_context_create([
+                                    'ssl' => [
+                                        'verify_peer' => false,
+                                        'verify_peer_name' => false,
+                                    ],
+                                ]),
+                            ]);
 
-                        $testMessage = "DB";
-                        // Send the message
-                        $client->send(json_encode($testMessage));
+                            $testMessage = "DB";
+                            // Send the message
+                            $client->send(json_encode($testMessage));
+                        }
                     } catch (\Exception $e) {
                         // Handle exceptions
                         //"Error: " . $e->getMessage();

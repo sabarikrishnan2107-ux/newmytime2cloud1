@@ -119,9 +119,9 @@ proxies the public endpoints.
 
 ## Hard rules
 
-- **Never point the DB at the live production host `139.59.69.241`.** Desktop uses the local
-  bundled `mytime2cloud-desktop-v2`. `config.js` hard-blocks the live host in `applyDb`;
-  don't work around it.
+- **Never point the DB at the live production host.** Desktop uses the local bundled
+  `mytime2cloud-desktop-v2`. `config.js` hard-blocks the live host in `applyDb` (the host is
+  base64-encoded there so the literal IP isn't shipped in source); don't work around it.
 - **No global-PATH runtime dependencies.** Everything is bundled and referenced repo-relative
   (`ROOT = app.isPackaged ? process.resourcesPath : ..`). The one exception is the face
   service's system Python. Don't add `env`-var config for values derivable in code — mirror

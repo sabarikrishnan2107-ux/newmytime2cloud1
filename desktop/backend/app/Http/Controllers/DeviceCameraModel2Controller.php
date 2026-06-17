@@ -633,7 +633,6 @@ class DeviceCameraModel2Controller extends Controller
     }
     public function getCameraDeviceLiveStatus($company_id)
     {
-        //139.59.69.241:8888
         $online_devices_count = 0;
         $devices = Device::where('company_id', $company_id)->where('model_number', "OX-900"); //OX-900
 
@@ -865,7 +864,7 @@ class DeviceCameraModel2Controller extends Controller
         $sid = $auth([]);
         if ($sid !== '') return $sid;
 
-        // 2. Gateway path — the shared SDK at 139.59.69.241:8888 rejects the challenge
+        // 2. Gateway path — the shared SDK gateway rejects the challenge
         // outright without these headers. Re-run the full handshake with them so we
         // return a *logged-in* session_id, not the pre-login one from the challenge.
         if ($this->sxdmToken !== '' && $this->sxdmSn !== '') {
