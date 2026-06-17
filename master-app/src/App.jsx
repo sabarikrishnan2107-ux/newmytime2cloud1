@@ -30,6 +30,7 @@ export default function App() {
       <Route element={<MainLayout title="Licenses" />}>
         <Route path="/licenses" element={<LicensesList />} />
         <Route path="/licenses/create" element={<LicenseGenerate />} />
+        <Route path="/licenses/:id/edit" element={<LicenseGenerate />} />
       </Route>
 
       <Route element={<MainLayout title="Payments" />}>

@@ -143,6 +143,9 @@ export default function LicensesList() {
                         <button className="btn-icon" title="Copy license key" onClick={() => copyToken(l.token)}>
                           <Icon name="copy" size={14} />
                         </button>
+                        <button className="btn-icon" title="Edit license" onClick={() => navigate(`/licenses/${l.id}/edit`)}>
+                          <Icon name="edit" size={14} />
+                        </button>
                         <button className="btn-icon" title="Delete license" disabled={deletingId === l.id} onClick={() => deleteLicense(l)}>
                           {deletingId === l.id ? <span className="spinner" /> : <Icon name="trash" size={14} />}
                         </button>

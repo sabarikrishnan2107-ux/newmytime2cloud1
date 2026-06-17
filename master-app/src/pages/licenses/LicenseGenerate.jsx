@@ -1,5 +1,5 @@
-import { useState, useRef } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import api from '../../services/api'
 import Icon from '../../components/Icon'
 import Toast from '../../components/Toast'
@@ -20,11 +20,14 @@ function SectionHeader({ icon, title, subtitle }) {
 
 export default function LicenseGenerate() {
   const navigate = useNavigate()
+  const { id } = useParams()
+  const isEdit = !!id
   const { toasts, success, error } = useToast()
 
   // Free-text label only — shown on the license for admin reference. It is NOT
   // linked to a real company record.
   const [companyName, setCompanyName] = useState('')
+  const [companyId, setCompanyId] = useState(null)
 
   const [machineFp, setMachineFp] = useState('')
   const [serials, setSerials] = useState([])
@@ -34,8 +37,35 @@ export default function LicenseGenerate() {
   const [expiry, setExpiry] = useState('')
 
   const [loading, setLoading] = useState(false)
+  const [fetching, setFetching] = useState(isEdit)
   const [result, setResult] = useState(null)          // { token, license_id, download_name }
   const [errors, setErrors] = useState({})
+
+  // Load the existing license when editing.
+  useEffect(() => {
+    if (!isEdit) return
+    let active = true
+    ;(async () => {
+      try {
+        const { data } = await api.get(`licenses/${id}`)
+        const r = data.record
+        if (!r) { error('License not found'); navigate('/licenses'); return }
+        if (!active) return
+        setCompanyName(r.company_name || '')
+        setCompanyId(r.company_id ?? null)
+        setMachineFp(r.machine_fp || '')
+        setSerials(Array.isArray(r.allowed_devices) ? r.allowed_devices : [])
+        setMaxEmployees(r.max_employees != null ? String(r.max_employees) : '')
+        setMaxDevices(r.max_devices != null ? String(r.max_devices) : '')
+        setExpiry(r.expiry ? String(r.expiry).slice(0, 10) : '')
+      } catch {
+        if (active) { error('Failed to load license'); navigate('/licenses') }
+      } finally {
+        if (active) setFetching(false)
+      }
+    })()
+    return () => { active = false }
+  }, [id, isEdit]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const addSerial = () => {
     const v = serialInput.trim()
@@ -54,8 +84,9 @@ export default function LicenseGenerate() {
     const e = {}
     if (!companyName.trim()) e.company = 'Company is required'
     if (!machineFp.trim()) e.machine_fp = 'Machine fingerprint is required'
+    if (serials.length === 0) e.allowed_devices = 'Add at least one device serial'
     if (maxEmployees === '' || Number(maxEmployees) < 0) e.max_employees = 'Enter max employees'
-    if (maxDevices === '' || Number(maxDevices) < 0) e.max_devices = 'Enter max devices'
+    if (maxDevices === '' || Number(maxDevices) < 1) e.max_devices = 'Enter max devices (at least 1)'
     if (!expiry) e.expiry = 'Expiry date is required'
     setErrors(e)
     return Object.keys(e).length === 0
@@ -65,25 +96,28 @@ export default function LicenseGenerate() {
     if (!validate()) return
     setLoading(true)
     setResult(null)
+    const payload = {
+      company_id: companyId ?? null,
+      company_name: companyName.trim(),
+      machine_fp: machineFp.trim(),
+      allowed_devices: serials,
+      max_devices: Number(maxDevices),
+      max_employees: Number(maxEmployees),
+      expiry,
+    }
     try {
-      const { data } = await api.post('licenses/generate', {
-        company_id: null,
-        company_name: companyName.trim(),
-        machine_fp: machineFp.trim(),
-        allowed_devices: serials,
-        max_devices: Number(maxDevices),
-        max_employees: Number(maxEmployees),
-        expiry,
-      })
+      const { data } = isEdit
+        ? await api.put(`licenses/${id}`, payload)
+        : await api.post('licenses/generate', payload)
       if (data.status) {
         setResult({ token: data.token, license_id: data.license_id, download_name: data.download_name })
-        success('License generated successfully')
+        success(isEdit ? 'License updated successfully' : 'License generated successfully')
       } else {
-        error(data.message || 'Failed to generate license')
+        error(data.message || `Failed to ${isEdit ? 'update' : 'generate'} license`)
       }
     } catch (e) {
       setErrors(e.response?.data?.errors || {})
-      error(e.response?.data?.message || 'Failed to generate license')
+      error(e.response?.data?.message || `Failed to ${isEdit ? 'update' : 'generate'} license`)
     } finally { setLoading(false) }
   }
 
@@ -110,8 +144,12 @@ export default function LicenseGenerate() {
     <div className="fade-up">
       <div className="page-header">
         <div>
-          <div className="page-title">Generate License</div>
-          <div className="page-subtitle">Issue a signed, machine-bound desktop license key</div>
+          <div className="page-title">{isEdit ? 'Edit License' : 'Generate License'}</div>
+          <div className="page-subtitle">
+            {isEdit
+              ? 'Editing re-signs the key — the customer must re-paste the new key into their desktop'
+              : 'Issue a signed, machine-bound desktop license key'}
+          </div>
         </div>
         <button className="btn btn-ghost" onClick={() => navigate('/licenses')}>
           <Icon name="back" size={14} /> Back
@@ -121,6 +159,12 @@ export default function LicenseGenerate() {
       <div className="card">
         <div className="card-body">
           <SectionHeader icon="key" title="License Details" subtitle="The customer reads the Activation Code off their desktop app" />
+
+          {fetching ? (
+          <div className="flex justify-center py-10"><span className="spinner" /></div>
+          ) : (
+          <>
+
 
           <div className="grid-2 mb-[14px]">
             {/* Company label (free text — admin reference only) */}
@@ -150,10 +194,10 @@ export default function LicenseGenerate() {
 
           {/* Allowed device serials */}
           <div className="field mb-[14px]">
-            <label>Allowed Device Serials</label>
+            <label>Allowed Device Serials *</label>
             <div className="flex gap-2">
               <input
-                className="input flex-1"
+                className={`input flex-1 ${errors.allowed_devices ? 'input-error' : ''}`}
                 placeholder="Enter a device serial / ID, then Add"
                 value={serialInput}
                 onChange={e => setSerialInput(e.target.value)}
@@ -163,6 +207,7 @@ export default function LicenseGenerate() {
                 <Icon name="plus" size={14} /> Add
               </button>
             </div>
+            <FE field="allowed_devices" />
             {serials.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {serials.map(s => (
@@ -176,7 +221,7 @@ export default function LicenseGenerate() {
               </div>
             )}
             <span className="text-[11px] text-content-muted mt-1">
-              After activation the desktop can only add devices whose serial is in this list. Leave empty to allow any serial up to Max Devices.
+              At least one serial is required. After activation the desktop can only add devices whose serial is in this list.
             </span>
           </div>
 
@@ -189,7 +234,7 @@ export default function LicenseGenerate() {
             </div>
             <div className="field">
               <label>Max Devices *</label>
-              <input className={`input ${errors.max_devices ? 'input-error' : ''}`} type="number" min="0"
+              <input className={`input ${errors.max_devices ? 'input-error' : ''}`} type="number" min="1"
                 value={maxDevices} onChange={e => setMaxDevices(e.target.value)} />
               <FE field="max_devices" />
             </div>
@@ -204,7 +249,7 @@ export default function LicenseGenerate() {
             <button className="btn btn-ghost" onClick={() => navigate('/licenses')}>Cancel</button>
             <button className="btn btn-primary" onClick={handleGenerate} disabled={loading}>
               {loading ? <span className="spinner spinner-sm" /> : <Icon name="key" size={14} />}
-              {loading ? 'Generating…' : 'Generate License'}
+              {loading ? (isEdit ? 'Saving…' : 'Generating…') : (isEdit ? 'Save & Re-sign' : 'Generate License')}
             </button>
           </div>
 
@@ -222,6 +267,8 @@ export default function LicenseGenerate() {
                 <button className="btn btn-primary" onClick={downloadLic}><Icon name="download" size={14} /> Download .lic</button>
               </div>
             </div>
+          )}
+          </>
           )}
         </div>
       </div>
