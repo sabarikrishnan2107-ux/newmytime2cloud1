@@ -53,7 +53,10 @@ const MQTT_HOST = `mqtt://${localIp}`;
 const MQTT_PORT = 1883;
 
 // Topic prefix: e.g. "mqtt/face"
-const MQTT_TOPIC_PREFIX = process.env.MQTT_TOPIC_PREFIX || "";
+// Desktop default: devices publish under mqtt/face (see live traffic + the other
+// MQTT services). Empty prefix would break all topic matching, so default it here
+// rather than depend on a services/.env. .env still overrides if present.
+const MQTT_TOPIC_PREFIX = process.env.MQTT_TOPIC_PREFIX || "mqtt/face";
 
 const HTTP_PORT = process.env.HTTP_PORT || 8001;
 

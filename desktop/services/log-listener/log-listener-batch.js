@@ -6,7 +6,11 @@ const { Pool } = require("pg");
 require("dotenv").config();
 
 // ========== CONFIG ==========
-const { SOCKET_ENDPOINT } = process.env;
+// Desktop is self-contained: all of these point at same-machine services with
+// fixed ports (see electron/main.js + postgres.js, which uses `trust` auth on
+// 127.0.0.1 so the password is irrelevant). Defaults are correct out of the box;
+// a services/log-listener/.env can still override them if present.
+const SOCKET_ENDPOINT = process.env.SOCKET_ENDPOINT || "ws://127.0.0.1:8080/WebSocket";
 
 console.table({
   SOCKET_ENDPOINT,
@@ -56,20 +60,14 @@ function logError(message) {
 
 // ========== POSTGRESQL ==========
 const dbPool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  user: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
+  host: process.env.DB_HOST || "127.0.0.1",
+  port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 54329,
+  user: process.env.DB_USERNAME || "postgres",
+  password: process.env.DB_PASSWORD || "postgres",
+  database: process.env.DB_DATABASE || "mytime2cloud-desktop-v2",
   max: process.env.PGPOOL_MAX ? Number(process.env.PGPOOL_MAX) : 20,
   idleTimeoutMillis: 0,
 });
-
-// An idle client can emit 'error' when the DB connection drops — most commonly
-// when the app shuts down and stops the bundled PostgreSQL. Without a handler
-// node-postgres rethrows it as an uncaught exception (a noisy crash dump on
-// quit). Log it quietly instead; the pool reconnects on the next query.
-dbPool.on("error", (err) => logError("PostgreSQL pool error (likely shutdown): " + err.message));
 
 dbPool.connect()
   .then(c => { console.log("✅ PostgreSQL connected"); c.release(); })

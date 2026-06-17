@@ -57,7 +57,10 @@ const uniqueId =
 // ========== CONFIG ==========
 
 // MQTT
-const MQTT_HOST = process.env.MQTT_HOST || "";
+// Desktop self-contained defaults: local broker + fixed topics (see live device
+// traffic — punches arrive on mqtt/face/<id>/Rec, heartbeat on mqtt/face/heartbeat).
+// .env still overrides if present.
+const MQTT_HOST = process.env.MQTT_HOST || "mqtt://127.0.0.1";
 const MQTT_PORT = process.env.MQTT_PORT || 1883;
 const MQTT_USERNAME = process.env.MQTT_USERNAME || "";
 const MQTT_PASSWORD = process.env.MQTT_PASSWORD || "";
@@ -65,8 +68,8 @@ const MQTT_PASSWORD = process.env.MQTT_PASSWORD || "";
 console.log(MQTT_HOST);
 
 
-const MQTT_TOPIC_ATT = process.env.MYTIME_MQTT_TOPIC_ATT || "";
-const MQTT_TOPIC_HEARTBEAT = process.env.MYTIME_MQTT_TOPIC_HEARTBEAT || "";
+const MQTT_TOPIC_ATT = process.env.MYTIME_MQTT_TOPIC_ATT || "mqtt/face/+/Rec";
+const MQTT_TOPIC_HEARTBEAT = process.env.MYTIME_MQTT_TOPIC_HEARTBEAT || "mqtt/face/heartbeat";
 
 // Use model_number to identify product type
 const HEARTBEAT_MODEL_NUMBER =
@@ -75,10 +78,10 @@ const HEARTBEAT_MODEL_NUMBER =
 // PostgreSQL
 const dbPool = new Pool({
   host: process.env.PGHOST || "127.0.0.1",
-  port: process.env.PGPORT ? Number(process.env.PGPORT) : 5432,
+  port: process.env.PGPORT ? Number(process.env.PGPORT) : 54329,
   user: process.env.PGUSER || "postgres",
-  password: process.env.PGPASSWORD || "test123",
-  database: process.env.PGDATABASE || "mytime2cloud_dev",
+  password: process.env.PGPASSWORD || "postgres",
+  database: process.env.PGDATABASE || "mytime2cloud-desktop-v2",
   max: 10,
   idleTimeoutMillis: 0,
 });

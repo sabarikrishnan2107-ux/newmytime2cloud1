@@ -259,6 +259,16 @@ function startNodeService(label, dir, script, extraEnv) {
 function startPdfService()  { startNodeService('pdf', PDF_SERVICE, 'index.js'); }
 function startSyncCalendar(){ startNodeService('sync-calendar', SYNC_CALENDAR, 'server.js'); }
 function startMqttBroker()  { startNodeService('mqtt-broker', LOG_LISTENER, 'mqtt-broker.js'); }
+// MQTT device gateway (MYTIME/FRT MQTT devices): subscribes to the broker, tracks
+// per-device Online/Offline + heartbeats, and serves the device status/command
+// HTTP API on :8001 — which the backend device-health check queries for MQTT
+// (model_number=MYTIME1) devices. Without it, MQTT devices never report online.
+function startMqttDeviceGateway(){ startNodeService('mqtt-device-sdk', LOG_LISTENER, 'mqtt-mytime-device-sdk.js'); }
+// MQTT punch ingestion for MYTIME devices: subscribes to mqtt/face/+/Rec (RecPush
+// records) + mqtt/face/heartbeat, and batch-inserts punches into the local
+// attendance_logs. This is the MQTT-device counterpart of startLogListener()
+// (which handles the .NET SDK WebSocket feed for FCard/TCP devices).
+function startMytimeMqttListener(){ startNodeService('mqtt-listener', LOG_LISTENER, 'log-listener-mytime-mqtt-batch.js'); }
 
 // ── Local SSE push relay ─────────────────────────────────────────────────────
 // Replaces the live external push server (v2push.mytime2cloud.com) for the
@@ -553,6 +563,8 @@ if (!app.requestSingleInstanceLock()) {
     startPdfService();       // HTML -> PDF (:3002)
     startSyncCalendar();     // holidays/calendar API (:4000)
     startMqttBroker();       // MQTT broker (:1883/:8083) for MQTT-based devices
+    startMqttDeviceGateway(); // MQTT device status/command gateway (:8001)
+    startMytimeMqttListener(); // MQTT punch ingestion -> attendance_logs
     createWindow();          // face validator + queue + scheduler start after window loads
   });
 }
