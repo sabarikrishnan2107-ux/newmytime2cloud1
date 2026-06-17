@@ -212,8 +212,19 @@ function startPhpCgiWorkers() {
 // conf/nginx.conf.template with the configured ports (so api/web/php ports and the
 // frontend __*_PORT__ token rewrites all track desktop-config.json). Falls back to
 // the static conf/nginx.conf if the template is missing.
+// Where nginx writes (generated conf + logs + temp). A packaged install dir can be
+// read-only (e.g. Program Files), so when packaged these live under userData; in dev
+// they stay under the repo root. Static roots (backend/public, frontend/out) are
+// read-only and stay relative to the -p prefix (ROOT).
+const NGINX_RUNTIME = (app && app.isPackaged) ? path.join(app.getPath('userData'), 'nginx') : ROOT;
+const fwdslash = p => p.replace(/\\/g, '/');
+
 function renderNginxConf() {
-  const tplPath = path.join(ROOT, 'conf', 'nginx.conf.template');
+  const confDir = path.join(ROOT, 'conf');
+  const tplPath = path.join(confDir, 'nginx.conf.template');
+  for (const d of ['logs', 'temp']) {
+    try { fs.mkdirSync(path.join(NGINX_RUNTIME, d), { recursive: true }); } catch (_) {}
+  }
   if (!fs.existsSync(tplPath)) return path.join('conf', 'nginx.conf');
   const phpUpstream = PHP_PORTS.map(p => `        server 127.0.0.1:${p};`).join('\n');
   const repl = {
@@ -223,21 +234,31 @@ function renderNginxConf() {
   let tpl = fs.readFileSync(tplPath, 'utf8');
   for (const [k, v] of Object.entries(repl)) tpl = tpl.split(`{{${k}}}`).join(String(v));
   tpl = tpl.split('{{PHP_UPSTREAM}}').join(phpUpstream);
-  const outPath = path.join(ROOT, 'conf', 'nginx.runtime.conf');
+  // Make includes (read from the install dir) and all WRITABLE paths (logs, temp)
+  // absolute, so the rendered conf can live in a writable dir outside the install.
+  const inc = f => `"${fwdslash(path.join(confDir, f))}"`;
+  const rt  = (...p) => `"${fwdslash(path.join(NGINX_RUNTIME, ...p))}"`;
+  tpl = tpl
+    .replace(/include\s+mime\.types;/, `include       ${inc('mime.types')};`)
+    .replace(/include\s+fastcgi_params;/, `include      ${inc('fastcgi_params')};`)
+    .replace(/access_log\s+logs\/access\.log;/, `access_log  ${rt('logs', 'access.log')};`)
+    .replace(/error_log\s+logs\/error\.log;/, `error_log   ${rt('logs', 'error.log')};`)
+    .replace(/client_body_temp_path\s+temp\/client_body;/, `client_body_temp_path ${rt('temp', 'client_body')};`)
+    .replace(/fastcgi_temp_path\s+temp\/fastcgi;/, `fastcgi_temp_path     ${rt('temp', 'fastcgi')};`)
+    .replace(/proxy_temp_path\s+temp\/proxy;/, `proxy_temp_path       ${rt('temp', 'proxy')};`)
+    .replace(/uwsgi_temp_path\s+temp\/uwsgi;/, `uwsgi_temp_path       ${rt('temp', 'uwsgi')};`)
+    .replace(/scgi_temp_path\s+temp\/scgi;/, `scgi_temp_path        ${rt('temp', 'scgi')};`);
+  const outPath = path.join(NGINX_RUNTIME, 'nginx.runtime.conf');
   fs.writeFileSync(outPath, tpl);
-  return path.join('conf', 'nginx.runtime.conf');
+  return outPath;   // absolute; nginx -c accepts it, -p ROOT still resolves static roots
 }
 
 function startNginx() {
-  // nginx fails to start if logs/ doesn't exist; temp/ holds its scratch dirs.
-  for (const d of ['logs', 'temp']) {
-    try { fs.mkdirSync(path.join(ROOT, d), { recursive: true }); } catch (_) {}
-  }
-  let confRel;
-  try { confRel = renderNginxConf(); }
-  catch (e) { log('nginx render error, using static conf:', e.message); confRel = path.join('conf', 'nginx.conf'); }
+  let confPath;
+  try { confPath = renderNginxConf(); }
+  catch (e) { log('nginx render error, using static conf:', e.message); confPath = path.join('conf', 'nginx.conf'); }
   log(`Starting nginx (:${API_PORT} API, :${WEB_PORT} web)`);
-  const p = spawn(NGINX, ['-p', ROOT, '-c', confRel], {
+  const p = spawn(NGINX, ['-p', ROOT, '-c', confPath], {
     cwd: ROOT,
     windowsHide: true,
   });
