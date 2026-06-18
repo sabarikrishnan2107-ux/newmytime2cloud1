@@ -1,5 +1,4 @@
 # Camera service AI model files (large binary, download separately)
-camera-service/models/models/
 *.onnx
 *.zip
 
