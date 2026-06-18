@@ -32,7 +32,6 @@ Thumbs.db
 **/.vite/
 
 # Bundled runtimes & binaries (present locally for packaging, not versioned)
-desktop/backend/php/
 desktop/pgsql/
 desktop/runtime/
 nginx.exe
