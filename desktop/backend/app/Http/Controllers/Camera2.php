@@ -91,7 +91,11 @@ class Camera2 extends Controller
             //chmod($file_name, 666);
             Storage::append($file_name, $message);
 
-            // (new AttendanceLogCameraController)->store();
+            // Ingest the just-written CSV row into attendance_logs immediately
+            // (real-time, no scheduler). store() processes only new lines (tracked
+            // via a per-day count file) and uses insertOrIgnore, so it is safe to
+            // call on every push — no duplicate logs.
+            (new AttendanceLogCameraController)->store();
         } else {
             $file_name = "camera/camera2-error-logs-" . date("d-m-Y") . ".log";
             Logger::channel("custom")->error('Error occured while inserting Camera2 logs logs.' . $message);
