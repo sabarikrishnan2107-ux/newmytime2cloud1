@@ -33,7 +33,6 @@ Thumbs.db
 
 # Bundled runtimes & binaries (present locally for packaging, not versioned)
 desktop/runtime/
-nginx.exe
 **/*.exe
 **/*.dll
 
