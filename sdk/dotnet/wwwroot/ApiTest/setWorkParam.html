@@ -1,0 +1,253 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="bootstrap.min.css" >
+    <title></title>
+</head>
+<body>
+    <div class="row">
+        <div class="col-md-12" style="text-align: center;"><h1>设置工作参数接口示例</h1></div>
+    </div>
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">提示:</label>
+            <div class="col-sm-10">
+                <label for="inputEmail3" class="control-label">调用改接口可以设置工作参数到设备中</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">请求格式:</label>
+            <div class="col-sm-8 input-group" style="padding-left:15px;padding-right:15px">              
+                <input type="text" class="form-control" id="SN" placeholder="设备SN">
+                <span class="input-group-addon" id="basic-addon2">/SetWorkParam</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">设备名称:</label>
+            <div class="col-sm-8">
+                <input type="email" class="form-control" id="name" placeholder="设备名称" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">进出类别:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="door">
+                    <option>请选择</option>
+                    <option value="0">进门</option>
+                    <option value="1">出门</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">制造商名称:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="manufacturer" placeholder="制造商名称" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">制造商网址:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="webAddr" placeholder="制造商网址" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">出厂日期:</label>
+            <div class="col-sm-8">
+                <input type="datetime-local" class="form-control" id="deliveryDate">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">语言:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="language">
+                    <option>请选择</option>
+                    <option value="1">中文</option>
+                    <option value="2">英文</option>
+                    <option value="3">繁体</option>
+                    <option value="4">法语</option>
+                    <option value="5">俄语</option>
+                    <option value="6">葡萄牙语</option>
+                    <option value="7">西班牙语</option>
+                    <option value="8">意大利语</option>
+                    <option value="9">日语</option>
+                    <option value="10">韩语</option>
+                    <option value="11">泰语</option>
+                    <option value="12">阿拉伯语</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">音量:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="volume">
+                    <option>请选择</option>
+                    <option value="0">关闭声音</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">最大声音</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">菜单密码:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="menuPassword" placeholder="仅支持4-8位数字密码" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">现场照片保存开关:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="savePhoto">
+                    <option>请选择</option>
+                    <option value="1">保存现场照片</option>
+                    <option value="0">禁止保存</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">消息推送开关:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="msgPush">
+                    <option>请选择</option>
+                    <option value="0">禁用</option>
+                    <option value="1">启用</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">日期时间同步:</label>
+            <div class="col-sm-8">
+                <input type="datetime-local" class="form-control" id="time">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="button" onclick="SetWorkParam()" class="btn btn-default">设置</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">发送参数:</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" id="Param" style="height:200px" placeholder="发送参数"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">返回结果:</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" id="Result" style="height:200px" placeholder="返回结果"></textarea>
+            </div>
+        </div>
+    </form>
+    <!-- jQuery (Bootstrap 的所有 JavaScript 插件都依赖 jQuery，所以必须放在前边) -->
+    <script src="jquery.min.js"></script>
+</body>
+</html>
+<script type="text/javascript">
+    function SetWorkParam() {
+        var sn = $("#SN").val();
+        if (sn.length != 16) {
+            alert("请输入16位SN号");
+            return;
+        }
+        var data = GetData();
+        if (data === undefined) {
+            return;
+        }
+        var url = "/" + sn + "/SetWorkParam";
+        var param = JSON.stringify(data);
+        $("#Param").val(param);
+        $.ajax({
+            type: "POST",
+            url: url,
+            contentType: "application/json;charset=utf-8",
+            data: param,
+            dataType: "json",
+            success: function (message) {
+                //  alert(message);
+                $("#Result").val(JSON.stringify(message));
+            }
+        })
+
+    }
+    function GetData() {
+        var data = {};
+        var name = $("#name").val();
+        var door = Number($("#door").val());
+        var paramCount = 0;
+        if (name.length > 0 || !isNaN(door)) {
+            if (name.length === 0 || isNaN(door)) {
+
+                alert("设备名称和进出方向需要同时填写才能生效");
+                return;
+            }
+            data["name"] = name;
+            data["door"] = door;
+            paramCount++;
+        }
+        var manufacturer = $("#manufacturer").val();
+        var webAddr = $("#webAddr").val();
+        var deliveryDate = $("#deliveryDate").val();
+        if (manufacturer.length > 0 || webAddr.length > 0 || deliveryDate.length > 0) {
+            if (manufacturer.length === 0 || webAddr.length === 0 || deliveryDate.length === 0) {
+                alert("制造商网址,制造商网址,出厂日期,必须同时填写才能生效");
+                return;
+            }
+            data["maker"] = {};
+            data["maker"]["manufacturer"] = manufacturer;
+            data["maker"]["webAddr"] = webAddr;
+            data["maker"]["deliveryDate"] = deliveryDate.replace("T"," ");
+            paramCount++;
+        }
+        var language = Number($("#language").val());
+        if (!isNaN(language)) {
+            data["language"] = language;
+            paramCount++;
+        }
+        var volume = Number($("#volume").val());
+        if (!isNaN(volume)) {
+            data["volume"] = volume;
+            paramCount++;
+        }
+        var menuPassword = $("#menuPassword").val();
+        if (menuPassword.length > 0) {
+            if (isNaN(menuPassword)|| menuPassword.length < 4 || menuPassword.length > 8) {
+                alert("菜单密码仅支持4-8位数字密码");
+                return;
+            }
+            data["menuPassword"] = menuPassword;
+            paramCount++;
+        }
+        var savePhoto = Number($("#savePhoto").val());
+        if (!isNaN(savePhoto)) {
+            data["savePhoto"] = savePhoto;
+            paramCount++;
+        }
+        var msgPush = Number($("#msgPush").val());
+        if (!isNaN(msgPush)) {
+            data["msgPush"] = msgPush;
+            paramCount++;
+        }
+        var time = $("#time").val();
+
+        if (time.length > 0) {
+            data["time"] = time.replace("T", " ");;
+            paramCount++;
+        }
+        if (paramCount == 0) {
+            alert("没有需要提交的参数");
+            return;
+        }
+        return data;
+    }
+</script>

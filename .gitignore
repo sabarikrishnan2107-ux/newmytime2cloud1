@@ -43,10 +43,6 @@ camera-service/models/models/
 # Electron desktop shell (do not commit deps/binaries)
 electron/node_modules/
 
-# Bundled device SDK runtimes (large binaries: .NET + JRE), now under sdk/
-sdk/dotnet/
-sdk/java/
-
 # nginx runtime artifacts (conf/ + nginx.exe ARE committed, like the bundled PHP;
 # these are generated at runtime by the desktop shell)
 logs/
@@ -57,6 +53,9 @@ __pycache__/
 *.pyc
 services/face/venv/
 services/face/.venv/
+
+# Bundled JRE jimage — exceeds GitHub's 100MB file limit; present locally for packaging, not versioned
+sdk/java/lib/modules
 
 # OS
 .DS_Store

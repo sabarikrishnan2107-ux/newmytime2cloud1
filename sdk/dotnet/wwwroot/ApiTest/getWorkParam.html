@@ -1,0 +1,66 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="bootstrap.min.css" >
+    <title></title>
+</head>
+<body>
+    <div class="row">
+        <div class="col-md-12" style="text-align: center;"><h1>获取工作参数接口示例</h1></div>
+    </div>
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">提示:</label>
+            <div class="col-sm-8">
+                <label for="inputEmail3" class="control-label">获取工作参数接口</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">请求格式:</label>
+            <div class="col-sm-8 input-group" style="padding-left:15px;padding-right:15px">
+               
+                <input type="text" class="form-control" id="SN" placeholder="设备SN">
+                <span class="input-group-addon" id="basic-addon2">/GetWorkParam</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="button" onclick="GetWorkParam()" class="btn btn-default">获取</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">返回结果:</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" id="Result" style="height:200px;" placeholder="返回结果"></textarea>
+            </div>
+        </div>
+    </form>
+    <!-- jQuery (Bootstrap 的所有 JavaScript 插件都依赖 jQuery，所以必须放在前边) -->
+ <script src="jquery.min.js"></script>
+</body>
+</html>
+<script type="text/javascript">
+    function GetWorkParam() {
+        var sn = $("#SN").val();
+        if (sn.length != 16) {
+            alert("请输入16位SN号");
+            return;
+        }
+        var url = "/" + sn + "/GetWorkParam";
+        $.ajax({
+            type: "POST",
+            url: url,
+            contentType: "application/json;charset=utf-8",
+            dataType: "json",
+            success: function (message) {
+              //  alert(message);
+                $("#Result").val(JSON.stringify(message));
+            }
+        })
+
+    }
+
+</script>

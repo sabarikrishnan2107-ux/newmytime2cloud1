@@ -1,0 +1,259 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="bootstrap.min.css">
+    <title></title>
+</head>
+<body>
+    <div class="row">
+        <div class="col-md-12" style="text-align: center;"><h1>添加人员接口示例</h1></div>
+    </div>
+    <form class="form-horizontal">
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">提示:</label>
+            <div class="col-sm-10">
+                <label for="inputEmail3" class="control-label">调用该接口可以直接将人员信息下发到设备中</label>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label">请求格式:</label>
+            <div class="col-sm-8 input-group" style="padding-left:15px;padding-right:15px">
+
+                <input type="text" class="form-control" id="SN" placeholder="设备SN">
+                <span class="input-group-addon" id="basic-addon2">/AddPerson</span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputEmail3" class="col-sm-2 control-label"><span style="color:red">*</span>人员姓名:</label>
+            <div class="col-sm-8">
+                <input type="email" class="form-control" id="name" placeholder="人员姓名" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label"><span style="color:red">*</span>用户编号:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="userCode" placeholder="数字编号" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">人员编号:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="code" placeholder="数字编号" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">卡号:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="cardData" placeholder="取值范围 0x1-0xFFFFFFFF" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">卡密码:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="password" placeholder="无密码不填。密码是4-8位的数字" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">人员职务:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="job" placeholder="人员职务" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">人员部门:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="dept" placeholder="人员部门" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">用户身份:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="identity">
+                    <option value="0">普通用户</option>
+                    <option value="1">管理员</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">卡片状态:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="cardStatus">
+                    <option value="0">正常状态</option>
+                    <option value="1">挂失</option>
+                    <option value="2">黑名单</option>
+                    <option value="3">已删除</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">卡片类型:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="cardType">
+                    <option value="0">普通卡</option>
+                    <option value="1">常开</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">出入标记:</label>
+            <div class="col-sm-8">
+                <select class="form-control" id="enterStatus">
+                    <option value="0">出入有效</option>
+                    <option value="1">入有效</option>
+                    <option value="2">出有效</option>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">出入截止日期:</label>
+            <div class="col-sm-8">
+                <input type="datetime-local" class="form-control" id="expiry" placeholder="最大2089年12月31日" value="2089-12-31T23:59:59">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">刷卡有效次数:</label>
+            <div class="col-sm-8">
+                <input type="text" class="form-control" id="openTimes" placeholder="取值范围：0-65535;65535表示无限制" value="">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">删除人脸照片:</label>
+            <div class="col-sm-8">
+                新增： <input type="radio" name="isDeleteFace" value="0" checked="checked" title="新增">
+                删除：  <input type="radio" name="isDeleteFace" value="1" title="删除">
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">人员照片:</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" id="faceImage" style="height:200px" placeholder="不带头部的base64图片"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">人员指纹特征:</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" id="feature" style="height:200px" placeholder="base64指纹特征"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-sm-offset-2 col-sm-10">
+                <button type="button" onclick="AddPerson()" class="btn btn-default">添加</button>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">发送参数:</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" id="Param" style="height:200px" placeholder="发送参数"></textarea>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="inputPassword3" class="col-sm-2 control-label">返回结果:</label>
+            <div class="col-sm-8">
+                <textarea class="form-control" id="Result" style="height:200px" placeholder="返回结果"></textarea>
+            </div>
+        </div>
+    </form>
+    <!-- jQuery (Bootstrap 的所有 JavaScript 插件都依赖 jQuery，所以必须放在前边) -->
+    <script src="jquery.min.js"></script>
+</body>
+</html>
+<script type="text/javascript">
+    function AddPerson() {
+        var sn = $("#SN").val();
+        if (sn.length != 16) {
+            alert("请输入16位SN号");
+            return;
+        }
+        var data = GetData();
+        if (data === undefined) {
+            return;
+        }
+        var url = "/" + sn + "/AddPerson";
+        var param = JSON.stringify(data);
+        $("#Param").val(param);
+        $.ajax({
+            type: "POST",
+            url: url,
+            contentType: "application/json;charset=utf-8",
+            data: param,
+            dataType: "json",
+            success: function (message) {
+                //  alert(message);
+                $("#Result").val(JSON.stringify(message));
+            }
+        })
+
+    }
+    function GetData() {
+        var data = {};
+        var name = $("#name").val();
+        if (name.length <= 0) {
+            alert("人员姓名不能为空");
+            return;
+        }
+        var userCode = Number($("#userCode").val());
+        if (isNaN(userCode) || userCode === 0) {
+            alert("用户编号错误");
+            return;
+        }
+        var code = Number($("#code").val());
+        var cardData = Number($("#cardData").val());
+        var password = $("#password").val();
+        var job = $("#job").val();
+        var dept = $("#dept").val();
+        var identity = $("#identity").val();
+        var cardStatus = $("#identity").val();
+        var cardType = $("#cardType").val();
+        var enterStatus = $("#enterStatus").val();
+        var expiry = $("#expiry").val();
+        var openTimes = $("#openTimes").val();
+        var faceImage = $("#faceImage").val();
+        var feature = $("#feature").val();
+        var isDeleteFace = $('input[name="isDeleteFace"]:checked').val();
+        debugger
+        data["name"] = name;
+        data["userCode"] = userCode;
+        if (!isNaN(code) && code !== 0) {
+            data["code"] = code;
+        }
+        if (cardData > 0 && cardData < 0xffffffff) {
+            data["cardData"] = cardData;
+        }
+        if (password.length > 0) {
+            var p = Number(Number(password));
+            if (isNaN(p) || password.length < 4 || password.length > 8) {
+                alert("卡密码错误");
+                return;
+            }
+            data["password"] = password;
+        }
+        if (job.length > 0) {
+            data["job"] = job;
+        }
+        if (dept.length > 0) {
+            data["dept"] = dept;
+        }
+        data["identity"] = Number(identity);
+        data["cardStatus"] = Number(cardStatus);
+        data["cardType"] = Number(cardType);
+        data["enterStatus"] = Number(enterStatus);
+        data["isDeleteFace"] = Boolean(Number(isDeleteFace));
+        if (expiry.length > 0) {
+            expiry = expiry.replace("T", " ");
+            data["expiry"] = expiry;
+        }
+        if (openTimes > 0 && openTimes <= 65535) {
+            data["openTimes"] = openTimes;
+        }
+        if (faceImage.length > 0 && isDeleteFace == "0") {
+            data["faceImage"] = faceImage;
+        }
+        if (feature.length > 0) {
+            data["fp"] = [feature];
+        }
+        return data;
+    }
+</script>
