@@ -1,4 +1,0 @@
-12:17:17,311 - push record{"UserCode":5656,"Photo":1,"RecordImage":null,"BodyTemperature":0.0,"RecordNumber":6,"Accesstype":1,"RecordDate":"2025-10-25 12:17:10","RecordType":1,"RecordMsg":"Face verification","RecordCode":3,"CardData":null,"Door":1,"SN":"FC-8100T21016229"}
-
-12:23:47,101 - push record{"UserCode":5656,"Photo":1,"RecordImage":null,"BodyTemperature":0.0,"RecordNumber":7,"Accesstype":1,"RecordDate":"2025-10-25 12:23:45","RecordType":1,"RecordMsg":"Face verification","RecordCode":3,"CardData":null,"Door":1,"SN":"FC-8100T21016229"}
-

@@ -48,6 +48,10 @@ electron/node_modules/
 logs/
 temp/
 
+# Runtime-generated logs (regenerated on each run, never versioned)
+**/*.log
+sdk/dotnet/Log/
+
 # Python bytecode / venvs (services/face source IS committed; these are not)
 __pycache__/
 *.pyc
