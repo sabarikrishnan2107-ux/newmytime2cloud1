@@ -101,9 +101,17 @@ All spawned by `main.js`; Node ones run on the bundled Electron-as-Node (no syst
   status/command gateway on :8001, queried by the backend's device-health check).
 - `push/server.js` — local SSE relay (:8077) replacing the live `v2push` server; backend
   POSTs to `/notify`, browser subscribes via `EventSource` at `/stream`.
-- `face/` — FastAPI (`/validate-passport`, `/verify-face-fast-file`) on :8500. **Uses a
-  system Python 3.12** (mediapipe + insightface), not a bundled runtime — package with
-  PyInstaller for a real installer.
+- `face/` — FastAPI (`/validate-passport`, `/verify-face-fast-file`) on :8500
+  (mediapipe + insightface). Ships as a **standalone PyInstaller exe** so target PCs
+  need no Python. `services/face/build-face.bat` freezes the app *and bundles the
+  InsightFace buffalo_l model pack* into `services/face/dist/face-service/face-service.exe`
+  (spec: `face-service.spec`; frozen entrypoint: `run.py`). `main.js` `startFaceService()`
+  prefers that exe and falls back to system Python 3.12 + `-m uvicorn` in dev.
+  **You don't have to remember to build it:** `npm run dist` runs a `predist` guard
+  (`electron/ensure-face-service.js`) that auto-runs `build-face.bat` if the exe is missing
+  and aborts the installer if it can't be produced. `dist/`, `build/`, and the staged
+  `models/` are gitignored (and excluded from the packaged installer except `dist/`), so
+  rebuild on a machine that has the deps + the buffalo_l model present once.
 - `pdf/` — Puppeteer HTML→PDF (:3002). `sync-calendar/` — holidays/calendar API (:4000).
 - `sdk/dotnet` (FCardProtocolAPI, REST + `/WebSocket` on :8080, bundled .NET runtime) and
   `sdk/java` (SxDeviceManager.jar for Suprema/SX, bundled JRE) are the device SDKs.

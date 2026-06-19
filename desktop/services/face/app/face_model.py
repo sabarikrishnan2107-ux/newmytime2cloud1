@@ -4,6 +4,8 @@ InsightFace model loading and management (RetinaFace + ArcFace)
 """
 
 import logging
+import os
+import sys
 import threading
 import time
 from pathlib import Path
@@ -13,6 +15,22 @@ import cv2
 import numpy as np
 
 logger = logging.getLogger(__name__)
+
+
+def _insightface_root() -> Optional[str]:
+    """
+    Where InsightFace should look for its model pack.
+
+    When frozen by PyInstaller there is no `~/.insightface` to download into
+    (and the target PC is offline), so the buffalo_l pack is bundled inside the
+    exe at `<bundle>/insightface/models/<name>`. `sys._MEIPASS` points at that
+    bundled data dir. In a normal `python` run we return None so InsightFace
+    uses its default (`~/.insightface`).
+    """
+    if getattr(sys, "frozen", False):
+        base = getattr(sys, "_MEIPASS", os.path.dirname(sys.executable))
+        return os.path.join(base, "insightface")
+    return None
 
 
 class FaceModel:
@@ -42,14 +60,18 @@ class FaceModel:
             import insightface
             from insightface.app import FaceAnalysis
 
-            logger.info(f"Loading InsightFace model pack: {model_name} (ctx_id={ctx_id})")
+            root = _insightface_root()
+            logger.info(f"Loading InsightFace model pack: {model_name} (ctx_id={ctx_id}, root={root or '~/.insightface'})")
             start = time.time()
 
-            self.app = FaceAnalysis(
+            fa_kwargs = dict(
                 name=model_name,
                 providers=["CUDAExecutionProvider", "CPUExecutionProvider"] if ctx_id >= 0
-                          else ["CPUExecutionProvider"]
+                          else ["CPUExecutionProvider"],
             )
+            if root:
+                fa_kwargs["root"] = root  # frozen: use bundled model pack, never download
+            self.app = FaceAnalysis(**fa_kwargs)
             # det_size: minimum face size the detector will look for
             self.app.prepare(ctx_id=ctx_id, det_size=(640, 640))
 

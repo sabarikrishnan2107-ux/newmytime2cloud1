@@ -313,13 +313,28 @@ function startJavaSdk() {
 // /verify-face-fast-file (InsightFace 1:1 match) on :8500 — where the frontend's
 // FACE_VALIDATOR_URL points. Source pulled from the live `face-apis` service.
 function startFaceService() {
-  const py = resolvePython();
-  log('Starting face validator (FastAPI) on', FACE_PORT, 'via', py);
-  const p = spawn(py, ['-m', 'uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', String(FACE_PORT)], {
-    cwd: FACE_SERVICE,
-    env: process.env,
-    windowsHide: true,
-  });
+  // Prefer the standalone PyInstaller build (services/face/dist/face-service/
+  // face-service.exe) so the target PC needs no Python / no pip install. The
+  // frozen exe reads FACE_PORT from the env. Fall back to system Python +
+  // `-m uvicorn` for dev machines that haven't built the exe.
+  const frozenExe = path.join(FACE_SERVICE, 'dist', 'face-service', 'face-service.exe');
+  let p;
+  if (fs.existsSync(frozenExe)) {
+    log('Starting face validator (frozen exe) on', FACE_PORT, 'via', frozenExe);
+    p = spawn(frozenExe, [], {
+      cwd: path.dirname(frozenExe),
+      env: { ...process.env, FACE_PORT: String(FACE_PORT) },
+      windowsHide: true,
+    });
+  } else {
+    const py = resolvePython();
+    log('Starting face validator (FastAPI) on', FACE_PORT, 'via', py);
+    p = spawn(py, ['-m', 'uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', String(FACE_PORT)], {
+      cwd: FACE_SERVICE,
+      env: process.env,
+      windowsHide: true,
+    });
+  }
   p.stdout.on('data', d => process.stdout.write('[face] ' + d));
   p.stderr.on('data', d => process.stderr.write('[face] ' + d));
   p.on('error', err => log('face service spawn error:', err.message));
