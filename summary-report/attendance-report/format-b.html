@@ -190,6 +190,7 @@
   var shiftTypeId = parseInt(qs('shift_type_id') || '6', 10);
   var apiBase = qs('api_base') || 'http://127.0.0.1:8000/api';
   var companyName = qs('company_name') || 'Company';
+  var statuses = (qs('statuses') || '').split(',').filter(Boolean);
 
   var payload = {
     page: 1,
@@ -200,7 +201,7 @@
     from_date: fromDate,
     to_date: toDate,
     employee_id: employeeIds.map(function(x) { return parseInt(x, 10) || x; }),
-    statuses: [],
+    statuses: statuses,
     department_ids: [],
     showTabs: JSON.stringify({ single: true }),
     company_id: parseInt(companyId, 10),

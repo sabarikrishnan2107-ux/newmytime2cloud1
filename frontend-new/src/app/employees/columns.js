@@ -72,7 +72,7 @@ export default (t, deleteEmployee, editEmployee, showHostQr, printCard, showEnro
     align: "left",
     render: (employee) => (
       <div className="text-sm">
-        <p className="text-slate-600 dark:text-stone-100">{employee.user?.email || "—"}</p>
+        <p className="text-slate-600 dark:text-stone-100">{employee.email || employee.user?.email || "—"}</p>
         <p className="text-xs text-slate-600 dark:text-stone-100">{employee.phone_number || "—"}</p>
       </div>
     ),

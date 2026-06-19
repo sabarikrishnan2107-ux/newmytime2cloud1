@@ -273,7 +273,13 @@ class Attendance extends Model
             $q->where('status', $request->status);
         });
 
-        $model->when(count($request->statuses ?? []) > 0, fn($q) => $q->whereIn('status', request("statuses")));
+        // `statuses` may arrive as a JSON array (POST) or a comma-separated string (GET/CSV).
+        // Normalise to an array so count()/whereIn never receive a scalar string.
+        $statusList = $request->input('statuses', []);
+        if (is_string($statusList)) {
+            $statusList = array_filter(explode(',', $statusList), fn($s) => $s !== '');
+        }
+        $model->when(count($statusList) > 0, fn($q) => $q->whereIn('status', array_values($statusList)));
 
         $model->when($request->status == "ME", function ($q) {
             $q->where('is_manual_entry', true);

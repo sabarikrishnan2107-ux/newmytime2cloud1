@@ -431,6 +431,11 @@ function AttendanceTableInner() {
           api_base: API_BASE_URL,
           company_name: user?.company_name || user?.company?.name || 'Company',
         };
+        // Forward the status filter so the PDF matches the on-screen (Submit) result.
+        // Without this the template defaults to "all statuses" and ignores Present/Absent.
+        if (selectedStatusIds?.length) {
+          paramsObj.statuses = selectedStatusIds.join(",");
+        }
         if (isDaily) {
           if (selectedBranchIds?.length)     paramsObj.branch_ids     = selectedBranchIds.join(",");
           if (selectedDepartmentIds?.length) paramsObj.department_ids = selectedDepartmentIds.join(",");
@@ -471,11 +476,12 @@ function AttendanceTableInner() {
       queryObj.append("employee_id", selectedEmployeeIds.join(","));
       queryObj.append("employee_ids", selectedEmployeeIds.join(","));
 
-      // Status filter: Vue defaults to "-1" when nothing selected (backend skips filter for "-1")
-      queryObj.append("status", selectedStatusIds.length > 0 ? selectedStatusIds.join(",") : "-1");
-      if (selectedStatusIds.length > 0) {
-        queryObj.append("statuses", selectedStatusIds.join(","));
-      }
+      // Status filter: send `statuses` as an ARRAY (statuses[]=P&statuses[]=A) so the
+      // backend's whereIn() + count() work for single AND multi select. A scalar
+      // comma string here crashed count() ("must be Countable|array, string given")
+      // and a comma `status` ("P,A") never matched. status="-1" skips the singular filter.
+      queryObj.append("status", "-1");
+      selectedStatusIds.forEach((s) => queryObj.append("statuses[]", s));
 
       const fullQsUrl = `${baseUrl}?${queryObj.toString()}`;
 

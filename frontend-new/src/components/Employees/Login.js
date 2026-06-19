@@ -111,6 +111,8 @@ const Login = ({ employee_id, email }) => {
                     <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Account Email</label>
                     <Input
                         type="email"
+                        autoComplete="off"
+                        name="account-email-field"
                         value={form.email}
                         onChange={handleEmailChange}
                         placeholder="email@company.com"
@@ -128,6 +130,8 @@ const Login = ({ employee_id, email }) => {
                             <Input
                                 placeholder="••••••••"
                                 type="password"
+                                autoComplete="new-password"
+                                name="new-account-password"
                                 value={form.password}
                                 onChange={handlePasswordChange}
                             />
@@ -138,6 +142,8 @@ const Login = ({ employee_id, email }) => {
                             <Input
                                 placeholder="••••••••"
                                 type="password"
+                                autoComplete="new-password"
+                                name="confirm-account-password"
                                 value={form.password_confirmation}
                                 onChange={handlePasswordConfirmationChange}
                             />
