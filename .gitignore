@@ -57,6 +57,9 @@ services/face/.venv/
 # Bundled JRE jimage — exceeds GitHub's 100MB file limit; present locally for packaging, not versioned
 sdk/java/lib/modules
 
+# Large DB backup dump — kept locally, not versioned
+backend/database/mytime-backup-25-march.sql
+
 # OS
 .DS_Store
 Thumbs.db
