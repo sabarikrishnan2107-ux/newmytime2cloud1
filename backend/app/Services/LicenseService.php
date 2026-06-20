@@ -199,12 +199,17 @@ class LicenseService
 
     private function employeeCount($companyId): int
     {
-        return Employee::where('company_id', $companyId)->count();
+        // Desktop is single-tenant. The license token may carry no company_id
+        // (NULL), which won't match the locally-seeded company — so when it's
+        // empty, count across the whole (single) install rather than scoping to
+        // a NULL company that matches nothing.
+        return Employee::when($companyId, fn ($q) => $q->where('company_id', $companyId))
+            ->count();
     }
 
     private function deviceCount($companyId): int
     {
-        return Device::where('company_id', $companyId)
+        return Device::when($companyId, fn ($q) => $q->where('company_id', $companyId))
             ->where('model_number', '!=', 'Manual')
             ->where('model_number', 'not like', '%Mobile%')
             ->count();
