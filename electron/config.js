@@ -29,7 +29,7 @@ const LISTENER_ENV = path.join(ROOT, 'services', 'log-listener', '.env');
 // NOTE: the Postgres port is configured separately via the DB settings (db.port /
 // backend .env DB_PORT), not here.
 const DEFAULT_PORTS = {
-  api: 8000, web: 3001, push: 8077, face: 8500,
+  api: 8000, web: 3001, push: 8077,
   dotnet: 8080, java: 8888, pdf: 3002, sync: 4000,
   mqttTcp: 1883, mqttWs: 8083, gateway: 8001,
   php: [9000, 9001, 9002, 9003],          // php-cgi FastCGI pool (internal)

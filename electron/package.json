@@ -1,13 +1,12 @@
 {
   "name": "mytime2desktop",
-  "version": "18.06.2026",
+  "version": "19.06.2026",
   "private": true,
   "description": "Electron desktop shell for MyTime2Desktop",
   "author": "MyTime2Desktop",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "predist": "node ensure-face-service.js",
     "dist": "electron-builder --win nsis"
   },
   "devDependencies": {
@@ -38,19 +37,32 @@
       },
       {
         "from": "../backend",
-        "to": "backend"
+        "to": "backend",
+        "filter": [
+          "**/*",
+          "!database/mytime-backup-25-march.sql",
+          "!tests/**",
+          "!storage/logs/*.log"
+        ]
       },
       {
         "from": "../sdk",
-        "to": "sdk"
+        "to": "sdk",
+        "filter": [
+          "**/*",
+          "!dotnet/dotnet/sdk/**",
+          "!dotnet/dotnet/sdk-manifests/**",
+          "!dotnet/dotnet/packs/**",
+          "!dotnet/dotnet/templates/**",
+          "!java/jmods/**"
+        ]
       },
       {
         "from": "../services",
         "to": "services",
         "filter": [
           "**/*",
-          "!face/build/**",
-          "!face/models/**",
+          "!face/**",
           "!**/__pycache__/**"
         ]
       },
@@ -81,7 +93,7 @@
       "oneClick": false,
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
-      "artifactName": "MyTime2Desktop-Setup-18.06.2026.${ext}"
+      "artifactName": "MyTime2Desktop-Setup-19.06.2026.${ext}"
     }
   }
 }

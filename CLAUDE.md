@@ -6,8 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MyTime2Cloud is a multi-tenant (company-scoped) attendance / access-control / payroll
 system. This repo packages it as a **self-contained Windows desktop app** — an Electron
-shell that bundles every runtime (PHP, PostgreSQL, nginx, .NET/Java device SDKs, a Python
-face service, and several Node helpers) so the end user installs and imports nothing.
+shell that bundles every runtime (PHP, PostgreSQL, nginx, .NET/Java device SDKs, and
+several Node helpers) so the end user installs and imports nothing.
 
 ### Everything lives under `desktop/`
 
@@ -64,7 +64,7 @@ cd desktop/backend && php artisan test --filter SomeTest      # single test
 5. **nginx** as the single front door — serves the Laravel API on **:8000** (FastCGI to the
    php-cgi pool) and the static Next build on **:3001**.
 6. Device SDKs and helper services (see below), then the window.
-7. After the window loads: the **face validator**, **queue worker**, and **scheduler** start
+7. After the window loads: the **queue worker** and **scheduler** start
    (deferred so they don't starve php-cgi's cold boot and delay first paint).
 
 The **queue worker and scheduler are required, not optional** — dispatched Jobs (e.g.
@@ -85,7 +85,7 @@ so the desktop manages those `.env` keys for it. Overrides go in `desktop-config
 
 The static frontend must work on any IP/hostname (LAN access from other PCs), so nothing is
 hardcoded. nginx rewrites tokens in the served HTML/JS per request via `sub_filter`:
-`__M2C_HOST__` → the client's host, and `__API_PORT__` / `__PUSH_PORT__` / `__FACE_PORT__`
+`__M2C_HOST__` → the client's host, and `__API_PORT__` / `__PUSH_PORT__`
 / etc. → the configured ports. So **changing a port needs no web rebuild.** The frontend's
 runtime fallback for these lives in `frontend/src/lib/runtimeHost.js` (`svcUrl()`), consumed
 by `frontend/src/config/index.js`.
@@ -101,17 +101,10 @@ All spawned by `main.js`; Node ones run on the bundled Electron-as-Node (no syst
   status/command gateway on :8001, queried by the backend's device-health check).
 - `push/server.js` — local SSE relay (:8077) replacing the live `v2push` server; backend
   POSTs to `/notify`, browser subscribes via `EventSource` at `/stream`.
-- `face/` — FastAPI (`/validate-passport`, `/verify-face-fast-file`) on :8500
-  (mediapipe + insightface). Ships as a **standalone PyInstaller exe** so target PCs
-  need no Python. `services/face/build-face.bat` freezes the app *and bundles the
-  InsightFace buffalo_l model pack* into `services/face/dist/face-service/face-service.exe`
-  (spec: `face-service.spec`; frozen entrypoint: `run.py`). `main.js` `startFaceService()`
-  prefers that exe and falls back to system Python 3.12 + `-m uvicorn` in dev.
-  **You don't have to remember to build it:** `npm run dist` runs a `predist` guard
-  (`electron/ensure-face-service.js`) that auto-runs `build-face.bat` if the exe is missing
-  and aborts the installer if it can't be produced. `dist/`, `build/`, and the staged
-  `models/` are gitignored (and excluded from the packaged installer except `dist/`), so
-  rebuild on a machine that has the deps + the buffalo_l model present once.
+  (The Python face service that previously served `/validate-passport` and
+  `/verify-face-fast-file` on :8500 has been removed — employee photo upload is now a plain
+  client-side upload in `frontend/src/components/ImageUploader.jsx`. Visitor reception still
+  does its face crop / background removal entirely in-browser via `face-api.js`.)
 - `pdf/` — Puppeteer HTML→PDF (:3002). `sync-calendar/` — holidays/calendar API (:4000).
 - `sdk/dotnet` (FCardProtocolAPI, REST + `/WebSocket` on :8080, bundled .NET runtime) and
   `sdk/java` (SxDeviceManager.jar for Suprema/SX, bundled JRE) are the device SDKs.
@@ -131,9 +124,8 @@ proxies the public endpoints.
   `mytime2cloud-desktop-v2`. `config.js` hard-blocks the live host in `applyDb` (the host is
   base64-encoded there so the literal IP isn't shipped in source); don't work around it.
 - **No global-PATH runtime dependencies.** Everything is bundled and referenced repo-relative
-  (`ROOT = app.isPackaged ? process.resourcesPath : ..`). The one exception is the face
-  service's system Python. Don't add `env`-var config for values derivable in code — mirror
-  them into `.env` the way `config.js` already does.
+  (`ROOT = app.isPackaged ? process.resourcesPath : ..`). Don't add `env`-var config for
+  values derivable in code — mirror them into `.env` the way `config.js` already does.
 - Backend is **Laravel 9 / PHP 8** on **PostgreSQL** (despite `desktop/backend/.env.example`
   showing MySQL — that's the legacy example). Routes are split across many files under
   `desktop/backend/routes/`, pulled in from `api.php`.

@@ -80,7 +80,6 @@ http {
         sub_filter        __M2C_HOST__    $host;
         sub_filter        __API_PORT__    "{{API_PORT}}";
         sub_filter        __PUSH_PORT__   "{{PUSH_PORT}}";
-        sub_filter        __FACE_PORT__   "{{FACE_PORT}}";
         sub_filter        __DOTNET_PORT__ "{{DOTNET_PORT}}";
         sub_filter        __PDF_PORT__    "{{PDF_PORT}}";
         sub_filter        __SYNC_PORT__   "{{SYNC_PORT}}";

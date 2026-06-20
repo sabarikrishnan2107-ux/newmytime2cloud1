@@ -27,23 +27,10 @@ const BACKEND = path.join(ROOT, 'backend');
 // Device SDKs live under sdk/ ; all child services under services/.
 const DOTNET_SDK = path.join(ROOT, 'sdk', 'dotnet');     // FCardProtocolAPI — REST + /WebSocket on :8080
 const JAVA_SDK = path.join(ROOT, 'sdk', 'java');         // SxDeviceManager.jar
-const FACE_SERVICE = path.join(ROOT, 'services', 'face'); // FastAPI face validator (/validate-passport) on :8500
 const PUSH_SERVICE = path.join(ROOT, 'services', 'push'); // SSE push relay on :8077
 const LOG_LISTENER = path.join(ROOT, 'services', 'log-listener'); // SDK WebSocket -> Postgres attendance_logs
 const PDF_SERVICE = path.join(ROOT, 'services', 'pdf');           // HTML -> PDF rendering on :3002
 const SYNC_CALENDAR = path.join(ROOT, 'services', 'sync-calendar'); // holidays/calendar API on :4000
-
-// Python for the face service. Prefer the per-user 3.12 install (where mediapipe
-// + insightface are installed) via LOCALAPPDATA so it's not hardcoded to a user;
-// fall back to whatever `python` is on PATH. NOTE: this is a SYSTEM Python, not a
-// bundled runtime — for a packaged installer, freeze services/face with PyInstaller.
-function resolvePython() {
-  const local = process.env.LOCALAPPDATA
-    ? path.join(process.env.LOCALAPPDATA, 'Programs', 'Python', 'Python312', 'python.exe')
-    : null;
-  if (local && fs.existsSync(local)) return local;
-  return 'python';
-}
 
 // Detect this machine's LAN IPv4 so the app is reachable from other PCs.
 function lanIp() {
@@ -64,7 +51,6 @@ const PORTS = cfg.load().ports;
 const API_PORT = PORTS.api;
 const WEB_PORT = PORTS.web;
 const PUSH_PORT = PORTS.push;
-const FACE_PORT = PORTS.face;   // face validator — frontend FACE_VALIDATOR_URL points here
 const GATEWAY_PORT = PORTS.gateway;  // MQTT device gateway HTTP API
 const PDF_PORT = PORTS.pdf;
 const SYNC_PORT = PORTS.sync;
@@ -133,7 +119,6 @@ function requiredPorts() {
     { label: '.NET device SDK',     port: DOTNET_PORT },
     { label: 'device inbound TCP',  port: DEVICE_TCP },
     { label: 'Java device SDK',     port: JAVA_PORT },
-    { label: 'face validator',      port: FACE_PORT },
     { label: 'PDF service',         port: PDF_PORT },
     { label: 'sync-calendar',       port: SYNC_PORT },
     { label: 'MQTT broker',         port: MQTT_TCP_PORT },
@@ -228,7 +213,7 @@ function renderNginxConf() {
   if (!fs.existsSync(tplPath)) return path.join('conf', 'nginx.conf');
   const phpUpstream = PHP_PORTS.map(p => `        server 127.0.0.1:${p};`).join('\n');
   const repl = {
-    API_PORT, WEB_PORT, PUSH_PORT, FACE_PORT,
+    API_PORT, WEB_PORT, PUSH_PORT,
     DOTNET_PORT, PDF_PORT, SYNC_PORT, MQTT_WS_PORT,
   };
   let tpl = fs.readFileSync(tplPath, 'utf8');
@@ -308,38 +293,6 @@ function startJavaSdk() {
   children.push(p);
 }
 
-// ── Face validator (FastAPI) ─────────────────────────────────────────────────
-// Serves /validate-passport (employee photo crop/enhance via MediaPipe) and
-// /verify-face-fast-file (InsightFace 1:1 match) on :8500 — where the frontend's
-// FACE_VALIDATOR_URL points. Source pulled from the live `face-apis` service.
-function startFaceService() {
-  // Prefer the standalone PyInstaller build (services/face/dist/face-service/
-  // face-service.exe) so the target PC needs no Python / no pip install. The
-  // frozen exe reads FACE_PORT from the env. Fall back to system Python +
-  // `-m uvicorn` for dev machines that haven't built the exe.
-  const frozenExe = path.join(FACE_SERVICE, 'dist', 'face-service', 'face-service.exe');
-  let p;
-  if (fs.existsSync(frozenExe)) {
-    log('Starting face validator (frozen exe) on', FACE_PORT, 'via', frozenExe);
-    p = spawn(frozenExe, [], {
-      cwd: path.dirname(frozenExe),
-      env: { ...process.env, FACE_PORT: String(FACE_PORT) },
-      windowsHide: true,
-    });
-  } else {
-    const py = resolvePython();
-    log('Starting face validator (FastAPI) on', FACE_PORT, 'via', py);
-    p = spawn(py, ['-m', 'uvicorn', 'app.main:app', '--host', '0.0.0.0', '--port', String(FACE_PORT)], {
-      cwd: FACE_SERVICE,
-      env: process.env,
-      windowsHide: true,
-    });
-  }
-  p.stdout.on('data', d => process.stdout.write('[face] ' + d));
-  p.stderr.on('data', d => process.stderr.write('[face] ' + d));
-  p.on('error', err => log('face service spawn error:', err.message));
-  children.push(p);
-}
 
 // ── Laravel background workers (queue + scheduler) ───────────────────────────
 // REQUIRED, not optional. Dispatched Jobs run ONLY via the queue worker — e.g.
@@ -513,7 +466,6 @@ function createWindow() {
       // Start heavy/background processes only AFTER the window is loading, so
       // they don't starve php-cgi's cold-boot and delay first paint. None are
       // needed at the login screen.
-      startFaceService();    // InsightFace load is CPU-bound (~10s)
       startQueueWorker();    // processes dispatched Jobs (e.g. expire-on-device)
       startScheduler();      // attendance regen, device sync, daily reports
     })
@@ -761,7 +713,7 @@ if (!app.requestSingleInstanceLock()) {
     startMqttBroker();       // MQTT broker (:1883/:8083) for MQTT-based devices
     startMqttDeviceGateway(); // MQTT device status/command gateway (:8001)
     startMytimeMqttListener(); // MQTT punch ingestion -> attendance_logs
-    createWindow();          // face validator + queue + scheduler start after window loads
+    createWindow();          // queue + scheduler start after window loads
   });
 }
 
