@@ -19,6 +19,7 @@ const NO_CACHE_STATIC = {
 };
 app.use("/templates", express.static(path.resolve(__dirname, "..", "..", "summary-report"), NO_CACHE_STATIC));
 app.use("/attendance-report", express.static(path.resolve(__dirname, "..", "..", "summary-report", "attendance-report"), NO_CACHE_STATIC));
+app.use("/daily-report", express.static(path.resolve(__dirname, "..", "..", "summary-report", "daily-report"), NO_CACHE_STATIC));
 app.use("/access-control-report", express.static(path.resolve(__dirname, "..", "..", "summary-report", "access-control-report"), NO_CACHE_STATIC));
 app.use("/absent-report", express.static(path.resolve(__dirname, "..", "..", "summary-report", "absent-report"), NO_CACHE_STATIC));
 app.use("/live-tracker-report", express.static(path.resolve(__dirname, "..", "..", "summary-report", "live-tracker-report"), NO_CACHE_STATIC));
