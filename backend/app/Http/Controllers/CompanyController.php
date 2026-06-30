@@ -70,7 +70,7 @@ class CompanyController extends Controller
 
     public function index(Company $model, Request $request)
     {
-        return $model->where("account_type", "company")->with(['user', 'contact', 'modules', 'trade_license'])->withCount('employees')->paginate($request->per_page);
+        return $model->where("account_type", "company")->with(['user', 'contact', 'modules', 'trade_license'])->withCount(['employees', 'devices', 'companybranches'])->paginate($request->per_page);
     }
 
     public function getMasterDashboardCounts()
