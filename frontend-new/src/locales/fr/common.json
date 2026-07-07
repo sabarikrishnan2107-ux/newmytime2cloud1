@@ -160,6 +160,7 @@
     }
   },
   "menu": {
+    "wizard": "Assistant",
     "dashboard": "Tableau de bord",
     "shift": "Quart",
     "schedule": "Planning",

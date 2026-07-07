@@ -160,6 +160,7 @@
     }
   },
   "menu": {
+    "wizard": "Wizard",
     "dashboard": "Dashboard",
     "shift": "Shift",
     "schedule": "Schedule",

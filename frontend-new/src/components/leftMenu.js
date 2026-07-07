@@ -5,14 +5,16 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { leftNavLinks } from '../lib/menuData';
-import { LogOut, ChevronDown } from "lucide-react";
+import { LogOut, ChevronDown, Wand2 } from "lucide-react";
 import { getUser } from "@/config";
 import { getCompanyLogo } from "@/lib/endpoint/company";
+import { useWizardMode } from "@/context/WizardModeContext";
 
 export default function LeftMenu() {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useTranslation();
+  const { wizardMode, toggleWizard } = useWizardMode();
   const [user, setUser] = useState(null);
   const [companyLogo, setCompanyLogo] = useState(null);
   const [openGroups, setOpenGroups] = useState({});
@@ -244,8 +246,36 @@ export default function LeftMenu() {
         })}
       </nav>
 
-      {/* Logo + Logout at bottom */}
+      {/* Wizard toggle + Logout at bottom */}
       <div className="mt-auto px-2.5 pb-2">
+        {/* Wizard mode toggle — mirrors the header wand button */}
+        <div
+          onClick={toggleWizard}
+          title={wizardMode ? t('header.tooltips.wizardOn') : t('header.tooltips.wizardOff')}
+          className={`flex items-center w-14 group-hover:w-full rounded-xl px-0 group-hover:px-3 py-2.5 mb-1 cursor-pointer transition-all duration-300 ease-in-out
+            ${wizardMode ? 'bg-violet-500/10 hover:bg-violet-500/15' : 'hover:bg-violet-500/10'}`}
+        >
+          <div className="flex justify-center w-14 group-hover:w-10 shrink-0 transition-all duration-300">
+            <div className="relative">
+              <Wand2
+                size={24}
+                strokeWidth={wizardMode ? 2.2 : 1.8}
+                className={wizardMode ? 'text-violet-500' : 'text-slate-600 dark:text-slate-300'}
+              />
+              <span
+                className={`absolute -top-0.5 -end-0.5 w-1.5 h-1.5 rounded-full transition-colors ${wizardMode ? 'bg-violet-500 shadow-[0_0_8px_#8b5cf6]' : 'bg-transparent'}`}
+              />
+            </div>
+          </div>
+          <span
+            className={`overflow-hidden w-0 opacity-0 group-hover:w-auto group-hover:opacity-100
+              transition-all duration-300 whitespace-nowrap text-[15px] font-medium ms-0 group-hover:ms-2.5
+              ${wizardMode ? 'text-violet-600 dark:text-violet-300' : 'text-slate-600 dark:text-slate-200'}`}
+          >
+            {t('menu.wizard')}
+          </span>
+        </div>
+
         <div
           onClick={handleLogout}
           title={t('header.logoutHint')}

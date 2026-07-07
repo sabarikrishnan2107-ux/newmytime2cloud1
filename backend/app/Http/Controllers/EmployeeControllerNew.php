@@ -58,7 +58,10 @@ class EmployeeControllerNew extends Controller
                 'company_id'           => 'required|integer', // Assumes a 'branches' table
                 'profile_image_base64' => 'nullable|string',  // Con
 
-                'email' => 'nullable|string',
+                // Login email must not collide with ANY existing account (admin/company
+                // or another employee — all live in the `users` table). This blocks the
+                // create request up front so it can never overwrite/hijack an account.
+                'email' => 'nullable|email|unique:users,email',
                 'password' => 'nullable|string',
 
                 'marital_status' => 'nullable|string',
@@ -138,29 +141,19 @@ class EmployeeControllerNew extends Controller
             // 9. Create User record if email and password are provided
             $user = null;
             if (!empty($email) && !empty($password)) {
-                // Check if user with this email already exists
-                $existingUser = User::where('email', $email)->first();
-
-                if ($existingUser) {
-                    // Update existing user and link to new employee
-                    $existingUser->update([
-                        'password' => $password,
-                        'employee_id' => $employee->id,
-                        "company_id" => $employee->company_id,
-                        "user_type" => "employee",
-                    ]);
-                    $user = $existingUser;
-                } else {
-                    // Create new user
-                    $user = User::create([
-                        'name' => $employee->full_name ?? $employee->first_name . ' ' . $employee->last_name,
-                        'email' => $email,
-                        'password' => $password, // Already hashed above
-                        'employee_id' => $employee->id,
-                        "company_id" => $employee->company_id,
-                        "user_type" => "employee",
-                    ]);
-                }
+                // Email uniqueness is guaranteed by the 'unique:users,email' rule above,
+                // so the email is always free here. Always create a FRESH user — never
+                // overwrite/convert an existing account. The previous "update existing
+                // user" branch silently hijacked company/admin logins (flipping them to
+                // user_type=employee) when an employee reused an existing email.
+                $user = User::create([
+                    'name' => $employee->full_name ?? $employee->first_name . ' ' . $employee->last_name,
+                    'email' => $email,
+                    'password' => $password, // Already hashed above
+                    'employee_id' => $employee->id,
+                    "company_id" => $employee->company_id,
+                    "user_type" => "employee",
+                ]);
 
                 // Update employee with user_id
                 $employee->update(['user_id' => $user->id]);

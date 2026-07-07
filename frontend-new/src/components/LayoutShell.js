@@ -5,6 +5,7 @@ import LeftMenu from "@/components/leftMenu";
 import Header from "@/components/Header";
 import MainContentWrapper from "@/components/MainContentWrapper";
 import AccessGuard from "@/components/AccessGuard";
+import { WizardModeProvider } from "@/context/WizardModeContext";
 import dynamic from "next/dynamic";
 
 const VoiceButton = dynamic(() => import("@/components/Voice/VoiceButton"), { ssr: false });
@@ -28,7 +29,7 @@ export default function LayoutShell({ children }) {
 
   // Admin/Manager layout with Header + LeftMenu
   return (
-    <>
+    <WizardModeProvider>
       <Header />
       <div className="flex flex-1 min-h-0">
         {!isSupportRoute && <LeftMenu />}
@@ -37,6 +38,6 @@ export default function LayoutShell({ children }) {
         </MainContentWrapper>
       </div>
       <VoiceButton />
-    </>
+    </WizardModeProvider>
   );
 }
