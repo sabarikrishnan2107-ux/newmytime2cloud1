@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\RealTimeLocation\StoreRequest;
+use App\Models\Attendance;
 use App\Models\Employee;
 use App\Models\RealTimeLocation;
 use App\Services\Notify;
+use App\Support\LiveTrackerPresence;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -51,6 +53,28 @@ class RealTimeLocationController extends Controller
             ->whereIn('id', $latestIds)
             ->orderBy('id', 'desc')
             ->get();
+
+        // Live view only (no explicit date): hide employees whose latest ping is
+        // stale (> freshMinutes) or who have clocked out for the day. A requested
+        // `date` is a historical snapshot and is returned unfiltered.
+        if (! $request->filled('date')) {
+            $freshMinutes = (int) $request->input('fresh_minutes', LiveTrackerPresence::DEFAULT_FRESH_MINUTES);
+            $freshMinutes = max(1, min(1440, $freshMinutes));
+            $now = now();
+
+            $clockedOut = Attendance::query()
+                ->where('company_id', $companyId)
+                ->whereDate('date', $now->toDateString())
+                ->whereNotNull('out')
+                ->whereNotIn('out', ['---', ''])
+                ->pluck('employee_id')
+                ->map(fn ($v) => (string) $v)
+                ->all();
+
+            $rows = $rows->filter(function ($row) use ($now, $freshMinutes, $clockedOut) {
+                return LiveTrackerPresence::isVisible($row->datetime, $row->UserID, $now, $freshMinutes, $clockedOut);
+            })->values();
+        }
 
         $userIds = $rows->pluck('UserID')->filter()->unique()->values();
         $employees = Employee::where('company_id', $companyId)

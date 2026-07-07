@@ -118,6 +118,7 @@ export default function ManualReportPage() {
 
   const [records, setRecords] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [perPage, setPerPage] = useState(25);
@@ -165,29 +166,38 @@ export default function ManualReportPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredEmployees]);
 
+  // Build the shared filter params (everything except pagination) so the on-screen
+  // fetch and the download export apply EXACTLY the same filters.
+  const buildFilterParams = useCallback(() => {
+    const params = {
+      sortDesc: "true",
+      from_date: from || undefined,
+      to_date: to || undefined,
+    };
+    // Log type → translates to DeviceID style filter
+    if (selectedLogType === "Manual") params.DeviceID = "Manual";
+    else if (selectedLogType === "Mobile") params.device = "Mobile";
+    // "Device" → no DeviceID filter, but exclude Manual/Mobile rows server-side if needed
+
+    const isAllSelected = (sel, items) => Array.isArray(sel) && sel.length > 0 && items.length > 0 && sel.length >= items.length;
+    if (selectedBranchIds?.length === 1) params.branch_id = selectedBranchIds[0];
+    else if (selectedBranchIds?.length > 1 && !isAllSelected(selectedBranchIds, branches)) params.branch_ids = selectedBranchIds;
+    if (selectedDepartmentIds?.length && !isAllSelected(selectedDepartmentIds, departments)) params.department_ids = selectedDepartmentIds;
+    if (selectedEmployeeIds?.length === 1) params.UserID = selectedEmployeeIds[0];
+    else if (selectedEmployeeIds?.length > 1 && selectedEmployeeIds.length < filteredEmployees.length) {
+      params.user_ids = selectedEmployeeIds;
+    }
+    return params;
+  }, [from, to, selectedLogType, selectedBranchIds, selectedDepartmentIds, selectedEmployeeIds, branches, departments, filteredEmployees]);
+
   const fetchRecords = useCallback(async () => {
     try {
       setIsLoading(true);
       const params = {
+        ...buildFilterParams(),
         page: currentPage,
         per_page: perPage,
-        sortDesc: "true",
-        from_date: from || undefined,
-        to_date: to || undefined,
       };
-      // Log type → translates to DeviceID style filter
-      if (selectedLogType === "Manual") params.DeviceID = "Manual";
-      else if (selectedLogType === "Mobile") params.device = "Mobile";
-      // "Device" → no DeviceID filter, but exclude Manual/Mobile rows server-side if needed
-
-      const isAllSelected = (sel, items) => Array.isArray(sel) && sel.length > 0 && items.length > 0 && sel.length >= items.length;
-      if (selectedBranchIds?.length === 1) params.branch_id = selectedBranchIds[0];
-      else if (selectedBranchIds?.length > 1 && !isAllSelected(selectedBranchIds, branches)) params.branch_ids = selectedBranchIds;
-      if (selectedDepartmentIds?.length && !isAllSelected(selectedDepartmentIds, departments)) params.department_ids = selectedDepartmentIds;
-      if (selectedEmployeeIds?.length === 1) params.UserID = selectedEmployeeIds[0];
-      else if (selectedEmployeeIds?.length > 1 && selectedEmployeeIds.length < filteredEmployees.length) {
-        params.user_ids = selectedEmployeeIds;
-      }
 
       const result = await getDeviceLogs(params);
       if (result && Array.isArray(result.data)) {
@@ -205,10 +215,7 @@ export default function ManualReportPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [
-    currentPage, perPage, from, to,
-    selectedLogType, selectedBranchIds, selectedDepartmentIds, selectedEmployeeIds,
-  ]);
+  }, [currentPage, perPage, buildFilterParams]);
 
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [submitTick, setSubmitTick] = useState(0);
@@ -225,16 +232,64 @@ export default function ManualReportPage() {
     const m = String(t).match(/^(\d{1,2}):(\d{2})/);
     return m ? `${m[1].padStart(2, "0")}:${m[2]}` : String(t).slice(0, 5);
   };
-  const displayedRecords = useMemo(() => {
-    if (!timeFrom && !timeTo) return records;
+  const applyTimeFilter = useCallback((list) => {
+    if (!timeFrom && !timeTo) return list;
     const lo = timeFrom || "00:00";
     const hi = timeTo || "23:59";
-    return records.filter((l) => {
+    return list.filter((l) => {
       const t = trimToHHMM(l?.time);
       if (!t) return false;
       return t >= lo && t <= hi;
     });
-  }, [records, timeFrom, timeTo]);
+  }, [timeFrom, timeTo]);
+  const displayedRecords = useMemo(() => applyTimeFilter(records), [records, applyTimeFilter]);
+
+  const toCsv = (list) => {
+    const headers = ["Name", "Employee ID", "Branch", "Department", "Date", "Time", "Device", "Log Type", "Reason"];
+    const rows = list.map((log) => [
+      `${log?.employee?.first_name || ""} ${log?.employee?.last_name || ""}`.trim(),
+      log?.employee?.employee_id || "",
+      log?.employee?.branch?.branch_name || "",
+      log?.employee?.department?.name || "",
+      log?.date || "",
+      log?.time || "",
+      log?.device?.name || log?.DeviceID || "",
+      log?.log_type || "",
+      log?.reason || "",
+    ]);
+    return [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  };
+
+  // Download EXPORTS ALL matching rows, not just the loaded page. The on-screen table
+  // is paginated (per_page), so we must re-query with a per_page large enough to cover
+  // every row before building the CSV — otherwise only the current page (e.g. 25) exports.
+  const handleDownload = async () => {
+    if (!hasSubmitted) return;
+    try {
+      setIsDownloading(true);
+      const params = {
+        ...buildFilterParams(),
+        page: 1,
+        per_page: total > 0 ? total : 100000,
+      };
+      const result = await getDeviceLogs(params);
+      const all = Array.isArray(result?.data) ? result.data : (Array.isArray(result) ? result : []);
+      const filtered = applyTimeFilter(all);
+
+      const csv = toCsv(filtered);
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `manual-report-${from}-to-${to}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(parseApiError(e));
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <div className="pt-8 pb-4 px-3 md:pt-10 md:pb-6 md:px-6 lg:pt-12 lg:pb-8 lg:px-10 overflow-x-hidden">
@@ -290,31 +345,14 @@ export default function ManualReportPage() {
         </button>
 
         <button
-          onClick={() => {
-            const headers = ["Name", "Employee ID", "Branch", "Department", "Date", "Time", "Device", "Log Type", "Reason"];
-            const rows = displayedRecords.map((log) => [
-              `${log?.employee?.first_name || ""} ${log?.employee?.last_name || ""}`.trim(),
-              log?.employee?.employee_id || "",
-              log?.employee?.branch?.branch_name || "",
-              log?.employee?.department?.name || "",
-              log?.date || "",
-              log?.time || "",
-              log?.device?.name || log?.DeviceID || "",
-              log?.log_type || "",
-              log?.reason || "",
-            ]);
-            const csv = [headers, ...rows].map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
-            const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `manual-report-${from}-to-${to}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }}
-          className="bg-violet-600 text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-violet-700 transition-all flex items-center space-x-2 whitespace-nowrap"
+          onClick={handleDownload}
+          disabled={isDownloading || !hasSubmitted}
+          className="bg-violet-600 text-white px-4 py-1 rounded-lg font-semibold shadow-md hover:bg-violet-700 transition-all flex items-center space-x-2 whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <Download className="w-4 h-4 mr-1" /> Download
+          {isDownloading
+            ? <RefreshCw className="w-4 h-4 mr-1 animate-spin" />
+            : <Download className="w-4 h-4 mr-1" />}
+          {isDownloading ? "Preparing…" : "Download"}
         </button>
       </div>
 

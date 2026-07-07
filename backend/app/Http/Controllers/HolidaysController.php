@@ -85,6 +85,8 @@ class HolidaysController extends Controller
             DB::commit();
             if ($record) {
 
+                $this->applyHolidayToAttendance($record);
+
                 return $this->response('Holidays Successfully created.', $record, true);
             } else {
                 return $this->response('Holidays cannot be created.', null, false);
@@ -98,9 +100,12 @@ class HolidaysController extends Controller
     {
 
         try {
-            $record = $Holidays::find($id)->update($request->validated());
+            $holiday = $Holidays::find($id);
+            $record  = $holiday->update($request->validated());
 
             if ($record) {
+
+                $this->applyHolidayToAttendance($holiday->fresh());
 
                 return $this->response('Holidays successfully updated.', $record, true);
             } else {
@@ -124,6 +129,25 @@ class HolidaysController extends Controller
     {
         return $this->getDefaultModelSettings($request)->where('title', 'LIKE', "%$key%")->paginate($request->per_page ?? 100);
     }
+    /**
+     * Stamp this holiday onto attendance immediately so it reflects in reports without
+     * waiting for the daily cron. Branch-scoped + keep-present rules live in RenderController.
+     * Wrapped in try/catch — a render hiccup must never fail the holiday save.
+     */
+    private function applyHolidayToAttendance(Holidays $holiday): void
+    {
+        try {
+            app(\App\Http\Controllers\Shift\RenderController::class)->applyHolidayToAttendance(
+                $holiday->company_id,
+                $holiday->branch_id ?? null,
+                substr((string) $holiday->start_date, 0, 10),
+                substr((string) $holiday->end_date, 0, 10)
+            );
+        } catch (\Throwable $e) {
+            // best-effort; holiday is saved regardless
+        }
+    }
+
     public function deleteSelected(Request $request)
     {
         $record = Holidays::whereIn('id', $request->ids)->delete();

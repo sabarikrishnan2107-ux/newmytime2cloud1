@@ -40,7 +40,10 @@ class Kernel extends HttpKernel
 
         'api' => [
             // \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            'throttle:200,1',
+            // Use the named 'api' limiter (see RouteServiceProvider) which keys by
+            // company/tenant instead of the shared office IP. Was 'throttle:200,1',
+            // which pooled a whole office (one public IP) into one 200/min bucket.
+            'throttle:api',
             \Illuminate\Routing\Middleware\SubstituteBindings::class,
         ],
     ];

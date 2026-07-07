@@ -46,7 +46,17 @@ class RouteServiceProvider extends ServiceProvider
     protected function configureRateLimiting()
     {
         RateLimiter::for('api', function (Request $request) {
-            return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
+            // Key the limit by TENANT (company) first, then authenticated user,
+            // then IP as a last resort. Most API calls are unauthenticated and
+            // carry company_id, so without this they all key by the caller's IP —
+            // and an entire office behind one public/NAT IP shares a single
+            // bucket, tripping 429s under normal multi-user load. Keying by
+            // company_id isolates each tenant into its own generous bucket.
+            $key = $request->input('company_id')
+                ?: $request->user()?->id
+                ?: $request->ip();
+
+            return Limit::perMinute(2000)->by('api:' . $key);
         });
     }
 }

@@ -1,5 +1,6 @@
 import axios from "axios";
 import { getUser } from "@/config/index";
+import { attachRetryInterceptor } from "./http-retry";
 
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -23,6 +24,9 @@ api.interceptors.request.use((config) => {
     }
     return config;
 });
+
+// Retry on HTTP 429 (rate limit) with backoff instead of surfacing a raw error.
+attachRetryInterceptor(api);
 
 /**
  * Global Query Builder

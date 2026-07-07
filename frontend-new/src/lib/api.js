@@ -1,4 +1,5 @@
 import axios from "axios";
+import { attachRetryInterceptor } from "./http-retry";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
 
@@ -1133,3 +1134,6 @@ api.interceptors.request.use((config) => {
     }
     return config
 })
+
+// Retry on HTTP 429 (rate limit) with backoff instead of surfacing a raw error.
+attachRetryInterceptor(api)

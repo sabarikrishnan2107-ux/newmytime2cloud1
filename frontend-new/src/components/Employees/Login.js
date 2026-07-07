@@ -18,17 +18,19 @@ const Login = ({ employee_id, email }) => {
     };
 
     const [form, setForm] = useState({
-        email: "",
+        email: email || "",
         password: "",
         password_confirmation: "",
     });
 
-    // Reset the field whenever the employee selection changes — admin must
-    // explicitly type the employee's login email rather than seeing a
-    // pre-filled value (which was coming through as the admin's email).
+    // Show the selected employee's saved login email (from payload.user.email).
+    // Re-sync whenever the employee selection OR their stored email changes, and
+    // clear any typed password so it can't carry over to a different employee.
+    // Password is hashed server-side and never returned, so it stays blank by
+    // design — the fields are only used to SET a new password.
     useEffect(() => {
-        setForm((prev) => ({ ...prev, email: "" }));
-    }, [employee_id]);
+        setForm({ email: email || "", password: "", password_confirmation: "" });
+    }, [employee_id, email]);
 
 
     // 2. Update state when user actually types

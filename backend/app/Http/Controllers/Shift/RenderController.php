@@ -80,6 +80,7 @@ class RenderController extends Controller
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             $this->normalizeWorkedStatuses($request);
+            $this->applyHolidaysForRange($request);
             return $r;
         }
 
@@ -89,6 +90,7 @@ class RenderController extends Controller
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             $this->normalizeWorkedStatuses($request);
+            $this->applyHolidaysForRange($request);
             return $r;
         }
 
@@ -98,6 +100,7 @@ class RenderController extends Controller
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             $this->normalizeWorkedStatuses($request);
+            $this->applyHolidaysForRange($request);
             return $r;
         }
 
@@ -110,6 +113,7 @@ class RenderController extends Controller
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             $this->normalizeWorkedStatuses($request);
+            $this->applyHolidaysForRange($request);
             return $results;
         }
 
@@ -120,6 +124,7 @@ class RenderController extends Controller
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             $this->normalizeWorkedStatuses($request);
+            $this->applyHolidaysForRange($request);
             return $results;
         }
 
@@ -130,6 +135,7 @@ class RenderController extends Controller
             $this->backfillDeviceIdsFromLogs($request);
             $this->dispatchWeekoffForRange($request);
             $this->normalizeWorkedStatuses($request);
+            $this->applyHolidaysForRange($request);
             return $results;
         }
 
@@ -143,6 +149,7 @@ class RenderController extends Controller
         $this->backfillDeviceIdsFromLogs($request);
         $this->dispatchWeekoffForRange($request);
         $this->normalizeWorkedStatuses($request);
+        $this->applyHolidaysForRange($request);
         return $results;
     }
 
@@ -168,6 +175,138 @@ class RenderController extends Controller
         foreach ($employeeIds as $empId) {
             foreach ($months as $ym) {
                 try { RenderWeekOffJob::dispatchSync($companyId, $ym, $empId); } catch (\Throwable $e) {}
+            }
+        }
+    }
+
+    /**
+     * Stamp configured holidays onto attendance for a date range.
+     *
+     * Branch-scoped: if the holiday has a branch_id only that branch's employees are
+     * marked; an empty branch_id applies company-wide. Honours "keep present" — only
+     * Absent / Missing / Week-off (A/M/O) rows are converted to Holiday (H); days the
+     * employee actually worked (P/LC/EG/HD) or is on Leave/Vacation (L/V) are left
+     * untouched. Employees with no row for the day get a fresh H row inserted.
+     *
+     * @param  int        $companyId
+     * @param  int|null   $branchId            null/0 => company-wide
+     * @param  string     $startDate           Y-m-d
+     * @param  string     $endDate             Y-m-d
+     * @param  array      $restrictEmployeeIds optional system_user_id whitelist (Attendance.employee_id)
+     * @return int  number of attendance rows created/converted
+     */
+    public function applyHolidayToAttendance($companyId, $branchId, $startDate, $endDate, array $restrictEmployeeIds = []): int
+    {
+        $companyId = (int) $companyId;
+        if (!$companyId || !$startDate || !$endDate) return 0;
+
+        // Resolve target employees (system_user_id) scoped to the holiday's branch.
+        $empQuery = Employee::where('company_id', $companyId)
+            ->whereNotNull('system_user_id')
+            ->where('system_user_id', '!=', '');
+        if ($branchId) {
+            $empQuery->where('branch_id', $branchId);
+        }
+        $targetIds = $empQuery->pluck('system_user_id')->map(fn($v) => (string) $v)->unique()->all();
+
+        if ($restrictEmployeeIds) {
+            $restrict  = array_map('strval', $restrictEmployeeIds);
+            $targetIds = array_values(array_intersect($targetIds, $restrict));
+        }
+        if (!$targetIds) return 0;
+
+        // shift_type_id per employee, used only for rows we INSERT (default single = 6).
+        $shiftTypeMap = ScheduleEmployee::where('company_id', $companyId)
+            ->whereIn('employee_id', $targetIds)
+            ->pluck('shift_type_id', 'employee_id')
+            ->all();
+
+        try {
+            $cursor = new DateTime($startDate);
+            $end    = new DateTime($endDate);
+        } catch (\Throwable $e) {
+            return 0;
+        }
+
+        $touched = 0;
+        while ($cursor <= $end) {
+            $date = $cursor->format('Y-m-d');
+
+            // 1) Drop only Absent / Missing / Week-off so they can become Holiday
+            //    (delete+insert mirrors renderHolidaysScript; keeps Present/Leave/Vacation).
+            $touched += Attendance::where('company_id', $companyId)
+                ->whereDate('date', $date)
+                ->whereIn('employee_id', $targetIds)
+                ->whereIn('status', ['A', 'M', 'O'])
+                ->delete();
+
+            // 2) Insert H for every target employee that now has no row for this date.
+            $existing = Attendance::where('company_id', $companyId)
+                ->whereDate('date', $date)
+                ->whereIn('employee_id', $targetIds)
+                ->pluck('employee_id')->map(fn($v) => (string) $v)->all();
+
+            $missing = array_diff($targetIds, $existing);
+            if ($missing) {
+                $rows = [];
+                foreach ($missing as $sysId) {
+                    $rows[] = [
+                        'company_id'    => $companyId,
+                        'date'          => $date,
+                        'status'        => 'H',
+                        'employee_id'   => $sysId,
+                        'shift_id'      => -4,
+                        'shift_type_id' => $shiftTypeMap[$sysId] ?? 6,
+                    ];
+                }
+                Attendance::insert($rows);
+                $touched += count($rows);
+            }
+
+            $cursor->modify('+1 day');
+        }
+
+        return $touched;
+    }
+
+    /**
+     * Re-apply any holidays that fall inside the just-rendered range, restricted to the
+     * rendered employees. Called at the END of render_logs so a holiday wins over an
+     * Absent that the renderer / normalizer may have just written.
+     */
+    protected function applyHolidaysForRange(Request $request): void
+    {
+        $companyId   = (int) ($request->company_id ?? 0);
+        $employeeIds = (array) ($request->employee_ids ?? []);
+        $dates       = (array) ($request->dates ?? []);
+        if (!$companyId || !$employeeIds || !$dates) return;
+
+        $rangeStart = substr((string) $dates[0], 0, 10);
+        $rangeEnd   = substr((string) ($dates[1] ?? $dates[0]), 0, 10);
+
+        try {
+            $holidays = Holidays::where('company_id', $companyId)
+                ->whereDate('start_date', '<=', $rangeEnd)
+                ->whereDate('end_date', '>=', $rangeStart)
+                ->get();
+        } catch (\Throwable $e) {
+            return;
+        }
+
+        foreach ($holidays as $holiday) {
+            // Clip the holiday's own span to the requested range.
+            $hStart = max(substr((string) $holiday->start_date, 0, 10), $rangeStart);
+            $hEnd   = min(substr((string) $holiday->end_date, 0, 10), $rangeEnd);
+            try {
+                $this->applyHolidayToAttendance(
+                    $companyId,
+                    $holiday->branch_id ?? null,
+                    $hStart,
+                    $hEnd,
+                    $employeeIds
+                );
+            } catch (\Throwable $e) {
+                // never let holiday application break a regeneration
             }
         }
     }

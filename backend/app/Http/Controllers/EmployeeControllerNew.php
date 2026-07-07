@@ -826,6 +826,16 @@ class EmployeeControllerNew extends Controller
                 'message' => 'Credentials saved successfully!',
                 'user'    => $user,
             ], 200);
+        } catch (ValidationException $e) {
+            // Surface validation failures (e.g. "The email has already been taken")
+            // as a clean 422 with the real message. Without this, the generic catch
+            // below swallows them into a 500 that the UI shows as a scary
+            // "A critical server error occurred" — hiding the actual cause.
+            return response()->json([
+                'status'  => 'error',
+                'message' => $e->validator->errors()->first() ?: 'Validation failed.',
+                'errors'  => $e->errors(),
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'status'  => 'error',
