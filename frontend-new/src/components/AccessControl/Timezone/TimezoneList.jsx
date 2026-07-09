@@ -3,7 +3,8 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Plus, RefreshCw, RadioTower, Pencil, Trash2 } from "lucide-react";
 import DataTable from "@/components/ui/DataTable";
 import TimezoneGridModal from "./TimezoneGridModal";
-import { getTimezones, createTimezone, updateTimezone, deleteTimezone, seedDefaultTimezones, syncTimezonesAllDevices } from "@/lib/api";
+import SyncTimezonesModal from "./SyncTimezonesModal";
+import { getTimezones, createTimezone, updateTimezone, deleteTimezone, seedDefaultTimezones } from "@/lib/api";
 import { notify, parseApiError } from "@/lib/utils";
 import { getUser } from "@/config";
 import { can } from "@/lib/permissions-check";
@@ -18,7 +19,7 @@ export default function TimezoneList() {
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [syncing, setSyncing] = useState(false);
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -64,26 +65,6 @@ export default function TimezoneList() {
     }
   };
 
-  const onSync = async () => {
-    setSyncing(true);
-    try {
-      const res = await syncTimezonesAllDevices();
-      const r = Array.isArray(res?.data) ? res.data : [];
-      const ok = r.filter((d) => d.ok).length;
-      const offline = r.filter((d) => d.offline).length;
-      const failed = r.length - ok - offline;
-      let msg = `${ok} of ${r.length} device(s) updated.`;
-      if (offline) msg += ` ${offline} offline (skipped).`;
-      if (failed) msg += ` ${failed} failed.`;
-      // Offline devices aren't a failure — only flag an error if nothing synced or some genuinely failed.
-      notify("Sync complete", msg, ok > 0 && failed === 0 ? "success" : (ok > 0 ? "warning" : "error"));
-    } catch (e) {
-      notify("Error", parseApiError(e), "error");
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const columns = [
     { key: "_n", header: "#", render: (r) => r._n },
     { key: "timezone_name", header: "TimeZone Name", render: (r) => <span className="font-semibold text-violet-700 dark:text-violet-400">{r.timezone_name}</span> },
@@ -110,8 +91,8 @@ export default function TimezoneList() {
         <div className="flex flex-wrap items-center gap-3">
           <button onClick={load} title="Reload" className="p-2 rounded-lg border border-gray-200 dark:border-white/10 text-slate-600 dark:text-gray-300 hover:bg-white/5 transition-colors"><RefreshCw className="w-4 h-4" /></button>
           {canEdit && (
-            <button onClick={onSync} disabled={syncing} className="px-4 py-2 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2 disabled:opacity-50">
-              <RadioTower className="w-4 h-4" />{syncing ? "Syncing…" : "Sync timezones to all devices"}
+            <button onClick={() => setSyncModalOpen(true)} className="px-4 py-2 rounded-full bg-violet-600 hover:bg-violet-700 text-white text-xs font-bold uppercase tracking-wider flex items-center gap-2">
+              <RadioTower className="w-4 h-4" />Sync timezones to devices
             </button>
           )}
           {canCreate && <button onClick={() => { setEditing(null); setModalOpen(true); }} title="Add timezone" className="size-9 rounded-full bg-slate-900 text-white flex items-center justify-center hover:bg-slate-800"><Plus className="w-5 h-5" /></button>}
@@ -121,6 +102,7 @@ export default function TimezoneList() {
       <DataTable columns={columns} data={data} isLoading={loading} emptyMessage="No timezones yet." />
 
       <TimezoneGridModal open={modalOpen} initial={editing} onClose={() => setModalOpen(false)} onSubmit={onSubmit} />
+      <SyncTimezonesModal open={syncModalOpen} onClose={() => setSyncModalOpen(false)} />
     </div>
   );
 }

@@ -1096,6 +1096,26 @@ export const syncTimezonesAllDevices = async () => {
     return { data: results }; // [{device_id, name, ok, offline?}]
 };
 
+export const syncTimezonesToDevices = async (serials = []) => {
+    // Push timezone *definitions* (WriteTimeGroup) to a chosen set of device serials only.
+    // Shared by the device-picker modal; reuses the existing per-device /{id}/WriteTimeGroup
+    // endpoint. Caller is responsible for passing online devices (offline ones just error).
+    const user = await getUser();
+    const company_id = user?.company_id ?? 0;
+    const list = (Array.isArray(serials) ? serials : []).filter(Boolean);
+
+    const results = await Promise.all(list.map(async (serial) => {
+        try {
+            await axios.post(`${API_BASE}/${serial}/WriteTimeGroup`, { company_id }, { timeout: 60000 });
+            return { device_id: serial, ok: true };
+        } catch (e) {
+            return { device_id: serial, ok: false, error: e?.message };
+        }
+    }));
+
+    return { data: results }; // [{device_id, ok, error?}]
+};
+
 export const getTimezoneEmployees = async (params = {}) => {
     const { data } = await axios.get(`${API_BASE}/employees_with_timezone_count`, { params: await buildQueryParams(params) });
     return data; // paginated employees with timezones_mapped[].{device,timezone}

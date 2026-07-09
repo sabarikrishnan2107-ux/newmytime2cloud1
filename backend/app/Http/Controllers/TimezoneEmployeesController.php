@@ -2,11 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Device;
 use App\Models\Employee;
 use App\Models\Timezone;
 use App\Models\TimezoneEmployees;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class TimezoneEmployeesController extends Controller
 {
@@ -155,6 +157,38 @@ class TimezoneEmployeesController extends Controller
         $data = $request->all();
         $sdk = new SDKController();
         $results = [];
+
+        // Push the time-group DEFINITIONS (WriteTimeGroup) to every device selected in THIS
+        // save, BEFORE we point any person at a slot. Without this the device still holds the
+        // default 24/7 grid for that slot, so AddPerson(timeGroup=N) silently grants full
+        // access and the time restriction does nothing. Scoped to the devices in the mapping
+        // (not "all devices"); offline devices are left to the manual Sync button.
+        $syncedSerials = [];
+        $serials = collect($data["mappings"] ?? [])
+            ->pluck("serial_number")
+            ->filter(fn($s) => $s !== null && $s !== '')
+            ->unique()
+            ->values();
+
+        if ($serials->isNotEmpty()) {
+            $onlineSerials = Device::where("company_id", $request->company_id)
+                ->whereIn("device_id", $serials)
+                ->where("status_id", Device::Active) // 1 = online; skip offline so the assign never hangs
+                ->pluck("device_id");
+
+            foreach ($onlineSerials as $serial) {
+                try {
+                    $sdk->processTimeGroup(new Request(['company_id' => $request->company_id]), $serial);
+                    $syncedSerials[] = $serial;
+                } catch (\Throwable $e) {
+                    Log::warning('Auto WriteTimeGroup on assign failed', [
+                        'device'  => $serial,
+                        'company' => $request->company_id,
+                        'error'   => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
 
         foreach ($data["employee_ids"] as $item) {
 
