@@ -87,9 +87,11 @@ class VoiceAssistantController extends Controller
         $provider = strtolower((string) env('VOICE_AI_PROVIDER', 'xai'));
 
         try {
-            $content = $provider === 'claude'
-                ? $this->callClaude($text, $language, $history, $mode)
-                : $this->callXai($text, $language, $history, $mode);
+            $content = match ($provider) {
+                'claude' => $this->callClaude($text, $language, $history, $mode),
+                'gemini', 'google' => $this->callGemini($text, $language, $history, $mode),
+                default => $this->callXai($text, $language, $history, $mode),
+            };
 
             if ($content === null) {
                 return response()->json(['error' => 'AI service error', 'detail' => $this->lastError], 502);
@@ -188,6 +190,42 @@ class VoiceAssistantController extends Controller
         return (string) $response->json('content.0.text', '');
     }
 
+    /**
+     * Call Google Gemini via its OpenAI-compatible endpoint. Free-tier keys come
+     * from Google AI Studio (aistudio.google.com). Runs on Google's servers — no
+     * load on our box. Returns the raw model text, or null on failure.
+     */
+    private function callGemini(string $text, string $language, array $history, string $mode = 'voice'): ?string
+    {
+        $apiKey = env('GEMINI_API_KEY');
+        $model = env('GEMINI_MODEL', 'gemini-2.5-flash');
+        if (!$apiKey) { $this->lastError = 'GEMINI_API_KEY not set'; return null; }
+
+        $messages = array_merge(
+            [['role' => 'system', 'content' => $this->systemPrompt($mode)]],
+            $history,
+            [['role' => 'user', 'content' => $this->userPrompt($text, $language)]]
+        );
+
+        $response = Http::withHeaders([
+            'Authorization' => 'Bearer ' . $apiKey,
+            'Content-Type' => 'application/json',
+        ])->timeout(30)->post('https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', [
+            'model' => $model,
+            'temperature' => 0.2,
+            'max_tokens' => $mode === 'chat' ? 1500 : 900,
+            'response_format' => ['type' => 'json_object'],
+            'messages' => $messages,
+        ]);
+
+        if (!$response->ok()) {
+            $this->lastError = $response->json('error.message') ?? $response->json('error') ?? $response->body();
+            Log::warning('Gemini interpret failed', ['status' => $response->status(), 'body' => $response->body()]);
+            return null;
+        }
+        return (string) $response->json('choices.0.message.content', '');
+    }
+
     private function systemPrompt(string $mode = 'voice'): string
     {
         $queries = implode(', ', self::QUERY_INTENTS);
@@ -202,10 +240,11 @@ class VoiceAssistantController extends Controller
 === RESPONSE STYLE: PROFESSIONAL SUPPORT CHAT (the user is TYPING) ===
 - Write like a warm, helpful HUMAN support agent having a real conversation — natural and friendly, never robotic or canned. Open with a short acknowledging line (e.g. "Sure!", "Happy to help with that.") when it fits, then get to the point.
 - Understand the user's intent even if their wording, spelling or grammar is rough — answer what they actually meant.
-- For "how to" / feature questions, give the COMPLETE step-by-step procedure as a numbered list (Step 1, Step 2, ...). Cover every step from opening the menu to saving/finishing.
+- For "how to" / feature questions, give the COMPLETE step-by-step procedure as a numbered list (Step 1, Step 2, ...). Cover every step from opening the menu to saving/finishing. Do NOT give a short, vague answer — be thorough and professional, like a proper user manual.
+- ALWAYS call out the MANDATORY / required fields the user must fill for that form (say clearly which are required vs optional), mention any prerequisite that must exist first, and say what happens after they Save.
 - If a question is vague, briefly answer the most likely meaning and offer to go deeper, rather than refusing.
 - Name the exact menu and page (and the route in brackets) the user must click.
-- Mention important fields, options, or prerequisites where relevant, and add a short tip at the end if helpful.
+- Use ONLY the app knowledge below for steps and field names — never invent a field, button or page that is not listed. If a detail isn't in the knowledge, say so and point to the closest page.
 - You may write longer, well-structured answers (use line breaks between steps). Quality and completeness matter more than brevity here.
 - Put the entire formatted answer (with numbered steps and line breaks) in the "speech" field. Still reply in the user's language.
 STYLE
@@ -270,31 +309,92 @@ PROMPT;
     private function appGuide(): string
     {
         return <<<GUIDE
-The app has a left-side menu with these modules. Pages are opened from there.
+The app has a left-side menu. Below is the module map, then detailed step-by-step procedures. When you answer a "how to" question, use these steps, name the menu > page and /route, and clearly mark which fields are REQUIRED. (req) = mandatory field the user must fill; everything else is optional.
 
-- Dashboard (/): overview of today's attendance, headcount and quick stats.
-- Employees: Employee List (/employees) to view/search staff; Add Employee (/employees/create) to create a new employee (fill personal info, branch, department, designation, then save); Employee Upload (/employees/employee_photo_upload) to bulk-upload employee face photos AND to transfer/sync employees onto biometric/face devices; Departments (/department-tabs); Designations (/roles); Branches (/branch).
-- Attendance: Attendance Dashboard (/attendance) shows daily in/out, late and absent; Manual Logs (/manual-logs) to add or correct a punch manually; Change Requests (/attendance/change_request) to approve/reject employee correction requests.
-- Schedule: Schedule (/schedule) assigns shifts to employees; Shifts (/shift) defines shift timings and rules.
-- Leave: Leave Dashboard (/leave-dashboard) to see balances and approvals; Leave Requests (/leaves) to view/apply/approve leave; leave types and balances are managed under the leave section.
-- Payroll: Payroll Dashboard (/payroll-tabs); Payslips (/payslips) to generate and view payslips; Salary Structures (/payslips/salary-structures) to define earnings/deductions; Loans (/payslips/loans).
-- Devices: Device List (/device) shows biometric/face devices and their online status; Add Device (/device/create) to register a new device (enter serial number / details).
-- Live Camera: Live Camera (/live-camera) for face-recognition camera feeds; Face Register (/live-camera/register) to enroll an employee's face.
-- Reports: Attendance Report (/report) for date-range attendance export; Activity Report (/activity).
-- Access Control: Access Control (/access_control) for door/access rules; Access Logs (/access_control_logs).
-- Visitor: Visitor Dashboard (/visitor/dashboard); Visitor Check-in (/visitor/check-in); Reception (/visitor/reception) for the front-desk view.
-- Automation (/automation): set up automatic rules and notifications.
-- Announcements (/announcements): post company-wide announcements.
-- Settings: Setup (/setup) for general configuration; Company (/company) for company profile; Theme (/theme) for appearance.
+=== MODULE MAP ===
+- Dashboard (/): today's attendance, headcount and quick stats.
+- Employees: Employee List (/employees); Add Employee (/employees/create); Employee Upload (/employees/employee_photo_upload) to upload face photos AND push employees onto biometric/face devices; Departments (/department-tabs); Designations (/roles); Branches (/branch).
+- Attendance: Attendance Dashboard (/attendance); Manual Logs (/manual-logs) to add/correct a punch; Change Requests (/attendance/change_request) to approve/reject employee correction requests.
+- Schedule: Schedule (/schedule) to assign shifts to employees; Shifts (/shift) to define shift timings.
+- Leave: Leave Dashboard (/leave-dashboard); Leave Requests (/leaves) to apply/approve/reject leave.
+- Payroll: Payroll Dashboard (/payroll-tabs); Payslips (/payslips); Salary Structures (/payslips/salary-structures); Loans (/payslips/loans).
+- Devices: Device List (/device); Add Device (/device/create).
+- Live Camera: Live Camera (/live-camera); Face Register (/live-camera/register).
+- Reports: Attendance Report (/report); Activity Report (/activity).
+- Access Control: Access Control (/access_control); Access Logs (/access_control_logs).
+- Visitor: Visitor Dashboard (/visitor/dashboard); Check-in (/visitor/check-in); Reception (/visitor/reception).
+- Automation (/automation); Announcements (/announcements); Settings: Setup (/setup), Company (/company).
 
-General how-to tips:
-- To add an employee: open Employees > Add Employee, fill the form (name, branch, department, designation, joining date), then Save.
-- To register a face for camera recognition: open Live Camera > Face Register, pick the employee and capture/upload the photo.
-- To transfer / upload / sync employees onto a device (push their data, face, RFID or PIN to a biometric or face terminal): open Employees > Employee Upload, choose the branch (and device model if shown), tick the employees you want to send and tick the target device(s), then click Submit. Each selected employee is pushed to each selected device and a Sync Progress window shows the result per device. To see or remove which devices an employee is already on, open Employees > Employee List, open that person's Actions menu and choose Devices.
-- To correct attendance: open Attendance > Manual Logs to add a punch, or approve the worker's request under Change Requests.
-- To approve leave: open Leave > Leave Requests, find the pending request, and Approve or Reject.
-- To run an attendance report: open Reports > Attendance Report, pick the date range and branch, then export.
-- To check who is absent/present/late today, just ask the assistant directly (it shows the list instantly).
+=== STEP-BY-STEP PROCEDURES ===
+
+# Add a new employee  (Employees > Add Employee, /employees/create)
+Prerequisite: the Branch, Department and Designation you want to assign must already exist (create them first if not — see below).
+1. In the top menu click Employees, then Add Employee.
+2. Fill the form. REQUIRED fields:
+   - First Name (req)
+   - Employee ID (req) — the staff code/number; must be UNIQUE within the company.
+   - System User ID (req) — the device user code. THIS IS IMPORTANT: it is what links the person to their biometric/face-device punches, so it must match the code enrolled on the device. Attendance will not map correctly if it is wrong.
+   - Branch (req), Department (req), Designation (req).
+   - Joining Date (req).
+3. Optional but recommended: Title (Mr./Ms.), Last Name, Display Name, Gender, Date of Birth, Nationality, Religion, Blood Group, Marital Status, Mobile/Phone number, WhatsApp number, Email, RFID Card Number (only if they use card access), Profile Photo.
+4. Optional: set a Password only if the employee will log in to the staff self-service portal.
+5. Click Save. The employee now shows in Employee List and can be scheduled, given leave, and pushed to devices.
+After saving: enrol their face/photo and push them to the device (see "Upload employees to a device"), and assign a shift (see "Assign a shift").
+
+# Add a Branch (Employees > Branches, /branch)
+1. Open Employees > Branches. 2. Click Add/New. 3. REQUIRED: Branch Name (req) (and location/company details if shown). 4. Save.
+
+# Add a Department (Employees > Departments, /department-tabs)
+1. Open Employees > Departments. 2. Click Add. 3. REQUIRED: Department Name (req). 4. Save.
+
+# Add a Designation / job title (Employees > Designations, /roles)
+1. Open Employees > Designations. 2. Click Add. 3. REQUIRED: Designation Name (req). 4. Save.
+
+# Register / enrol an employee's face (Live Camera > Face Register, /live-camera/register)
+1. Open Live Camera > Face Register. 2. Pick the employee. 3. Capture from the camera or upload a clear, front-facing photo. 4. Save. This face is used for camera recognition attendance.
+
+# Upload / push employees to a biometric or face device (Employees > Employee Upload, /employees/employee_photo_upload)
+Prerequisite: the employee must have a photo on the server (if it says "Photo missing on server", upload the photo first); and the device must be registered (Devices > Add Device).
+1. Open Employees > Employee Upload. 2. Choose the Branch (and device model, if shown). 3. Tick the employees to send. 4. Tick the target device(s). 5. Click Submit. A Sync Progress window shows the result per person per device ("Success", "Already exists on device", etc.).
+To see/remove which devices a person is already on: Employees > Employee List > that person's Actions menu > Devices.
+
+# Add a device (Devices > Add Device, /device/create)
+1. Open Devices > Add Device. 2. REQUIRED: Device Serial Number (req) and device name/model as shown. 3. Save. The device appears in Device List with its online status.
+
+# Add or correct a punch manually (Attendance > Manual Logs, /manual-logs)
+1. Open Attendance > Manual Logs. 2. REQUIRED: Employee (req), Date (req), Time (req), In/Out type (req). 3. Save — the log is added and attendance recalculates.
+
+# Approve or reject an attendance correction request (Attendance > Change Requests, /attendance/change_request)
+1. Open Attendance > Change Requests. 2. Find the pending request. 3. Review the requested change. 4. Click Approve or Reject.
+
+# Define a shift (Schedule > Shifts, /shift)
+1. Open Schedule > Shifts. 2. Click Add. 3. REQUIRED: Shift Name (req), On-duty (start) time (req), Off-duty (end) time (req); plus grace/late rules if shown. 4. Save.
+
+# Assign a shift / schedule to employees (Schedule, /schedule)
+Prerequisite: the Shift must exist (see above).
+1. Open Schedule. 2. Select the employee(s), the Shift, and the date range/days. 3. Save. Attendance now evaluates those employees against that shift.
+
+# Apply for / approve leave (Leave > Leave Requests, /leaves)
+To apply: 1. Open Leave > Leave Requests > Apply/Add. 2. REQUIRED: Employee (req), Leave Type (req), Start Date (req), End Date (req); Reason recommended. 3. Save.
+To approve: 1. Open Leave > Leave Requests. 2. Find the pending request. 3. Approve or Reject.
+
+# Salary structure (Payroll > Salary Structures, /payslips/salary-structures)
+1. Open Payroll > Salary Structures. 2. Add/edit a structure. 3. REQUIRED: the employee/structure name and at least the Basic salary; add earnings and deductions as needed. 4. Save.
+
+# Generate a payslip (Payroll > Payslips, /payslips)
+Prerequisite: the employee needs a salary structure.
+1. Open Payroll > Payslips. 2. Pick the pay period/month (req) and the employee(s) (req). 3. Generate. 4. Review and finalise/download.
+
+# Record a loan or advance (Payroll > Loans, /payslips/loans)
+1. Open Payroll > Loans. 2. REQUIRED: Employee (req), Amount (req), and the repayment/installment terms. 3. Save.
+
+# Run an attendance report (Reports > Attendance Report, /report)
+1. Open Reports > Attendance Report. 2. REQUIRED: Date range (req); optionally filter by Branch/Department/employee. 3. Generate, then Export/Download.
+
+# Post an announcement (Announcements, /announcements)
+1. Open Announcements. 2. Click Add. 3. REQUIRED: Title (req) and Message (req); choose the audience if shown. 4. Publish.
+
+# Quick data (no navigation needed): to see who is absent/present/late today, who is on leave, pending leave or change requests, employee count, or upcoming holidays — the user can just ask the assistant and it shows the list instantly.
 GUIDE;
     }
 

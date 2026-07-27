@@ -1,4 +1,22 @@
-import { api, buildQueryParams } from "@/lib/api-client";
+import { api, buildQueryParams, API_BASE } from "@/lib/api-client";
+
+// Employee photos are served from <host>/media/employee/profile_picture/<file>
+// (same host as the API, minus the trailing /api). profile_picture may already be
+// a full URL, or just a filename.
+const PHOTO_BASE = API_BASE.replace(/\/api\/?$/, "");
+const photoUrl = (p) => {
+  if (!p || typeof p !== "string") return null;
+  return p.startsWith("http") ? p : `${PHOTO_BASE}/media/employee/profile_picture/${p}`;
+};
+
+// Build a full display name from the record's available name fields.
+const fullName = (r) =>
+  (r.display_name && r.display_name.trim()) ||
+  `${r.first_name || ""} ${r.last_name || ""}`.trim() ||
+  r.employee_name ||
+  r.employee_code ||
+  r.employee_id ||
+  "Unknown";
 
 /**
  * Execute a data query command by calling the Laravel API.
@@ -62,8 +80,10 @@ async function fetchDailyAttendance(params, date, statusFilter, label) {
   }
 
   const employees = filtered.map((r) => ({
-    name: r.employee_name || r.first_name || r.employee_id || "Unknown",
-    employee_id: r.employee_id,
+    name: fullName(r),
+    employee_id: r.employee_code || r.employee_id,
+    photo: photoUrl(r.profile_picture),
+    department: r.department_name && r.department_name !== "---" ? r.department_name : null,
     branch: r.branch_name || "---",
     in: r.in || "---",
     out: r.out || "---",
@@ -137,8 +157,9 @@ async function fetchLeaveRequests(params, approvedOnly, date) {
   const leaves = records.map((r) => ({
     name: r.employee?.first_name
       ? `${r.employee.first_name} ${r.employee.last_name || ""}`.trim()
-      : "Unknown",
+      : (r.employee?.display_name || "Unknown"),
     leave_type: r.leave_type?.name || "Leave",
+    photo: photoUrl(r.employee?.profile_picture),
     start_date: r.start_date,
     end_date: r.end_date,
     days: r.total_days || 1,
@@ -167,7 +188,8 @@ async function fetchChangeRequests(params) {
     const requests = records.map((r) => ({
       name: r.employee?.first_name
         ? `${r.employee.first_name} ${r.employee.last_name || ""}`.trim()
-        : "Unknown",
+        : (r.employee?.display_name || "Unknown"),
+      photo: photoUrl(r.employee?.profile_picture),
       date: r.date,
       reason: r.reason || "---",
     }));

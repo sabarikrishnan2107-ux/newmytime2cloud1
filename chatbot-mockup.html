@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>MyTime Assistant — Chat mockup</title>
+<style>
+  :root{
+    --panel:#0d1529; --panel2:#0b1020; --line:rgba(255,255,255,.08);
+    --muted:#64748b; --text:#e2e8f0; --sub:#94a3b8;
+    --indigo:#6366f1; --purple:#8b5cf6; --emerald:#10b981;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; min-height:100vh; font-family:'Segoe UI',system-ui,Arial,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(99,102,241,.14), transparent 60%),
+      radial-gradient(900px 500px at 0% 110%, rgba(139,92,246,.12), transparent 55%),
+      #070b16;
+    color:var(--text); display:grid; place-items:center; padding:34px;
+  }
+  .wrap{width:372px; display:flex; flex-direction:column; align-items:flex-end; gap:14px;}
+
+  /* ---------- Chat panel ---------- */
+  .panel{
+    width:372px; height:620px; display:flex; flex-direction:column;
+    background:var(--panel); border:1px solid var(--line);
+    border-radius:20px; overflow:hidden; box-shadow:0 24px 60px -12px rgba(0,0,0,.7);
+  }
+  .head{
+    flex:none;
+    display:flex; align-items:center; gap:10px; padding:13px 14px;
+    border-bottom:1px solid var(--line);
+    background:linear-gradient(90deg, rgba(99,102,241,.16), rgba(139,92,246,.10) 60%, transparent);
+  }
+  .badge{
+    width:30px;height:30px;border-radius:10px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(135deg,var(--indigo),var(--purple));
+    box-shadow:0 6px 16px -4px rgba(99,102,241,.6);
+  }
+  .htxt{display:flex;flex-direction:column;line-height:1.1}
+  .htxt b{font-size:13.5px}
+  .htxt span{font-size:10.5px;color:var(--emerald);display:flex;align-items:center;gap:5px;margin-top:2px}
+  .dot{width:6px;height:6px;border-radius:50%;background:var(--emerald);box-shadow:0 0 6px var(--emerald)}
+  .x{margin-left:auto;color:var(--muted);cursor:pointer;display:grid;place-items:center}
+  .x:hover{color:var(--sub)}
+
+  /* ---------- Thread ---------- */
+  /* only this list scrolls; header + chips + input stay pinned */
+  .thread{flex:1 1 auto;min-height:0;padding:14px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
+  .thread::-webkit-scrollbar{width:7px}
+  .thread::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:4px}
+  .chips,.inbar,.lang{flex:none}
+  .row{display:flex;gap:8px;align-items:flex-end}
+  .row.me{justify-content:flex-end}
+  .av{width:24px;height:24px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff}
+  .av.bot{background:linear-gradient(135deg,var(--indigo),var(--purple))}
+  .bub{max-width:80%;padding:9px 12px;border-radius:14px;font-size:13px;line-height:1.5}
+  .bub.bot{background:rgba(255,255,255,.05);border:1px solid var(--line);border-bottom-left-radius:5px;color:#dbe4f0}
+  .bub.me{background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;border-bottom-right-radius:5px}
+  .bub .t{font-size:12px;color:var(--sub);margin:2px 0 0}
+
+  /* data card inside a bot bubble */
+  .card{background:rgba(255,255,255,.04);border:1px solid var(--line);border-radius:12px;padding:10px;margin-top:8px}
+  .card .k{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#fff;margin-bottom:8px}
+  .pill{margin-left:auto;font-size:10px;font-weight:700;color:#fca5a5;background:rgba(239,68,68,.14);border:1px solid rgba(239,68,68,.25);padding:2px 8px;border-radius:999px}
+  .pill.g{color:#86efac;background:rgba(16,185,129,.14);border-color:rgba(16,185,129,.25)}
+  .person{display:flex;align-items:center;gap:9px;padding:5px 2px}
+  .person + .person{border-top:1px dashed rgba(255,255,255,.06)}
+  .pi{width:26px;height:26px;border-radius:50%;flex:none;display:grid;place-items:center;font-size:10px;font-weight:700;color:#fff}
+  .pn{font-size:12.5px}
+  .pmeta{margin-left:auto;font-size:11px;color:var(--muted)}
+  ol.steps{margin:6px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:4px}
+  ol.steps li{font-size:12.5px;color:#dbe4f0}
+  ol.steps b{color:#c7d2fe}
+
+  /* ---------- Chips ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:7px;padding:2px 14px 12px}
+  .chip{font-size:11.5px;color:#c7d2fe;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.28);
+    padding:6px 11px;border-radius:999px;cursor:pointer;white-space:nowrap}
+  .chip:hover{background:rgba(99,102,241,.2)}
+
+  /* ---------- Input ---------- */
+  .inbar{display:flex;align-items:center;gap:8px;padding:12px 14px;border-top:1px solid var(--line);background:rgba(255,255,255,.02)}
+  .field{flex:1;display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.05);border:1px solid var(--line);border-radius:999px;padding:8px 8px 8px 14px}
+  .field input{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13px}
+  .field input::placeholder{color:#5b6b86}
+  .mic{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--sub);cursor:pointer}
+  .mic:hover{color:#fff;background:rgba(255,255,255,.06)}
+  .send{width:38px;height:38px;flex:none;border-radius:50%;display:grid;place-items:center;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,var(--indigo),var(--purple));box-shadow:0 8px 18px -6px rgba(99,102,241,.7)}
+  .lang{font-size:10px;color:var(--muted);text-align:center;padding:0 0 10px}
+  .lang b{color:#a5b4fc}
+
+  /* ---------- Launcher ---------- */
+  .launch{width:56px;height:56px;border-radius:50%;display:grid;place-items:center;color:#fff;cursor:pointer;
+    background:linear-gradient(135deg,var(--indigo),var(--purple));box-shadow:0 14px 30px -6px rgba(99,102,241,.65)}
+  svg{display:block}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <!-- header -->
+      <div class="head">
+        <div class="badge">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3v4M3 5h4M6 17v4M4 19h4"/><path d="M13 3l2.5 6.5L22 12l-6.5 2.5L13 21l-2.5-6.5L4 12l6.5-2.5z"/></svg>
+        </div>
+        <div class="htxt"><b>MyTime Assistant</b><span><i class="dot"></i>Online · DPS Sharjah</span></div>
+        <div class="x">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </div>
+      </div>
+
+      <!-- thread -->
+      <div class="thread">
+        <div class="row">
+          <div class="av bot">M</div>
+          <div class="bub bot">Hi! I'm your MyTime Assistant. Ask me about today's attendance, leave, or how to do anything in the app. 👋</div>
+        </div>
+
+        <div class="row me"><div class="bub me">how many absent today?</div></div>
+
+        <div class="row">
+          <div class="av bot">M</div>
+          <div class="bub bot">
+            4 people are absent today.
+            <div class="card">
+              <div class="k">Absent today <span class="pill">4</span></div>
+              <div class="person"><div class="pi" style="background:#ef4444">NT</div><div class="pn">Nazini Thayyil</div><div class="pmeta">10001</div></div>
+              <div class="person"><div class="pi" style="background:#f59e0b">AV</div><div class="pn">Ancy Vargheese</div><div class="pmeta">10009</div></div>
+              <div class="person"><div class="pi" style="background:#8b5cf6">HM</div><div class="pn">Hala Mustafa</div><div class="pmeta">10008</div></div>
+              <div class="person"><div class="pi" style="background:#0ea5e9">ST</div><div class="pn">Sweety Tom</div><div class="pmeta">10010</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row me"><div class="bub me">who is on leave?</div></div>
+        <div class="row">
+          <div class="av bot">M</div>
+          <div class="bub bot">
+            2 employees are on leave today.
+            <div class="card">
+              <div class="k">On leave <span class="pill g">2</span></div>
+              <div class="person"><div class="pi" style="background:#10b981">PS</div><div class="pn">Priya Susan</div><div class="pmeta">Sick</div></div>
+              <div class="person"><div class="pi" style="background:#6366f1">RB</div><div class="pn">Ramya Balaji</div><div class="pmeta">Annual</div></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row me"><div class="bub me">how do i add an employee?</div></div>
+        <div class="row">
+          <div class="av bot">M</div>
+          <div class="bub bot">
+            Here's how to add an employee:
+            <ol class="steps">
+              <li>Open <b>Employees → Add Employee</b></li>
+              <li>Fill in name, branch, department &amp; designation</li>
+              <li>Set the joining date</li>
+              <li>Click <b>Save</b> — done ✅</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- suggestion chips -->
+      <div class="chips">
+        <div class="chip">Absent today</div>
+        <div class="chip">Present count</div>
+        <div class="chip">On leave</div>
+        <div class="chip">Pending leaves</div>
+        <div class="chip">How to add employee?</div>
+      </div>
+
+      <!-- input -->
+      <div class="inbar">
+        <div class="field">
+          <input placeholder="Ask anything about DPS Sharjah…" />
+          <div class="mic" title="Tap to talk">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2M12 19v3"/></svg>
+          </div>
+        </div>
+        <div class="send" title="Send">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        </div>
+      </div>
+      <div class="lang">Replies in <b>English</b> · tap the mic to switch to voice</div>
+    </div>
+
+    <!-- floating launcher (chat bubble) -->
+    <div class="launch" title="MyTime Assistant">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></svg>
+    </div>
+  </div>
+  <script>
+    // Chat lands on the newest message (auto-scroll to bottom), like a real chat.
+    const t = document.querySelector('.thread');
+    t.scrollTop = t.scrollHeight;
+  </script>
+</body>
+</html>

@@ -2,12 +2,13 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Mic, MicOff } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import useTextToSpeech from "@/hooks/useTextToSpeech";
 import { matchIntent } from "@/lib/voice/intentMatcher";
 import { executeDataQuery } from "@/lib/voice/commandExecutor";
 import { aiInterpret } from "@/lib/voice/aiInterpret";
-import VoicePanel from "./VoicePanel";
+import ChatPanel from "./ChatPanel";
+import { getUser } from "@/config";
 import VoiceResultModal from "./VoiceResultModal";
 
 const SILENCE_TIMEOUT = 8000;
@@ -27,10 +28,6 @@ const LANGUAGES = [
   { value: "fr-FR", label: "Français (French)" },
 ];
 
-// Result types that deserve the big centered popup
-const MODAL_TYPES = new Set([
-  "employee_list", "summary", "count", "leave_list", "change_list", "holiday_list", "greeting", "answer", "error",
-]);
 const MAX_HISTORY = 8; // conversation turns kept for follow-up context
 
 export default function VoiceButton() {
@@ -46,6 +43,17 @@ export default function VoiceButton() {
   const [debugLog, setDebugLog] = useState([]);
   const [position, setPosition] = useState(null); // {x, y} | null (null = default bottom-right)
   const [dragging, setDragging] = useState(false);
+
+  // === Chat thread ===
+  const [company, setCompany] = useState("");
+  const [messages, setMessages] = useState([
+    { id: 0, role: "bot", text: "Hi! I'm your MyTime Assistant. Ask me about today's attendance, leave, or how to do anything in the app. 👋" },
+  ]);
+  const msgIdRef = useRef(1);
+
+  const appendMessage = useCallback((role, text, data = null) => {
+    setMessages((prev) => [...prev, { id: msgIdRef.current++, role, text, data }]);
+  }, []);
 
   const { speak } = useTextToSpeech();
   const recognitionRef = useRef(null);
@@ -146,8 +154,9 @@ export default function VoiceButton() {
     }
   }, [clearSilenceTimer]);
 
-  const processCommand = useCallback(async (text) => {
+  const processCommand = useCallback(async (text, { mode = "voice", speak: doSpeak = true } = {}) => {
     addToHistory(text);
+    appendMessage("user", text);
     setState("processing");
     setPanelOpen(true);
     addDebug(`Processing: "${text}"`);
@@ -157,8 +166,8 @@ export default function VoiceButton() {
 
     const finish = (res, { navigate } = {}) => {
       setResult(res);
-      if (res && MODAL_TYPES.has(res.type)) setModalOpen(true);
-      if (res?.speech) speak(res.speech, res.language || langRef.current);
+      if (doSpeak && res?.speech) speak(res.speech, res.language || langRef.current);
+      appendMessage("bot", res?.speech || "", res && res.data ? res : null);
       // Remember this exchange so follow-up questions have context
       if (res?.speech) {
         conversationRef.current = [
@@ -178,9 +187,13 @@ export default function VoiceButton() {
       }
     };
 
-    // English: try the free/instant local keyword match first.
-    // Other languages: skip straight to the AI (keywords are English-only).
-    const intent = langRef.current.startsWith("en") ? matchIntent(text) : null;
+    // The local keyword matcher is for quick SPOKEN commands only. On the typed
+    // chatbot (mode "chat") it mis-fires on any sentence containing a keyword —
+    // e.g. "how do I mark someone present" scores as `present_count` and shows a
+    // count instead of answering — so always let the AI classify in chat mode.
+    // It reliably separates "how do I…" guidance from "show me…" data queries.
+    // Voice quick-commands (English only) still use the instant local match.
+    const intent = (mode !== "chat" && langRef.current.startsWith("en")) ? matchIntent(text) : null;
 
     if (intent) {
       addDebug(`Local intent: ${intent.type} - ${intent.command.label || "greeting"}`);
@@ -211,7 +224,7 @@ export default function VoiceButton() {
 
     // AI fallback: understands any language, questions & guidance (Grok or Claude via backend).
     addDebug("Asking AI...");
-    const ai = await aiInterpret(text, langRef.current, conversationRef.current);
+    const ai = await aiInterpret(text, langRef.current, conversationRef.current, mode);
 
     if (!ai || ai.kind === "none") {
       addDebug(ai ? "AI: no match" : "AI unavailable");
@@ -258,7 +271,7 @@ export default function VoiceButton() {
 
     // Unknown shape -> treat as not understood
     finish({ speech: ai.speech || "Sorry, I didn't understand that.", data: null, label: "Not Understood", type: "error", language: ai.language });
-  }, [addToHistory, addDebug, speak, router, setState, stopRecognition]);
+  }, [addToHistory, appendMessage, addDebug, speak, router, setState, stopRecognition]);
 
   // Build a recognition instance wired to our handlers.
   const buildRecognition = useCallback(() => {
@@ -438,6 +451,18 @@ export default function VoiceButton() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSupported]);
 
+  // Company name for the chat header ("Online · <company>")
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const u = await getUser();
+        if (!cancelled) setCompany(u?.company?.name || u?.company_name || u?.name || "");
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const toggleEnabled = useCallback(() => {
     setEnabled((prev) => {
       const next = !prev;
@@ -517,28 +542,13 @@ export default function VoiceButton() {
 
   if (!isSupported) return null;
 
-  const handleMicClick = () => {
-    // Suppress click that fires immediately after a drag
-    if (dragStateRef.current.didDrag) {
-      dragStateRef.current.didDrag = false;
-      return;
-    }
-    setPanelOpen(true);
-    if (voiceState === "listening" || voiceState === "processing") {
-      // Stop the current attempt; fall back to background wake word (or idle)
-      clearSilenceTimer();
-      setTranscript("");
-      if (enabledRef.current) {
-        startWakeWordRef.current?.();
-      } else {
-        stopRecognition();
-        setState("idle");
-      }
-      return;
-    }
-    // idle or waiting -> talk now
-    startCommand();
+  // The floating button now just opens/closes the chat panel; the mic lives inside it.
+  const handleLauncherClick = () => {
+    if (dragStateRef.current.didDrag) { dragStateRef.current.didDrag = false; return; }
+    setPanelOpen((o) => !o);
   };
+  const handlePanelMic = () => startCommand();
+  const handleSend = (text) => { processCommand(text, { mode: "chat", speak: false }); };
 
   const handlePointerDown = (e) => {
     if (!buttonRef.current) return;
@@ -617,17 +627,16 @@ export default function VoiceButton() {
       )}
 
       <div className="fixed z-[9999]" style={wrapperStyle}>
-        {/* Status / debug panel */}
+        {/* Chat panel */}
         {panelOpen && (
-          <VoicePanel
+          <ChatPanel
+            messages={messages}
             state={voiceState}
-            enabled={enabled}
+            company={company}
             language={language}
             languages={LANGUAGES}
-            transcript={transcript}
-            history={history}
-            debugLog={debugLog}
-            onToggleEnabled={toggleEnabled}
+            onSend={handleSend}
+            onMic={handlePanelMic}
             onLanguageChange={changeLanguage}
             onClose={handleClosePanel}
           />
@@ -636,7 +645,7 @@ export default function VoiceButton() {
         {/* Floating Mic Button */}
         <button
           ref={buttonRef}
-          onClick={handleMicClick}
+          onClick={handleLauncherClick}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -648,11 +657,7 @@ export default function VoiceButton() {
               : "bg-gradient-to-br from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 shadow-indigo-500/30"
           }`}
         >
-          {voiceState === "idle" && !enabled ? (
-            <MicOff size={18} className="text-white" />
-          ) : (
-            <Mic size={18} className="text-white" />
-          )}
+          <MessageCircle size={20} className="text-white" />
 
           {/* Active (post wake word) - strong red pulse */}
           {isActive && (
@@ -672,7 +677,7 @@ export default function VoiceButton() {
 
           {!panelOpen && !dragging && (
             <span className="absolute -top-10 right-0 bg-slate-900 text-white text-[10px] font-medium px-3 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-white/10">
-              {isActive ? "Listening - tap to stop" : enabled ? "Tap to talk (or say 'Hey MyTime')" : "Voice off - tap to talk"}
+              {isActive ? "Listening…" : "Ask MyTime Assistant"}
             </span>
           )}
         </button>

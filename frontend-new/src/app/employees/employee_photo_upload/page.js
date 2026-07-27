@@ -255,11 +255,24 @@ export default function AttendanceTable() {
             console.groupEnd();
 
             if (apiResult) {
+              // apiResult.status is only the GATEWAY status (200 = "request sent").
+              // The device's own verdict is in sdk_response.status:
+              //   200 = enrolled OK; 103 = person already exists on the device
+              //   (firmware reports it as "parameter error" in Chinese);
+              //   422 = photo file missing on server (guard refused to push).
+              const dev = apiResult.sdk_response;
+              const devStatus = dev && typeof dev === "object" ? dev.status : null;
+              let displayStatus;
+              if (devStatus === 200) displayStatus = 200;
+              else if (devStatus === 103) displayStatus = "Already exists on device";
+              else if (devStatus === 422 || apiResult.status === 422) displayStatus = "Photo missing on server";
+              else if (apiResult.status === 500) displayStatus = "Device offline / timeout";
+              else displayStatus = (dev && dev.message) || apiResult.status;
               setSyncResults((prev) => [...prev, {
                 ...apiResult,
                 name: apiResult.name || emp.name,
                 device_id: apiResult.device_id || device.id,
-                status: apiResult.status
+                status: displayStatus
               }]);
             } else {
               throw new Error("Invalid API Response Structure");

@@ -10,39 +10,10 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="light">
       <head>
-        {/* ⚠️ TEMPORARY DIAGNOSTIC — capture white-screen errors on mobile Safari.
-            Renders the real JS error + stack onto the page so we can read it on the
-            phone (no Mac/devtools needed). REMOVE once the Safari issue is fixed. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `(function(){
-  function show(title, msg){
-    try{
-      var el = document.getElementById('__err_overlay__');
-      if(!el){
-        el = document.createElement('div');
-        el.id = '__err_overlay__';
-        el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:#0b1120;color:#f87171;font:13px/1.5 ui-monospace,monospace;padding:16px;overflow:auto;white-space:pre-wrap;word-break:break-word;-webkit-overflow-scrolling:touch;';
-        var h = document.createElement('div');
-        h.style.cssText='color:#fbbf24;font-weight:bold;margin-bottom:8px;';
-        h.textContent='App error (diagnostic overlay) — screenshot this:';
-        el.appendChild(h);
-        (document.body||document.documentElement).appendChild(el);
-      }
-      el.textContent += '\\n\\n' + title + '\\n' + msg;
-    }catch(_){}
-  }
-  window.addEventListener('error', function(e){
-    var m = (e.error && (e.error.stack || e.error.message)) || e.message || String(e);
-    show('[JS ERROR] '+(e.filename||'')+':'+(e.lineno||'')+':'+(e.colno||''), m);
-  });
-  window.addEventListener('unhandledrejection', function(e){
-    var r = e.reason; var m = (r && (r.stack || r.message)) || String(r);
-    show('[PROMISE REJECTION]', m);
-  });
-})();`,
-          }}
-        />
+        {/* Diagnostic overlay removed 2026-07-13 — it was a TEMPORARY debugging aid
+            that painted every JS error full-screen for end users. The issues it was
+            added to catch (429 storms, LogTime 500s, i18n hydration mismatch) are
+            fixed. Errors still log to the browser console as normal. */}
 
         {/* Chart.js */}
         <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>

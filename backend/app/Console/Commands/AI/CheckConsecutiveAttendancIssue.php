@@ -125,7 +125,13 @@ class CheckConsecutiveAttendancIssue extends Command
 
         $feedRows = [];
         foreach ($results as $employeeId => $dates) {
-            $employee = Employee::where('system_user_id', $employeeId)->first();
+            // Scope by company: system_user_id (the device user code) is NOT unique across
+            // companies — the same code exists in up to a dozen companies — so an unscoped
+            // lookup attaches a DIFFERENT company's employee (name/photo/id) to this feed
+            // row, which is why AI Feeds showed people from other companies.
+            $employee = Employee::where('company_id', $companyId)
+                ->where('system_user_id', $employeeId)
+                ->first();
             $name = $employee ? ($employee->first_name) : $employeeId;
             $desc = "$name with Employee ID ({$employeeId}) has {$streakTarget}+ $typeLabel on: " . implode(' | ', $dates);
             $this->info($desc);

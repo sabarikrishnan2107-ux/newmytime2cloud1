@@ -17,15 +17,6 @@ export const SUPPORTED_LANGUAGES = [
 
 export const LANGUAGE_STORAGE_KEY = "app_language";
 
-const isBrowser = typeof window !== "undefined";
-
-function readSavedLanguage() {
-  if (!isBrowser) return "en";
-  const saved = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
-  const valid = SUPPORTED_LANGUAGES.some((l) => l.code === saved);
-  return valid ? saved : "en";
-}
-
 if (!i18n.isInitialized) {
   i18n.use(initReactI18next).init({
     resources: {
@@ -34,7 +25,12 @@ if (!i18n.isInitialized) {
       fr: { common: fr },
       hi: { common: hi },
     },
-    lng: readSavedLanguage(),
+    // ALWAYS initialize in English — the same language the pages were
+    // pre-rendered in at build time. Reading the saved language here (before
+    // hydration) made React's first client render differ from the server HTML
+    // for every non-English user → React error #418 on every page load.
+    // LanguageProvider switches to the saved language right after mount.
+    lng: "en",
     fallbackLng: "en",
     defaultNS: "common",
     ns: ["common"],

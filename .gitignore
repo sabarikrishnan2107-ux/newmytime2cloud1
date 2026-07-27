@@ -17,6 +17,14 @@ camera-service/models/models/
 **/.env.development
 **/.env.staging
 
+# SSH / server keys (NEVER commit — these grant server access)
+*.ppk
+*.pem
+*_key
+*_key.*
+new_server_key.ppk
+ssh_login_key.ppk
+
 # OS
 .DS_Store
 Thumbs.db

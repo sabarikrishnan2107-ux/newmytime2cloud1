@@ -574,9 +574,23 @@ class AttendanceLogController extends Controller
 
     public function GenerateLog(Request $request)
     {
+        // Normalize LogTime instead of blindly appending ":00". Clients send it
+        // with OR without seconds; appending unconditionally produced values like
+        // "2026-07-03 19:00:00:00" (and "... undefined:00"), which the varchar
+        // LogTime column accepted — and then every pgsql query casting
+        // LogTime::date crashed with a 500 for that whole company.
+        try {
+            $logTime = Carbon::parse(trim((string) $request->LogTime))->format('Y-m-d H:i:s');
+        } catch (\Throwable $e) {
+            return response()->json([
+                'status'  => false,
+                'message' => 'Invalid LogTime value: ' . $request->LogTime,
+            ], 422);
+        }
+
         $payload = [
             "UserID"       => $request->UserID,
-            "LogTime"      => $request->LogTime . ":00",
+            "LogTime"      => $logTime,
             "DeviceID"     => $request->DeviceID ?? "Unknown",
             "company_id"   => $request->company_id,
             "log_type"     => $request->log_type ?? "Unknown",
