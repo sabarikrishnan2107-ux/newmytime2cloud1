@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\ActiveLicense;
+use App\Models\Company;
 use App\Models\Device;
 use App\Models\Employee;
 
@@ -13,8 +14,9 @@ use App\Models\Employee;
  * - Binds to this machine's fingerprint and to a whitelist of device serials.
  * - Enforces expiry, max employees, and max devices on add operations.
  *
- * Re-activation is non-destructive: activate() only upserts the single
- * active_license row and never touches employees/devices/attendance data.
+ * Re-activation is non-destructive: activate() upserts the single
+ * active_license row and mirrors the license limits onto the local company
+ * profile — it never touches employees/devices/attendance data.
  */
 class LicenseService
 {
@@ -85,9 +87,11 @@ class LicenseService
         $license = ActiveLicense::create([
             'license_id'      => $payload['lid'] ?? 'LIC',
             'company_id'      => $payload['company_id'] ?? null,
+            'company_name'    => $payload['company_name'] ?? null,
             'machine_fp'      => $payload['machine_fp'],
             'allowed_devices' => array_values($payload['allowed_devices'] ?? []),
             'max_devices'     => (int) ($payload['max_devices'] ?? 0),
+            'max_branches'    => (int) ($payload['max_branches'] ?? 0),
             'max_employees'   => (int) ($payload['max_employees'] ?? 0),
             'issued_at'       => $payload['issued_at'] ?? null,
             'expiry'          => $payload['expiry'],
@@ -95,7 +99,41 @@ class LicenseService
             'activated_at'    => now(),
         ]);
 
+        $this->syncCompanyFromLicense($payload);
+
         return ['ok' => true, 'message' => 'License activated successfully.', 'license' => $license];
+    }
+
+    /**
+     * Mirror the license limits onto the local company profile so the Company
+     * page (name, max branches/devices/employees, expiry) matches the license.
+     * The desktop is single-tenant; the token's company_id is a master-side id
+     * that does not map to the locally-seeded company, so we always target the
+     * one local company row. Touches no employees/devices/attendance data.
+     */
+    private function syncCompanyFromLicense(array $payload): void
+    {
+        $company = Company::query()->orderBy('id')->first();
+        if (! $company) {
+            return;
+        }
+
+        $updates = [
+            'max_devices'  => (int) ($payload['max_devices'] ?? 0),
+            'max_employee' => (int) ($payload['max_employees'] ?? 0),
+            'expiry'       => $payload['expiry'],
+        ];
+
+        if (! empty($payload['company_name'])) {
+            $updates['name'] = $payload['company_name'];
+        }
+
+        // 0 means the key was minted before branch limits existed — leave as is.
+        if ((int) ($payload['max_branches'] ?? 0) > 0) {
+            $updates['max_branches'] = (int) $payload['max_branches'];
+        }
+
+        $company->forceFill($updates)->save();
     }
 
     /** The currently stored license, or null. */
@@ -148,11 +186,13 @@ class LicenseService
             'reason'          => $reason,
             'license_id'      => $lic->license_id,
             'company_id'      => $lic->company_id,
+            'company_name'    => $lic->company_name,
             'machine_fp'      => $this->currentMachineFp(),
             'expiry'          => (string) $lic->expiry,
             'expired'         => $this->isExpired($lic->expiry),
             'max_employees'   => $lic->max_employees,
             'max_devices'     => $lic->max_devices,
+            'max_branches'    => $lic->max_branches,
             'used_employees'  => $this->employeeCount($lic->company_id),
             'used_devices'    => $this->deviceCount($lic->company_id),
             'allowed_devices' => $lic->allowed_devices ?? [],
