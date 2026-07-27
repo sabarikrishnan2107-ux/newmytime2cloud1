@@ -24,6 +24,7 @@ use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\EmployeeLeaveDocumentController;
 use App\Http\Controllers\EmployeeLeavesController;
 use App\Http\Controllers\ExperienceController;
+use App\Http\Controllers\FaceAttendanceController;
 use App\Http\Controllers\GlobalSearchController;
 use App\Http\Controllers\GovernmentHolidaysController;
 use App\Http\Controllers\HolidaysController;
@@ -139,6 +140,15 @@ Route::get('attendance_log_paginate/{page?}', [AttendanceLogController::class, '
 //Route::post('generate_logs111111', [AttendanceLogController::class, 'generate_logs']);
 Route::post('generate_log', [AttendanceLogController::class, 'GenerateLog'])->middleware("auth:sanctum");
 Route::get('logs', [AttendanceLogController::class, 'getAttendanceLogs']);
+
+// Face attendance / gallery (TimeAdmin + face kiosk). All auth:sanctum — company_id
+// comes from the token, never the body. The first three already exist on prod; the two
+// build-* routes are the new async gallery build. On deploy, merge this whole block.
+Route::get('face-gallery/status', [FaceAttendanceController::class, 'status'])->middleware('auth:sanctum');
+Route::post('face-gallery/build', [FaceAttendanceController::class, 'build'])->middleware('auth:sanctum');
+Route::post('face-gallery/build-async', [FaceAttendanceController::class, 'buildAsync'])->middleware('auth:sanctum');
+Route::get('face-gallery/build-status', [FaceAttendanceController::class, 'buildStatus'])->middleware('auth:sanctum');
+Route::post('face-identify', [FaceAttendanceController::class, 'identify'])->middleware('auth:sanctum');
 
 Route::get('attendance_single_list', [AttendanceLogController::class, 'singleView']);
 Route::get('attendance_single_list_by_id', [AttendanceLogController::class, 'singleViewById']);
